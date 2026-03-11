@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gold Signal Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f0f;
+      --card:      #1a1a1a;
+      --card2:     #222222;
+      --border:    #2a2a2a;
+      --text:      #e0e0e0;
+      --muted:     #9ca3af;
+      --gold:      #d4a017;
+      --gold-dim:  #a07810;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --grey:      #6b7280;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.3px;
+    }
+    .header-updated {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    main {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+    }
+
+    /* ── Spinner ─────────────────────────────────────────────────────── */
+    #spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 50vh;
+      gap: 16px;
+      color: var(--muted);
+    }
+    .spin {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Hero cards ──────────────────────────────────────────────────── */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 900px)  { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px)  { .hero-grid { grid-template-columns: 1fr; } }
+
+    .hero-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .hero-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .hero-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .hero-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .color-bullish  { color: var(--green); }
+    .color-bearish  { color: var(--red); }
+    .color-neutral  { color: var(--grey); }
+    .color-gold     { color: var(--gold); }
+    .color-green    { color: var(--green); }
+    .color-red      { color: var(--red); }
+    .color-yellow   { color: #eab308; }
+
+    /* ── Chart cards ─────────────────────────────────────────────────── */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 20px 16px;
+      margin-bottom: 20px;
+    }
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .chart-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .chart-wrap {
+      position: relative;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .chart-row-bottom {
+      display: grid;
+      grid-template-columns: 55fr 45fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 800px) {
+      .chart-row, .chart-row-bottom { grid-template-columns: 1fr; }
+    }
+
+    .no-data {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 180px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      padding: 20px 0 10px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="header-title">🟡 Gold Signal Tracker</span>
+  <span class="header-updated" id="header-updated">Loading…</span>
+</header>
+
+<main>
+  <div id="spinner">
+    <div class="spin"></div>
+    <span>Loading dashboard…</span>
+  </div>
+
+  <div id="dashboard" style="display:none">
+
+    <!-- Hero cards -->
+    <div class="hero-grid">
+      <div class="hero-card">
+        <div class="hero-label">Current Price</div>
+        <div class="hero-value color-gold" id="card-price">—</div>
+        <div class="hero-sub">XAU / AUD</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-label">Latest Signal</div>
+        <div class="hero-value" id="card-direction">—</div>
+        <div class="hero-sub" id="card-confidence">—</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-label">Win Rate</div>
+        <div class="hero-value" id="card-winrate">—</div>
+        <div class="hero-sub" id="card-winrate-sub">—</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-label">Total API Cost</div>
+        <div class="hero-value color-gold" id="card-cost">—</div>
+        <div class="hero-sub">AUD (all time)</div>
+      </div>
+    </div>
+
+    <!-- Chart 1: Signal History (full width) -->
+    <div class="chart-card">
+      <div class="chart-title">Signal History</div>
+      <div class="chart-subtitle">Composite score over time — green dots = bullish, red = bearish, grey = neutral</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chart-history"></canvas>
+        <div class="no-data" id="no-data-history" style="display:none">Not enough data yet</div>
+      </div>
+    </div>
+
+    <!-- Chart row: scatter + donut -->
+    <div class="chart-row">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Predicted vs Actual Move %</div>
+        <div class="chart-subtitle">Dots above the line = move was larger than predicted</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-scatter"></canvas>
+          <div class="no-data" id="no-data-scatter" style="display:none">Not enough data yet</div>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Prediction Accuracy</div>
+        <div class="chart-subtitle" id="donut-subtitle">&nbsp;</div>
+        <div class="chart-wrap" style="height:280px">
+          <canvas id="chart-donut"></canvas>
+          <div class="no-data" id="no-data-donut" style="display:none">Not enough data yet</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px"></div>
+
+    <!-- Chart 4: Cumulative P&L (full width) -->
+    <div class="chart-card">
+      <div class="chart-title">Cumulative Signal P&amp;L (%)</div>
+      <div class="chart-subtitle">Hypothetical return if following every signal</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="chart-pnl"></canvas>
+        <div class="no-data" id="no-data-pnl" style="display:none">Not enough data yet</div>
+      </div>
+    </div>
+
+    <!-- Chart row: driver bars + daily cost -->
+    <div class="chart-row-bottom">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Average Driver Scores (all-time)</div>
+        <div class="chart-subtitle">Average score per driver across all signals</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chart-drivers"></canvas>
+          <div class="no-data" id="no-data-drivers" style="display:none">Not enough data yet</div>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Daily API Cost (AUD)</div>
+        <div class="chart-subtitle">Spend per day</div>
+        <div class="chart-wrap" style="height:240px">
+          <canvas id="chart-costs"></canvas>
+          <div class="no-data" id="no-data-costs" style="display:none">Not enough data yet</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#dashboard -->
+
+  <div id="error-msg" style="display:none; text-align:center; color:var(--muted); margin-top:60px; font-size:15px">
+    No data yet — the bot hasn't run its first cycle.
+  </div>
+</main>
+
+<footer>Gold Signal Tracker — Paper trading only. Not financial advice.</footer>
+
+<script>
+// ── Globals ─────────────────────────────────────────────────────────────────
+Chart.defaults.color = '#9ca3af';
+Chart.defaults.borderColor = '#2a2a2a';
+
+const GOLD   = '#d4a017';
+const GREEN  = '#22c55e';
+const RED    = '#ef4444';
+const GREY   = '#6b7280';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Convert a UTC ISO string to AWST (+8h) and return a readable label.
+ * e.g. "2026-03-11T06:00:00" → "11 Mar 06:00"
+ */
+function toAWST(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr.endsWith('Z') ? isoStr : isoStr + 'Z');
+  d.setTime(d.getTime() + 8 * 60 * 60 * 1000);
+  const day   = d.getUTCDate();
+  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+  const hh    = String(d.getUTCHours()).padStart(2,'0');
+  const mm    = String(d.getUTCMinutes()).padStart(2,'0');
+  return `${day} ${month} ${hh}:${mm}`;
+}
+
+/**
+ * Full human-readable AWST datetime for the header.
+ */
+function toAWSTFull(isoStr) {
+  if (!isoStr) return 'unknown';
+  const d = new Date(isoStr.endsWith('Z') ? isoStr : isoStr + 'Z');
+  d.setTime(d.getTime() + 8 * 60 * 60 * 1000);
+  const day   = d.getUTCDate();
+  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+  const year  = d.getUTCFullYear();
+  const hh    = String(d.getUTCHours()).padStart(2,'0');
+  const mm    = String(d.getUTCMinutes()).padStart(2,'0');
+  return `${day} ${month} ${year}, ${hh}:${mm} AWST`;
+}
+
+function fmtPrice(v) {
+  return v == null ? '—' : '$' + Number(v).toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function directionColor(dir) {
+  if (!dir) return GREY;
+  const d = dir.toLowerCase();
+  if (d === 'bullish') return GREEN;
+  if (d === 'bearish') return RED;
+  return GREY;
+}
+
+function directionClass(dir) {
+  if (!dir) return 'color-neutral';
+  const d = dir.toLowerCase();
+  if (d === 'bullish') return 'color-bullish';
+  if (d === 'bearish') return 'color-bearish';
+  return 'color-neutral';
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a,b) => a + (b||0), 0) / arr.length;
+}
+
+function showNoData(canvasId, placeholderId) {
+  const c = document.getElementById(canvasId);
+  const p = document.getElementById(placeholderId);
+  if (c) c.style.display = 'none';
+  if (p) p.style.display = 'flex';
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  let data;
+  try {
+    const resp = await fetch('./data.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    data = await resp.json();
+  } catch (e) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('spinner').style.display    = 'none';
+  document.getElementById('dashboard').style.display  = 'block';
+
+  const s = data.summary || {};
+
+  // Header
+  document.getElementById('header-updated').textContent =
+    'Last updated: ' + toAWSTFull(data.generated_at);
+
+  // Hero — price
+  document.getElementById('card-price').textContent =
+    data.current_price_aud ? fmtPrice(data.current_price_aud) : '—';
+
+  // Hero — latest signal
+  const dirEl  = document.getElementById('card-direction');
+  const dirTxt = (s.last_direction || '—').charAt(0).toUpperCase() + (s.last_direction || '').slice(1);
+  dirEl.textContent = dirTxt;
+  dirEl.className   = 'hero-value ' + directionClass(s.last_direction);
+  document.getElementById('card-confidence').textContent =
+    s.last_confidence != null
+      ? `Score ${(s.last_score||0).toFixed(2)} · Confidence ${Math.round((s.last_confidence||0)*100)}%`
+      : '—';
+
+  // Hero — win rate
+  const wrEl  = document.getElementById('card-winrate');
+  const wrPct = Math.round((s.win_rate||0) * 100);
+  wrEl.textContent = wrPct + '%';
+  wrEl.className   = 'hero-value ' + (wrPct > 60 ? 'color-green' : wrPct >= 40 ? 'color-yellow' : 'color-red');
+  document.getElementById('card-winrate-sub').textContent =
+    `${s.correct||0} / ${s.total_assessed||0} correct`;
+
+  // Hero — cost
+  document.getElementById('card-cost').textContent =
+    'AUD $' + (s.total_cost_aud || 0).toFixed(2);
+
+  const signals     = data.signals     || [];
+  const daily_costs = data.daily_costs || [];
+
+  // ── Chart 1 — Signal History ───────────────────────────────────────────────
+  buildHistoryChart(signals);
+
+  // ── Chart 2 — Scatter ─────────────────────────────────────────────────────
+  buildScatterChart(signals);
+
+  // ── Chart 3 — Donut ───────────────────────────────────────────────────────
+  buildDonutChart(s);
+
+  // ── Chart 4 — P&L ─────────────────────────────────────────────────────────
+  buildPnlChart(signals);
+
+  // ── Chart 5 — Drivers ─────────────────────────────────────────────────────
+  buildDriversChart(signals);
+
+  // ── Chart 6 — Daily cost ──────────────────────────────────────────────────
+  buildCostChart(daily_costs);
+}
+
+// ── Chart 1: Signal History ──────────────────────────────────────────────────
+function buildHistoryChart(signals) {
+  if (!signals.length) {
+    showNoData('chart-history', 'no-data-history');
+    return;
+  }
+
+  const labels = signals.map(sig => toAWST(sig.created_at));
+  const scores = signals.map(sig => sig.composite_score ?? 0);
+  const pointColors = signals.map(sig => directionColor(sig.direction));
+
+  // Segment colours by score value
+  const segmentColors = scores.map(v => v > 0.3 ? GREEN : v < -0.3 ? RED : GREY);
+
+  // Build win/loss annotation text for tooltip
+  const outcomeLabels = signals.map(sig => {
+    if (!sig.outcome) return 'Pending';
+    return sig.outcome.was_correct ? '✓ Correct' : '✗ Incorrect';
+  });
+
+  const ctx = document.getElementById('chart-history').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Composite Score',
+          data: scores,
+          borderColor: GOLD,
+          borderWidth: 2,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          tension: 0.3,
+          segment: {
+            borderColor: ctx2 => {
+              const v = (scores[ctx2.p0DataIndex] + scores[ctx2.p1DataIndex]) / 2;
+              return v > 0.3 ? GREEN : v < -0.3 ? RED : GREY;
+            }
+          },
+          fill: false,
+        },
+        {
+          // Zero reference line
+          label: '_zero',
+          data: scores.map(() => 0),
+          borderColor: '#3a3a3a',
+          borderWidth: 1,
+          borderDash: [4,4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => labels[items[0].dataIndex],
+            label: item => {
+              if (item.datasetIndex !== 0) return null;
+              const i   = item.dataIndex;
+              const sig = signals[i];
+              return [
+                `Score: ${(sig.composite_score||0).toFixed(3)}`,
+                `Direction: ${sig.direction || '—'}`,
+                `Confidence: ${Math.round((sig.confidence||0)*100)}%`,
+                outcomeLabels[i],
+              ];
+            },
+            filter: item => item.datasetIndex === 0,
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 11 } } },
+        y: {
+          min: -2, max: 2,
+          title: { display: true, text: 'Score', font: { size: 11 } },
+          grid: { color: '#2a2a2a' }
+        }
+      }
+    }
+  });
+}
+
+// ── Chart 2: Residual Scatter ────────────────────────────────────────────────
+function buildScatterChart(signals) {
+  const withOutcome = signals.filter(s => s.outcome && s.outcome.actual_move_pct != null);
+  if (withOutcome.length < 2) {
+    showNoData('chart-scatter', 'no-data-scatter');
+    return;
+  }
+
+  const correctDots = withOutcome
+    .filter(s => s.outcome.was_correct)
+    .map(s => ({ x: s.expected_move_pct ?? 0, y: s.outcome.actual_move_pct }));
+  const incorrectDots = withOutcome
+    .filter(s => !s.outcome.was_correct)
+    .map(s => ({ x: s.expected_move_pct ?? 0, y: s.outcome.actual_move_pct }));
+
+  const ctx = document.getElementById('chart-scatter').getContext('2d');
+  new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Correct',
+          data: correctDots,
+          backgroundColor: GREEN + 'cc',
+          borderColor: GREEN,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        },
+        {
+          label: 'Incorrect',
+          data: incorrectDots,
+          backgroundColor: RED + 'cc',
+          borderColor: RED,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        },
+        {
+          // 45° reference line y = x
+          label: 'y = x',
+          type: 'line',
+          data: [{ x: -3, y: -3 }, { x: 3, y: 3 }],
+          borderColor: '#555',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          fill: false,
+        },
+        {
+          // Vertical zero line x = 0
+          label: '_vz',
+          type: 'line',
+          data: [{ x: 0, y: -3 }, { x: 0, y: 3 }],
+          borderColor: '#3a3a3a',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        },
+        {
+          // Horizontal zero line y = 0
+          label: '_hz',
+          type: 'line',
+          data: [{ x: -3, y: 0 }, { x: 3, y: 0 }],
+          borderColor: '#3a3a3a',
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            filter: item => !item.text.startsWith('_') && item.text !== 'y = x',
+            boxWidth: 12,
+            font: { size: 11 },
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: item => {
+              if (item.datasetIndex > 1) return null;
+              const p = item.raw;
+              return `Pred: ${p.x.toFixed(2)}%  Actual: ${p.y.toFixed(2)}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear', min: -3, max: 3,
+          title: { display: true, text: 'Predicted Move %', font: { size: 11 } },
+          grid: { color: '#2a2a2a' }
+        },
+        y: {
+          type: 'linear', min: -3, max: 3,
+          title: { display: true, text: 'Actual Move %', font: { size: 11 } },
+          grid: { color: '#2a2a2a' }
+        }
+      }
+    }
+  });
+}
+
+// ── Chart 3: Win/Loss Donut ──────────────────────────────────────────────────
+function buildDonutChart(s) {
+  const total    = s.total_signals  || 0;
+  const assessed = s.total_assessed || 0;
+  const correct  = s.correct        || 0;
+  const incorrect = assessed - correct;
+  const pending   = total - assessed;
+
+  if (total === 0) {
+    showNoData('chart-donut', 'no-data-donut');
+    return;
+  }
+
+  const wrPct = Math.round((s.win_rate || 0) * 100);
+  document.getElementById('donut-subtitle').textContent =
+    `${correct} correct · ${incorrect} incorrect · ${pending} pending`;
+
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+
+  // Centre text plugin (inline)
+  const centerTextPlugin = {
+    id: 'centerText',
+    afterDraw(chart) {
+      const { ctx: c, chartArea: { top, bottom, left, right } } = chart;
+      const cx = (left + right) / 2;
+      const cy = (top + bottom) / 2;
+      c.save();
+      c.font = 'bold 28px -apple-system, sans-serif';
+      c.fillStyle = '#e0e0e0';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(wrPct + '%', cx, cy);
+      c.restore();
+    }
+  };
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    plugins: [centerTextPlugin],
+    data: {
+      labels: ['Correct', 'Incorrect', 'Pending'],
+      datasets: [{
+        data: [correct, incorrect, pending],
+        backgroundColor: [GREEN + 'cc', RED + 'cc', GREY + '80'],
+        borderColor:     [GREEN, RED, GREY],
+        borderWidth: 2,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 14, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: item => {
+              const v   = item.raw;
+              const pct = total > 0 ? Math.round(v / total * 100) : 0;
+              return ` ${item.label}: ${v} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Chart 4: Cumulative P&L ──────────────────────────────────────────────────
+function buildPnlChart(signals) {
+  const withPnl = signals.filter(s => s.cumulative_pnl != null);
+  if (withPnl.length < 2) {
+    showNoData('chart-pnl', 'no-data-pnl');
+    return;
+  }
+
+  const labels = withPnl.map(s => toAWST(s.outcome ? s.created_at : s.created_at));
+  const values = withPnl.map(s => s.cumulative_pnl);
+
+  const ctx = document.getElementById('chart-pnl').getContext('2d');
+
+  // Gradient fill
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, GREEN + '44');
+  gradient.addColorStop(1, GREEN + '00');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Cumulative P&L (%)',
+          data: values,
+          borderColor: GREEN,
+          borderWidth: 2,
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: values.map(v => v >= 0 ? GREEN : RED),
+          pointBorderColor:     values.map(v => v >= 0 ? GREEN : RED),
+        },
+        {
+          label: '_zero',
+          data: values.map(() => 0),
+          borderColor: '#3a3a3a',
+          borderWidth: 1,
+          borderDash: [4,4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => {
+              if (item.datasetIndex !== 0) return null;
+              return `P&L: ${item.raw.toFixed(2)}%`;
+            },
+            filter: item => item.datasetIndex === 0,
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 11 } } },
+        y: {
+          title: { display: true, text: 'Cumulative %', font: { size: 11 } },
+          grid:  { color: '#2a2a2a' }
+        }
+      }
+    }
+  });
+}
+
+// ── Chart 5: Driver Scores ───────────────────────────────────────────────────
+function buildDriversChart(signals) {
+  const withDrivers = signals.filter(s => s.drivers);
+  if (!withDrivers.length) {
+    showNoData('chart-drivers', 'no-data-drivers');
+    return;
+  }
+
+  const driverKeys = ['geopolitical_risk','usd_strength','real_yields','cb_physical','aud_dynamics'];
+  const driverLabels = ['Geopolitical Risk','USD Strength','Real Yields','CB Physical','AUD Dynamics'];
+
+  const avgs = driverKeys.map(k => {
+    const vals = withDrivers.map(s => s.drivers[k]).filter(v => v != null);
+    return vals.length ? avg(vals) : 0;
+  });
+
+  const barColors = avgs.map(v => v >= 0 ? GOLD + 'cc' : RED + 'cc');
+  const borderColors = avgs.map(v => v >= 0 ? GOLD : RED);
+
+  const ctx = document.getElementById('chart-drivers').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: driverLabels,
+      datasets: [{
+        label: 'Avg Score',
+        data: avgs,
+        backgroundColor: barColors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => ` ${item.raw.toFixed(3)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: -2, max: 2,
+          grid: { color: '#2a2a2a' },
+          title: { display: true, text: 'Average Score', font: { size: 11 } }
+        },
+        y: {
+          ticks: { font: { size: 11 } },
+          grid: { color: '#2a2a2a' }
+        }
+      }
+    }
+  });
+}
+
+// ── Chart 6: Daily API Cost ───────────────────────────────────────────────────
+function buildCostChart(dailyCosts) {
+  if (!dailyCosts.length) {
+    showNoData('chart-costs', 'no-data-costs');
+    return;
+  }
+
+  const labels = dailyCosts.map(d => d.date);
+  const values = dailyCosts.map(d => d.aud);
+
+  const ctx = document.getElementById('chart-costs').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'AUD Cost',
+        data: values,
+        backgroundColor: GOLD + 'bb',
+        borderColor: GOLD,
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => ` AUD $${item.raw.toFixed(4)}`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 45, font: { size: 11 } } },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#2a2a2a' },
+          title: { display: true, text: 'AUD', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
