@@ -465,6 +465,24 @@
           </div>
         </div>
       </div>
+      <!-- Regime Confirmation Meter -->
+      <div id="qs-confirm-row" style="margin-top:16px;display:none">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">
+          Regime Confirmation — <span id="qs-confirm-label" style="font-weight:600">—</span>
+          <span id="qs-confirm-status" style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700"></span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div id="qs-confirm-bar-wrap" style="flex:1;height:10px;background:#2a2a2a;border-radius:5px;overflow:hidden">
+            <div id="qs-confirm-bar" style="height:100%;width:0%;border-radius:5px;transition:width 0.4s ease"></div>
+          </div>
+          <div id="qs-confirm-pct" style="font-size:12px;color:var(--muted);min-width:40px;text-align:right">—</div>
+        </div>
+        <div id="qs-confirm-dots" style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap"></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          Threshold: <span id="qs-confirm-threshold">70%</span> of metrics must agree before regime change confirms.
+          Change this with <code style="font-size:10px">--threshold</code> when running the optimiser.
+        </div>
+      </div>
     </div>
 
     <!-- Panel Q4: Regime Distribution -->
@@ -1159,6 +1177,53 @@ function buildCurrentSignalPanel(cs, regime) {
   document.getElementById('qs-bars').textContent      = cs.consecutive_bars != null ? cs.consecutive_bars + 'd' : '—';
   const wt = cs.quant_weight != null ? Math.round(cs.quant_weight * 100) + '%' : '—';
   document.getElementById('qs-weight').textContent    = wt;
+
+  // Confirmation meter
+  const conf = (regime.confirmation) || null;
+  const confirmRow = document.getElementById('qs-confirm-row');
+  if (conf) {
+    confirmRow.style.display = 'block';
+    const met   = conf.metrics_met   || 0;
+    const total = conf.metrics_total || 10;
+    const pct   = conf.confidence != null ? Math.round(conf.confidence * 100) : 0;
+    const thr   = conf.threshold   != null ? Math.round(conf.threshold * 100) : 70;
+    const confirmed = conf.confirmed;
+
+    document.getElementById('qs-confirm-label').textContent =
+      `${met}/${total} metrics agree`;
+    document.getElementById('qs-confirm-threshold').textContent = thr + '%';
+    document.getElementById('qs-confirm-pct').textContent = pct + '%';
+
+    const statusEl = document.getElementById('qs-confirm-status');
+    if (confirmed) {
+      statusEl.textContent = 'CONFIRMED';
+      statusEl.style.background = '#1a3a1a';
+      statusEl.style.color = '#22c55e';
+    } else {
+      statusEl.textContent = 'PENDING';
+      statusEl.style.background = '#2a2a1a';
+      statusEl.style.color = '#f59e0b';
+    }
+
+    const bar = document.getElementById('qs-confirm-bar');
+    bar.style.width = pct + '%';
+    bar.style.background = confirmed ? '#22c55e' : '#f59e0b';
+
+    // Metric dots
+    const dotsEl = document.getElementById('qs-confirm-dots');
+    dotsEl.innerHTML = '';
+    if (conf.metric_details) {
+      Object.entries(conf.metric_details).forEach(([name, passed]) => {
+        const dot = document.createElement('div');
+        dot.title = name.replace(/_/g, ' ');
+        dot.style.cssText = `width:14px;height:14px;border-radius:3px;cursor:default;` +
+          `background:${passed ? '#22c55e' : '#3a1a1a'};` +
+          `border:1px solid ${passed ? '#22c55e' : '#ef4444'};` +
+          `title="${name}"`;
+        dotsEl.appendChild(dot);
+      });
+    }
+  }
 }
 
 // ── Panel Q4: Regime Distribution Chart ──────────────────────────────────────
