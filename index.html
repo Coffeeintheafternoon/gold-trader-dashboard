@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gold Signal Tracker</title>
+  <title>Squant Bot</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -241,7 +241,16 @@
 <body>
 
 <header>
-  <span class="header-title">🟡 Gold Signal Tracker</span>
+  <span class="header-title">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
+      <circle cx="14" cy="14" r="13" fill="#d4a017" fill-opacity="0.15" stroke="#d4a017" stroke-width="1.5"/>
+      <!-- Gold bar shape -->
+      <rect x="7" y="11" width="14" height="7" rx="1.5" fill="#d4a017"/>
+      <rect x="9" y="9" width="10" height="3" rx="1" fill="#d4a017" fill-opacity="0.7"/>
+      <!-- Trend arrow -->
+      <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>Squant Bot
+  </span>
   <span class="header-updated" id="header-updated">Loading…</span>
 </header>
 
@@ -384,40 +393,44 @@
 
     <!-- Panel Q2: MCPT Validation Table -->
     <div class="chart-card" id="quant-mcpt-panel" style="display:none">
-      <div class="chart-title">Strategy Validation (MCPT)</div>
-      <div class="chart-subtitle">Monte Carlo Permutation Test — hover column headers for explanations</div>
-      <div style="overflow-x:auto">
-        <table id="mcpt-table" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
-              <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="The rule-based trading strategy being tested. Each strategy is optimised on a training window then evaluated on unseen data (walk-forward).">Strategy</span></th>
-              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Total winning trade returns ÷ total losing trade losses.\n\n• 1.0 = break even\n• &gt;1.2 = meaningful edge\n• &gt;1.5 = strong edge\n\nMeasured on out-of-sample data only (never the training window).">Profit Factor</span></th>
-              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Annualised return divided by annualised volatility (risk-free rate = 0).\n\n• &gt;1.0 = good\n• &gt;2.0 = excellent\n• Negative = strategy loses more than it gains on a risk-adjusted basis">Sharpe</span></th>
-              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="The probability that random chance alone could produce this strategy's result.\n\n• p &lt; 0.05 = VALIDATED (95% confident the edge is real)\n• p &lt; 0.10 = BORDERLINE\n• p ≥ 0.10 = REJECTED (could just be luck)\n\nCalculated by running the strategy on 1000 randomly shuffled price datasets.">p-value</span></th>
-              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="How many random bar-shuffled datasets were tested.\n\n• 200 = quick check\n• 1000 = statistically reliable\n\nRun: python quant/run_backtest.py --perms 1000">Permutations</span></th>
-              <th style="text-align:center;padding:8px 12px"><span class="tip tip-down" data-tip="VALIDATED = p &lt; 0.05. The edge is statistically real.\nBORDERLINE = p &lt; 0.10. Weak evidence — run more permutations.\nREJECTED = p ≥ 0.10. No statistical edge found.\nNO MCPT = backtest run with --no-mcpt flag.">Status</span></th>
-              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Date the backtest was last run.">Last Tested</span></th>
-            </tr>
-          </thead>
-          <tbody id="mcpt-tbody"></tbody>
-        </table>
-      </div>
-      <!-- Regime breakdown sub-table -->
-      <div id="regime-perf-container" style="display:none;margin-top:20px">
-        <div class="chart-subtitle" style="margin-bottom:8px">Donchian — performance by regime (hover regime names for details)</div>
+      <div class="chart-title">Regime → Strategy Assignment (Optimiser)</div>
+      <div class="chart-subtitle">Exhaustive search over all strategy combinations per regime, validated with Monte Carlo Permutation Tests</div>
+
+      <!-- MCPT summary badges -->
+      <div id="mcpt-badges" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px"></div>
+
+      <!-- Walk-forward strategy metrics -->
+      <div style="margin-bottom:20px">
+        <div class="chart-subtitle" style="margin-bottom:8px">Walk-Forward Out-of-Sample Metrics (5y, 29 windows)</div>
         <div style="overflow-x:auto">
-          <table id="regime-perf-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <table id="wf-metrics-table" style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+                <th style="text-align:left;padding:8px 12px">Strategy</th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Total winning returns ÷ total losing losses.\n&gt;1.0 = profitable\n&gt;1.2 = meaningful edge\nMeasured on out-of-sample walk-forward data only.">Profit Factor</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Annualised risk-adjusted return.\n&gt;1.0 = good\n&gt;2.0 = excellent\nNegative = losing money on a risk-adjusted basis.">Sharpe</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of rolling train/test windows completed.\nEach window optimises on 1yr training data then generates 1 month of OOS signals.">Windows</span></th>
+              </tr>
+            </thead>
+            <tbody id="wf-metrics-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Best regime assignment table -->
+      <div>
+        <div class="chart-subtitle" style="margin-bottom:8px">Best Strategy per Regime (78,125 combinations tested, hover regime names for details)</div>
+        <div style="overflow-x:auto">
+          <table id="regime-assignment-table" style="width:100%;border-collapse:collapse;font-size:13px">
             <thead>
               <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
                 <th style="text-align:left;padding:8px 12px">Regime</th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="% of bars where the strategy's position made a positive return.\n\nNote: win rate alone doesn't determine profitability — a strategy can win 40% of the time and still be profitable if wins are much larger than losses.">Win Rate</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Total winning returns ÷ total losing losses in this regime only.\n&gt;1.0 = profitable in this regime.">Profit Factor</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Risk-adjusted return within this regime.\n&gt;0 = positive return per unit of risk.">Sharpe</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of out-of-sample bars in this regime.\nSmall n = less statistically reliable.">Bars (n)</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="How much the quant signal contributes to the composite score when gold is in this regime.\n\nLower weight = Claude's news/geo analysis dominates.\nHigher weight = quant signal is more trusted.">Quant Wt</span></th>
+                <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="The mathematically best strategy for this regime, found by exhaustive search over all 78,125 possible regime→strategy combinations.\n\nObjective: Sharpe ratio penalised by max drawdown (sharpe_dd).">Best Strategy</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="The Sharpe-DD score (Sharpe penalised by max drawdown) achieved by the best strategy in this specific regime.\n\nHigher = better risk-adjusted performance here.">Regime Score</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="How much the quant model contributes to the composite signal score in this regime.\n\n• 10% = CRISIS (trust news, not chart)\n• 50% = QUIET_RANGE (mean-reversion is reliable here)">Quant Weight</span></th>
               </tr>
             </thead>
-            <tbody id="regime-perf-tbody"></tbody>
+            <tbody id="regime-assignment-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -425,8 +438,8 @@
 
     <!-- Panel Q3: Walk-Forward Equity Curve -->
     <div class="chart-card" id="quant-equity-panel" style="display:none">
-      <div class="chart-title">Walk-Forward Equity Curve (Donchian vs Buy-and-Hold)</div>
-      <div class="chart-subtitle">Cumulative log returns — quant strategy (OOS only) vs passive gold holding</div>
+      <div class="chart-title">Walk-Forward Equity Curve — Squant vs Buy-and-Hold</div>
+      <div class="chart-subtitle">Cumulative log returns — best-assignment combined strategy (OOS only) vs passive gold holding</div>
       <div class="chart-wrap" style="height:280px">
         <canvas id="chart-equity"></canvas>
         <div class="no-data" id="no-data-equity" style="display:none">Run the backtest first: python quant/run_backtest.py</div>
@@ -608,7 +621,7 @@ async function loadQuantPanels() {
   buildRegimePanel(qd.current_regime || {}, qd.regime_history || []);
 
   // ── Panel Q2 — MCPT Table ─────────────────────────────────────────────────
-  buildMcptTable(qd.strategies || [], qd.regime_performance || {});
+  buildMcptTable(qd);
 
   // ── Panel Q3 — Equity Curve ───────────────────────────────────────────────
   buildEquityChart(qd.equity_curve || [], qd.regime_history || []);
@@ -1134,88 +1147,105 @@ function buildRegimePanel(regime, history) {
   });
 }
 
-// ── Panel Q2: MCPT Validation Table ──────────────────────────────────────────
-function buildMcptTable(strategies, regimePerf) {
-  const tbody = document.getElementById('mcpt-tbody');
-  tbody.innerHTML = '';
+// ── Panel Q2: Optimiser Results + MCPT ───────────────────────────────────────
+function buildMcptTable(qd) {
+  const STRATEGY_DISPLAY = {
+    donchian:       'Donchian Breakout',
+    mean_reversion: 'Bollinger Mean-Rev',
+    ma_crossover:   'EMA Crossover',
+    atr_breakout:   'ATR Impulse',
+    flat:           'No Trade',
+  };
 
-  strategies.forEach(st => {
-    const pf   = (st.profit_factor || 0).toFixed(3);
-    const sr   = (st.sharpe_ratio  || 0).toFixed(3);
-    const pval = st.p_value;
-    const perms = st.n_permutations || 0;
-    const tested = st.last_tested || '—';
-
-    let statusText, statusColor;
-    if (pval == null) {
-      statusText = 'NO MCPT'; statusColor = '#9ca3af';
-    } else if (pval < 0.05) {
-      statusText = 'VALIDATED'; statusColor = '#22c55e';
-    } else if (pval < 0.10) {
-      statusText = 'BORDERLINE'; statusColor = '#f59e0b';
-    } else {
-      statusText = 'REJECTED'; statusColor = '#ef4444';
-    }
-
-    const pvalStr  = pval != null ? pval.toFixed(4) : '—';
-    const permsStr = perms > 0 ? perms : '—';
-
-    tbody.innerHTML += `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:10px 12px">${st.name}</td>
-        <td style="padding:10px 12px;text-align:right">${pf}</td>
-        <td style="padding:10px 12px;text-align:right">${sr}</td>
-        <td style="padding:10px 12px;text-align:right">${pvalStr}</td>
-        <td style="padding:10px 12px;text-align:right">${permsStr}</td>
-        <td style="padding:10px 12px;text-align:center">
-          <span style="color:${statusColor};font-weight:700;font-size:12px">${statusText}</span>
-        </td>
-        <td style="padding:10px 12px;text-align:right;color:var(--muted)">${tested}</td>
-      </tr>`;
-  });
-
-  // Regime breakdown — 7 regimes
   const regimes = ['QUIET_BULL','QUIET_BEAR','QUIET_RANGE','TREND_BULL','TREND_BEAR','VOLATILE_CHOP','CRISIS'];
   const regimeNames = {
     QUIET_BULL: 'Quiet Bull', QUIET_BEAR: 'Quiet Bear', QUIET_RANGE: 'Quiet Range',
     TREND_BULL: 'Trend Bull', TREND_BEAR: 'Trend Bear',
     VOLATILE_CHOP: 'Volatile Chop', CRISIS: 'Crisis',
   };
-  const regimeHints = {
+  const regimeColors = {
     QUIET_BULL: '#22c55e', QUIET_BEAR: '#ef4444', QUIET_RANGE: '#60a5fa',
     TREND_BULL: '#4ade80', TREND_BEAR: '#f87171',
     VOLATILE_CHOP: '#f59e0b', CRISIS: '#ff2222',
   };
-  const hasPerfData = regimes.some(r => regimePerf[r] && regimePerf[r].profit_factor != null);
 
-  if (hasPerfData) {
-    document.getElementById('regime-perf-container').style.display = 'block';
-    const perfTbody = document.getElementById('regime-perf-tbody');
-    perfTbody.innerHTML = '';
-    regimes.forEach(r => {
-      const stats = regimePerf[r] || {};
-      const wr  = stats.win_rate    != null ? (stats.win_rate * 100).toFixed(1) + '%' : '—';
-      const pf  = stats.profit_factor != null ? stats.profit_factor.toFixed(3) : '—';
-      const sr  = stats.sharpe       != null ? stats.sharpe.toFixed(3) : '—';
-      const n   = stats.n            != null ? stats.n : '—';
-      const quantWts = {
-        QUIET_BULL: '40%', QUIET_BEAR: '40%', QUIET_RANGE: '50%',
-        TREND_BULL: '35%', TREND_BEAR: '35%', VOLATILE_CHOP: '20%', CRISIS: '10%',
-      };
-      const tip = (REGIME_DESCRIPTIONS[r] || '').replace(/'/g, '&#39;');
-      perfTbody.innerHTML += `
-        <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:8px 12px">
-            <span class="tip" data-tip="${tip}" style="color:${regimeHints[r]};font-weight:600;border-bottom-color:${regimeHints[r]}44">${regimeNames[r]}</span>
-          </td>
-          <td style="padding:8px 12px;text-align:right">${wr}</td>
-          <td style="padding:8px 12px;text-align:right">${pf}</td>
-          <td style="padding:8px 12px;text-align:right">${sr}</td>
-          <td style="padding:8px 12px;text-align:right;color:var(--muted)">${n}</td>
-          <td style="padding:8px 12px;text-align:right;color:var(--muted)">${quantWts[r] || '—'}</td>
-        </tr>`;
-    });
+  function mcptBadge(label, test, tipText) {
+    if (!test) return `<div class="hero-card" style="padding:10px 16px;min-width:200px"><div class="hero-label">${label}</div><div class="hero-value" style="color:var(--muted)">Not run</div></div>`;
+    const pval = test.p_value;
+    const validated = test.validated;
+    let statusText, statusColor;
+    if (pval < 0.05)       { statusText = 'VALIDATED';  statusColor = '#22c55e'; }
+    else if (pval < 0.10)  { statusText = 'BORDERLINE'; statusColor = '#f59e0b'; }
+    else                   { statusText = 'REJECTED';   statusColor = '#ef4444'; }
+    return `
+      <div class="hero-card tip" data-tip="${tipText}" style="padding:10px 16px;min-width:200px;cursor:help">
+        <div class="hero-label">${label}</div>
+        <div class="hero-value" style="color:${statusColor};font-size:16px">${statusText}</div>
+        <div class="hero-sub">p = ${pval.toFixed(4)} · ${test.n_permutations} perms</div>
+      </div>`;
   }
+
+  // MCPT badges
+  const badges = document.getElementById('mcpt-badges');
+  badges.innerHTML =
+    mcptBadge('Regime Routing MCPT', qd.mcpt_routing,
+      'Test 1: Shuffles regime labels 200 times and re-runs assignment search each time.\n\nQuestion: Does knowing which regime we\'re in actually help pick the right strategy?\n\np < 0.05 = regime routing is real — VALIDATED means the classifier adds genuine value.') +
+    mcptBadge('Combined Signal MCPT', qd.mcpt_combined,
+      'Test 2: Shuffles price bar order 200 times and recomputes signals with fixed assignment.\n\nQuestion: Does the combined signal have a real edge vs random price sequences?\n\np < 0.05 = combined signal is statistically robust.\np > 0.75 = the edge is in the ROUTING (Test 1), not the raw signal strength.');
+
+  // Combined metrics summary card
+  if (qd.combined_metrics) {
+    const cm = qd.combined_metrics;
+    badges.innerHTML += `
+      <div class="hero-card" style="padding:10px 16px;min-width:200px">
+        <div class="hero-label">Combined OOS Metrics</div>
+        <div class="hero-value color-gold">Sharpe ${(cm.sharpe_ratio||0).toFixed(3)}</div>
+        <div class="hero-sub">PF ${(cm.profit_factor||0).toFixed(3)} · obj ${(cm.objective_score||0).toFixed(4)}</div>
+      </div>`;
+  }
+
+  // Walk-forward per-strategy metrics
+  const wfTbody = document.getElementById('wf-metrics-tbody');
+  wfTbody.innerHTML = '';
+  const wf = qd.wf_strategy_metrics || {};
+  const stratOrder = ['donchian','mean_reversion','ma_crossover','atr_breakout'];
+  stratOrder.forEach(key => {
+    const m = wf[key];
+    if (!m) return;
+    const pf = (m.profit_factor||0).toFixed(3);
+    const sr = (m.sharpe_ratio||0).toFixed(3);
+    const pfColor = m.profit_factor >= 1.2 ? '#22c55e' : m.profit_factor >= 1.0 ? '#f59e0b' : '#ef4444';
+    const srColor = m.sharpe_ratio  >= 1.0 ? '#22c55e' : m.sharpe_ratio  >= 0.0 ? '#f59e0b' : '#ef4444';
+    wfTbody.innerHTML += `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 12px">${STRATEGY_DISPLAY[key] || key}</td>
+        <td style="padding:8px 12px;text-align:right;color:${pfColor};font-weight:600">${pf}</td>
+        <td style="padding:8px 12px;text-align:right;color:${srColor};font-weight:600">${sr}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${m.n_windows||'—'}</td>
+      </tr>`;
+  });
+
+  // Best assignment per regime
+  const asgTbody = document.getElementById('regime-assignment-tbody');
+  asgTbody.innerHTML = '';
+  const asg = qd.best_assignment || {};
+  regimes.forEach(r => {
+    const info = asg[r] || {};
+    const stratName  = STRATEGY_DISPLAY[info.strategy] || info.strategy_display || '—';
+    const score      = info.regime_score != null ? info.regime_score.toFixed(3) : '—';
+    const scoreColor = info.regime_score != null ? (info.regime_score > 0 ? '#22c55e' : '#ef4444') : 'var(--muted)';
+    const wt         = info.quant_weight != null ? Math.round(info.quant_weight * 100) + '%' : '—';
+    const tip        = (REGIME_DESCRIPTIONS[r] || '').replace(/'/g, '&#39;');
+    asgTbody.innerHTML += `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 12px">
+          <span class="tip" data-tip="${tip}" style="color:${regimeColors[r]};font-weight:600;border-bottom:1px dashed ${regimeColors[r]}44;cursor:help">${regimeNames[r]}</span>
+        </td>
+        <td style="padding:8px 12px;font-weight:600">${stratName}</td>
+        <td style="padding:8px 12px;text-align:right;color:${scoreColor}">${score}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${wt}</td>
+      </tr>`;
+  });
 }
 
 // ── Panel Q3: Walk-Forward Equity Curve ───────────────────────────────────────
