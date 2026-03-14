@@ -323,7 +323,15 @@
     </span>
     <span style="font-size:11px;color:var(--muted);padding-left:30px">XAU/AUD · 1H · Adaptive K-Means + Claude AI · Paper Trading</span>
   </div>
-  <span class="header-updated" id="header-updated">Loading…</span>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="asset-dropdown-wrap" style="display:none">
+      <select id="asset-select" onchange="switchAsset(this.value)"
+        style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:6px;
+               padding:5px 10px;font-size:13px;cursor:pointer;outline:none">
+      </select>
+    </div>
+    <span class="header-updated" id="header-updated">Loading…</span>
+  </div>
 </header>
 
 <main>
@@ -431,7 +439,7 @@
     <div class="section-divider">
       <div class="section-divider-line"></div>
       <span class="section-divider-icon">📊</span>
-      <span class="section-divider-label">Squant v1 — Adaptive Strategy Model</span>
+      <span class="section-divider-label" id="quant-section-label">Squant v1 — Adaptive Strategy Model</span>
       <div class="section-divider-line"></div>
     </div>
 
@@ -835,13 +843,25 @@ async function loadDashboard() {
 }
 
 async function loadQuantPanels() {
+  // Determine which asset to load from URL param (?asset=gold), default gold
+  const urlAsset = new URLSearchParams(window.location.search).get('asset') || 'gold';
+
+  // Try to load the asset index to build the dropdown
+  try {
+    const idxResp = await fetch('./quant_data_index.json?t=' + Date.now());
+    if (idxResp.ok) {
+      const idx = await idxResp.json();
+      buildAssetDropdown(idx.assets || [], urlAsset);
+    }
+  } catch (_) {}
+
   let qd;
   try {
-    const resp = await fetch('./quant_data.json?t=' + Date.now());
-    if (!resp.ok) return;  // quant_data.json not yet generated — silently skip
+    const resp = await fetch(`./quant_data_${urlAsset}.json?t=` + Date.now());
+    if (!resp.ok) return;
     qd = await resp.json();
   } catch (e) {
-    return;  // quant backtest hasn't run yet — no panels shown
+    return;
   }
 
   // Show all quant panels
@@ -849,6 +869,12 @@ async function loadQuantPanels() {
    'quant-rolling-panel','quant-mcpt-panel','quant-equity-panel'].forEach(id => {
     document.getElementById(id).style.display = 'block';
   });
+
+  // Update section label with active asset
+  if (qd.asset_label) {
+    const lbl = document.getElementById('quant-section-label');
+    if (lbl) lbl.textContent = `Squant v1 — ${qd.asset_label} (${(qd.ticker||'').replace('=','/')} · ${qd.interval || '1h'})`;
+  }
 
   // ── Panel Q0 — Current Signal ─────────────────────────────────────────────
   buildCurrentSignalPanel(qd.current_signal || {}, qd.current_cluster || {});
@@ -2654,6 +2680,32 @@ function buildClusterRulesPanel(clusterPerf) {
         </div>
         <div style="margin-top:8px;font-size:11px;color:#6b7280;font-style:italic;border-top:1px solid #222;padding-top:6px">${rules.note}</div>
       </div>`;
+  });
+}
+
+// ── Asset switcher ────────────────────────────────────────────────────────────
+function switchAsset(assetId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('asset', assetId);
+  window.location.href = url.toString();
+}
+
+function buildAssetDropdown(assets, currentAsset) {
+  if (!assets || assets.length < 2) return;  // only show if multiple assets exist
+  const wrap   = document.getElementById('asset-dropdown-wrap');
+  const select = document.getElementById('asset-select');
+  wrap.style.display = '';
+
+  const _ICONS = { gold: '🥇', oil: '🛢️', dxy: '💵', audusd: '🇦🇺' };
+
+  assets.forEach(a => {
+    const opt      = document.createElement('option');
+    opt.value      = a.id;
+    opt.selected   = a.id === currentAsset;
+    const pf       = a.pf   != null ? ` · PF ${a.pf.toFixed(2)}`   : '';
+    const sharpe   = a.sharpe != null ? ` · SR ${a.sharpe.toFixed(2)}` : '';
+    opt.textContent = `${_ICONS[a.id] || '📊'} ${a.label}${pf}${sharpe}`;
+    select.appendChild(opt);
   });
 }
 
