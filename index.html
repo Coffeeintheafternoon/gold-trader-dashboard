@@ -169,6 +169,77 @@
       font-size: 13px;
     }
 
+    /* ── Section dividers ────────────────────────────────────────────── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 32px 0 20px;
+    }
+    .section-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .section-divider-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .section-divider-icon {
+      font-size: 13px;
+    }
+
+    /* ── Model metrics table ──────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    @media (max-width: 700px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .metrics-section {
+      border-right: 1px solid #333;
+    }
+    .metrics-section:last-child { border-right: none; }
+    .metrics-section-header {
+      background: #222;
+      padding: 7px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--gold);
+      border-bottom: 1px solid #333;
+    }
+    .metrics-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      border-bottom: 1px solid #222;
+    }
+    .metrics-row:last-child { border-bottom: none; }
+    .metrics-row:nth-child(even) { background: #161616; }
+    .metrics-label { color: var(--muted); font-size: 12px; }
+    .metrics-value { font-weight: 600; font-size: 13px; color: var(--text); text-align: right; }
+    .metrics-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px 10px;
+      border-bottom: 1px solid #333;
+      background: #181818;
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
     /* ── Footer ──────────────────────────────────────────────────────── */
     footer {
       text-align: center;
@@ -241,16 +312,17 @@
 <body>
 
 <header>
-  <span class="header-title">
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px">
-      <circle cx="14" cy="14" r="13" fill="#d4a017" fill-opacity="0.15" stroke="#d4a017" stroke-width="1.5"/>
-      <!-- Gold bar shape -->
-      <rect x="7" y="11" width="14" height="7" rx="1.5" fill="#d4a017"/>
-      <rect x="9" y="9" width="10" height="3" rx="1" fill="#d4a017" fill-opacity="0.7"/>
-      <!-- Trend arrow -->
-      <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>Squant Bot
-  </span>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    <span class="header-title">
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:7px">
+        <circle cx="14" cy="14" r="13" fill="#d4a017" fill-opacity="0.15" stroke="#d4a017" stroke-width="1.5"/>
+        <rect x="7" y="11" width="14" height="7" rx="1.5" fill="#d4a017"/>
+        <rect x="9" y="9" width="10" height="3" rx="1" fill="#d4a017" fill-opacity="0.7"/>
+        <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>Squant Bot
+    </span>
+    <span style="font-size:11px;color:var(--muted);padding-left:30px">XAU/AUD · 1H · Adaptive K-Means + Claude AI · Paper Trading</span>
+  </div>
   <span class="header-updated" id="header-updated">Loading…</span>
 </header>
 
@@ -261,6 +333,14 @@
   </div>
 
   <div id="dashboard" style="display:none">
+
+    <!-- ── Section: Live Signal ─────────────────────────────────────────── -->
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🤖</span>
+      <span class="section-divider-label">Live Signal — Claude AI</span>
+      <div class="section-divider-line"></div>
+    </div>
 
     <!-- Hero cards -->
     <div class="hero-grid">
@@ -347,9 +427,25 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         QUANT PANELS — populated from quant_data.json
-         ══════════════════════════════════════════════════════════════════════ -->
+    <!-- ── Section: Quant Model ─────────────────────────────────────────── -->
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">📊</span>
+      <span class="section-divider-label">Squant v1 — Adaptive Strategy Model</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Panel: Model Metrics Overview -->
+    <div class="chart-card" id="quant-metrics-panel" style="display:none">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div>
+          <div class="chart-title" style="font-size:15px">Squant v1 — Model Performance Overview</div>
+          <div class="chart-subtitle">Walk-forward out-of-sample · XAU/AUD · 1H bars · Adaptive K-Means + Strategy Pool</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);text-align:right" id="metrics-date-range">—</div>
+      </div>
+      <div class="metrics-grid" id="metrics-grid"></div>
+    </div>
 
     <!-- Panel Q1: Cluster Indicator -->
     <div class="chart-card" id="quant-regime-panel" style="display:none">
@@ -778,6 +874,7 @@ async function loadQuantPanels() {
   buildClusterPerfTable(qd.cluster_performance || []);
   buildMonthlyCalendar(qd.equity_curve || []);
   buildLongShortBreakdown(qd.long_short || {});
+  buildModelMetrics(qd.equity_curve || [], qd.strategies || [], qd.trade_log || []);
   buildTradeSignalChart(qd.price_series || [], qd.trade_log || [], qd.cluster_performance || []);
   buildClusterRulesPanel(qd.cluster_performance || []);
   buildTradeLog(qd.trade_log || []);
@@ -2136,6 +2233,186 @@ function buildLongShortBreakdown(ls) {
         </div>
       </div>`;
   });
+}
+
+// ── Model Metrics Overview ────────────────────────────────────────────────────
+function buildModelMetrics(equityCurve, strategies, tradeLog) {
+  if (!equityCurve || equityCurve.length < 20) return;
+  document.getElementById('quant-metrics-panel').style.display = '';
+
+  // ── Only use OOS bars (where quant_cumlog has started moving) ──────────────
+  const oosBars = equityCurve.filter(d => d.quant_cumlog != null && d.quant_cumlog !== 0);
+  const allBars = oosBars.length ? oosBars : equityCurve;
+
+  const startDate = allBars[0].date;
+  const endDate   = allBars[allBars.length - 1].date;
+  document.getElementById('metrics-date-range').textContent =
+    `Start: ${startDate}   End: ${endDate}`;
+
+  // ── Daily log returns from cumlog diffs ────────────────────────────────────
+  const dailyRets = [];
+  for (let i = 1; i < allBars.length; i++) {
+    const r = (allBars[i].quant_cumlog || 0) - (allBars[i-1].quant_cumlog || 0);
+    dailyRets.push(r);
+  }
+
+  const n       = dailyRets.length;
+  const sumRet  = dailyRets.reduce((a, b) => a + b, 0);
+  const meanRet = sumRet / n;
+  const variance = dailyRets.reduce((a, r) => a + (r - meanRet) ** 2, 0) / (n - 1);
+  const stdRet  = Math.sqrt(variance);
+
+  // Annualised return (log → simple)
+  const annFactor = 252;
+  const totalLogRet = allBars[allBars.length - 1].quant_cumlog || 0;
+  const totalSimple = (Math.exp(totalLogRet) - 1) * 100;
+  const nTradingDays = n;
+  const annLogRet    = totalLogRet * (annFactor / nTradingDays);
+  const annSimpleRet = (Math.exp(annLogRet) - 1) * 100;
+  const annVol       = stdRet * Math.sqrt(annFactor) * 100;
+
+  // Sharpe (0% risk-free)
+  const sharpe = stdRet > 0 ? (meanRet / stdRet) * Math.sqrt(annFactor) : null;
+
+  // Max drawdown (already in equity_curve as drawdown field, fraction)
+  const maxDd = Math.min(...allBars.map(d => d.drawdown || 0)) * 100;
+
+  // Calmar
+  const calmar = maxDd < 0 ? annSimpleRet / Math.abs(maxDd) : null;
+
+  // Sortino (downside std only)
+  const downRets  = dailyRets.filter(r => r < 0);
+  const downVar   = downRets.length > 1
+    ? downRets.reduce((a, r) => a + r * r, 0) / downRets.length : null;
+  const downStd   = downVar ? Math.sqrt(downVar) : null;
+  const sortino   = downStd ? (meanRet / downStd) * Math.sqrt(annFactor) : null;
+
+  // Upside / downside volatility
+  const upRets   = dailyRets.filter(r => r > 0);
+  const upVol    = upRets.length > 1
+    ? Math.sqrt(upRets.reduce((a, r) => a + r * r, 0) / upRets.length) * Math.sqrt(annFactor) * 100 : null;
+  const downVol  = downStd ? downStd * Math.sqrt(annFactor) * 100 : null;
+
+  // 1M return (last ~21 trading days)
+  const bars1M   = allBars.slice(-21);
+  const ret1M    = bars1M.length > 1
+    ? (Math.exp((bars1M[bars1M.length-1].quant_cumlog||0) - (bars1M[0].quant_cumlog||0)) - 1) * 100 : null;
+
+  // 1Y return (last ~252 trading days)
+  const bars1Y   = allBars.slice(-252);
+  const ret1Y    = bars1Y.length > 20
+    ? (Math.exp((bars1Y[bars1Y.length-1].quant_cumlog||0) - (bars1Y[0].quant_cumlog||0)) - 1) * 100 : null;
+
+  // YTD — from Jan 1 of the last year in the data
+  const endYear  = endDate.slice(0, 4);
+  const ytdStart = allBars.findIndex(d => d.date >= endYear + '-01-01');
+  const barsYTD  = ytdStart >= 0 ? allBars.slice(ytdStart) : [];
+  const retYTD   = barsYTD.length > 1
+    ? (Math.exp((barsYTD[barsYTD.length-1].quant_cumlog||0) - (barsYTD[0].quant_cumlog||0)) - 1) * 100 : null;
+
+  // Previous year return
+  const prevYear  = String(parseInt(endYear) - 1);
+  const pyStart   = allBars.findIndex(d => d.date >= prevYear + '-01-01');
+  const pyEnd     = allBars.findIndex(d => d.date >= endYear + '-01-01');
+  const barsPY    = pyStart >= 0 && pyEnd > pyStart ? allBars.slice(pyStart, pyEnd) : [];
+  const retPY     = barsPY.length > 20
+    ? (Math.exp((barsPY[barsPY.length-1].quant_cumlog||0) - (barsPY[0].quant_cumlog||0)) - 1) * 100 : null;
+
+  // Skewness and Kurtosis
+  const skew = n > 2 && stdRet > 0
+    ? (dailyRets.reduce((a, r) => a + ((r - meanRet) / stdRet) ** 3, 0) / n) : null;
+  const kurt = n > 3 && stdRet > 0
+    ? (dailyRets.reduce((a, r) => a + ((r - meanRet) / stdRet) ** 4, 0) / n) - 3 : null;
+
+  // Profit factor from strategies
+  const adaptiveStrat = (strategies || []).find(s => s.name && s.name.toLowerCase().includes('adaptive'));
+  const pf = adaptiveStrat ? adaptiveStrat.profit_factor : null;
+  const pfSharpe = adaptiveStrat ? adaptiveStrat.sharpe_ratio : null;
+
+  // Trade stats from trade_log
+  const trades = (tradeLog || []).filter(t => t.cluster != null || t.entry_date);
+  const wins   = trades.filter(t => t.win).length;
+  const winRate = trades.length ? (wins / trades.length * 100) : null;
+
+  // ── Helper renderers ───────────────────────────────────────────────────────
+  function pct(v, dp = 1) {
+    if (v == null || isNaN(v)) return '<span style="color:#4b5563">—</span>';
+    const color = v > 0 ? '#22c55e' : v < 0 ? '#ef4444' : 'var(--muted)';
+    return `<span style="color:${color}">${v > 0 ? '+' : ''}${v.toFixed(dp)}%</span>`;
+  }
+  function pctPA(v, dp = 1) {
+    if (v == null || isNaN(v)) return '<span style="color:#4b5563">—</span>';
+    const color = v > 0 ? '#22c55e' : v < 0 ? '#ef4444' : 'var(--muted)';
+    return `<span style="color:${color}">${v > 0 ? '+' : ''}${v.toFixed(dp)}% p.a.</span>`;
+  }
+  function ratio(v, dp = 2, goodAbove = 1.0) {
+    if (v == null || isNaN(v)) return '<span style="color:#4b5563">—</span>';
+    const color = v >= goodAbove ? '#22c55e' : v >= 0 ? '#f59e0b' : '#ef4444';
+    return `<span style="color:${color}">${v.toFixed(dp)}</span>`;
+  }
+  function plain(v, dp = 2) {
+    if (v == null || isNaN(v)) return '<span style="color:#4b5563">—</span>';
+    return `<span>${v.toFixed(dp)}</span>`;
+  }
+  function na() { return '<span style="color:#4b5563">—</span>'; }
+
+  // ── Build the grid ─────────────────────────────────────────────────────────
+  function section(title, rows) {
+    const rowsHtml = rows.map(([label, value]) => `
+      <div class="metrics-row">
+        <span class="metrics-label">${label}</span>
+        <span class="metrics-value">${value}</span>
+      </div>`).join('');
+    return `<div class="metrics-section">
+      <div class="metrics-section-header">${title}</div>
+      ${rowsHtml}
+    </div>`;
+  }
+
+  const grid = document.getElementById('metrics-grid');
+  grid.innerHTML =
+    section('Performance', [
+      ['YTD',             pct(retYTD)],
+      ['1 Month',         pct(ret1M)],
+      ['Previous Year',   pct(retPY)],
+      ['1Y',              pct(ret1Y)],
+      ['Since Inception', pctPA(annSimpleRet)],
+      ['Total Return',    pct(totalSimple)],
+      ['Profit Factor',   ratio(pf, 3, 1.0)],
+      ['Win Rate',        winRate != null ? ratio(winRate / 100, 0, 50) + ` <span style="font-size:11px;color:var(--muted)">(${wins}/${trades.length})</span>` : na()],
+    ]) +
+    section('Risk-Adjusted', [
+      ['Sharpe (0% RF)',     ratio(sharpe, 2, 1.0)],
+      ['Sharpe (OOS)',       ratio(pfSharpe, 2, 1.0)],
+      ['Calmar Ratio',       ratio(calmar, 2, 0.5)],
+      ['Max Drawdown',       pct(maxDd)],
+      ['Sortino Ratio',      ratio(sortino, 2, 1.0)],
+      ['Skewness',           plain(skew)],
+      ['Kurtosis (excess)',  plain(kurt)],
+      ['N Trades',           `<span>${trades.length}</span>`],
+    ]) +
+    section('Volatility', [
+      ['1Y Annualised',      pct(ret1Y != null ? annVol : null)],
+      ['Since Inception',    pct(annVol)],
+      ['Upside Volatility',  upVol  != null ? `<span>${upVol.toFixed(1)}%</span>` : na()],
+      ['Downside Volatility',downVol != null ? `<span>${downVol.toFixed(1)}%</span>` : na()],
+      ['Daily Std Dev',      plain(stdRet * 100) + ' <span style="font-size:11px;color:var(--muted)">%</span>'],
+    ]) +
+    section('Benchmark', [
+      ['Corr. to Equities',  na()],
+      ['Corr. to Benchmark', na()],
+      ['Beta to Benchmark',  na()],
+      ['Buy & Hold Return',  (() => {
+        const bh = allBars[allBars.length-1].buyhold_cumlog;
+        return bh != null ? pct((Math.exp(bh) - 1) * 100) : na();
+      })()],
+      ['B&H Ann. Return', (() => {
+        const bh = allBars[allBars.length-1].buyhold_cumlog;
+        if (bh == null) return na();
+        const bhAnn = (Math.exp(bh * annFactor / nTradingDays) - 1) * 100;
+        return pctPA(bhAnn);
+      })()],
+    ]);
 }
 
 // ── Trade Log ─────────────────────────────────────────────────────────────────
