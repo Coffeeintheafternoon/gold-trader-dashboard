@@ -351,43 +351,30 @@
          QUANT PANELS — populated from quant_data.json
          ══════════════════════════════════════════════════════════════════════ -->
 
-    <!-- Panel Q1: Regime Indicator -->
+    <!-- Panel Q1: Cluster Indicator -->
     <div class="chart-card" id="quant-regime-panel" style="display:none">
-      <div class="chart-title">Market Regime</div>
-      <div class="chart-subtitle">Based on 20d realised volatility, EMA slope, and Hurst exponent — hover each item for details</div>
+      <div class="chart-title">Current Market Cluster</div>
+      <div class="chart-subtitle">K-means cluster from the most recent walk-forward window — data-driven, no hardcoded rules</div>
       <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:18px">
-        <div id="regime-badge" style="font-size:26px;font-weight:800;padding:8px 22px;border-radius:8px;letter-spacing:0.5px;cursor:help">—</div>
+        <div id="cluster-badge" style="font-size:26px;font-weight:800;padding:8px 22px;border-radius:8px;letter-spacing:0.5px">—</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap">
-          <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label tip" data-tip="Annualised standard deviation of daily log returns over 20 trading days.\n\nThresholds:\n• &lt;10% = LOW (quiet)\n• 10–20% = NORMAL\n• 20–35% = HIGH\n• &gt;35% = EXTREME → CRISIS regime">Realised Vol (20d)</div>
-            <div class="hero-value color-gold" id="regime-vol">—</div>
-            <div class="hero-sub">annualised</div>
+          <div class="hero-card" style="min-width:140px;padding:12px 16px">
+            <div class="hero-label tip" data-tip="The strategy the adaptive pool assigned to this cluster in the last training window.\n\nSelected by highest in-sample profit factor among all strategies tested on this cluster's bars.">Strategy Assigned</div>
+            <div class="hero-value color-gold" id="cluster-strategy">—</div>
           </div>
           <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label tip" data-tip="Measures how persistent (trending) or mean-reverting gold's price moves are.\n\n• &gt;0.55 = trending — momentum strategies work\n• ~0.50 = random walk — coin flip\n• &lt;0.45 = mean-reverting — fade the moves\n\nCalculated using R/S analysis over a rolling 20-bar window.">Hurst Exponent</div>
-            <div class="hero-value" id="regime-hurst">—</div>
-            <div class="hero-sub">&gt;0.55 trending</div>
+            <div class="hero-label tip" data-tip="In-sample profit factor for the assigned strategy on this cluster's bars in the last training window.\n\nThis is the selection score — not an OOS estimate.">IS Profit Factor</div>
+            <div class="hero-value" id="cluster-pf">—</div>
           </div>
           <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label tip" data-tip="Short-term vol (5d) divided by long-term vol (20d).\n\n• &gt;1.0 = volatility expanding — breakout conditions forming\n• &lt;1.0 = volatility contracting — coiling, range-bound\n• ~1.0 = stable conditions">Vol Ratio (5d/20d)</div>
-            <div class="hero-value" id="regime-volratio">—</div>
-            <div class="hero-sub">&gt;1 = expanding</div>
-          </div>
-          <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label tip" data-tip="Rate of change of the 20-day EMA over 5 bars, as % of price.\n\n• &gt;+0.3% = uptrend (UP direction)\n• &lt;-0.3% = downtrend (DOWN direction)\n• Between = flat\n\nCombined with vol level to determine the 7 regimes.">EMA Slope</div>
-            <div class="hero-value" id="regime-emaslope">—</div>
-            <div class="hero-sub">5-bar EMA(20) chg</div>
-          </div>
-          <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label tip" data-tip="How much the quant model contributes to the composite signal score in the current regime.\n\nHigher = quant is more reliable here.\nLower = Claude's news/geo analysis takes over.\n\nRange: 10% (CRISIS) to 50% (QUIET_RANGE)">Quant Weight</div>
-            <div class="hero-value color-gold" id="regime-quantwt">—</div>
-            <div class="hero-sub">of composite score</div>
+            <div class="hero-label tip" data-tip="Total number of clusters the k-means algorithm chose for the last training window.\n\nChosen automatically by maximising the silhouette score (2–7 tested).">K (clusters)</div>
+            <div class="hero-value" id="cluster-k">—</div>
           </div>
         </div>
       </div>
-      <div class="chart-subtitle tip" data-tip="Each bar = one trading day. Colour shows the regime detected on that day. Hover individual bars for the exact date and regime." style="margin-bottom:8px;display:inline-block">Last 30 days — regime timeline</div>
+      <div class="chart-subtitle" style="margin-bottom:8px">Recent cluster timeline — each bar = one hourly bar, coloured by OOS cluster assignment</div>
       <div class="chart-wrap" style="height:60px">
-        <div id="regime-timeline" style="display:flex;height:100%;gap:2px;align-items:stretch"></div>
+        <div id="cluster-timeline" style="display:flex;height:100%;gap:1px;align-items:stretch"></div>
       </div>
     </div>
 
@@ -417,23 +404,8 @@
         </div>
       </div>
 
-      <!-- Best regime assignment table -->
-      <div>
-        <div class="chart-subtitle" style="margin-bottom:8px">Best Strategy per Regime (78,125 combinations tested, hover regime names for details)</div>
-        <div style="overflow-x:auto">
-          <table id="regime-assignment-table" style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead>
-              <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
-                <th style="text-align:left;padding:8px 12px">Regime</th>
-                <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="The mathematically best strategy for this regime, found by exhaustive search over all 78,125 possible regime→strategy combinations.\n\nObjective: Sharpe ratio penalised by max drawdown (sharpe_dd).">Best Strategy</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="The Sharpe-DD score (Sharpe penalised by max drawdown) achieved by the best strategy in this specific regime.\n\nHigher = better risk-adjusted performance here.">Regime Score</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="How much the quant model contributes to the composite signal score in this regime.\n\n• 10% = CRISIS (trust news, not chart)\n• 50% = QUIET_RANGE (mean-reversion is reliable here)">Quant Weight</span></th>
-              </tr>
-            </thead>
-            <tbody id="regime-assignment-tbody"></tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Cluster → strategy mapping (last window) -->
+      <div id="mcpt-cluster-summary"></div>
     </div>
 
     <!-- Panel Q0: Current Quant Signal -->
@@ -444,9 +416,9 @@
         <div id="qs-direction-badge" style="font-size:32px;font-weight:900;padding:10px 28px;border-radius:10px;letter-spacing:1px">—</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap">
           <div class="hero-card" style="min-width:130px;padding:12px 16px">
-            <div class="hero-label">Regime</div>
+            <div class="hero-label">Cluster</div>
             <div class="hero-value" id="qs-regime">—</div>
-            <div class="hero-sub">current classification</div>
+            <div class="hero-sub">k-means assignment</div>
           </div>
           <div class="hero-card" style="min-width:150px;padding:12px 16px">
             <div class="hero-label">Active Strategy</div>
@@ -485,12 +457,12 @@
       </div>
     </div>
 
-    <!-- Panel Q4: Regime Distribution -->
+    <!-- Panel Q4: Cluster Distribution -->
     <div class="chart-card" id="quant-dist-panel" style="display:none">
-      <div class="chart-title">Regime Distribution (5-year history)</div>
-      <div class="chart-subtitle">How much time gold has spent in each regime — bars with very few samples have less reliable strategy assignments</div>
+      <div class="chart-title">Cluster Distribution — Last Training Window</div>
+      <div class="chart-subtitle">How many bars fell into each k-means cluster — clusters with very few bars (&lt;50) get a fallback strategy</div>
       <div class="chart-wrap" style="height:220px">
-        <canvas id="chart-regime-dist"></canvas>
+        <canvas id="chart-cluster-dist"></canvas>
       </div>
     </div>
 
@@ -522,10 +494,10 @@
       </div>
     </div>
 
-    <!-- Panel: Regime Timeline -->
+    <!-- Panel: Cluster Timeline -->
     <div class="chart-card" id="quant-regime-timeline-panel" style="display:none">
-      <div class="chart-title">Regime Timeline — Full History</div>
-      <div class="chart-subtitle">Gold price coloured by market regime — shows when the strategy context changed</div>
+      <div class="chart-title">Cluster Timeline — OOS History</div>
+      <div class="chart-subtitle">Gold price coloured by k-means cluster assignment (OOS only) — shows how the adaptive model changed strategy context over time</div>
       <div class="chart-wrap" style="height:260px">
         <canvas id="chart-regime-timeline"></canvas>
       </div>
@@ -538,22 +510,21 @@
       <div id="param-heatmap-wrap" style="overflow-x:auto;margin-top:8px"></div>
     </div>
 
-    <!-- Panel: Per-Regime Performance -->
+    <!-- Panel: Per-Cluster Performance -->
     <div class="chart-card" id="quant-regime-perf-panel" style="display:none">
-      <div class="chart-title">Strategy Performance by Regime</div>
-      <div class="chart-subtitle">How Donchian Breakout performs in each market regime — confirms the model is routing to the right strategy</div>
+      <div class="chart-title">Cluster → Strategy Assignment (Last Window)</div>
+      <div class="chart-subtitle">Which strategy the adaptive model assigned to each cluster, and its in-sample profit factor — used to select trades in OOS period</div>
       <div style="overflow-x:auto">
-        <table id="regime-perf-table" style="width:100%;border-collapse:collapse;font-size:13px">
+        <table id="cluster-perf-table" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead>
             <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
-              <th style="text-align:left;padding:8px 12px">Regime</th>
-              <th style="text-align:right;padding:8px 12px">Profit Factor</th>
-              <th style="text-align:right;padding:8px 12px">Win Rate</th>
-              <th style="text-align:right;padding:8px 12px">N Trades</th>
-              <th style="text-align:right;padding:8px 12px">Quant Weight</th>
+              <th style="text-align:left;padding:8px 12px">Cluster</th>
+              <th style="text-align:left;padding:8px 12px">Strategy Assigned</th>
+              <th style="text-align:right;padding:8px 12px">IS Profit Factor</th>
+              <th style="text-align:right;padding:8px 12px">N Bars</th>
             </tr>
           </thead>
-          <tbody id="regime-perf-tbody"></tbody>
+          <tbody id="cluster-perf-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -767,13 +738,13 @@ async function loadQuantPanels() {
   });
 
   // ── Panel Q0 — Current Signal ─────────────────────────────────────────────
-  buildCurrentSignalPanel(qd.current_signal || {}, qd.current_regime || {});
+  buildCurrentSignalPanel(qd.current_signal || {}, qd.current_cluster || {});
 
-  // ── Panel Q1 — Regime Indicator ───────────────────────────────────────────
-  buildRegimePanel(qd.current_regime || {}, qd.regime_history || []);
+  // ── Panel Q1 — Cluster Indicator ──────────────────────────────────────────
+  buildClusterPanel(qd.current_cluster || {}, qd.cluster_history || []);
 
-  // ── Panel Q4 — Regime Distribution ───────────────────────────────────────
-  buildRegimeDistChart(qd.regime_distribution || []);
+  // ── Panel Q4 — Cluster Distribution ──────────────────────────────────────
+  buildClusterDistChart(qd.cluster_performance || []);
 
   // ── Panel Q5 — Rolling Sharpe + Drawdown ─────────────────────────────────
   buildRollingChart(qd.equity_curve || []);
@@ -782,12 +753,12 @@ async function loadQuantPanels() {
   buildMcptTable(qd);
 
   // ── Panel Q3 — Equity Curve ───────────────────────────────────────────────
-  buildEquityChart(qd.equity_curve || [], qd.regime_history || []);
+  buildEquityChart(qd.equity_curve || [], qd.cluster_history || []);
 
   buildMcptHistogram(qd.strategies || []);
-  buildRegimeTimeline(qd.equity_curve || [], qd.regime_history_full || []);
+  buildClusterTimeline(qd.equity_curve || [], qd.cluster_history || []);
   buildParamHeatmap(qd.param_heatmap || []);
-  buildRegimePerfTable(qd.regime_performance || {});
+  buildClusterPerfTable(qd.cluster_performance || []);
   buildMonthlyCalendar(qd.equity_curve || []);
   buildLongShortBreakdown(qd.long_short || {});
   buildTradeLog(qd.trade_log || []);
@@ -1257,11 +1228,12 @@ function buildCurrentSignalPanel(cs, regime) {
   badge.style.color      = c.color;
   badge.style.border     = `2px solid ${c.border}`;
 
-  const regLabel = cs.regime || regime.label || '—';
-  const regColors = REGIME_COLORS || {};
-  const rc = regColors[regLabel] || { text: '#9ca3af' };
-  document.getElementById('qs-regime').textContent    = regLabel.replace(/_/g,' ');
-  document.getElementById('qs-regime').style.color    = rc.text;
+  const clusterInfo = regime;  // now receives current_cluster object
+  const cid = clusterInfo.cluster != null ? clusterInfo.cluster : null;
+  const cc  = clusterColor(cid);
+  const clusterLabel = cid != null ? `Cluster ${cid}` : '—';
+  document.getElementById('qs-regime').textContent = clusterLabel;
+  document.getElementById('qs-regime').style.color = cc.text;
   document.getElementById('qs-strategy').textContent  = cs.strategy_display || '—';
   document.getElementById('qs-bars').textContent      = cs.consecutive_bars != null ? cs.consecutive_bars + 'd' : '—';
   const wt = cs.quant_weight != null ? Math.round(cs.quant_weight * 100) + '%' : '—';
@@ -1458,74 +1430,97 @@ function buildRollingChart(equity) {
   });
 }
 
-// ── Panel Q1: Regime Indicator ────────────────────────────────────────────────
-const REGIME_DESCRIPTIONS = {
-  QUIET_BULL:    'Low vol (<10% ann.) + upward EMA trend.\n\nGold grinding higher in calm conditions — carry trades, USD weakness narrative, no panic. Donchian works but moves are small. Quant weight: 40%.',
-  QUIET_BEAR:    'Low vol (<10% ann.) + downward EMA trend.\n\nGold slowly bleeding lower — risk-on rotation, USD strength. Small moves. Quant weight: 40%.',
-  QUIET_RANGE:   'Low vol (<10% ann.) + flat EMA — no direction.\n\nGold coiling, waiting for a catalyst. Donchian LOSES here (35% win rate) — it buys every false breakout and gets stopped out. Either use mean-reversion or stay flat. Quant weight: 50% but use the right strategy.',
-  TREND_BULL:    'Normal-to-high vol (10–35% ann.) + upward EMA trend.\n\nA real breakout — institutional buying, safe-haven bid, or USD collapse. Donchian shines (PF 1.35, 59% win rate). Gold spends 57% of its history here. Quant weight: 35%.',
-  TREND_BEAR:    'Normal-to-high vol (10–35% ann.) + downward EMA trend.\n\nReal breakdown — USD rally, Fed hawkishness, risk-on rotation. Donchian still works short side. Gold spends ~30% of time here. Quant weight: 35%.',
-  VOLATILE_CHOP: 'High vol (20–35% ann.) + flat EMA — no clear direction.\n\nConflicting geopolitical catalysts. Big intraday swings, no follow-through. Quant weight drops to 20% — Claude\'s news analysis more reliable.',
-  CRISIS:        'Extreme vol (>35% ann.) — financial shock or war spike.\n\nExamples: COVID, SVB, Ukraine. Price patterns break down. Gold can spike +5% or crash -8% in hours. Quant weight only 10% — trust the news, not the chart.',
-  UNKNOWN:       'Regime could not be calculated — insufficient price history.',
-};
+// ── Cluster colour palette (up to 7 clusters, max_k=7) ───────────────────────
+const _CLUSTER_PALETTE = [
+  { bg: '#1a2a3a', text: '#60a5fa', border: '#60a5fa' },  // 0 blue
+  { bg: '#1a3a1a', text: '#22c55e', border: '#22c55e' },  // 1 green
+  { bg: '#3a2a0a', text: '#f59e0b', border: '#f59e0b' },  // 2 amber
+  { bg: '#2a1a3a', text: '#a78bfa', border: '#a78bfa' },  // 3 purple
+  { bg: '#3a1a2a', text: '#f472b6', border: '#f472b6' },  // 4 pink
+  { bg: '#1a3a3a', text: '#22d3ee', border: '#22d3ee' },  // 5 cyan
+  { bg: '#3a2a1a', text: '#fb923c', border: '#fb923c' },  // 6 orange
+];
+const _CLUSTER_UNKNOWN = { bg: '#2a2a2a', text: '#9ca3af', border: '#9ca3af' };
 
-const REGIME_COLORS = {
-  QUIET_BULL:    { bg: '#1a3a1a', text: '#22c55e', border: '#22c55e' },
-  QUIET_BEAR:    { bg: '#3a1a1a', text: '#ef4444', border: '#ef4444' },
-  QUIET_RANGE:   { bg: '#1a2a3a', text: '#60a5fa', border: '#60a5fa' },
-  TREND_BULL:    { bg: '#1e3520', text: '#4ade80', border: '#4ade80' },
-  TREND_BEAR:    { bg: '#3d1c1c', text: '#f87171', border: '#f87171' },
-  VOLATILE_CHOP: { bg: '#3a2a0a', text: '#f59e0b', border: '#f59e0b' },
-  CRISIS:        { bg: '#3a0a0a', text: '#ff2222', border: '#ff2222' },
-  UNKNOWN:       { bg: '#2a2a2a', text: '#9ca3af', border: '#9ca3af' },
-};
+function clusterColor(cid) {
+  if (cid == null || cid < 0) return _CLUSTER_UNKNOWN;
+  return _CLUSTER_PALETTE[cid % _CLUSTER_PALETTE.length];
+}
 
-function buildRegimePanel(regime, history) {
-  const label    = regime.label || 'UNKNOWN';
-  const badge    = document.getElementById('regime-badge');
-  const volEl    = document.getElementById('regime-vol');
-  const hurstEl  = document.getElementById('regime-hurst');
-  const ratioEl  = document.getElementById('regime-volratio');
-  const slopeEl  = document.getElementById('regime-emaslope');
-  const wtEl     = document.getElementById('regime-quantwt');
-  const timeline = document.getElementById('regime-timeline');
+// ── Panel Q1: Cluster Indicator ───────────────────────────────────────────────
+function buildClusterPanel(cluster, history) {
+  const cid      = cluster.cluster != null ? cluster.cluster : null;
+  const cc       = clusterColor(cid);
+  const badge    = document.getElementById('cluster-badge');
+  const stratEl  = document.getElementById('cluster-strategy');
+  const pfEl     = document.getElementById('cluster-pf');
+  const kEl      = document.getElementById('cluster-k');
+  const timeline = document.getElementById('cluster-timeline');
 
-  const colors = REGIME_COLORS[label] || REGIME_COLORS['UNKNOWN'];
-  badge.textContent      = label.replace(/_/g, ' ');
-  badge.style.background = colors.bg;
-  badge.style.color      = colors.text;
-  badge.style.border     = `2px solid ${colors.border}`;
-  badge.setAttribute('data-tip', REGIME_DESCRIPTIONS[label] || label);
-  badge.classList.add('tip');
+  badge.textContent      = cid != null ? `Cluster ${cid}` : '—';
+  badge.style.background = cc.bg;
+  badge.style.color      = cc.text;
+  badge.style.border     = `2px solid ${cc.border}`;
 
-  volEl.textContent   = regime.vol_20d_ann_pct != null ? regime.vol_20d_ann_pct + '%' : '—';
-  hurstEl.textContent = regime.hurst_20d   != null ? regime.hurst_20d.toFixed(3) : '—';
-  ratioEl.textContent = regime.vol_ratio   != null ? regime.vol_ratio.toFixed(3) : '—';
-  slopeEl.textContent = regime.ema_slope_pct != null
-    ? (regime.ema_slope_pct > 0 ? '+' : '') + regime.ema_slope_pct.toFixed(3) + '%' : '—';
+  stratEl.textContent = cluster.strategy || '—';
+  const pf = cluster.is_pf;
+  pfEl.textContent = pf != null ? pf.toFixed(3) : '—';
+  pfEl.className   = 'hero-value ' + (pf >= 1.5 ? 'color-green' : pf >= 1.0 ? 'color-gold' : 'color-red');
+  kEl.textContent  = cluster.k != null ? cluster.k : '—';
 
-  const wt = regime.quant_weight != null ? Math.round(regime.quant_weight * 100) : null;
-  wtEl.textContent = wt != null ? wt + '%' : '—';
-  wtEl.className   = 'hero-value ' + (wt >= 40 ? 'color-green' : wt >= 30 ? 'color-gold' : 'color-yellow');
-
-  if (regime.hurst_20d != null)
-    hurstEl.className = 'hero-value ' + (regime.hurst_20d > 0.55 ? 'color-green' : regime.hurst_20d < 0.45 ? 'color-yellow' : '');
-  if (regime.ema_slope_pct != null)
-    slopeEl.className = 'hero-value ' + (regime.ema_slope_pct > 0.3 ? 'color-green' : regime.ema_slope_pct < -0.3 ? 'color-red' : '');
-
-  // Timeline
-  const last30 = history.slice(-30);
+  // Timeline — last 200 hourly bars (≈ 1 month)
+  const last200 = history.slice(-200);
   timeline.innerHTML = '';
-  last30.forEach(item => {
-    const c = REGIME_COLORS[item.regime] || REGIME_COLORS['UNKNOWN'];
+  last200.forEach(item => {
+    const c   = clusterColor(item.cluster);
     const bar = document.createElement('div');
     bar.style.flex         = '1';
-    bar.style.background   = c.text + '66';
-    bar.style.borderRadius = '2px';
-    bar.style.cursor       = 'help';
-    bar.title = `${item.date}\n${(item.regime||'').replace(/_/g,' ')}`;
+    bar.style.background   = c.text + '88';
+    bar.style.borderRadius = '1px';
+    bar.style.cursor       = 'default';
+    bar.title = `${item.date}  Cluster ${item.cluster}`;
     timeline.appendChild(bar);
+  });
+}
+
+// ── Panel Q4: Cluster Distribution Chart ─────────────────────────────────────
+function buildClusterDistChart(clusterPerf) {
+  if (!clusterPerf || !clusterPerf.length) return;
+  const labels   = clusterPerf.map(c => `Cluster ${c.cluster}\n${c.strategy || ''}`);
+  const values   = clusterPerf.map(c => c.n_bars || 0);
+  const bgColors = clusterPerf.map(c => clusterColor(c.cluster).text + 'aa');
+  const bdColors = clusterPerf.map(c => clusterColor(c.cluster).border);
+
+  const ctx = document.getElementById('chart-cluster-dist').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Bars in cluster',
+        data: values,
+        backgroundColor: bgColors,
+        borderColor: bdColors,
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: item => ` ${item.raw} bars  ·  Strategy: ${clusterPerf[item.dataIndex].strategy || '—'}  ·  IS PF: ${clusterPerf[item.dataIndex].is_pf != null ? clusterPerf[item.dataIndex].is_pf.toFixed(3) : '—'}`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: '#9ca3af' }, grid: { color: '#2a2a2a' } },
+        y: { ticks: { font: { size: 10 } }, grid: { color: '#2a2a2a' }, title: { display: true, text: 'Bars', color: '#9ca3af', font: { size: 10 } } }
+      }
+    }
   });
 }
 
@@ -1539,17 +1534,6 @@ function buildMcptTable(qd) {
     flat:           'No Trade',
   };
 
-  const regimes = ['QUIET_BULL','QUIET_BEAR','QUIET_RANGE','TREND_BULL','TREND_BEAR','VOLATILE_CHOP','CRISIS'];
-  const regimeNames = {
-    QUIET_BULL: 'Quiet Bull', QUIET_BEAR: 'Quiet Bear', QUIET_RANGE: 'Quiet Range',
-    TREND_BULL: 'Trend Bull', TREND_BEAR: 'Trend Bear',
-    VOLATILE_CHOP: 'Volatile Chop', CRISIS: 'Crisis',
-  };
-  const regimeColors = {
-    QUIET_BULL: '#22c55e', QUIET_BEAR: '#ef4444', QUIET_RANGE: '#60a5fa',
-    TREND_BULL: '#4ade80', TREND_BEAR: '#f87171',
-    VOLATILE_CHOP: '#f59e0b', CRISIS: '#ff2222',
-  };
 
   function mcptBadge(label, test, tipText) {
     if (!test) return `<div class="hero-card" style="padding:10px 16px;min-width:200px"><div class="hero-label">${label}</div><div class="hero-value" style="color:var(--muted)">Not run</div></div>`;
@@ -1607,31 +1591,30 @@ function buildMcptTable(qd) {
       </tr>`;
   });
 
-  // Best assignment per regime
-  const asgTbody = document.getElementById('regime-assignment-tbody');
-  asgTbody.innerHTML = '';
-  const asg = qd.best_assignment || {};
-  regimes.forEach(r => {
-    const info = asg[r] || {};
-    const stratName  = STRATEGY_DISPLAY[info.strategy] || info.strategy_display || '—';
-    const score      = info.regime_score != null ? info.regime_score.toFixed(3) : '—';
-    const scoreColor = info.regime_score != null ? (info.regime_score > 0 ? '#22c55e' : '#ef4444') : 'var(--muted)';
-    const wt         = info.quant_weight != null ? Math.round(info.quant_weight * 100) + '%' : '—';
-    const tip        = (REGIME_DESCRIPTIONS[r] || '').replace(/'/g, '&#39;');
-    asgTbody.innerHTML += `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px 12px">
-          <span class="tip" data-tip="${tip}" style="color:${regimeColors[r]};font-weight:600;border-bottom:1px dashed ${regimeColors[r]}44;cursor:help">${regimeNames[r]}</span>
-        </td>
-        <td style="padding:8px 12px;font-weight:600">${stratName}</td>
-        <td style="padding:8px 12px;text-align:right;color:${scoreColor}">${score}</td>
-        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${wt}</td>
-      </tr>`;
-  });
+  // Cluster → strategy summary (adaptive pool last window)
+  const clusterSummaryEl = document.getElementById('mcpt-cluster-summary');
+  const cp = qd.cluster_performance || [];
+  if (cp.length && clusterSummaryEl) {
+    let html = '<div class="chart-subtitle" style="margin-bottom:8px;margin-top:12px">Adaptive Pool — Last Window Cluster Assignment</div>';
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    cp.forEach(row => {
+      const cc = clusterColor(row.cluster);
+      const pf = row.is_pf != null ? row.is_pf.toFixed(3) : '—';
+      const pfColor = row.is_pf >= 1.5 ? '#22c55e' : row.is_pf >= 1.0 ? '#f59e0b' : '#ef4444';
+      html += `<div class="hero-card" style="padding:10px 14px;min-width:130px;border:1px solid ${cc.border}44">
+        <div style="color:${cc.text};font-weight:700;font-size:12px">Cluster ${row.cluster}</div>
+        <div style="color:#e5e7eb;font-size:13px;margin:4px 0">${row.strategy || '—'}</div>
+        <div style="color:${pfColor};font-size:12px">PF ${pf}</div>
+        <div style="color:var(--muted);font-size:11px">${row.n_bars} bars</div>
+      </div>`;
+    });
+    html += '</div>';
+    clusterSummaryEl.innerHTML = html;
+  }
 }
 
 // ── Panel Q3: Walk-Forward Equity Curve ───────────────────────────────────────
-function buildEquityChart(equityCurve, regimeHistory) {
+function buildEquityChart(equityCurve, clusterHistory) {
   if (!equityCurve.length) {
     showNoData('chart-equity', 'no-data-equity');
     return;
@@ -1641,9 +1624,9 @@ function buildEquityChart(equityCurve, regimeHistory) {
   const quantRet = equityCurve.map(d => d.quant_cumlog   != null ? (d.quant_cumlog   * 100).toFixed(2) : null);
   const bhRet    = equityCurve.map(d => d.buyhold_cumlog != null ? (d.buyhold_cumlog * 100).toFixed(2) : null);
 
-  // Build regime colour map for background segments
+  // cluster map (unused in rendering, kept for tooltip extension)
   const regimeMap = {};
-  regimeHistory.forEach(r => { regimeMap[r.date] = r.regime; });
+  (clusterHistory||[]).forEach(r => { regimeMap[r.date] = r.cluster; });
 
   const ctx = document.getElementById('chart-equity').getContext('2d');
   new Chart(ctx, {
@@ -1805,24 +1788,18 @@ function buildMcptHistogram(strategies) {
   wrap.appendChild(lbl);
 }
 
-// ── Regime Timeline ───────────────────────────────────────────────────────────
-function buildRegimeTimeline(equityCurve, regimeHistoryFull) {
+// ── Cluster Timeline ──────────────────────────────────────────────────────────
+function buildClusterTimeline(equityCurve, clusterHistory) {
   if (!equityCurve || equityCurve.length < 10) return;
-  if (!regimeHistoryFull || regimeHistoryFull.length < 10) return;
+  if (!clusterHistory || clusterHistory.length < 10) return;
   document.getElementById('quant-regime-timeline-panel').style.display = '';
 
-  // Build a map: date → regime
-  const regMap = {};
-  regimeHistoryFull.forEach(r => { regMap[r.date] = r.regime; });
+  // Map date → cluster id
+  const clMap = {};
+  clusterHistory.forEach(r => { clMap[r.date] = r.cluster; });
 
   const labels = equityCurve.map(d => d.date);
   const prices = equityCurve.map(d => d.close_price != null ? d.close_price : null);
-
-  // Colour each point by regime
-  const pointColors = labels.map(d => {
-    const r = regMap[d] || 'UNKNOWN';
-    return (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
-  });
 
   const ctx = document.getElementById('chart-regime-timeline').getContext('2d');
   new Chart(ctx, {
@@ -1841,8 +1818,8 @@ function buildRegimeTimeline(equityCurve, regimeHistoryFull) {
           borderColor: ctx2 => {
             const d = equityCurve[ctx2.p1DataIndex];
             if (!d) return GOLD;
-            const r = regMap[d.date] || 'UNKNOWN';
-            return (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
+            const cid = clMap[d.date];
+            return cid != null ? clusterColor(cid).text : GOLD;
           }
         }
       }]
@@ -1858,8 +1835,8 @@ function buildRegimeTimeline(equityCurve, regimeHistoryFull) {
             title: items => items[0].label,
             label: item => ` Price: ${(item.raw||0).toFixed(0)} AUD`,
             afterLabel: item => {
-              const r = regMap[item.label] || 'UNKNOWN';
-              return ` Regime: ${r}`;
+              const cid = clMap[item.label];
+              return cid != null ? ` Cluster: ${cid}` : ' Cluster: —';
             }
           }
         }
@@ -1871,13 +1848,14 @@ function buildRegimeTimeline(equityCurve, regimeHistoryFull) {
     }
   });
 
-  // Legend
+  // Legend — one swatch per cluster seen in data
+  const seenClusters = [...new Set(clusterHistory.map(r => r.cluster))].sort((a,b) => a-b);
   const wrap = document.getElementById('chart-regime-timeline').parentElement;
-  const lgd = document.createElement('div');
+  const lgd  = document.createElement('div');
   lgd.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px';
-  Object.entries(REGIME_COLORS).forEach(([name, c]) => {
-    if (name === 'UNKNOWN') return;
-    lgd.innerHTML += `<span style="color:${c.text}">■ ${name.replace('_',' ')}</span>`;
+  seenClusters.forEach(cid => {
+    const c = clusterColor(cid);
+    lgd.innerHTML += `<span style="color:${c.text}">■ Cluster ${cid}</span>`;
   });
   wrap.appendChild(lgd);
 }
@@ -1949,34 +1927,30 @@ function buildParamHeatmap(grid) {
   wrap.innerHTML = html;
 }
 
-// ── Per-Regime Performance Table ──────────────────────────────────────────────
-function buildRegimePerfTable(regimePerf) {
-  if (!regimePerf || Object.keys(regimePerf).length === 0) return;
+// ── Per-Cluster Performance Table ─────────────────────────────────────────────
+function buildClusterPerfTable(clusterPerf) {
+  if (!clusterPerf || !clusterPerf.length) return;
   document.getElementById('quant-regime-perf-panel').style.display = '';
 
-  const REGIMES = ['QUIET_BULL','QUIET_BEAR','QUIET_RANGE','TREND_BULL','TREND_BEAR','VOLATILE_CHOP','CRISIS'];
-  const QUANT_WEIGHTS = { QUIET_BULL:0.20, QUIET_BEAR:0.25, QUIET_RANGE:0.35, TREND_BULL:0.25, TREND_BEAR:0.35, VOLATILE_CHOP:0.10, CRISIS:0.10 };
-  const REGIME_NAMES  = { QUIET_BULL:'Quiet Bull', QUIET_BEAR:'Quiet Bear', QUIET_RANGE:'Quiet Range', TREND_BULL:'Trend Bull', TREND_BEAR:'Trend Bear', VOLATILE_CHOP:'Volatile Chop', CRISIS:'Crisis' };
-
-  const tbody = document.getElementById('regime-perf-tbody');
+  const tbody = document.getElementById('cluster-perf-tbody');
   tbody.innerHTML = '';
 
-  REGIMES.forEach(r => {
-    const stats = regimePerf[r];
-    if (!stats) return;
-    const pf  = stats.profit_factor;
-    const wr  = stats.win_rate;
-    const n   = stats.n || stats.n_trades || '—';
-    const wt  = QUANT_WEIGHTS[r];
-    const pfColor = pf >= 1.2 ? '#22c55e' : pf >= 1.0 ? '#f59e0b' : '#ef4444';
-    const regColor = (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
+  // Sort by cluster id ascending
+  const sorted = [...clusterPerf].sort((a, b) => a.cluster - b.cluster);
+  sorted.forEach(row => {
+    const cid     = row.cluster;
+    const cc      = clusterColor(cid);
+    const pf      = row.is_pf;
+    const pfColor = pf == null ? 'var(--muted)' : pf >= 1.5 ? '#22c55e' : pf >= 1.0 ? '#f59e0b' : '#ef4444';
+    const note    = row.n_bars < 50 ? ' <span style="color:#f59e0b;font-size:11px">⚠ fallback</span>' : '';
     tbody.innerHTML += `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px 12px;color:${regColor};font-weight:600">${REGIME_NAMES[r] || r}</td>
+        <td style="padding:8px 12px;font-weight:700">
+          <span style="color:${cc.text};background:${cc.bg};padding:2px 10px;border-radius:4px;border:1px solid ${cc.border}">Cluster ${cid}</span>
+        </td>
+        <td style="padding:8px 12px;color:#e5e7eb">${row.strategy || '—'}${note}</td>
         <td style="padding:8px 12px;text-align:right;color:${pfColor};font-weight:700">${pf != null ? pf.toFixed(3) : '—'}</td>
-        <td style="padding:8px 12px;text-align:right">${wr != null ? wr.toFixed(1)+'%' : '—'}</td>
-        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${n}</td>
-        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${Math.round(wt*100)}%</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${row.n_bars != null ? row.n_bars.toLocaleString() : '—'}</td>
       </tr>`;
   });
 }
@@ -2097,7 +2071,7 @@ function buildTradeLog(tradeLog) {
   sorted.forEach(t => {
     const retColor  = t.win ? '#22c55e' : '#ef4444';
     const dirColor  = t.direction === 'long' ? '#22c55e' : '#ef4444';
-    const regColor  = t.regime ? (REGIME_COLORS[t.regime] || REGIME_COLORS.UNKNOWN).text : 'var(--muted)';
+    const regColor  = 'var(--muted)';   // regime field is legacy — no longer coloured
     tbody.innerHTML += `
       <tr style="border-bottom:1px solid #222">
         <td style="padding:5px 10px;color:var(--muted)">${t.entry_date}</td>
