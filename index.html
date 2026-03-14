@@ -513,6 +513,87 @@
       </div>
     </div>
 
+    <!-- Panel: MCPT Histogram -->
+    <div class="chart-card" id="quant-mcpt-hist-panel" style="display:none">
+      <div class="chart-title">MCPT Distribution — Donchian Breakout</div>
+      <div class="chart-subtitle">Permuted profit factors vs real PF (gold line) — real PF should sit in the far right tail for a validated edge</div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="chart-mcpt-hist"></canvas>
+      </div>
+    </div>
+
+    <!-- Panel: Regime Timeline -->
+    <div class="chart-card" id="quant-regime-timeline-panel" style="display:none">
+      <div class="chart-title">Regime Timeline — Full History</div>
+      <div class="chart-subtitle">Gold price coloured by market regime — shows when the strategy context changed</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chart-regime-timeline"></canvas>
+      </div>
+    </div>
+
+    <!-- Panel: Parameter Heatmap -->
+    <div class="chart-card" id="quant-param-heatmap-panel" style="display:none">
+      <div class="chart-title">Donchian Parameter Heatmap — Entry vs Exit Lookback</div>
+      <div class="chart-subtitle">Profit factor across all tested parameter combinations — a wide green cluster means a robust edge, a single spike means curve-fitting</div>
+      <div id="param-heatmap-wrap" style="overflow-x:auto;margin-top:8px"></div>
+    </div>
+
+    <!-- Panel: Per-Regime Performance -->
+    <div class="chart-card" id="quant-regime-perf-panel" style="display:none">
+      <div class="chart-title">Strategy Performance by Regime</div>
+      <div class="chart-subtitle">How Donchian Breakout performs in each market regime — confirms the model is routing to the right strategy</div>
+      <div style="overflow-x:auto">
+        <table id="regime-perf-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:8px 12px">Regime</th>
+              <th style="text-align:right;padding:8px 12px">Profit Factor</th>
+              <th style="text-align:right;padding:8px 12px">Win Rate</th>
+              <th style="text-align:right;padding:8px 12px">N Trades</th>
+              <th style="text-align:right;padding:8px 12px">Quant Weight</th>
+            </tr>
+          </thead>
+          <tbody id="regime-perf-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel: Monthly Returns Calendar -->
+    <div class="chart-card" id="quant-monthly-panel" style="display:none">
+      <div class="chart-title">Monthly Returns — Donchian Strategy</div>
+      <div class="chart-subtitle">Green = profitable month, red = losing month — look for seasonal patterns or persistent losing periods</div>
+      <div id="monthly-calendar-wrap" style="overflow-x:auto;margin-top:8px"></div>
+    </div>
+
+    <!-- Panel: Long vs Short Breakdown -->
+    <div class="chart-card" id="quant-ls-panel" style="display:none">
+      <div class="chart-title">Long vs Short Breakdown</div>
+      <div class="chart-subtitle">Gold is structurally bullish — if short trades drag down PF, regime-conditioned shorting may help</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px" id="ls-breakdown-wrap"></div>
+    </div>
+
+    <!-- Panel: Trade Log -->
+    <div class="chart-card" id="quant-trade-log-panel" style="display:none">
+      <div class="chart-title">Trade Log — Donchian Breakout (full history)</div>
+      <div class="chart-subtitle">Every trade taken by the walk-forward strategy — sorted newest first</div>
+      <div style="overflow-x:auto;max-height:400px">
+        <table id="trade-log-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead style="position:sticky;top:0;background:#1a1a1a">
+            <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:6px 10px">Entry</th>
+              <th style="text-align:left;padding:6px 10px">Exit</th>
+              <th style="text-align:left;padding:6px 10px">Dir</th>
+              <th style="text-align:right;padding:6px 10px">Bars</th>
+              <th style="text-align:right;padding:6px 10px">Return %</th>
+              <th style="text-align:left;padding:6px 10px">Regime</th>
+              <th style="text-align:center;padding:6px 10px">W/L</th>
+            </tr>
+          </thead>
+          <tbody id="trade-log-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div><!-- /#dashboard -->
 
   <div id="error-msg" style="display:none; text-align:center; color:var(--muted); margin-top:60px; font-size:15px">
@@ -702,6 +783,14 @@ async function loadQuantPanels() {
 
   // ── Panel Q3 — Equity Curve ───────────────────────────────────────────────
   buildEquityChart(qd.equity_curve || [], qd.regime_history || []);
+
+  buildMcptHistogram(qd.strategies || []);
+  buildRegimeTimeline(qd.equity_curve || [], qd.regime_history_full || []);
+  buildParamHeatmap(qd.param_heatmap || []);
+  buildRegimePerfTable(qd.regime_performance || {});
+  buildMonthlyCalendar(qd.equity_curve || []);
+  buildLongShortBreakdown(qd.long_short || {});
+  buildTradeLog(qd.trade_log || []);
 }
 
 // ── Chart 1: Signal History ──────────────────────────────────────────────────
@@ -1620,6 +1709,405 @@ function buildEquityChart(equityCurve, regimeHistory) {
         }
       }
     }
+  });
+}
+
+// ── MCPT Histogram ────────────────────────────────────────────────────────────
+function buildMcptHistogram(strategies) {
+  const don = (strategies || []).find(s => s.name === 'Donchian Breakout');
+  if (!don || !don.permuted_pfs || don.permuted_pfs.length === 0) return;
+
+  document.getElementById('quant-mcpt-hist-panel').style.display = '';
+
+  const perms  = don.permuted_pfs.map(Number);
+  const realPF = don.profit_factor || don.real_profit_factor || 0;
+  const n_bins = 20;
+  const lo = Math.min(...perms);
+  const hi = Math.max(Math.max(...perms), realPF) * 1.01;
+  const binW = (hi - lo) / n_bins;
+
+  const counts = Array(n_bins).fill(0);
+  perms.forEach(p => {
+    const idx = Math.min(Math.floor((p - lo) / binW), n_bins - 1);
+    counts[idx]++;
+  });
+
+  const labels     = counts.map((_, i) => (lo + i * binW).toFixed(3));
+  const bgColors   = counts.map((_, i) => {
+    const binLo = lo + i * binW;
+    const binHi = binLo + binW;
+    return (realPF >= binLo && realPF < binHi) ? '#d4a01788' : '#3b82f633';
+  });
+  const borderColors = bgColors.map(c => c.startsWith('#d4') ? GOLD : '#3b82f6');
+
+  const realBin = Math.min(Math.floor((realPF - lo) / binW), n_bins - 1);
+  const annot = counts.map((c, i) => i === realBin ? c : null);
+
+  const ctx = document.getElementById('chart-mcpt-hist').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Permuted PF count',
+        data: counts,
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => `PF bin: ${items[0].label}`,
+            label: item => ` ${item.raw} permutations`,
+            afterBody: items => {
+              const binLo = lo + items[0].dataIndex * binW;
+              const binHi = binLo + binW;
+              if (realPF >= binLo && realPF < binHi) return [`← Real PF: ${realPF.toFixed(4)}`];
+              return [];
+            }
+          }
+        },
+        annotation: undefined,
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Profit Factor', font: { size: 11 } },
+          ticks: { maxRotation: 45, font: { size: 9 }, maxTicksLimit: 12 },
+          grid: { color: '#2a2a2a' },
+        },
+        y: {
+          title: { display: true, text: 'Count', font: { size: 11 } },
+          grid: { color: '#2a2a2a' },
+          ticks: { font: { size: 10 } },
+        }
+      }
+    }
+  });
+
+  // Add real PF label below chart
+  const wrap = document.getElementById('chart-mcpt-hist').parentElement;
+  const pval = don.p_value != null ? don.p_value.toFixed(4) : '—';
+  const validated = don.validated;
+  const statusColor = validated ? '#22c55e' : (don.p_value < 0.10 ? '#f59e0b' : '#ef4444');
+  const statusText  = validated ? 'VALIDATED' : (don.p_value < 0.10 ? 'BORDERLINE' : 'REJECTED');
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:12px;color:var(--muted);margin-top:8px;text-align:center';
+  lbl.innerHTML = `Real PF: <span style="color:${GOLD};font-weight:700">${realPF.toFixed(4)}</span>
+    &nbsp;·&nbsp; p-value: <span style="font-weight:600">${pval}</span>
+    &nbsp;·&nbsp; <span style="color:${statusColor};font-weight:700">${statusText}</span>
+    &nbsp;·&nbsp; ${don.n_permutations || perms.length} permutations`;
+  wrap.appendChild(lbl);
+}
+
+// ── Regime Timeline ───────────────────────────────────────────────────────────
+function buildRegimeTimeline(equityCurve, regimeHistoryFull) {
+  if (!equityCurve || equityCurve.length < 10) return;
+  if (!regimeHistoryFull || regimeHistoryFull.length < 10) return;
+  document.getElementById('quant-regime-timeline-panel').style.display = '';
+
+  // Build a map: date → regime
+  const regMap = {};
+  regimeHistoryFull.forEach(r => { regMap[r.date] = r.regime; });
+
+  const labels = equityCurve.map(d => d.date);
+  const prices = equityCurve.map(d => d.close_price != null ? d.close_price : null);
+
+  // Colour each point by regime
+  const pointColors = labels.map(d => {
+    const r = regMap[d] || 'UNKNOWN';
+    return (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
+  });
+
+  const ctx = document.getElementById('chart-regime-timeline').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gold Price (AUD)',
+        data: prices,
+        borderColor: GOLD,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.1,
+        fill: false,
+        segment: {
+          borderColor: ctx2 => {
+            const d = equityCurve[ctx2.p1DataIndex];
+            if (!d) return GOLD;
+            const r = regMap[d.date] || 'UNKNOWN';
+            return (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
+          }
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: item => ` Price: ${(item.raw||0).toFixed(0)} AUD`,
+            afterLabel: item => {
+              const r = regMap[item.label] || 'UNKNOWN';
+              return ` Regime: ${r}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 10, maxRotation: 45, font: { size: 10 } }, grid: { color: '#2a2a2a' } },
+        y: { grid: { color: '#2a2a2a' }, ticks: { callback: v => '$' + v.toFixed(0), font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Legend
+  const wrap = document.getElementById('chart-regime-timeline').parentElement;
+  const lgd = document.createElement('div');
+  lgd.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px';
+  Object.entries(REGIME_COLORS).forEach(([name, c]) => {
+    if (name === 'UNKNOWN') return;
+    lgd.innerHTML += `<span style="color:${c.text}">■ ${name.replace('_',' ')}</span>`;
+  });
+  wrap.appendChild(lgd);
+}
+
+// ── Parameter Heatmap ─────────────────────────────────────────────────────────
+function buildParamHeatmap(grid) {
+  if (!grid || grid.length === 0) return;
+  document.getElementById('quant-param-heatmap-panel').style.display = '';
+
+  const wrap = document.getElementById('param-heatmap-wrap');
+
+  // Get unique sorted entry and exit lookbacks
+  const entries = [...new Set(grid.map(g => g.entry_lb))].sort((a,b) => a-b);
+  const exits   = [...new Set(grid.map(g => g.exit_lb))].sort((a,b) => a-b);
+
+  // Build lookup: entry → exit → pf
+  const lookup = {};
+  grid.forEach(g => {
+    if (!lookup[g.entry_lb]) lookup[g.entry_lb] = {};
+    lookup[g.entry_lb][g.exit_lb] = g.pf;
+  });
+
+  const allPfs = grid.map(g => g.pf).filter(p => p > 0);
+  const minPf = Math.min(...allPfs);
+  const maxPf = Math.max(...allPfs);
+
+  function pfToColor(pf) {
+    if (!pf || pf === 0) return '#1a1a1a';
+    const t = Math.max(0, Math.min(1, (pf - minPf) / (maxPf - minPf)));
+    // red (0) → grey (0.5) → green (1)
+    if (t < 0.5) {
+      const r = Math.round(239 * (1 - t * 2) + 42 * t * 2);
+      const g = Math.round(68  * (1 - t * 2) + 68 * t * 2);
+      const b = Math.round(68  * (1 - t * 2) + 68 * t * 2);
+      return `rgba(${r},${g},${b},0.7)`;
+    } else {
+      const u = (t - 0.5) * 2;
+      const r = Math.round(42  * (1 - u) + 34 * u);
+      const g = Math.round(68  * (1 - u) + 197 * u);
+      const b = Math.round(68  * (1 - u) + 94 * u);
+      return `rgba(${r},${g},${b},0.7)`;
+    }
+  }
+
+  let html = '<table style="border-collapse:collapse;font-size:11px;min-width:400px">';
+  html += '<thead><tr><th style="padding:4px 6px;color:var(--muted);text-align:right">Entry↓ Exit→</th>';
+  exits.forEach(ex => { html += `<th style="padding:4px 6px;color:var(--muted);text-align:center">${ex}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  entries.forEach(en => {
+    html += `<tr><td style="padding:4px 6px;color:var(--muted);text-align:right;font-weight:600">${en}</td>`;
+    exits.forEach(ex => {
+      const pf = (lookup[en] || {})[ex];
+      const color = pfToColor(pf);
+      const text  = pf != null ? pf.toFixed(2) : '—';
+      const textColor = pf != null && pf >= 1.0 ? '#e5e7eb' : '#6b7280';
+      html += `<td style="padding:3px 5px;background:${color};text-align:center;color:${textColor};cursor:default" title="Entry=${en} Exit=${ex} PF=${text}">${text}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  html += `<div style="font-size:11px;color:var(--muted);margin-top:8px">
+    PF range: ${minPf.toFixed(3)} – ${maxPf.toFixed(3)} &nbsp;·&nbsp;
+    ${grid.length} combinations &nbsp;·&nbsp;
+    <span style="color:#22c55e">■</span> PF > 1.0 &nbsp;
+    <span style="color:#ef4444">■</span> PF < 1.0
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+
+// ── Per-Regime Performance Table ──────────────────────────────────────────────
+function buildRegimePerfTable(regimePerf) {
+  if (!regimePerf || Object.keys(regimePerf).length === 0) return;
+  document.getElementById('quant-regime-perf-panel').style.display = '';
+
+  const REGIMES = ['QUIET_BULL','QUIET_BEAR','QUIET_RANGE','TREND_BULL','TREND_BEAR','VOLATILE_CHOP','CRISIS'];
+  const QUANT_WEIGHTS = { QUIET_BULL:0.20, QUIET_BEAR:0.25, QUIET_RANGE:0.35, TREND_BULL:0.25, TREND_BEAR:0.35, VOLATILE_CHOP:0.10, CRISIS:0.10 };
+  const REGIME_NAMES  = { QUIET_BULL:'Quiet Bull', QUIET_BEAR:'Quiet Bear', QUIET_RANGE:'Quiet Range', TREND_BULL:'Trend Bull', TREND_BEAR:'Trend Bear', VOLATILE_CHOP:'Volatile Chop', CRISIS:'Crisis' };
+
+  const tbody = document.getElementById('regime-perf-tbody');
+  tbody.innerHTML = '';
+
+  REGIMES.forEach(r => {
+    const stats = regimePerf[r];
+    if (!stats) return;
+    const pf  = stats.profit_factor;
+    const wr  = stats.win_rate;
+    const n   = stats.n || stats.n_trades || '—';
+    const wt  = QUANT_WEIGHTS[r];
+    const pfColor = pf >= 1.2 ? '#22c55e' : pf >= 1.0 ? '#f59e0b' : '#ef4444';
+    const regColor = (REGIME_COLORS[r] || REGIME_COLORS.UNKNOWN).text;
+    tbody.innerHTML += `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 12px;color:${regColor};font-weight:600">${REGIME_NAMES[r] || r}</td>
+        <td style="padding:8px 12px;text-align:right;color:${pfColor};font-weight:700">${pf != null ? pf.toFixed(3) : '—'}</td>
+        <td style="padding:8px 12px;text-align:right">${wr != null ? wr.toFixed(1)+'%' : '—'}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${n}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted)">${Math.round(wt*100)}%</td>
+      </tr>`;
+  });
+}
+
+// ── Monthly Returns Calendar ──────────────────────────────────────────────────
+function buildMonthlyCalendar(equityCurve) {
+  if (!equityCurve || equityCurve.length < 30) return;
+  document.getElementById('quant-monthly-panel').style.display = '';
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Group cumulative log return by year-month
+  const byYM = {};
+  equityCurve.forEach(d => {
+    if (d.quant_cumlog == null) return;
+    const dt = d.date.split('-');
+    const ym = `${dt[0]}-${dt[1]}`;
+    if (!byYM[ym]) byYM[ym] = [];
+    byYM[ym].push(d.quant_cumlog);
+  });
+
+  // Monthly return = last value minus first value of month
+  const monthlyRet = {};
+  Object.entries(byYM).forEach(([ym, vals]) => {
+    monthlyRet[ym] = vals[vals.length-1] - vals[0];
+  });
+
+  const years  = [...new Set(Object.keys(monthlyRet).map(ym => ym.split('-')[0]))].sort();
+  const allRet = Object.values(monthlyRet);
+  const maxAbs = Math.max(...allRet.map(Math.abs), 0.001);
+
+  function retToColor(ret) {
+    if (ret == null) return '#1e1e1e';
+    const t = Math.max(-1, Math.min(1, ret / maxAbs));
+    if (t >= 0) {
+      const g = Math.round(34 + 163 * t);
+      return `rgba(34,${g},94,0.75)`;
+    } else {
+      const r = Math.round(239 + (-t) * 0);
+      return `rgba(${r},68,68,${0.3 + Math.abs(t)*0.5})`;
+    }
+  }
+
+  let html = '<table style="border-collapse:collapse;font-size:12px">';
+  html += '<thead><tr><th style="padding:4px 8px;color:var(--muted);text-align:right">Year</th>';
+  MONTHS.forEach(m => { html += `<th style="padding:4px 8px;color:var(--muted);text-align:center;min-width:44px">${m}</th>`; });
+  html += '<th style="padding:4px 8px;color:var(--muted);text-align:right">Annual</th></tr></thead><tbody>';
+
+  years.forEach(yr => {
+    let annualTotal = 0;
+    html += `<tr><td style="padding:4px 8px;color:var(--muted);font-weight:600;text-align:right">${yr}</td>`;
+    MONTHS.forEach((_, mi) => {
+      const ym  = `${yr}-${String(mi+1).padStart(2,'0')}`;
+      const ret = monthlyRet[ym];
+      const col = retToColor(ret != null ? ret : null);
+      const txt = ret != null ? (ret*100).toFixed(1)+'%' : '';
+      const textCol = ret != null && Math.abs(ret) > 0.005 ? '#e5e7eb' : '#6b7280';
+      if (ret != null) annualTotal += ret;
+      html += `<td style="padding:4px 6px;background:${col};text-align:center;color:${textCol};border-radius:3px" title="${ym}: ${txt}">${txt}</td>`;
+    });
+    const annCol = retToColor(annualTotal);
+    const annTxt = (annualTotal*100).toFixed(1)+'%';
+    html += `<td style="padding:4px 8px;text-align:right;background:${annCol};border-radius:3px;font-weight:700;color:#e5e7eb">${annTxt}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('monthly-calendar-wrap').innerHTML = html;
+}
+
+// ── Long/Short Breakdown ──────────────────────────────────────────────────────
+function buildLongShortBreakdown(ls) {
+  if (!ls || (!ls.long && !ls.short)) return;
+  document.getElementById('quant-ls-panel').style.display = '';
+
+  const wrap = document.getElementById('ls-breakdown-wrap');
+  wrap.innerHTML = '';
+
+  ['long','short'].forEach(side => {
+    const d = ls[side];
+    if (!d) return;
+    const pfColor = d.profit_factor >= 1.2 ? '#22c55e' : d.profit_factor >= 1.0 ? '#f59e0b' : '#ef4444';
+    const sideColor = side === 'long' ? '#22c55e' : '#ef4444';
+    const totalPct  = (d.total_log_return * 100).toFixed(2);
+    const totalColor = d.total_log_return >= 0 ? '#22c55e' : '#ef4444';
+    wrap.innerHTML += `
+      <div class="hero-card" style="min-width:220px;padding:16px 20px">
+        <div style="font-size:18px;font-weight:800;color:${sideColor};margin-bottom:10px">${side.toUpperCase()} POSITIONS</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <div class="hero-label">Profit Factor</div>
+            <div class="hero-value" style="color:${pfColor}">${d.profit_factor.toFixed(3)}</div>
+          </div>
+          <div>
+            <div class="hero-label">Win Rate</div>
+            <div class="hero-value">${d.win_rate.toFixed(1)}%</div>
+          </div>
+          <div>
+            <div class="hero-label">Active Bars</div>
+            <div class="hero-value" style="font-size:16px">${d.n_bars.toLocaleString()}</div>
+          </div>
+          <div>
+            <div class="hero-label">Total Log Return</div>
+            <div class="hero-value" style="color:${totalColor};font-size:16px">${totalPct}%</div>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+// ── Trade Log ─────────────────────────────────────────────────────────────────
+function buildTradeLog(tradeLog) {
+  if (!tradeLog || tradeLog.length === 0) return;
+  document.getElementById('quant-trade-log-panel').style.display = '';
+
+  const tbody = document.getElementById('trade-log-tbody');
+  tbody.innerHTML = '';
+
+  const sorted = [...tradeLog].reverse();
+  sorted.forEach(t => {
+    const retColor  = t.win ? '#22c55e' : '#ef4444';
+    const dirColor  = t.direction === 'long' ? '#22c55e' : '#ef4444';
+    const regColor  = t.regime ? (REGIME_COLORS[t.regime] || REGIME_COLORS.UNKNOWN).text : 'var(--muted)';
+    tbody.innerHTML += `
+      <tr style="border-bottom:1px solid #222">
+        <td style="padding:5px 10px;color:var(--muted)">${t.entry_date}</td>
+        <td style="padding:5px 10px;color:var(--muted)">${t.exit_date}</td>
+        <td style="padding:5px 10px;color:${dirColor};font-weight:600">${t.direction.toUpperCase()}</td>
+        <td style="padding:5px 10px;text-align:right;color:var(--muted)">${t.bars}</td>
+        <td style="padding:5px 10px;text-align:right;color:${retColor};font-weight:600">${t.return_pct > 0 ? '+' : ''}${t.return_pct}%</td>
+        <td style="padding:5px 10px;color:${regColor};font-size:11px">${t.regime || '—'}</td>
+        <td style="padding:5px 10px;text-align:center;color:${retColor}">${t.win ? '✓' : '✗'}</td>
+      </tr>`;
   });
 }
 
