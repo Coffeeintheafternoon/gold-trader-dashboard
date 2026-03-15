@@ -492,23 +492,25 @@
 
     <!-- Panel Q2: MCPT Validation Table -->
     <div class="chart-card" id="quant-mcpt-panel" style="display:none">
-      <div class="chart-title">Regime → Strategy Assignment (Optimiser)</div>
-      <div class="chart-subtitle">Exhaustive search over all strategy combinations per regime, validated with Monte Carlo Permutation Tests</div>
+      <div class="chart-title">Strategy Validation</div>
+      <div class="chart-subtitle">Walk-forward out-of-sample metrics + Monte Carlo Permutation Test (MCPT) status</div>
 
-      <!-- MCPT summary badges -->
+      <!-- MCPT status badges -->
       <div id="mcpt-badges" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px"></div>
 
       <!-- Walk-forward strategy metrics -->
       <div style="margin-bottom:20px">
-        <div class="chart-subtitle" style="margin-bottom:8px">Walk-Forward Out-of-Sample Metrics (5y, 29 windows)</div>
+        <div class="chart-subtitle" style="margin-bottom:8px">Walk-Forward Out-of-Sample Results</div>
         <div style="overflow-x:auto">
           <table id="wf-metrics-table" style="width:100%;border-collapse:collapse;font-size:13px">
             <thead>
               <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
                 <th style="text-align:left;padding:8px 12px">Strategy</th>
                 <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Total winning returns ÷ total losing losses.\n&gt;1.0 = profitable\n&gt;1.2 = meaningful edge\nMeasured on out-of-sample walk-forward data only.">Profit Factor</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Annualised risk-adjusted return.\n&gt;1.0 = good\n&gt;2.0 = excellent\nNegative = losing money on a risk-adjusted basis.">Sharpe</span></th>
-                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of rolling train/test windows completed.\nEach window optimises on 1yr training data then generates 1 month of OOS signals.">Windows</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Annualised risk-adjusted return.\n&gt;0.5 = decent retail edge\n&gt;1.0 = good\nNegative = losing money on a risk-adjusted basis.">Sharpe</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Walk-Forward Efficiency: OOS annual return ÷ IS annual return × 100.\n\n100% = strategy performs identically OOS as IS (unlikely)\n40–70% = healthy — some degradation is expected and normal\n&lt;20% = severe overfitting — IS edge not surviving OOS\n\nLow WFE means the optimiser is curve-fitting noise.">WFE %</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of rolling train/test windows completed.\nEach window trains on historical data then generates out-of-sample signals.">Windows</span></th>
+                <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Monte Carlo Permutation Test result.\nSHUFFLES price order 200+ times and measures how often a random strategy beats the real one.\np &lt; 0.05 = VALIDATED (real edge is in top 5% of random)\nNot run = MCPT skipped with --no-mcpt flag">MCPT</span></th>
               </tr>
             </thead>
             <tbody id="wf-metrics-tbody"></tbody>
@@ -518,6 +520,13 @@
 
       <!-- Cluster → strategy mapping (last window) -->
       <div id="mcpt-cluster-summary"></div>
+    </div>
+
+    <!-- Panel: Feature Selection -->
+    <div class="chart-card" id="quant-features-panel" style="display:none">
+      <div class="chart-title">Feature Selection — What the Model Used</div>
+      <div class="chart-subtitle">K-means clustering used these features to separate market regimes. F-score = how strongly the feature separates clusters (higher = more discriminating). Dropped features were redundant or near-constant.</div>
+      <div id="features-wrap"></div>
     </div>
 
     <!-- Panel Q0: Current Quant Signal -->
@@ -634,8 +643,10 @@
               <th style="text-align:left;padding:8px 12px">Character</th>
               <th style="text-align:left;padding:8px 12px">Strategy / Entry-Exit</th>
               <th style="text-align:right;padding:8px 12px">IS PF</th>
+              <th style="text-align:right;padding:8px 12px">Trades</th>
+              <th style="text-align:right;padding:8px 12px">Win %</th>
               <th style="text-align:right;padding:8px 12px">N Bars</th>
-              <th style="text-align:left;padding:8px 12px">Top Features</th>
+              <th style="text-align:left;padding:8px 12px">Top Features (z-score)</th>
             </tr>
           </thead>
           <tbody id="cluster-perf-tbody"></tbody>
@@ -882,7 +893,8 @@ async function loadQuantPanels() {
 
   // Show all quant panels
   ['quant-signal-panel','quant-regime-panel','quant-dist-panel',
-   'quant-rolling-panel','quant-mcpt-panel','quant-equity-panel'].forEach(id => {
+   'quant-rolling-panel','quant-mcpt-panel','quant-equity-panel',
+   'quant-features-panel'].forEach(id => {
     document.getElementById(id).style.display = 'block';
   });
 
@@ -913,12 +925,13 @@ async function loadQuantPanels() {
   buildMcptHistogram(qd.strategies || []);
   buildClusterTimeline(qd.equity_curve || [], qd.cluster_history || []);
   buildParamHeatmap(qd.param_heatmap || []);
-  buildClusterPerfTable(qd.cluster_performance || []);
+  buildClusterPerfTable(qd.cluster_performance || [], qd.trade_log || []);
   buildMonthlyCalendar(qd.equity_curve || []);
   buildLongShortBreakdown(qd.long_short || {});
   buildModelMetrics(qd.equity_curve || [], qd.strategies || [], qd.trade_log || []);
   buildTradeSignalChart(qd.price_series || [], qd.trade_log || [], qd.cluster_performance || []);
   buildClusterRulesPanel(qd.cluster_performance || []);
+  buildFeatureSelection(qd.strategies || []);
   buildTradeLog(qd.trade_log || []);
 }
 
@@ -1736,24 +1749,41 @@ function buildMcptTable(qd) {
       </div>`;
   }
 
-  // Walk-forward per-strategy metrics
+  // Walk-forward strategy metrics (from strategies array)
   const wfTbody = document.getElementById('wf-metrics-tbody');
   wfTbody.innerHTML = '';
-  const wf = qd.wf_strategy_metrics || {};
-  const stratOrder = ['donchian','mean_reversion','ma_crossover','atr_breakout'];
-  stratOrder.forEach(key => {
-    const m = wf[key];
-    if (!m) return;
-    const pf = (m.profit_factor||0).toFixed(3);
-    const sr = (m.sharpe_ratio||0).toFixed(3);
+  (qd.strategies || []).forEach(m => {
+    const pf      = (m.profit_factor||0).toFixed(3);
+    const sr      = (m.sharpe_ratio||0).toFixed(3);
     const pfColor = m.profit_factor >= 1.2 ? '#22c55e' : m.profit_factor >= 1.0 ? '#f59e0b' : '#ef4444';
-    const srColor = m.sharpe_ratio  >= 1.0 ? '#22c55e' : m.sharpe_ratio  >= 0.0 ? '#f59e0b' : '#ef4444';
+    const srColor = m.sharpe_ratio  >= 0.5 ? '#22c55e' : m.sharpe_ratio  >= 0.0 ? '#f59e0b' : '#ef4444';
+    // WFE
+    const wfe = m.wfe_pct;
+    const wfeStr   = wfe != null ? `${wfe.toFixed(0)}%` : '—';
+    const wfeColor = wfe == null ? 'var(--muted)' : wfe >= 40 ? '#22c55e' : wfe >= 20 ? '#f59e0b' : '#ef4444';
+    // MCPT status
+    let mcptStr, mcptColor;
+    if (!m.n_permutations || m.n_permutations === 0) {
+      mcptStr = 'Not run'; mcptColor = 'var(--muted)';
+    } else if (m.p_value == null) {
+      mcptStr = '—'; mcptColor = 'var(--muted)';
+    } else if (m.p_value < 0.01) {
+      mcptStr = `✓ p=${m.p_value.toFixed(3)}`; mcptColor = '#22c55e';
+    } else if (m.p_value < 0.05) {
+      mcptStr = `✓ p=${m.p_value.toFixed(3)}`; mcptColor = '#86efac';
+    } else if (m.p_value < 0.10) {
+      mcptStr = `~ p=${m.p_value.toFixed(3)}`; mcptColor = '#f59e0b';
+    } else {
+      mcptStr = `✗ p=${m.p_value.toFixed(3)}`; mcptColor = '#ef4444';
+    }
     wfTbody.innerHTML += `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:8px 12px">${STRATEGY_DISPLAY[key] || key}</td>
+        <td style="padding:8px 12px">${m.name}</td>
         <td style="padding:8px 12px;text-align:right;color:${pfColor};font-weight:600">${pf}</td>
         <td style="padding:8px 12px;text-align:right;color:${srColor};font-weight:600">${sr}</td>
+        <td style="padding:8px 12px;text-align:right;color:${wfeColor};font-weight:600">${wfeStr}</td>
         <td style="padding:8px 12px;text-align:right;color:var(--muted)">${m.n_windows||'—'}</td>
+        <td style="padding:8px 12px;text-align:right;color:${mcptColor};font-size:11px;font-weight:600">${mcptStr}</td>
       </tr>`;
   });
 
@@ -2094,9 +2124,19 @@ function buildParamHeatmap(grid) {
 }
 
 // ── Per-Cluster Performance Table ─────────────────────────────────────────────
-function buildClusterPerfTable(clusterPerf) {
+function buildClusterPerfTable(clusterPerf, tradeLog) {
   if (!clusterPerf || !clusterPerf.length) return;
   document.getElementById('quant-regime-perf-panel').style.display = '';
+
+  // Pre-compute per-cluster trade stats from trade_log
+  const clusterTrades = {};
+  (tradeLog || []).forEach(t => {
+    const cid = t.cluster;
+    if (cid == null) return;
+    if (!clusterTrades[cid]) clusterTrades[cid] = { n: 0, wins: 0 };
+    clusterTrades[cid].n++;
+    if (t.win) clusterTrades[cid].wins++;
+  });
 
   const tbody = document.getElementById('cluster-perf-tbody');
   tbody.innerHTML = '';
@@ -2105,14 +2145,19 @@ function buildClusterPerfTable(clusterPerf) {
   function fmtParams(params) {
     if (!params || !Object.keys(params).length) return '';
     const parts = [];
-    // Common param keys → friendly labels
     const labels = {
       entry_bars: 'entry', exit_bars: 'exit', period: 'period',
-      std_mult: 'σ', fast: 'fast', slow: 'slow', atr_period: 'atr',
-      atr_mult: 'mult', hold_bars: 'hold', long_only: null
+      std_mult: 'σ', exit_mult: 'exit σ', fast: 'fast', slow: 'slow',
+      atr_period: 'atr', atr_mult: 'mult', hold_bars: 'hold',
+      best_lookback: 'lookback', k: 'k',
+      // Ichimoku tuned params
+      ema_period: 'ema', back_candles: 'back', min_above: 'min↑',
+      // skip flags and fixed Ichimoku structural periods
+      long_only: null, tenkan_period: null, kijun_period: null,
+      senkou_b_period: null, cloud_shift: null, ichimoku_back: null,
     };
     Object.entries(params).forEach(([k, v]) => {
-      if (labels[k] === null) return;            // skip boolean flags
+      if (labels[k] === null) return;
       if (typeof v === 'boolean') return;
       const lbl = labels[k] || k;
       const disp = typeof v === 'number'
@@ -2123,7 +2168,7 @@ function buildClusterPerfTable(clusterPerf) {
     return parts.join(' / ');
   }
 
-  // Feature profile badges
+  // Feature profile badges — z-score visible, value on hover
   function fmtFeatureProfile(fp) {
     if (!fp || !fp.length) return '<span style="color:var(--muted);font-size:11px">—</span>';
     return fp.map(f => {
@@ -2131,14 +2176,14 @@ function buildClusterPerfTable(clusterPerf) {
       const color  = f.dir === 'high' ? '#22c55e' : '#f472b6';
       const zAbs   = Math.abs(f.z);
       const weight = zAbs >= 2 ? '700' : '400';
-      // Format value compactly
       let valStr = f.value;
       if (typeof f.value === 'number') {
         valStr = Math.abs(f.value) < 0.01 ? f.value.toExponential(1)
                : Math.abs(f.value) < 10   ? f.value.toFixed(3)
                : f.value.toFixed(1);
       }
-      return `<span title="z=${f.z}" style="display:inline-block;margin:1px 3px 1px 0;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:${weight};background:#1a2030;border:1px solid ${color}30;color:${color}">${arrow} ${f.feature.replace(/_/g,' ')} ${valStr}</span>`;
+      const zStr = (f.z >= 0 ? '+' : '') + f.z.toFixed(2);
+      return `<span title="value=${valStr}" style="display:inline-block;margin:1px 3px 1px 0;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:${weight};background:#1a2030;border:1px solid ${color}30;color:${color}">${arrow} ${f.feature.replace(/_/g,' ')} <span style="opacity:0.7;font-size:10px">${zStr}σ</span></span>`;
     }).join('');
   }
 
@@ -2159,6 +2204,13 @@ function buildClusterPerfTable(clusterPerf) {
       `<span style="display:inline-block;margin:1px 2px 1px 0;padding:1px 6px;border-radius:3px;font-size:11px;background:${cc.bg};color:${cc.text};border:1px solid ${cc.border}30">${t}</span>`
     ).join('');
 
+    const ct      = clusterTrades[cid] || {};
+    const nTrades = ct.n || 0;
+    const winPct  = nTrades > 0 ? (ct.wins / ct.n * 100).toFixed(0) + '%' : '—';
+    const winColor = nTrades > 0
+      ? (ct.wins / ct.n >= 0.55 ? '#22c55e' : ct.wins / ct.n >= 0.45 ? '#f59e0b' : '#ef4444')
+      : 'var(--muted)';
+
     tbody.innerHTML += `
       <tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px 12px;font-weight:700;white-space:nowrap">
@@ -2167,6 +2219,8 @@ function buildClusterPerfTable(clusterPerf) {
         <td style="padding:8px 12px;line-height:1.6">${labelHtml}</td>
         <td style="padding:8px 12px;color:#e5e7eb;line-height:1.6">${stratCell}</td>
         <td style="padding:8px 12px;text-align:right;color:${pfColor};font-weight:700;white-space:nowrap">${pf != null ? pf.toFixed(3) : '—'}</td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted);white-space:nowrap">${nTrades > 0 ? nTrades : '—'}</td>
+        <td style="padding:8px 12px;text-align:right;color:${winColor};font-weight:${nTrades>0?'600':'400'};white-space:nowrap">${winPct}</td>
         <td style="padding:8px 12px;text-align:right;color:var(--muted);white-space:nowrap">${row.n_bars != null ? row.n_bars.toLocaleString() : '—'}</td>
         <td style="padding:8px 12px">${fmtFeatureProfile(row.feature_profile || [])}</td>
       </tr>`;
@@ -2474,6 +2528,8 @@ function buildTradeLog(tradeLog) {
     const cidBadge = cid != null
       ? `<span style="color:${cc.text};background:${cc.bg};padding:1px 7px;border-radius:3px;border:1px solid ${cc.border};font-size:11px">C${cid}</span>`
       : '<span style="color:var(--muted)">—</span>';
+    const regime = t.regime || '—';
+    const regimeShort = regime.replace('QUIET_','Q·').replace('TREND_','T·').replace('VOLATILE_','V·');
     tbody.innerHTML += `
       <tr style="border-bottom:1px solid #222">
         <td style="padding:5px 10px">${cidBadge}</td>
@@ -2482,6 +2538,7 @@ function buildTradeLog(tradeLog) {
         <td style="padding:5px 10px;color:${dirColor};font-weight:600">${t.direction.toUpperCase()}</td>
         <td style="padding:5px 10px;text-align:right;color:var(--muted)">${t.bars}</td>
         <td style="padding:5px 10px;text-align:right;color:${retColor};font-weight:600">${t.return_pct > 0 ? '+' : ''}${t.return_pct}%</td>
+        <td style="padding:5px 10px;font-size:11px;color:var(--muted)">${regimeShort}</td>
         <td style="padding:5px 10px;text-align:center;color:${retColor}">${t.win ? '✓' : '✗'}</td>
       </tr>`;
   });
@@ -2665,6 +2722,18 @@ function buildClusterRulesPanel(clusterPerf) {
           note:  `Classic trend filter — smooth and simple. Responds to regime shifts rather than noise.`,
         };
       }
+      case 'Ichimoku': {
+        const ema  = p.ema_period  || '?';
+        const hold = p.hold_bars   || '?';
+        const back = p.back_candles || 5;
+        const minA = p.min_above   || 6;
+        return {
+          long:  `Price dips into Ichimoku cloud and closes above it — while ${back}+ bars are above EMA(${ema}) and ${minA}/10 recent bars were above the cloud`,
+          short: `Price dips into cloud and closes below it — while ${back}+ bars are below EMA(${ema}) and ${minA}/10 recent bars were below the cloud`,
+          exit:  `Hold fixed ${hold} bars then exit (or flip on opposite signal)`,
+          note:  `Trend-following retracement entry. Only fires in clean sustained trends — very selective. Low trade count, high conviction.`,
+        };
+      }
       default:
         return { long: 'See strategy code', short: 'See strategy code', exit: 'See strategy code', note: '' };
     }
@@ -2778,6 +2847,92 @@ function buildIntervalToggle(assets, currentAsset, currentInterval) {
     btn1h.style.cssText += ';' + activeStyle;
     btn1d.style.cssText += ';' + inactiveStyle;
   }
+}
+
+// ── Feature Selection Panel ───────────────────────────────────────────────────
+function buildFeatureSelection(strategies) {
+  const strat = (strategies || []).find(s => s.name && s.name.toLowerCase().includes('adaptive'));
+  if (!strat) return;
+  const selected = strat.selected_features || [];
+  const dropped  = strat.dropped_features  || [];
+  const fscores  = strat.f_scores          || {};
+  if (!selected.length && !dropped.length) return;
+
+  document.getElementById('quant-features-panel').style.display = '';
+  const wrap = document.getElementById('features-wrap');
+  wrap.innerHTML = '';
+
+  // F-score bar chart for selected features
+  const maxF = Math.max(...selected.map(f => fscores[f] || 0), 1);
+
+  // Plain-English feature name map
+  const FEAT_LABELS = {
+    vol_20d:        'Volatility 20d',      vol_ratio:     'Vol Expansion Ratio',
+    adx_14:         'ADX Trend Strength',  rsi_14:        'RSI Momentum',
+    bb_zscore:      'Bollinger Z-Score',   donchian_pos_20: 'Donchian Position',
+    hurst_20:       'Hurst (20)',          hurst_100:     'Hurst (100)',
+    close_vs_ma200: 'Distance from 200MA', ma50_vs_ma200: 'Golden/Death Cross',
+    eff_ratio_60:   'Trend Quality 60d',   eff_ratio_20:  'Trend Quality 20d',
+    ret_60d:        '3M Momentum',         ret_126d:      '6M Momentum',
+    ret_252d:       '12M Momentum',        close_vs_ma50: 'Distance from 50MA',
+    vol_z_score:    'Vol vs 1yr Baseline', ema_slope:     'EMA Slope',
+  };
+  const FEAT_DESC = {
+    vol_20d:        'How volatile is the market right now (annualised)?',
+    vol_ratio:      'Is volatility expanding or contracting vs recent history?',
+    adx_14:         'Is the market trending strongly or ranging?',
+    rsi_14:         'Is momentum overbought or oversold?',
+    bb_zscore:      'How far is price from its Bollinger Band mean?',
+    donchian_pos_20:'Where is price within its 20-bar high/low range?',
+    close_vs_ma200: 'Is price above or below the 200-day moving average?',
+    ma50_vs_ma200:  'Is the 50MA above the 200MA (golden cross) or below (death cross)?',
+    eff_ratio_60:   'Is the 60-day trend clean/directional or choppy/noisy?',
+    eff_ratio_20:   'Is the 20-day trend clean/directional or choppy/noisy?',
+    ret_60d:        '3-month price return — medium-term momentum direction',
+    ret_126d:       '6-month price return — intermediate trend',
+    ret_252d:       '12-month price return — dominant annual trend',
+    ema_slope:      'Is the EMA rising or falling over the last N bars?',
+    hurst_20:       'Hurst exponent (20): is price mean-reverting or trending?',
+    hurst_100:      'Hurst exponent (100): long-horizon trend persistence',
+  };
+
+  // Selected features with F-score bars
+  let html = '<div style="margin-bottom:16px">';
+  html += '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Used in clustering</div>';
+  const sortedSelected = [...selected].sort((a,b) => (fscores[b]||0) - (fscores[a]||0));
+  sortedSelected.forEach(f => {
+    const fscore = fscores[f] || 0;
+    const barPct = Math.min(100, (fscore / maxF) * 100);
+    const barColor = barPct > 66 ? '#d4a017' : barPct > 33 ? '#f59e0b' : '#6b7280';
+    const label = FEAT_LABELS[f] || f;
+    const desc  = FEAT_DESC[f]  || '';
+    html += `
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px;color:#e5e7eb" title="${desc}">${label}</span>
+          <span style="font-size:11px;color:var(--muted)">F=${fscore.toFixed(0)}</span>
+        </div>
+        <div style="height:6px;background:#222;border-radius:3px">
+          <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:3px;transition:width 0.4s"></div>
+        </div>
+        ${desc ? `<div style="font-size:10px;color:#4b5563;margin-top:2px">${desc}</div>` : ''}
+      </div>`;
+  });
+  html += '</div>';
+
+  // Dropped features as grey chips
+  if (dropped.length) {
+    html += '<div>';
+    html += '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Dropped (redundant or near-constant)</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    dropped.forEach(f => {
+      const label = FEAT_LABELS[f] || f;
+      html += `<span style="font-size:11px;color:#4b5563;background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:2px 8px">${label}</span>`;
+    });
+    html += '</div></div>';
+  }
+
+  wrap.innerHTML = html;
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
