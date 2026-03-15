@@ -324,6 +324,14 @@
     <span style="font-size:11px;color:var(--muted);padding-left:30px">XAU/AUD · 1H · Adaptive K-Means + Claude AI · Paper Trading</span>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
+    <div id="interval-toggle-wrap" style="display:none;gap:4px;display:none">
+      <button id="btn-interval-1d" onclick="switchInterval('1d')"
+        style="background:#222;color:#9ca3af;border:1px solid #444;border-radius:5px;
+               padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">1D</button>
+      <button id="btn-interval-1h" onclick="switchInterval('1h')"
+        style="background:#222;color:#9ca3af;border:1px solid #444;border-radius:5px;
+               padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">1H</button>
+    </div>
     <div id="asset-dropdown-wrap" style="display:none">
       <select id="asset-select" onchange="switchAsset(this.value)"
         style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:6px;
@@ -843,21 +851,29 @@ async function loadDashboard() {
 }
 
 async function loadQuantPanels() {
-  // Determine which asset to load from URL param (?asset=gold), default gold
-  const urlAsset = new URLSearchParams(window.location.search).get('asset') || 'gold';
+  const params   = new URLSearchParams(window.location.search);
+  const urlAsset = params.get('asset')    || 'gold';
+  const urlIntvl = params.get('interval') || '1h';
 
-  // Try to load the asset index to build the dropdown
+  // Try to load the asset index to build the dropdown and interval toggle
+  let allAssets = [];
   try {
     const idxResp = await fetch('./quant_data_index.json?t=' + Date.now());
     if (idxResp.ok) {
       const idx = await idxResp.json();
-      buildAssetDropdown(idx.assets || [], urlAsset);
+      allAssets = idx.assets || [];
+      buildAssetDropdown(allAssets, urlAsset, urlIntvl);
+      buildIntervalToggle(allAssets, urlAsset, urlIntvl);
     }
   } catch (_) {}
 
+  // Find the matching file from the index, fall back to naming convention
+  const entry    = allAssets.find(a => a.id === urlAsset && a.interval === urlIntvl);
+  const filename = entry ? entry.file : `quant_data_${urlAsset}_${urlIntvl}.json`;
+
   let qd;
   try {
-    const resp = await fetch(`./quant_data_${urlAsset}.json?t=` + Date.now());
+    const resp = await fetch(`./${filename}?t=` + Date.now());
     if (!resp.ok) return;
     qd = await resp.json();
   } catch (e) {
@@ -2665,6 +2681,23 @@ function buildClusterRulesPanel(clusterPerf) {
       `<span style="display:inline-block;margin:2px 2px 2px 0;padding:1px 7px;border-radius:3px;font-size:11px;background:${cc.bg};color:${cc.text};border:1px solid ${cc.border}40">${t}</span>`
     ).join('');
 
+    // Build params summary line
+    const p = cp.params || {};
+    const paramParts = [];
+    if (p.period      != null) paramParts.push(`period=${p.period}`);
+    if (p.std_mult    != null) paramParts.push(`σ=${p.std_mult}`);
+    if (p.exit_mult   != null) paramParts.push(`exit=${p.exit_mult}σ`);
+    if (p.best_lookback != null) paramParts.push(`lookback=${p.best_lookback}`);
+    if (p.exit_lookback != null) paramParts.push(`exit_lb=${p.exit_lookback}`);
+    if (p.fast        != null) paramParts.push(`fast=${p.fast}`);
+    if (p.slow        != null) paramParts.push(`slow=${p.slow}`);
+    if (p.k           != null) paramParts.push(`k=${p.k}`);
+    if (p.atr_mult    != null) paramParts.push(`atr×${p.atr_mult}`);
+    if (p.hold_bars   != null) paramParts.push(`hold=${p.hold_bars}bars`);
+    const paramsHtml = paramParts.length
+      ? `<div style="margin-top:6px;font-size:11px;color:#6b7280">Params: <span style="color:#9ca3af">${paramParts.join(' · ')}</span></div>`
+      : '';
+
     wrap.innerHTML += `
       <div style="flex:1;min-width:260px;max-width:380px;background:#111;border:1px solid ${cc.border}55;border-radius:8px;padding:14px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -2678,35 +2711,73 @@ function buildClusterRulesPanel(clusterPerf) {
           ${rules.short !== 'No short trades — long only' ? `<div><span style="color:#f472b6;font-weight:700">▼ SELL SHORT </span><span style="color:#9ca3af">${rules.short}</span></div>` : `<div style="color:#4b5563;font-size:11px">▼ No short trades</div>`}
           <div style="margin-top:4px"><span style="color:#f59e0b;font-weight:700">✕ EXIT &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#9ca3af">${rules.exit}</span></div>
         </div>
+        ${paramsHtml}
         <div style="margin-top:8px;font-size:11px;color:#6b7280;font-style:italic;border-top:1px solid #222;padding-top:6px">${rules.note}</div>
       </div>`;
   });
 }
 
-// ── Asset switcher ────────────────────────────────────────────────────────────
+// ── Asset + Interval switchers ────────────────────────────────────────────────
 function switchAsset(assetId) {
   const url = new URL(window.location.href);
   url.searchParams.set('asset', assetId);
+  // When switching asset, reset to 1h (most commonly available)
+  url.searchParams.set('interval', '1h');
   window.location.href = url.toString();
 }
 
-function buildAssetDropdown(assets, currentAsset) {
-  if (!assets || assets.length < 2) return;  // only show if multiple assets exist
+function switchInterval(interval) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('interval', interval);
+  window.location.href = url.toString();
+}
+
+function buildAssetDropdown(assets, currentAsset, currentInterval) {
+  // Deduplicate to one entry per asset id for the dropdown
+  const seen = new Set();
+  const unique = assets.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+  if (!unique || unique.length < 2) return;
   const wrap   = document.getElementById('asset-dropdown-wrap');
   const select = document.getElementById('asset-select');
   wrap.style.display = '';
 
   const _ICONS = { gold: '🥇', oil: '🛢️', dxy: '💵', audusd: '🇦🇺' };
 
-  assets.forEach(a => {
+  unique.forEach(a => {
+    // Find the entry matching current interval for this asset, fallback to any
+    const entry = assets.find(x => x.id === a.id && x.interval === currentInterval) ||
+                  assets.find(x => x.id === a.id);
     const opt      = document.createElement('option');
     opt.value      = a.id;
     opt.selected   = a.id === currentAsset;
-    const pf       = a.pf   != null ? ` · PF ${a.pf.toFixed(2)}`   : '';
-    const sharpe   = a.sharpe != null ? ` · SR ${a.sharpe.toFixed(2)}` : '';
+    const pf       = entry && entry.pf   != null ? ` · PF ${entry.pf.toFixed(2)}`   : '';
+    const sharpe   = entry && entry.sharpe != null ? ` · SR ${entry.sharpe.toFixed(2)}` : '';
     opt.textContent = `${_ICONS[a.id] || '📊'} ${a.label}${pf}${sharpe}`;
     select.appendChild(opt);
   });
+}
+
+function buildIntervalToggle(assets, currentAsset, currentInterval) {
+  // Only show toggle if this asset has both 1d and 1h data
+  const has1d = assets.some(a => a.id === currentAsset && a.interval === '1d');
+  const has1h = assets.some(a => a.id === currentAsset && a.interval === '1h');
+  if (!has1d || !has1h) return;
+
+  const wrap = document.getElementById('interval-toggle-wrap');
+  wrap.style.display = 'flex';
+
+  const btn1d = document.getElementById('btn-interval-1d');
+  const btn1h = document.getElementById('btn-interval-1h');
+  const activeStyle   = 'background:#d4a017;color:#000;border-color:#d4a017;font-weight:700';
+  const inactiveStyle = 'background:#222;color:#9ca3af;border:1px solid #444;font-weight:600';
+
+  if (currentInterval === '1d') {
+    btn1d.style.cssText += ';' + activeStyle;
+    btn1h.style.cssText += ';' + inactiveStyle;
+  } else {
+    btn1h.style.cssText += ';' + activeStyle;
+    btn1d.style.cssText += ';' + inactiveStyle;
+  }
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
