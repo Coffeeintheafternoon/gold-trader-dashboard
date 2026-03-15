@@ -2810,7 +2810,12 @@ function buildAssetDropdown(assets, currentAsset, currentInterval) {
   const select = document.getElementById('asset-select');
   wrap.style.display = '';
 
-  const _ICONS = { gold: '🥇', oil: '🛢️', dxy: '💵', audusd: '🇦🇺' };
+  const _ICONS = {
+    gold: '🥇', gold_acf: '🥇',
+    oil:  '🛢️', oil_acf:  '🛢️',
+    dxy:  '💵', dxy_acf:  '💵',
+    audusd: '🇦🇺', audusd_acf: '🇦🇺',
+  };
 
   unique.forEach(a => {
     // Find the entry matching current interval for this asset, fallback to any
