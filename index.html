@@ -712,6 +712,55 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MODEL COMPARISON SECTION                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="model-comparison-section" style="display:none">
+
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">📋</span>
+      <span class="section-divider-label">Validated Model Comparison — All Tickers</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Summary hero row -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="comp-hero-row"></div>
+
+    <!-- Signal cards grid -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px" id="comp-signal-cards"></div>
+
+    <!-- Comparison table -->
+    <div class="chart-card" style="padding:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="chart-title">All Validated Models — Side by Side</div>
+          <div class="chart-subtitle">Ridge regression on 6 MCPT-validated ASX stocks · click a row to view full feature breakdown below</div>
+        </div>
+        <div id="comp-generated-at" style="font-size:11px;color:var(--muted)"></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="comp-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
+              <th style="text-align:left;padding:8px 12px">Ticker</th>
+              <th style="text-align:left;padding:8px 12px">Sector</th>
+              <th style="text-align:right;padding:8px 12px">Close</th>
+              <th style="text-align:center;padding:8px 12px">Signal</th>
+              <th style="text-align:right;padding:8px 12px">Pred 5-Bar%</th>
+              <th style="text-align:right;padding:8px 12px">Sig Features</th>
+              <th style="text-align:right;padding:8px 12px">MCPT p</th>
+              <th style="text-align:right;padding:8px 12px">WF Profit Factor</th>
+              <th style="text-align:left;padding:8px 12px">Top Driver</th>
+            </tr>
+          </thead>
+          <tbody id="comp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /#model-comparison-section -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- FEATURE MODEL SECTION                                                    -->
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <div id="feature-model-section" style="display:none">
@@ -3011,6 +3060,120 @@ function buildFeatureSelection(strategies) {
   wrap.innerHTML = html;
 }
 
+// ── Model Comparison Panel ────────────────────────────────────────────────────
+let _activeTicker = 'waf_ax';
+
+async function loadComparisonPanel() {
+  let data;
+  try {
+    const res = await fetch(`models_comparison.json?t=${Date.now()}`);
+    if (!res.ok) return;
+    data = await res.json();
+  } catch(e) { return; }
+
+  const tickers = data.tickers || [];
+  if (!tickers.length) return;
+
+  document.getElementById('model-comparison-section').style.display = '';
+
+  // ── Generated-at timestamp ──────────────────────────────────────────────────
+  const genAt = new Date(data.generated_at);
+  document.getElementById('comp-generated-at').textContent =
+    'Updated ' + genAt.toLocaleDateString('en-AU', {day:'2-digit',month:'short',year:'numeric'}) +
+    ' ' + genAt.toLocaleTimeString('en-AU', {hour:'2-digit',minute:'2-digit'});
+
+  // ── Hero summary row ────────────────────────────────────────────────────────
+  const buys  = tickers.filter(t => t.signal === 1).length;
+  const sells = tickers.filter(t => t.signal === -1).length;
+  const avgSig= (tickers.reduce((s,t)=>s+t.n_significant,0)/tickers.length).toFixed(1);
+  const bestPred = tickers.reduce((best,t)=> t.predicted_5bar_pct > best.predicted_5bar_pct ? t : best, tickers[0]);
+  document.getElementById('comp-hero-row').innerHTML = `
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">Models Tracked</div>
+      <div class="hero-value color-gold">${tickers.length}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">validated MCPT p&lt;0.05</div>
+    </div>
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">BUY Signals</div>
+      <div class="hero-value" style="color:var(--green)">${buys}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${sells} SELL${sells!==1?'s':''}</div>
+    </div>
+    <div class="hero-card" style="min-width:160px">
+      <div class="hero-label tip" data-tip="Ticker with the highest predicted 5-bar return right now.">Strongest BUY</div>
+      <div class="hero-value color-gold">${bestPred.ticker}</div>
+      <div style="font-size:11px;color:var(--green);margin-top:2px">+${bestPred.predicted_5bar_pct.toFixed(2)}% pred</div>
+    </div>
+    <div class="hero-card" style="min-width:160px">
+      <div class="hero-label tip" data-tip="Average number of features with Spearman p &lt; 0.05 across all models.">Avg Significant Features</div>
+      <div class="hero-value" style="font-size:18px">${avgSig} / 33</div>
+    </div>`;
+
+  // ── Signal cards ────────────────────────────────────────────────────────────
+  document.getElementById('comp-signal-cards').innerHTML = tickers.map(t => {
+    const isBuy   = t.signal === 1;
+    const sc      = isBuy ? 'var(--green)' : 'var(--red)';
+    const bg      = isBuy ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+    const border  = isBuy ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)';
+    const predSign= t.predicted_5bar_pct >= 0 ? '+' : '';
+    const safe    = t.ticker.replace(/\./g,'_').toLowerCase();
+    return `
+      <div class="hero-card" style="cursor:pointer;border:1px solid ${border};background:${bg};padding:14px 16px"
+           onclick="selectTicker('${safe}')" title="Click to view ${t.ticker} full feature breakdown">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <span style="font-size:15px;font-weight:700;color:#e5e7eb">${t.ticker}</span>
+          <span style="font-size:12px;font-weight:700;color:${sc};background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:${sc};margin-bottom:4px">${predSign}${t.predicted_5bar_pct.toFixed(2)}%</div>
+        <div style="font-size:11px;color:var(--muted)">5-bar prediction</div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+          <span>A$${t.close.toFixed(2)}</span>
+          <span>${t.n_significant}/${t.n_features} sig</span>
+          <span>p=${t.mcpt_p?.toFixed(3)??'—'}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  // ── Comparison table ────────────────────────────────────────────────────────
+  document.getElementById('comp-tbody').innerHTML = tickers.map(t => {
+    const isBuy   = t.signal === 1;
+    const sc      = isBuy ? 'var(--green)' : 'var(--red)';
+    const pc      = t.predicted_5bar_pct >= 0 ? 'var(--green)' : 'var(--red)';
+    const pvalC   = t.mcpt_p < 0.01 ? 'var(--green)' : t.mcpt_p < 0.05 ? '#86efac' : '#fbbf24';
+    const top     = t.top_features?.[0];
+    const topStr  = top
+      ? `<span style="font-size:11px;font-family:monospace">${top.name}</span> <span style="color:${top.contribution_pct>=0?'var(--green)':'var(--red)'}">` +
+        `${top.contribution_pct>=0?'+':''}${top.contribution_pct.toFixed(3)}%</span>`
+      : '—';
+    const safe    = t.ticker.replace(/\./g,'_').toLowerCase();
+    return `<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="selectTicker('${safe}')"
+               onmouseover="this.style.background='#1f1f1f'" onmouseout="this.style.background=''">
+      <td style="padding:9px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td>
+      <td style="padding:9px 12px;color:var(--muted);font-size:12px">${t.sector??'—'}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:monospace">A$${t.close.toFixed(2)}</td>
+      <td style="padding:9px 12px;text-align:center">
+        <span style="color:${sc};font-weight:700;font-size:12px;background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:3px 10px;border-radius:4px">
+          ${isBuy?'BUY':'SELL'}
+        </span>
+      </td>
+      <td style="padding:9px 12px;text-align:right;font-family:monospace;font-weight:600;color:${pc}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td>
+      <td style="padding:9px 12px;text-align:right;color:var(--muted)">${t.n_significant}/${t.n_features}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:monospace;color:${pvalC}">${t.mcpt_p?.toFixed(3)??'—'}</td>
+      <td style="padding:9px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td>
+      <td style="padding:9px 12px">${topStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+function selectTicker(safe) {
+  _activeTicker = safe;
+  loadFeaturePanel(safe);
+  // Scroll to feature section
+  document.getElementById('feature-model-section').scrollIntoView({behavior:'smooth', block:'start'});
+  // Update divider label
+  const divLabel = document.querySelector('#feature-model-section .section-divider-label');
+  if (divLabel) divLabel.textContent = safe.replace('_ax','').toUpperCase() + '.AX — Ridge Regression Feature Model';
+}
+
 // ── Feature Model Panel ───────────────────────────────────────────────────────
 let _featContribChart = null;
 
@@ -3210,6 +3373,7 @@ async function loadFeaturePanel(ticker = 'waf_ax') {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 loadDashboard();
+loadComparisonPanel();
 loadFeaturePanel('waf_ax');
 </script>
 </body>
