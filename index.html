@@ -712,6 +712,71 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SCREENER RESULTS SECTION                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="screener-section" style="display:none">
+
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🔭</span>
+      <span class="section-divider-label">ASX Universe Screener — 22 Tickers Modeled</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Hero counts -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="screener-hero-row"></div>
+
+    <!-- Two column: bar chart + result table -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:0">
+
+      <!-- p-value bar chart -->
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title">MCPT p-value — Linear Regression</div>
+        <div class="chart-subtitle">Lower = stronger edge · dashed line = 0.05 significance threshold · grey = no data</div>
+        <div class="chart-wrap" style="height:420px;margin-top:14px">
+          <canvas id="screener-pval-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Profit factor chart -->
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title">Walk-Forward Profit Factor — Linear Regression</div>
+        <div class="chart-subtitle">Out-of-sample profit factor · dashed line = 1.0 break-even · sorted by p-value</div>
+        <div class="chart-wrap" style="height:420px;margin-top:14px">
+          <canvas id="screener-pf-chart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Full results table -->
+    <div class="chart-card" style="padding:20px;margin-top:16px">
+      <div class="chart-title" style="margin-bottom:4px">Full Screener Results</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">Both strategies tested · MCPT 200 permutations · Walk-forward OOS bars shown</div>
+      <div style="overflow-x:auto">
+        <table id="screener-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
+              <th style="text-align:left;padding:7px 10px">Ticker</th>
+              <th style="text-align:left;padding:7px 10px">Sector</th>
+              <th style="text-align:center;padding:7px 10px">Verdict</th>
+              <th style="text-align:right;padding:7px 10px">LR p-val</th>
+              <th style="text-align:right;padding:7px 10px">LR PF</th>
+              <th style="text-align:right;padding:7px 10px">Don p-val</th>
+              <th style="text-align:right;padding:7px 10px">Don PF</th>
+              <th style="text-align:right;padding:7px 10px">OOS Bars</th>
+              <th style="text-align:right;padding:7px 10px">Total Bars</th>
+              <th style="text-align:left;padding:7px 10px">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="screener-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /#screener-section -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- MODEL COMPARISON SECTION                                                 -->
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <div id="model-comparison-section" style="display:none">
@@ -3060,6 +3125,192 @@ function buildFeatureSelection(strategies) {
   wrap.innerHTML = html;
 }
 
+// ── Screener Results Panel ────────────────────────────────────────────────────
+let _screenerPvalChart = null;
+let _screenerPfChart   = null;
+
+async function loadScreenerPanel() {
+  let data;
+  try {
+    const res = await fetch(`screener_summary.json?t=${Date.now()}`);
+    if (!res.ok) return;
+    data = await res.json();
+  } catch(e) { return; }
+
+  const tickers = data.tickers || [];
+  if (!tickers.length) return;
+  document.getElementById('screener-section').style.display = '';
+
+  // ── Hero counts ─────────────────────────────────────────────────────────────
+  document.getElementById('screener-hero-row').innerHTML = `
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">Tickers Screened</div>
+      <div class="hero-value color-gold">${data.n_total}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">ASX miners &amp; diversifieds</div>
+    </div>
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">Accepted</div>
+      <div class="hero-value" style="color:var(--green)">${data.n_accept}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">MCPT p &lt; 0.05</div>
+    </div>
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">Rejected</div>
+      <div class="hero-value" style="color:var(--red)">${data.n_reject}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">No validated edge</div>
+    </div>
+    <div class="hero-card" style="min-width:130px">
+      <div class="hero-label">No Data</div>
+      <div class="hero-value" style="color:var(--muted)">${data.n_error}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Delisted / unavailable</div>
+    </div>
+    <div class="hero-card" style="min-width:200px">
+      <div class="hero-label tip" data-tip="${data.strategy_note}">Strategy Winner</div>
+      <div class="hero-value color-gold" style="font-size:14px">Linear Regression</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Donchian: 0/22 validated</div>
+    </div>`;
+
+  // Only tickers with data (no errors) for charts
+  const chartTickers = tickers.filter(t => t.lr_p !== null && t.lr_p !== undefined);
+  const labels  = chartTickers.map(t => t.ticker);
+  const pvals   = chartTickers.map(t => t.lr_p);
+  const pfs     = chartTickers.map(t => t.lr_pf);
+
+  const barColors = chartTickers.map(t =>
+    t.verdict === 'ACCEPT'     ? 'rgba(34,197,94,0.75)'  :
+    t.verdict === 'BORDERLINE' ? 'rgba(251,191,36,0.75)' :
+                                  'rgba(239,68,68,0.65)'
+  );
+  const borderColors = chartTickers.map(t =>
+    t.verdict === 'ACCEPT'     ? '#22c55e' :
+    t.verdict === 'BORDERLINE' ? '#fbbf24' :
+                                  '#ef4444'
+  );
+
+  // ── p-value chart ────────────────────────────────────────────────────────────
+  const pCtx = document.getElementById('screener-pval-chart').getContext('2d');
+  if (_screenerPvalChart) _screenerPvalChart.destroy();
+  _screenerPvalChart = new Chart(pCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: pvals,
+        backgroundColor: barColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const t = chartTickers[ctx.dataIndex];
+              return [
+                ` p = ${ctx.raw.toFixed(3)}  →  ${t.verdict}`,
+                ` PF = ${t.lr_pf?.toFixed(3) ?? '—'}`,
+                ` ${t.note}`,
+              ];
+            }
+          }
+        },
+        annotation: {
+          annotations: {
+            threshold: {
+              type: 'line', value: 0.05, scaleID: 'x',
+              borderColor: 'rgba(212,160,23,0.7)', borderWidth: 2, borderDash: [5,4],
+              label: { content: 'p=0.05', display: true, position: 'start',
+                       color: '#d4a017', font: { size: 10 } }
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 1,
+          grid: { color: '#222' },
+          ticks: { callback: v => v.toFixed(2) }
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // ── PF chart ─────────────────────────────────────────────────────────────────
+  const pfCtx = document.getElementById('screener-pf-chart').getContext('2d');
+  if (_screenerPfChart) _screenerPfChart.destroy();
+  _screenerPfChart = new Chart(pfCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: pfs,
+        backgroundColor: barColors,
+        borderColor: borderColors,
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const t = chartTickers[ctx.dataIndex];
+              return [` PF = ${ctx.raw?.toFixed(3)}`, ` p = ${t.lr_p?.toFixed(3) ?? '—'}`, ` ${t.note}`];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0.9,
+          grid: { color: '#222' },
+          ticks: { callback: v => v.toFixed(2) }
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // ── Results table ─────────────────────────────────────────────────────────────
+  const VERDICT_STYLE = {
+    'ACCEPT':     { bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.4)',  color: '#22c55e', label: 'ACCEPT ✓' },
+    'BORDERLINE': { bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.4)', color: '#fbbf24', label: 'BORDERLINE ~' },
+    'REJECT':     { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.3)',  color: '#ef4444', label: 'REJECT ✗' },
+    'ERROR':      { bg: 'rgba(107,114,128,0.08)',border: 'rgba(107,114,128,0.3)',color: '#6b7280', label: 'NO DATA' },
+  };
+
+  document.getElementById('screener-tbody').innerHTML = tickers.map((t, i) => {
+    const vs = VERDICT_STYLE[t.verdict] || VERDICT_STYLE.REJECT;
+    const pvalC = t.lr_p !== null ? (t.lr_p < 0.01 ? 'var(--green)' : t.lr_p < 0.05 ? '#86efac' : t.lr_p < 0.10 ? '#fbbf24' : 'var(--muted)') : 'var(--muted)';
+    const rowBg = i % 2 === 0 ? '' : 'background:#111';
+    return `<tr style="border-bottom:1px solid #1a1a1a;${rowBg}">
+      <td style="padding:7px 10px;font-weight:600;color:#e5e7eb;font-size:13px">${t.ticker}</td>
+      <td style="padding:7px 10px;color:var(--muted);font-size:11px;white-space:nowrap">${t.sector}</td>
+      <td style="padding:7px 10px;text-align:center">
+        <span style="font-size:11px;font-weight:700;color:${vs.color};background:${vs.bg};border:1px solid ${vs.border};padding:2px 8px;border-radius:4px;white-space:nowrap">${vs.label}</span>
+      </td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pvalC}">${t.lr_p !== null ? t.lr_p.toFixed(3) : '—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace">${t.lr_pf !== null ? t.lr_pf?.toFixed(3) : '—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:var(--muted)">${t.don_p !== null ? t.don_p?.toFixed(3) : '—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:var(--muted)">${t.don_pf !== null ? t.don_pf?.toFixed(3) : '—'}</td>
+      <td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString() ?? '—'}</td>
+      <td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.n_bars?.toLocaleString() ?? '—'}</td>
+      <td style="padding:7px 10px;color:#4b5563;font-size:11px">${t.note}</td>
+    </tr>`;
+  }).join('');
+}
+
 // ── Model Comparison Panel ────────────────────────────────────────────────────
 let _activeTicker = 'waf_ax';
 
@@ -3373,6 +3624,7 @@ async function loadFeaturePanel(ticker = 'waf_ax') {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 loadDashboard();
+loadScreenerPanel();
 loadComparisonPanel();
 loadFeaturePanel('waf_ax');
 </script>
