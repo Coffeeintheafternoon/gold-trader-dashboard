@@ -710,6 +710,76 @@
   <div id="error-msg" style="display:none; text-align:center; color:var(--muted); margin-top:60px; font-size:15px">
     No data yet — the bot hasn't run its first cycle.
   </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- FEATURE MODEL SECTION                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="feature-model-section" style="display:none">
+
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🔬</span>
+      <span class="section-divider-label">WAF.AX — Ridge Regression Feature Model</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Hero cards -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="feat-hero-row"></div>
+
+    <!-- Two-column: chart + model summary -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+
+      <!-- Contribution bar chart -->
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title">Feature Contributions to Predicted Return</div>
+        <div class="chart-subtitle">Top 15 features by absolute contribution — green = bullish push, red = bearish push</div>
+        <div class="chart-wrap" style="height:340px;margin-top:14px">
+          <canvas id="feat-contrib-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Model summary -->
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title" style="margin-bottom:14px">Model Summary</div>
+        <div id="feat-model-summary"></div>
+      </div>
+    </div>
+
+    <!-- Full feature table -->
+    <div class="chart-card" style="padding:20px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="chart-title">All Features — Ridge Weights &amp; Spearman Correlation</div>
+          <div class="chart-subtitle">Sorted by |contribution| — click column headers to sort · Significant = Spearman p &lt; 0.05</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="feat-sig-only" style="accent-color:var(--gold)"> Significant only
+          </label>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="feat-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
+              <th data-col="name"      style="text-align:left;padding:6px 10px;cursor:pointer;white-space:nowrap">Feature ↕</th>
+              <th data-col="group"     style="text-align:left;padding:6px 10px;cursor:pointer">Group ↕</th>
+              <th data-col="raw_value" style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">Raw Value ↕</th>
+              <th data-col="standardized" style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">Std Value ↕</th>
+              <th data-col="ridge_weight" style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">Ridge Weight ↕</th>
+              <th data-col="contribution_pct" style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">Contribution% ↕</th>
+              <th data-col="spearman_r"  style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">Spearman r ↕</th>
+              <th data-col="p_value"     style="text-align:right;padding:6px 10px;cursor:pointer;white-space:nowrap">p-value ↕</th>
+              <th data-col="significant" style="text-align:center;padding:6px 10px;cursor:pointer">Sig?</th>
+            </tr>
+          </thead>
+          <tbody id="feat-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /#feature-model-section -->
+
 </main>
 
 <footer>Squant Bot — Paper trading only. Not financial advice.</footer>
@@ -2941,8 +3011,206 @@ function buildFeatureSelection(strategies) {
   wrap.innerHTML = html;
 }
 
+// ── Feature Model Panel ───────────────────────────────────────────────────────
+let _featContribChart = null;
+
+async function loadFeaturePanel(ticker = 'waf_ax') {
+  const safe = ticker.replace(/\./g,'_').toLowerCase();
+  let data;
+  try {
+    const res = await fetch(`feature_data_${safe}.json?t=${Date.now()}`);
+    if (!res.ok) return;
+    data = await res.json();
+  } catch(e) { return; }
+
+  document.getElementById('feature-model-section').style.display = '';
+
+  // ── Hero cards ──────────────────────────────────────────────────────────────
+  const signal    = data.signal === 1 ? 'BUY' : 'SELL';
+  const sigColor  = data.signal === 1 ? 'var(--green)' : 'var(--red)';
+  const predColor = data.predicted_5bar_pct >= 0 ? 'var(--green)' : 'var(--red)';
+  const predSign  = data.predicted_5bar_pct >= 0 ? '+' : '';
+  document.getElementById('feat-hero-row').innerHTML = `
+    <div class="hero-card" style="min-width:140px">
+      <div class="hero-label">WAF Close</div>
+      <div class="hero-value color-gold">A$${data.close.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${data.bar_date}</div>
+    </div>
+    <div class="hero-card" style="min-width:170px">
+      <div class="hero-label tip" data-tip="Ridge regression prediction: expected 5-bar (1-week) return.\nIntercept: ${data.intercept > 0 ? '+' : ''}${data.intercept?.toFixed(3)}%\nFeature sum: ${data.feature_sum >= 0 ? '+' : ''}${data.feature_sum?.toFixed(3)}%">Predicted 5-Bar Return</div>
+      <div class="hero-value" style="color:${predColor}">${predSign}${data.predicted_5bar_pct?.toFixed(2)}%</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">~1 week horizon</div>
+    </div>
+    <div class="hero-card" style="min-width:120px">
+      <div class="hero-label">Signal</div>
+      <div class="hero-value" style="color:${sigColor};font-size:22px;font-weight:800">${signal}</div>
+    </div>
+    <div class="hero-card" style="min-width:150px">
+      <div class="hero-label tip" data-tip="Features with Spearman p &lt; 0.05 vs 5-bar forward return.\nOut of ${data.n_features} total features tested.">Significant Features</div>
+      <div class="hero-value color-gold">${data.n_significant} / ${data.n_features}</div>
+    </div>
+    <div class="hero-card" style="min-width:150px">
+      <div class="hero-label tip" data-tip="Train window: last ${data.train_days} bars.\nForward horizon: ${data.forward_bars} bars.\nModel: Ridge regression α=1.0">Training Window</div>
+      <div class="hero-value" style="font-size:16px">${data.train_days}d</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">fwd ${data.forward_bars} bars</div>
+    </div>`;
+
+  // ── Model Summary ────────────────────────────────────────────────────────────
+  const intercept = data.intercept ?? 0;
+  const featSum   = data.feature_sum ?? 0;
+  const equation  = `${intercept >= 0 ? '+' : ''}${intercept.toFixed(3)}% (intercept) + ${featSum >= 0 ? '+' : ''}${featSum.toFixed(3)}% (features) = ${predSign}${data.predicted_5bar_pct?.toFixed(3)}%`;
+  const sigFeats  = (data.features || []).filter(f => f.significant).slice(0, 8);
+  let summHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">PREDICTION EQUATION</div>
+      <div style="font-size:12px;color:#e5e7eb;font-family:monospace;background:#111;padding:8px 10px;border-radius:6px;border:1px solid var(--border)">${equation}</div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Top Significant Features</div>`;
+  sigFeats.forEach(f => {
+    const isPos = f.contribution_pct >= 0;
+    const barW  = Math.min(100, Math.abs(f.contribution_pct) / Math.max(...(data.features||[]).map(x => Math.abs(x.contribution_pct)), 1) * 100);
+    summHTML += `
+      <div style="margin-bottom:8px" title="${f.tip}">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="color:#e5e7eb">${f.name}</span>
+          <span style="color:${isPos ? 'var(--green)' : 'var(--red)'}">${isPos ? '+' : ''}${f.contribution_pct.toFixed(3)}%</span>
+        </div>
+        <div style="height:4px;background:#1a1a1a;border-radius:2px">
+          <div style="height:100%;width:${barW}%;background:${isPos ? 'var(--green)' : 'var(--red)'};border-radius:2px"></div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('feat-model-summary').innerHTML = summHTML;
+
+  // ── Contribution Bar Chart (top 15) ──────────────────────────────────────────
+  const top15  = (data.features || []).slice(0, 15);
+  const labels = top15.map(f => f.name);
+  const values = top15.map(f => f.contribution_pct);
+  const colors = values.map(v => v >= 0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)');
+  const borderC= values.map(v => v >= 0 ? '#22c55e' : '#ef4444');
+
+  const ctx = document.getElementById('feat-contrib-chart').getContext('2d');
+  if (_featContribChart) _featContribChart.destroy();
+  _featContribChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: borderC,
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const f = top15[ctx.dataIndex];
+              return [
+                ` Contribution: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(4)}%`,
+                ` Ridge weight: ${f.ridge_weight >= 0 ? '+' : ''}${f.ridge_weight.toFixed(4)}`,
+                ` Std value: ${f.standardized >= 0 ? '+' : ''}${f.standardized.toFixed(4)}`,
+                ` Spearman r: ${f.spearman_r >= 0 ? '+' : ''}${f.spearman_r.toFixed(4)}  p=${f.p_value.toFixed(4)}`,
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#222' },
+          ticks: { callback: v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
+
+  // ── Feature Table ────────────────────────────────────────────────────────────
+  let allFeatures = [...(data.features || [])];
+  let sortCol = 'contribution_pct';
+  let sortDir = -1; // -1 = desc, +1 = asc
+  let sigOnly = false;
+
+  function renderTable() {
+    const rows = allFeatures
+      .filter(f => !sigOnly || f.significant)
+      .sort((a, b) => {
+        const av = a[sortCol], bv = b[sortCol];
+        if (typeof av === 'boolean') return sortDir * (av === bv ? 0 : av ? -1 : 1);
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return sortDir * (typeof av === 'string' ? av.localeCompare(bv) : av - bv);
+      });
+
+    const tbody = document.getElementById('feat-tbody');
+    tbody.innerHTML = rows.map(f => {
+      const cColor = f.contribution_pct >= 0 ? 'var(--green)' : 'var(--red)';
+      const rColor = f.spearman_r >= 0 ? 'var(--green)' : 'var(--red)';
+      const pColor = f.p_value < 0.01 ? 'var(--green)' : f.p_value < 0.05 ? '#86efac' : f.p_value < 0.10 ? '#fbbf24' : 'var(--muted)';
+      const sigBadge = f.significant
+        ? '<span style="color:var(--green);font-size:13px" title="p < 0.05">✓</span>'
+        : '<span style="color:#374151;font-size:13px">—</span>';
+      const rawFmt  = f.raw_value  != null ? f.raw_value.toFixed(4)  : '—';
+      const stdFmt  = f.standardized != null ? (f.standardized >= 0 ? '+' : '') + f.standardized.toFixed(4) : '—';
+      const contFmt = (f.contribution_pct >= 0 ? '+' : '') + f.contribution_pct.toFixed(4) + '%';
+      const wFmt    = (f.ridge_weight >= 0 ? '+' : '') + f.ridge_weight.toFixed(5);
+      const rFmt    = (f.spearman_r >= 0 ? '+' : '') + f.spearman_r.toFixed(4);
+      const pFmt    = f.p_value.toFixed(4);
+      return `<tr style="border-bottom:1px solid #1a1a1a" title="${f.tip}">
+        <td style="padding:6px 10px;font-family:monospace;font-size:11px;color:#e5e7eb">${f.name}</td>
+        <td style="padding:6px 10px;font-size:11px;color:var(--muted)">${f.group}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${rawFmt}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${stdFmt}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${wFmt}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${cColor}">${contFmt}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${rColor}">${rFmt}</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${pColor}">${pFmt}</td>
+        <td style="padding:6px 10px;text-align:center">${sigBadge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Sortable column headers
+  document.querySelectorAll('#feat-table thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-col');
+      if (sortCol === col) sortDir *= -1;
+      else { sortCol = col; sortDir = col === 'contribution_pct' ? -1 : (col === 'p_value' ? 1 : -1); }
+      // Reset headers
+      document.querySelectorAll('#feat-table thead th[data-col]').forEach(h => {
+        const base = h.textContent.replace(/ [↑↓]$/, '').replace(/ ↕$/, '');
+        h.textContent = base + (h.getAttribute('data-col') === sortCol ? (sortDir === -1 ? ' ↓' : ' ↑') : ' ↕');
+      });
+      renderTable();
+    });
+  });
+
+  // Significant-only filter
+  document.getElementById('feat-sig-only').addEventListener('change', e => {
+    sigOnly = e.target.checked;
+    renderTable();
+  });
+
+  renderTable();
+
+  // re-init tooltips for new hero cards
+  if (typeof initTooltips === 'function') initTooltips();
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 loadDashboard();
+loadFeaturePanel('waf_ax');
 </script>
 </body>
 </html>
