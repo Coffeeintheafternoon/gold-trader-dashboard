@@ -264,12 +264,6 @@
 
     <!-- Feature importance chart removed (redundant with feature table) -->
 
-    <!-- Announcement features detail -->
-    <div class="chart-card" style="margin-bottom:16px" id="ml-ann-card">
-      <div class="chart-title">Announcement Features — Detail</div>
-      <div class="chart-subtitle">How each announcement category ranks and how often it fires</div>
-      <div id="ml-ann-table-wrap" style="overflow-x:auto"></div>
-    </div>
 
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
@@ -2804,6 +2798,7 @@ function buildMLFeatChart(features, filterCat) {
 function buildAnnTable(features) {
   const annFeats = features.filter(f => f.category === 'announcement');
   const wrap = document.getElementById('ml-ann-table-wrap');
+  if (!wrap) return;
   if (!annFeats.length) { wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">No announcement features in model (no announcement data for this ticker).</div>'; return; }
   const rows = annFeats.map(f => {
     const wc = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
