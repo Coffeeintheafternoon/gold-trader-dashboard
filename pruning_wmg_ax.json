@@ -1,6 +1,6 @@
 {
   "ticker": "WMG.AX",
-  "generated_at": "2026-03-21T17:31:21Z",
+  "generated_at": "2026-03-21T17:41:17Z",
   "baseline_features": 89,
   "rounds": [
     {
@@ -2173,10 +2173,116 @@
         "ho_sharpe": null
       },
       "stopped": false
+    },
+    {
+      "round": 29,
+      "pruned_this_round": [
+        {
+          "name": "lower_wick_pct",
+          "prune_score": 0.4315,
+          "p_value": 0.1431,
+          "instability": 2.3135,
+          "sign_pct": 57.1,
+          "reason": "p=0.14 insig, instability=2.31, sign=57%"
+        },
+        {
+          "name": "ann_capital_today",
+          "prune_score": 0.2897,
+          "p_value": 0.0288,
+          "instability": 1.4669,
+          "sign_pct": 57.1,
+          "reason": "p=0.03 insig, instability=1.47, sign=57%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "ann_capital_today",
+        "ann_days_since_capital",
+        "ann_days_since_drilling",
+        "ann_days_since_quarterly",
+        "ann_days_since_sensitive",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_neg_kw_today",
+        "atr_14_pct",
+        "bar_range_pct",
+        "buy_sell_ratio_5d",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_ann_gold",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_dollar_vol",
+        "ix_vix_momentum",
+        "ix_vix_vol",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "mfi_14",
+        "trend_signed_adx",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_ratio",
+        "vol_ratio_5_20"
+      ],
+      "features_remaining": 32,
+      "metrics": {
+        "is_pf": 1.2128,
+        "is_sharpe": 0.9281,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 14
+      },
+      "feature_health": {
+        "n_features": 32,
+        "n_significant_p05": 29,
+        "n_marginal_p10": 3,
+        "pct_significant": 90.6,
+        "avg_pval": 0.0157,
+        "avg_std_err": 0.002338,
+        "avg_sign_pct": 81.0,
+        "avg_instability": 1.184
+      },
+      "delta": {
+        "is_pf": 0.0212,
+        "is_sharpe": 0.0849,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
     }
   ],
   "final_excluded": [
     "adx_14",
+    "ann_capital_today",
     "ann_days_since_capital",
     "ann_days_since_drilling",
     "ann_days_since_quarterly",
@@ -2206,6 +2312,7 @@
     "ix_vix_volume",
     "ix_yield_gold",
     "ix_yield_oil",
+    "lower_wick_pct",
     "macro_au10yr_mom20d",
     "macro_au10yr_mom5d",
     "macro_au2yr_mom5d",
@@ -2234,7 +2341,7 @@
   ],
   "stop_reason": "max_rounds",
   "params": {
-    "max_rounds": 28,
+    "max_rounds": 29,
     "per_round": 2,
     "min_pval": 0.1
   }
