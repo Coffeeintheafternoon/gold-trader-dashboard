@@ -12,7 +12,7 @@
     :root {
       --bg: #040404; --card: #0b0b0b; --card2: #101010; --border: #1e1e1e;
       --text: #e8d8b4; --muted: #7a7060; --gold: #f5a520; --gold-dim: #b07818;
-      --green: #00ff88; --red: #ff2020; --grey: #555;
+      --green: #00ff55; --red: #ff2020; --grey: #555;
     }
     html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; min-height: 100vh; }
     header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; gap: 12px; flex-wrap: wrap; }
@@ -762,7 +762,7 @@
 // ── Chart defaults ────────────────────────────────────────────────────────────
 Chart.defaults.color = '#7a7060';
 Chart.defaults.borderColor = '#1a1400';
-const GOLD = '#f5a520', GREEN = '#00ff88', RED = '#ff2020', GREY = '#555';
+const GOLD = '#f5a520', GREEN = '#00ff55', RED = '#ff2020', GREY = '#555';
 
 // ── Tab management ────────────────────────────────────────────────────────────
 const TABS = ['signal','modellab','universe','meta'];
@@ -1403,14 +1403,42 @@ function buildTradeSignalChart(equityCurve, tradeLog, clusterPerf) {
     if(longs.length)entryDatasets.push({type:'scatter',label:'Long Entry',data:longs.map(t=>({x:t.entry_date,y:t.entry_price})),backgroundColor:'#22c55eee',borderColor:'#22c55e',borderWidth:1,pointStyle:'triangle',pointRadius:6,pointHoverRadius:8,_meta:longs});
     if(shorts.length)entryDatasets.push({type:'scatter',label:'Short Entry',data:shorts.map(t=>({x:t.entry_date,y:t.entry_price})),backgroundColor:'#f472b6ee',borderColor:'#f472b6',borderWidth:1,pointStyle:'rectRot',pointRadius:6,pointHoverRadius:8,_meta:shorts});
   }
-  const exitDataset={type:'scatter',label:'Exit',data:allTrades.map(t=>({x:t.exit_date,y:t.exit_price})),backgroundColor:allTrades.map(t=>t.win?'#22c55e55':'#ef444455'),borderColor:allTrades.map(t=>t.win?'#22c55eaa':'#ef4444aa'),borderWidth:1,pointStyle:'crossRot',pointRadius:5,pointHoverRadius:7,_meta:allTrades};
+  // Custom canvas markers for exits: tick=win, cross=loss; green=long, pink=short
+  function exitMarker(win, dir, size=13) {
+    const c=document.createElement('canvas');c.width=size;c.height=size;
+    const cx=c.getContext('2d');
+    const col=dir==='long'?'#00ff88':'#f472b6';
+    cx.strokeStyle=col;cx.lineWidth=2.2;cx.lineCap='round';cx.lineJoin='round';
+    const p=2;
+    if(win){cx.beginPath();cx.moveTo(p,size/2);cx.lineTo(size/2-0.5,size-p);cx.lineTo(size-p,p);cx.stroke();}
+    else{cx.beginPath();cx.moveTo(p,p);cx.lineTo(size-p,size-p);cx.moveTo(size-p,p);cx.lineTo(p,size-p);cx.stroke();}
+    return c;
+  }
+  function exitDatasets(trades) {
+    const groups={lw:[],ll:[],sw:[],sl:[]};
+    trades.forEach(t=>{
+      const k=(t.direction==='long'?'l':'s')+(t.win?'w':'l');
+      groups[k].push(t);
+    });
+    return Object.entries({lw:['Long Win',true,'long'],ll:['Long Loss',false,'long'],sw:['Short Win',true,'short'],sl:['Short Loss',false,'short']})
+      .filter(([k])=>groups[k].length)
+      .map(([k,[lbl,win,dir]])=>({
+        type:'scatter',label:lbl,
+        data:groups[k].map(t=>({x:t.exit_date,y:t.exit_price})),
+        pointStyle:exitMarker(win,dir),
+        pointRadius:7,pointHoverRadius:9,
+        backgroundColor:'transparent',borderColor:'transparent',
+        _meta:groups[k]
+      }));
+  }
+  const exitDatasetsArr=exitDatasets(allTrades);
 
   const oosBoundaryPlugin={}; // no IS/OOS line — entire curve is OOS (walk-forward)
 
   const ctx=document.getElementById('chart-trade-signals').getContext('2d');
   _tradeSignalChart=new Chart(ctx,{
     plugins:[oosBoundaryPlugin],
-    data:{labels:priceLabels,datasets:[{type:'line',label:'Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0,fill:false,yAxisID:'y',order:10},...entryDatasets,exitDataset]},
+    data:{labels:priceLabels,datasets:[{type:'line',label:'Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0,fill:false,yAxisID:'y',order:10},...entryDatasets,...exitDatasetsArr]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},
       plugins:{
         legend:{display:true,labels:{color:'#9ca3af',boxWidth:12,padding:10}},
