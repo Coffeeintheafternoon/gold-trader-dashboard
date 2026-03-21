@@ -1,6 +1,6 @@
 {
   "ticker": "WMG.AX",
-  "generated_at": "2026-03-21T18:11:39Z",
+  "generated_at": "2026-03-21T18:17:09Z",
   "baseline_features": 98,
   "rounds": [
     {
@@ -2599,6 +2599,118 @@
         "ho_sharpe": null
       },
       "stopped": false
+    },
+    {
+      "round": 33,
+      "pruned_this_round": [
+        {
+          "name": "season_score",
+          "prune_score": 0.3561,
+          "p_value": 0.0781,
+          "instability": 1.8851,
+          "sign_pct": 57.1,
+          "reason": "p=0.08 insig, instability=1.89, sign=57%"
+        },
+        {
+          "name": "macro_vix_regime_30",
+          "prune_score": 0.343,
+          "p_value": 0.1032,
+          "instability": 2.0569,
+          "sign_pct": 71.4,
+          "reason": "p=0.10 insig, instability=2.06, sign=71%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "ann_capital_today",
+        "ann_days_since_capital",
+        "ann_days_since_drilling",
+        "ann_days_since_quarterly",
+        "ann_days_since_sensitive",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_neg_kw_today",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_width_20",
+        "bb_width_50",
+        "bb_zscore",
+        "buy_sell_ratio_5d",
+        "distribution_signal",
+        "garman_klass_10d",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_ann_gold",
+        "ix_ann_volume",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_dollar_vol",
+        "ix_vix_momentum",
+        "ix_vix_vol",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "mfi_14",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_1d",
+        "season_score",
+        "trend_signed_adx",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vov_20d"
+      ],
+      "features_remaining": 34,
+      "metrics": {
+        "is_pf": 1.2229,
+        "is_sharpe": 0.9678,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 14
+      },
+      "feature_health": {
+        "n_features": 34,
+        "n_significant_p05": 29,
+        "n_marginal_p10": 5,
+        "pct_significant": 85.3,
+        "avg_pval": 0.0225,
+        "avg_std_err": 0.002405,
+        "avg_sign_pct": 80.7,
+        "avg_instability": 1.251
+      },
+      "delta": {
+        "is_pf": -0.0068,
+        "is_sharpe": -0.0266,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
     }
   ],
   "final_excluded": [
@@ -2656,18 +2768,20 @@
     "macro_oil_mom5d",
     "macro_us10yr_mom20d",
     "macro_vix_mom5d",
+    "macro_vix_regime_30",
     "mfi_14",
     "parkinson_10d",
     "parkinson_20d",
     "ret_1d",
+    "season_score",
     "trend_signed_adx",
     "up_vol_ratio_20d",
     "upper_wick_pct",
     "vov_20d"
   ],
-  "stop_reason": "max_rounds",
+  "stop_reason": "no_candidates",
   "params": {
-    "max_rounds": 32,
+    "max_rounds": 35,
     "per_round": 2,
     "min_pval": 0.1
   }
