@@ -1441,6 +1441,7 @@ function buildAssetDropdown(assets, currentAsset, currentInterval) {
   const select=document.getElementById('asset-select');
   wrap.style.display='';wrap.dataset.mlVisible='';
   const _ICONS={gold:'🥇',gold_acf:'🥇',oil:'🛢️',oil_acf:'🛢️',dxy:'💵',dxy_acf:'💵',audusd:'🇦🇺',audusd_acf:'🇦🇺',waf:'⛏️'};
+  select.innerHTML=''; // clear before repopulating to avoid duplicates
   // Sort by PF desc, show top 10 — current asset always included even if outside top 10
   const sorted=[...assets].sort((a,b)=>(b.pf||0)-(a.pf||0));
   const top10=sorted.slice(0,10);
@@ -1569,7 +1570,8 @@ async function loadQuantPanels() {
   const filename=entry?entry.file:`quant_data_${urlAsset}_${urlIntvl}.json`;
   let qd;
   try { const resp=await fetch(`./${filename}?v=${_CV}`); if(!resp.ok)return; qd=await resp.json(); } catch(e) { return; }
-  ['quant-signal-panel','quant-regime-panel','quant-dist-panel','quant-rolling-panel','quant-mcpt-panel','quant-equity-panel','quant-features-panel'].forEach(id=>{document.getElementById(id).style.display='block';});
+  ['quant-signal-panel','quant-regime-panel','quant-rolling-panel','quant-mcpt-panel','quant-equity-panel','quant-features-panel'].forEach(id=>{document.getElementById(id).style.display='block';});
+  if((qd.cluster_performance||[]).length)document.getElementById('quant-dist-panel').style.display='block';
   if(qd.asset_label){const lbl=document.getElementById('quant-section-label');if(lbl)lbl.textContent=`Squant v1 — ${qd.asset_label} (${(qd.ticker||'').replace('=','/')} · ${qd.interval||'1h'})`;}
   // Round 1 — render immediately (small data, fast)
   buildCurrentSignalPanel(qd.current_signal||{},qd.current_cluster||{});
