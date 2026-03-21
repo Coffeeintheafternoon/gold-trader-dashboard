@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Squant Bot</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -357,8 +359,11 @@
   </div>
 
   <div class="chart-card" id="quant-trade-chart-panel" style="display:none">
-    <div class="chart-title">Price Chart — Buy &amp; Sell Signals</div>
-    <div class="chart-subtitle">Daily XAU/AUD close with entry (▲) and exit (▼) markers coloured by cluster. Last 365 days of walk-forward OOS trades.</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+      <div class="chart-title">Price Chart — Buy &amp; Sell Signals</div>
+      <button id="btn-reset-zoom" onclick="resetTradeChartZoom()" style="font-size:11px;padding:3px 10px;background:#222;border:1px solid #444;color:#9ca3af;border-radius:5px;cursor:pointer">Reset zoom</button>
+    </div>
+    <div class="chart-subtitle">Scroll to zoom · drag to pan · Last 365 days of walk-forward OOS trades.</div>
     <div style="position:relative;height:340px"><canvas id="chart-trade-signals"></canvas></div>
   </div>
 
@@ -1391,7 +1396,7 @@ function buildTradeSignalChart(priceSeries, tradeLog, clusterPerf) {
   }
   const exitDataset={type:'scatter',label:'Exit',data:visibleTrades.map(t=>({x:t.exit_date,y:t.exit_price})),backgroundColor:visibleTrades.map(t=>t.win?'#22c55e55':'#ef444455'),borderColor:visibleTrades.map(t=>t.win?'#22c55eaa':'#ef4444aa'),borderWidth:1,pointStyle:'crossRot',pointRadius:5,pointHoverRadius:7};
   const ctx=document.getElementById('chart-trade-signals').getContext('2d');
-  new Chart(ctx,{data:{labels:priceLabels,datasets:[{type:'line',label:'XAU/AUD Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0.2,fill:false,yAxisID:'y',order:10},...entryDatasets,exitDataset]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:true,labels:{color:'#9ca3af',boxWidth:12,padding:10}},tooltip:{callbacks:{label(ctx){if(ctx.dataset.label==='XAU/AUD Close')return` Price: $${ctx.parsed.y.toFixed(2)}`;const trade=(ctx.dataset._meta||[])[ctx.dataIndex];if(trade)return[` ${trade.direction.toUpperCase()} entry @ $${trade.entry_price}`,` Exit @ $${trade.exit_price}  (${trade.return_pct>0?'+':''}${trade.return_pct}%)`,` ${trade.bars} bars  ${trade.win?'✓ Win':'✗ Loss'}`];return` Exit @ $${ctx.parsed.y.toFixed(2)}`;}}}},scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'#ffffff08'}},y:{ticks:{color:'#6b7280',callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff08'},position:'left'}}}});
+  _tradeSignalChart=new Chart(ctx,{data:{labels:priceLabels,datasets:[{type:'line',label:'Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0.2,fill:false,yAxisID:'y',order:10},...entryDatasets,exitDataset]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:true,labels:{color:'#9ca3af',boxWidth:12,padding:10}},tooltip:{callbacks:{label(ctx){if(ctx.dataset.label==='Close')return` Price: $${ctx.parsed.y.toFixed(2)}`;const trade=(ctx.dataset._meta||[])[ctx.dataIndex];if(trade)return[` ${trade.direction.toUpperCase()} entry @ $${trade.entry_price}`,` Exit @ $${trade.exit_price}  (${trade.return_pct>0?'+':''}${trade.return_pct}%)`,` ${trade.bars} bars  ${trade.win?'✓ Win':'✗ Loss'}`];return` Exit @ $${ctx.parsed.y.toFixed(2)}`; }}},zoom:{pan:{enabled:true,mode:'x'},zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'}}},scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'#ffffff08'}},y:{ticks:{color:'#6b7280',callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff08'},position:'left'}}}});
 }
 
 // ── Cluster Rules Panel ───────────────────────────────────────────────────────
@@ -1627,6 +1632,7 @@ async function openTickerInModelLab(ticker, data) {
     sp.set('interval',match.interval);
     history.replaceState(null,'','?'+sp.toString()+'#modellab');
     // Destroy any existing Chart.js instances on quant canvases so they can be redrawn
+    _tradeSignalChart=null;
     ['chart-cluster-dist','chart-rolling','chart-equity','chart-mcpt-hist','chart-regime-timeline','chart-trade-signals'].forEach(id=>{
       const c=document.getElementById(id);if(c){const ch=Chart.getChart(c);if(ch)ch.destroy();}
     });
@@ -1806,6 +1812,8 @@ function selectTicker(safe) {
 
 // ── Feature Panel ─────────────────────────────────────────────────────────────
 let _featContribChart=null;
+let _tradeSignalChart=null;
+function resetTradeChartZoom(){if(_tradeSignalChart)_tradeSignalChart.resetZoom();}
 
 async function loadFeaturePanel(ticker='waf_ax') {
   const safe=ticker.replace(/\./g,'_').toLowerCase();
