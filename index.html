@@ -342,6 +342,19 @@
       </div>
     </div>
 
+    <!-- Feature Pruning Roadmap -->
+    <div class="chart-card" id="ml-pruning-card" style="margin-bottom:16px;display:none">
+      <div class="chart-title">Feature Pruning Roadmap</div>
+      <div class="chart-subtitle">Systematic elimination of insignificant features — each round removes the weakest features and re-evaluates IS metrics. Green delta = metric improved after pruning.</div>
+      <div class="chart-wrap" style="height:220px;margin-bottom:18px"><canvas id="ml-pruning-chart"></canvas></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Round Timeline</div>
+      <div id="ml-pruning-rounds" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px"></div>
+    </div>
+    <div id="ml-pruning-placeholder" class="chart-card" style="margin-bottom:16px;display:none">
+      <div style="color:var(--muted);font-size:13px">No pruning data for this ticker. Run:</div>
+      <code id="ml-pruning-cmd" style="display:block;margin-top:8px;background:#111;padding:8px 12px;border-radius:4px;font-size:12px;color:#c8b89a;white-space:pre">python scripts/run_pruning.py --tickers —</code>
+    </div>
+
     <!-- Full feature table -->
     <div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2298,6 +2311,9 @@ function renderTickerDetail(d) {
 
   // Feature table
   mlRenderFeatTable();
+
+  // Pruning roadmap (lazy-loaded from pruning_{safe}.json)
+  renderPruningRoadmap(d.ticker || '');
 }
 
 function buildMLEquityChart(equityIS, equityHO, hoStart) {
@@ -3256,6 +3272,192 @@ async function loadFeaturePanel(ticker='waf_ax') {
   document.querySelectorAll('#feat-table thead th[data-col]').forEach(th=>{th.addEventListener('click',()=>{const col=th.getAttribute('data-col');if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=col==='contribution_pct'?-1:(col==='p_value'?1:-1);}document.querySelectorAll('#feat-table thead th[data-col]').forEach(h=>{const base=h.textContent.replace(/ [↑↓]$/,'').replace(/ ↕$/,'');h.textContent=base+(h.getAttribute('data-col')===sortCol?(sortDir===-1?' ↓':' ↑'):' ↕');});renderTable();});});
   document.getElementById('feat-sig-only').addEventListener('change',e=>{sigOnly=e.target.checked;renderTable();});
   renderTable();
+}
+
+// ── Feature Pruning Roadmap ────────────────────────────────────────────────────
+let _mlPruningChart = null;
+
+async function renderPruningRoadmap(ticker) {
+  const card        = document.getElementById('ml-pruning-card');
+  const placeholder = document.getElementById('ml-pruning-placeholder');
+  const cmd         = document.getElementById('ml-pruning-cmd');
+  card.style.display        = 'none';
+  placeholder.style.display = 'none';
+
+  const safe = ticker.toLowerCase().replace(/\./g, '_');
+  if (cmd) cmd.textContent = `python scripts/run_pruning.py --tickers ${ticker}`;
+
+  let data;
+  try {
+    const resp = await fetch(`./pruning_${safe}.json?_=${Date.now()}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    data = await resp.json();
+  } catch (_) {
+    placeholder.style.display = '';
+    return;
+  }
+
+  const rounds = data.rounds || [];
+  if (!rounds.length) { placeholder.style.display = ''; return; }
+
+  card.style.display = '';
+
+  // ── A. Metrics line chart ─────────────────────────────────────────────────
+  const ctx = document.getElementById('ml-pruning-chart').getContext('2d');
+  if (_mlPruningChart) _mlPruningChart.destroy();
+
+  const labels   = rounds.map(r => `R${r.round}`);
+  const isPF     = rounds.map(r => r.metrics?.is_pf    ?? null);
+  const isShr    = rounds.map(r => r.metrics?.is_sharpe ?? null);
+
+  _mlPruningChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'IS Profit Factor',
+          data: isPF,
+          borderColor: '#00c832', backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 3, tension: 0.2,
+          yAxisID: 'y',
+        },
+        {
+          label: 'IS Sharpe',
+          data: isShr,
+          borderColor: '#f5a520', backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 3, tension: 0.2,
+          yAxisID: 'y2',
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#aaa', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            afterTitle: (items) => {
+              const r = rounds[items[0].dataIndex];
+              if (!r || !r.pruned_this_round?.length) return '';
+              return 'Pruned: ' + r.pruned_this_round.map(p => p.name).join(', ');
+            },
+          },
+        },
+      },
+      scales: {
+        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { size: 10 } } },
+        y: {
+          position: 'left',
+          grid: { color: '#1a1a1a' },
+          ticks: { color: '#00c832', font: { size: 10 }, callback: v => v.toFixed(3) },
+          title: { display: true, text: 'IS Profit Factor', color: '#00c832', font: { size: 10 } },
+        },
+        y2: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#f5a520', font: { size: 10 }, callback: v => (v >= 0 ? '+' : '') + v.toFixed(3) },
+          title: { display: true, text: 'IS Sharpe', color: '#f5a520', font: { size: 10 } },
+        },
+      },
+    },
+  });
+
+  // ── B. Round cards ────────────────────────────────────────────────────────
+  const container = document.getElementById('ml-pruning-rounds');
+  container.innerHTML = '';
+
+  const stopReason  = data.stop_reason || '';
+  const baseFeats   = data.baseline_features || 0;
+  const finalExcl   = (data.final_excluded || []).length;
+
+  rounds.forEach((r, idx) => {
+    const isBaseline = r.round === 0;
+    const m  = r.metrics  || {};
+    const d  = r.delta    || {};
+    const pruned = r.pruned_this_round || [];
+
+    function deltaSpan(val, invert = false) {
+      if (val == null) return '<span style="color:var(--muted)">—</span>';
+      const good = invert ? val < 0 : val > 0;
+      const col  = good ? 'var(--green)' : val === 0 ? 'var(--muted)' : 'var(--red)';
+      return `<span style="color:${col}">${val >= 0 ? '+' : ''}${val.toFixed(3)}</span>`;
+    }
+
+    let cardBorder = '#2a2a2a';
+    if (isBaseline) cardBorder = '#444';
+    else if (r.stopped) cardBorder = '#b45309';
+    else if (d.is_sharpe > 0.01) cardBorder = '#16a34a';
+    else if (d.is_sharpe < -0.15) cardBorder = '#991b1b';
+
+    let prunedHtml = '';
+    if (isBaseline) {
+      prunedHtml = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Baseline — all ${baseFeats} features</div>`;
+    } else if (pruned.length) {
+      prunedHtml = pruned.map(p => {
+        const pColor = p.p_value > 0.5 ? 'var(--red)' : p.p_value > 0.2 ? '#f59e0b' : 'var(--muted)';
+        return `<div style="display:flex;align-items:baseline;gap:6px;font-size:11px;margin-bottom:3px">
+          <span style="color:#f87171">✂</span>
+          <span style="color:#e5e7eb;font-family:monospace">${p.name}</span>
+          <span style="color:${pColor};font-size:10px">p=${p.p_value.toFixed(2)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    const metricsHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:11px;margin-top:6px;border-top:1px solid #1e1e1e;padding-top:6px">
+        <span style="color:var(--muted)">IS PF</span>
+        <span style="font-family:monospace;color:var(--green);text-align:right">${m.is_pf?.toFixed(3) ?? '—'}${!isBaseline ? ' ' + deltaSpan(d.is_pf) : ''}</span>
+        <span style="color:var(--muted)">IS Shr</span>
+        <span style="font-family:monospace;color:#f5a520;text-align:right">${m.is_sharpe != null ? (m.is_sharpe >= 0 ? '+' : '') + m.is_sharpe.toFixed(3) : '—'}${!isBaseline ? ' ' + deltaSpan(d.is_sharpe) : ''}</span>
+        <span style="color:var(--muted)">Windows</span>
+        <span style="font-family:monospace;text-align:right;color:var(--text)">${m.n_windows ?? '—'}</span>
+        <span style="color:var(--muted)">Features</span>
+        <span style="font-family:monospace;text-align:right;color:var(--text)">${r.features_remaining ?? '—'}</span>
+      </div>`;
+
+    let stopHtml = '';
+    if (r.stopped) {
+      const stopMsgs = {
+        over_pruned:   'STOP — IS Sharpe dropped >0.30 from baseline. Pruning halted.',
+        no_candidates: 'STOP — All remaining features are statistically protected.',
+        max_rounds:    'STOP — Maximum rounds reached.',
+      };
+      stopHtml = `<div style="margin-top:8px;padding:5px 8px;background:rgba(180,83,9,0.1);border-left:2px solid #b45309;font-size:10px;color:#f59e0b">
+        ${stopMsgs[stopReason] || 'STOP — ' + stopReason}
+      </div>`;
+    } else if (idx === rounds.length - 1 && !r.stopped && stopReason) {
+      const stopMsgs = {
+        no_candidates: 'All remaining features are statistically protected.',
+        max_rounds:    'Maximum rounds reached.',
+      };
+      stopHtml = `<div style="margin-top:8px;font-size:10px;color:var(--muted)">${stopMsgs[stopReason] || stopReason}</div>`;
+    }
+
+    const card = document.createElement('div');
+    card.style.cssText = [
+      'min-width:190px', 'max-width:220px', 'flex-shrink:0',
+      `border:1px solid ${cardBorder}`, 'border-radius:6px',
+      'background:var(--card2)', 'padding:10px 12px',
+    ].join(';');
+    card.innerHTML = `
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${isBaseline ? 'var(--muted)' : 'var(--gold)'};margin-bottom:6px">
+        ${isBaseline ? 'Baseline' : 'Round ' + r.round}
+      </div>
+      ${prunedHtml}
+      ${metricsHtml}
+      ${stopHtml}
+    `;
+    container.appendChild(card);
+  });
+
+  // Summary line
+  if (finalExcl > 0) {
+    const summary = document.createElement('div');
+    summary.style.cssText = 'min-width:160px;max-width:200px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center;padding:10px';
+    summary.innerHTML = `${finalExcl} feature${finalExcl !== 1 ? 's' : ''} pruned<br>${baseFeats - finalExcl} remaining`;
+    container.appendChild(summary);
+  }
 }
 
 </script>
