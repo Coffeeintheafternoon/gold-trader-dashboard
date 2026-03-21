@@ -413,6 +413,28 @@
       <div class="chart-wrap" style="height:320px"><canvas id="ml-price-chart"></canvas></div>
     </div>
 
+    <!-- Trade Analytics -->
+    <div class="chart-card" style="margin-top:16px;display:none" id="ml-trade-analytics-card">
+      <div class="chart-title" style="margin:0 0 14px">Trade Analytics</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <!-- Monthly P&L -->
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly P&L</div>
+          <canvas id="ml-monthly-pnl-chart" height="140"></canvas>
+        </div>
+        <!-- Return Distribution -->
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution</div>
+          <canvas id="ml-ret-dist-chart" height="140"></canvas>
+        </div>
+        <!-- Duration vs Return -->
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Duration vs Return</div>
+          <canvas id="ml-dur-ret-chart" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
     <!-- Trade Log -->
     <div class="chart-card" style="margin-top:16px" id="ml-trade-log-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2117,7 +2139,8 @@ function renderTickerDetail(d) {
   // Price chart with trade signals
   buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || []);
 
-  // Trade log table
+  // Trade analytics + log table
+  buildMLTradeAnalytics(d.trades_is || []);
   buildMLTradeLog(d.trades_is || []);
 }
 
@@ -2521,6 +2544,114 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
       scales: {
         x: { ticks: {maxTicksLimit:12, color:'#555', font:{size:10}}, grid: {color:'#1a1a1a'} },
         y: { ticks: {color:'#555', font:{size:10}, callback: v => '$'+v.toFixed(2)}, grid: {color:'#1a1a1a'} }
+      }
+    }
+  });
+}
+
+// ── Trade Analytics ────────────────────────────────────────────────────────────
+let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null;
+
+function buildMLTradeAnalytics(tradesIS) {
+  const card = document.getElementById('ml-trade-analytics-card');
+  if (!card || !tradesIS || tradesIS.length < 3) return;
+  card.style.display = '';
+
+  // Destroy previous instances
+  if (_mlMonthlyChart) { _mlMonthlyChart.destroy(); _mlMonthlyChart = null; }
+  if (_mlRetDistChart) { _mlRetDistChart.destroy(); _mlRetDistChart = null; }
+  if (_mlDurRetChart)  { _mlDurRetChart.destroy();  _mlDurRetChart  = null; }
+
+  const axStyle = { color: '#6b7280', font: { size: 10 } };
+  const gridStyle = { color: '#1e1e1e' };
+
+  // ── 1. Monthly P&L ─────────────────────────────────────────────────────────
+  const monthly = {};
+  tradesIS.forEach(t => {
+    const key = t.exit_date ? t.exit_date.slice(0,7) : t.entry_date.slice(0,7);
+    monthly[key] = (monthly[key] || 0) + (t.return_pct || 0);
+  });
+  const mKeys   = Object.keys(monthly).sort();
+  const mVals   = mKeys.map(k => +monthly[k].toFixed(2));
+  const mColors = mVals.map(v => v >= 0 ? 'rgba(0,255,65,0.75)' : 'rgba(255,80,80,0.75)');
+  const mBorder = mVals.map(v => v >= 0 ? '#00ff41' : '#ff5050');
+
+  _mlMonthlyChart = new Chart(document.getElementById('ml-monthly-pnl-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: mKeys.map(k => { const [y,m]=k.split('-'); return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y.slice(2)}`; }),
+      datasets: [{ data: mVals, backgroundColor: mColors, borderColor: mBorder, borderWidth: 1, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => `${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }
+      }},
+      scales: {
+        x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle,
+             border: { display: false } }
+      }
+    }
+  });
+
+  // ── 2. Return Distribution Histogram ───────────────────────────────────────
+  const rets = tradesIS.map(t => t.return_pct || 0);
+  const rMin = Math.min(...rets), rMax = Math.max(...rets);
+  const nBins = Math.min(12, Math.max(6, Math.round(Math.sqrt(rets.length))));
+  const binW = (rMax - rMin) / nBins || 1;
+  const bins = Array.from({length: nBins}, (_, i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, count: 0, wins: 0 }));
+  rets.forEach((r, ri) => {
+    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    bins[bi].count++;
+    if (tradesIS[ri].win) bins[bi].wins++;
+  });
+  const histColors = bins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)');
+  const histBorder = bins.map(b => b.lo >= 0 ? '#00ff41' : '#ff5050');
+
+  _mlRetDistChart = new Chart(document.getElementById('ml-ret-dist-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: bins.map(b => `${b.lo.toFixed(1)}%`),
+      datasets: [{ data: bins.map(b => b.count), backgroundColor: histColors, borderColor: histBorder, borderWidth: 1, borderRadius: 2, barPercentage: 0.95, categoryPercentage: 1 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: {
+          title: ctx => { const b = bins[ctx[0].dataIndex]; return `${b.lo.toFixed(2)}% to ${b.hi.toFixed(2)}%`; },
+          label: ctx => { const b = bins[ctx.dataIndex]; return `${b.count} trade${b.count!==1?'s':''} (${b.wins} W)`; }
+        }
+      }},
+      scales: {
+        x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+        y: { ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false }, title: { display: true, text: 'Count', color: '#6b7280', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // ── 3. Duration vs Return scatter ──────────────────────────────────────────
+  const wins3  = tradesIS.filter(t => t.win).map(t => ({ x: t.bars || 0, y: +(t.return_pct||0).toFixed(2) }));
+  const losses3= tradesIS.filter(t => !t.win).map(t => ({ x: t.bars || 0, y: +(t.return_pct||0).toFixed(2) }));
+
+  _mlDurRetChart = new Chart(document.getElementById('ml-dur-ret-chart').getContext('2d'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Win', data: wins3,   backgroundColor: 'rgba(0,255,65,0.55)',   borderColor: '#00ff41', pointRadius: 5, pointHoverRadius: 7 },
+        { label: 'Loss', data: losses3, backgroundColor: 'rgba(255,80,80,0.55)', borderColor: '#ff5050', pointRadius: 5, pointHoverRadius: 7 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y >= 0 ? '+' : ''}${ctx.raw.y.toFixed(2)}%` }}
+      },
+      scales: {
+        x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color: '#6b7280', font: { size: 10 } } },
+        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border: { display: false },
+             title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
       }
     }
   });
