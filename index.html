@@ -282,13 +282,13 @@
 
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
-      <div class="chart-title" id="ml-stab-title">Weight Stability — Top 6 Features Across Windows</div>
-      <div class="chart-subtitle" id="ml-stab-subtitle">Each line = one feature's signed weight across the rolling train windows. Flat = consistent. Wild swings = noise or feature swap. Switch metric or add features to compare.</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-        <span style="font-size:10px;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase">Show:</span>
-        <button onclick="mlStabMetric('weight')"   id="ml-stab-m-weight"   class="ml-sort-btn ml-sort-active" style="font-size:10px;padding:2px 8px">Signed Weight</button>
-        <button onclick="mlStabMetric('cum_avg')"  id="ml-stab-m-cum_avg"  class="ml-sort-btn" style="font-size:10px;padding:2px 8px">Running Avg</button>
-        <button onclick="mlStabMetric('cum_pval')" id="ml-stab-m-cum_pval" class="ml-sort-btn" style="font-size:10px;padding:2px 8px">Running p-val</button>
+      <div class="chart-title">Weight Stability — Feature Deep-Dive</div>
+      <div class="chart-subtitle">Each feature shown with up to 3 overlaid metrics. Toggle metrics on/off or add features to compare. Solid = signed weight (left axis) · Dashed = running avg (left) · Dotted = running p-val (right, 0–1).</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Metrics:</span>
+        <button onclick="mlStabToggle('weight')"   id="ml-stab-m-weight"   class="ml-sort-btn" style="font-size:10px;padding:2px 8px;border-style:solid">── Signed Weight</button>
+        <button onclick="mlStabToggle('cum_avg')"  id="ml-stab-m-cum_avg"  class="ml-sort-btn" style="font-size:10px;padding:2px 8px;border-style:dashed">╌ Running Avg</button>
+        <button onclick="mlStabToggle('cum_pval')" id="ml-stab-m-cum_pval" class="ml-sort-btn" style="font-size:10px;padding:2px 8px;border-style:dotted">··· p-val (right axis)</button>
       </div>
       <div id="ml-stability-toggles" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center"></div>
       <div class="chart-wrap" style="height:240px"><canvas id="ml-stability-chart"></canvas></div>
@@ -2098,7 +2098,7 @@ let _mlFeatChart = null;
 let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
 let _mlCurrentWH = [];          // weight_history for current ticker
-let _mlStabMetric   = 'weight'; // 'weight' | 'cum_avg' | 'cum_pval'
+let _mlStabShow     = { weight: true, cum_avg: true, cum_pval: true }; // which metrics visible
 let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
 const _ML_CAT_COLORS = {
@@ -2205,13 +2205,9 @@ function renderTickerDetail(d) {
   _mlCorrData = d.correlations || null;
   _mlHeatmapBuilt = false; _mlDendroBuilt = false; _mlForceBuilt = false;
   _mlForceAnim = null;
-  _mlStabAdded  = [];
-  _mlStabMetric = 'weight';
-  // Reset metric buttons
-  ['weight','cum_avg','cum_pval'].forEach(k => {
-    const b = document.getElementById(`ml-stab-m-${k}`);
-    if (b) { b.style.background = k==='weight' ? '#f59e0b22':'transparent'; b.style.color = k==='weight' ? '#f59e0b':'#6b7280'; b.style.borderColor = k==='weight' ? '#f59e0b':'#374151'; }
-  });
+  _mlStabAdded = [];
+  _mlStabShow  = { weight: true, cum_avg: true, cum_pval: true };
+  _mlStabSyncButtons();
   const ticker = d.ticker || '—';
   document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
@@ -2436,25 +2432,22 @@ function _tPval(vals) {
 const _STAB_PALETTE = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b',
                        '#38bdf8','#7dd3fc','#c084fc','#e879f9','#fb923c','#a3e635'];
 
-function mlStabMetric(m) {
-  _mlStabMetric = m;
-  const titles = { weight:'Signed Weight', cum_avg:'Running Avg', cum_pval:'Running p-val' };
-  const subtitles = {
-    weight:   'Signed weight at each window ×1000. Shows raw swings — how much the model re-learns each period.',
-    cum_avg:  'Cumulative mean weight across windows seen so far. Converging to near-zero = weak feature.',
-    cum_pval: 'Running p-value (t-test vs zero). Drops as more windows confirm the signal. Below 0.05 = significant.',
-  };
-  document.getElementById('ml-stab-title').textContent    = `Weight Stability — ${titles[m]}`;
-  document.getElementById('ml-stab-subtitle').textContent  = subtitles[m];
+function _mlStabSyncButtons() {
   ['weight','cum_avg','cum_pval'].forEach(k => {
     const b = document.getElementById(`ml-stab-m-${k}`);
     if (!b) return;
-    const on = k === m;
+    const on = _mlStabShow[k];
     b.style.background  = on ? '#f59e0b22' : 'transparent';
     b.style.color       = on ? '#f59e0b'   : '#6b7280';
     b.style.borderColor = on ? '#f59e0b'   : '#374151';
+    b.style.opacity     = on ? '1'         : '0.45';
   });
-  buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+}
+
+function mlStabToggle(m) {
+  _mlStabShow[m] = !_mlStabShow[m];
+  _mlStabSyncButtons();
+  _mlStabApplyMetricVisibility();
 }
 
 function mlStabAdd(name) {
@@ -2513,35 +2506,49 @@ function buildMLStabilityChart(features, weightHistory) {
     return;
   }
 
-  const metric   = _mlStabMetric;
   const top6     = features.slice(0, 6);
-  const allFeats = [...top6.map((f,i) => ({...f, slotIdx:i})),
-                    ..._mlStabAdded.map(s => { const f=features.find(x=>x.name===s.name); return f ? {...f,slotIdx:s.slotIdx} : null; }).filter(Boolean)];
-  const labels   = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
+  const allFeats = [
+    ...top6.map((f,i) => ({...f, slotIdx:i})),
+    ..._mlStabAdded.map(s => { const f=features.find(x=>x.name===s.name); return f?{...f,slotIdx:s.slotIdx}:null; }).filter(Boolean),
+  ];
+  const labels = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
 
-  const datasets = allFeats.map(f => ({
-    label:           f.name.replace('ann_','★ '),
-    data:            _stabDataSeries(f.name, weightHistory, metric),
-    borderColor:     _STAB_PALETTE[f.slotIdx % _STAB_PALETTE.length],
-    backgroundColor: 'transparent',
-    borderWidth:     f.slotIdx >= 6 ? 2 : 1.5,
-    borderDash:      f.slotIdx >= 6 ? [5,3] : [],
-    pointRadius:     2,
-    tension:         0.3,
-    spanGaps:        true,
-  }));
+  // Each feature produces up to 3 datasets (one per metric), stored as flat list.
+  // datasetIdx = featIdx*3 + metricOffset (0=weight,1=cum_avg,2=cum_pval)
+  const REF_LABELS = new Set(['── zero','p=0.05','p=0.20']);
+  const METRICS = [
+    { key:'weight',   dash:[],     yAxis:'y',    label:'wt' },
+    { key:'cum_avg',  dash:[6,3],  yAxis:'y',    label:'avg' },
+    { key:'cum_pval', dash:[2,3],  yAxis:'yPval',label:'p' },
+  ];
+
+  const datasets = [];
+  allFeats.forEach((f, fi) => {
+    const color = _STAB_PALETTE[f.slotIdx % _STAB_PALETTE.length];
+    METRICS.forEach((m, mi) => {
+      datasets.push({
+        label:           `${f.name}__${m.key}`,  // internal key, not shown
+        _featName:       f.name,
+        _metric:         m.key,
+        _featIdx:        fi,
+        data:            _stabDataSeries(f.name, weightHistory, m.key),
+        borderColor:     color,
+        backgroundColor: 'transparent',
+        borderWidth:     1.5,
+        borderDash:      m.dash,
+        pointRadius:     mi === 0 ? 2 : 0,   // dots only on weight line
+        tension:         0.3,
+        spanGaps:        true,
+        yAxisID:         m.yAxis,
+        hidden:          !_mlStabShow[m.key],
+      });
+    });
+  });
 
   // Reference lines
-  if (metric === 'cum_pval') {
-    datasets.push({ label:'p=0.05', data:labels.map(()=>0.05), borderColor:'#00c832', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
-    datasets.push({ label:'p=0.20', data:labels.map(()=>0.20), borderColor:'#f59e0b', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
-  } else {
-    datasets.push({ label:'── zero', data:labels.map(()=>0), borderColor:'#444', borderDash:[4,4], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
-  }
-
-  const isPval   = metric === 'cum_pval';
-  const yTitle   = isPval ? 'p-value' : 'Weight ×1000';
-  const refLabels = new Set(['── zero','p=0.05','p=0.20']);
+  datasets.push({ label:'── zero', data:labels.map(()=>0), borderColor:'#333', borderDash:[4,4], borderWidth:1, pointRadius:0, spanGaps:true, yAxisID:'y',     order:99 });
+  datasets.push({ label:'p=0.05',  data:labels.map(()=>0.05), borderColor:'#00c83266', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, yAxisID:'yPval', order:99, hidden:!_mlStabShow.cum_pval });
+  datasets.push({ label:'p=0.20',  data:labels.map(()=>0.20), borderColor:'#f59e0b66', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, yAxisID:'yPval', order:99, hidden:!_mlStabShow.cum_pval });
 
   _mlStabilityChart = new Chart(ctx, {
     type: 'line',
@@ -2550,63 +2557,95 @@ function buildMLStabilityChart(features, weightHistory) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: {
-          label: c => {
-            if (refLabels.has(c.dataset.label)) return null;
-            const v = c.raw;
-            if (v == null) return null;
-            const suffix = isPval ? (v < 0.05 ? ' ✓ sig' : v < 0.20 ? ' ~ marginal' : ' ✗ noise') : ' ×1k';
-            return ` ${c.dataset.label}: ${isPval ? v.toFixed(3) : (v>=0?'+':'')+v.toFixed(3)}${suffix}`;
+        tooltip: {
+          callbacks: {
+            label: c => {
+              if (REF_LABELS.has(c.dataset.label)) return null;
+              const v = c.raw; if (v == null) return null;
+              const fname = c.dataset._featName;
+              const m     = c.dataset._metric;
+              if (m === 'cum_pval') return ` ${fname} p-val: ${v.toFixed(3)}${v<0.05?' ✓':v<0.20?' ~':' ✗'}`;
+              return ` ${fname} ${m==='weight'?'wt':'avg'}: ${v>=0?'+':''}${v.toFixed(3)} ×1k`;
+            }
           }
-        }}
+        }
       },
       scales: {
-        x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
-        y: {
-          grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}},
-          title:{display:true, text:yTitle, color:'#555', font:{size:10}},
-          ...(isPval ? {min:0, max:1} : {}),
-        }
+        x:     { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
+        y:     { position:'left',  grid:{color:'#1a1a1a'}, ticks:{color:'#555',font:{size:9}}, title:{display:true,text:'Weight ×1000',color:'#555',font:{size:9}} },
+        yPval: { position:'right', grid:{drawOnChartArea:false}, min:0, max:1, ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(2)}, title:{display:true,text:'p-value',color:'#555',font:{size:9}} },
       }
     }
   });
 
-  // Toggle buttons for each active feature
-  allFeats.forEach(f => {
+  // ── Feature toggle buttons (each hides/shows all 3 metric lines for that feature)
+  allFeats.forEach((f, fi) => {
     const color   = _STAB_PALETTE[f.slotIdx % _STAB_PALETTE.length];
     const isAdded = f.slotIdx >= 6;
     const label   = f.name.replace('ann_','★ ');
     const btn = document.createElement('button');
-    btn.dataset.slotIdx = f.slotIdx;
+    btn.dataset.featIdx = fi;
     btn.dataset.active  = 'true';
     btn.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;border:1px solid ${color};background:${color}22;color:${color};font-size:10px;font-family:monospace;font-weight:600;cursor:pointer;transition:opacity 0.15s,background 0.15s;`;
-    const swatch = `<span style="display:inline-block;width:12px;height:2px;background:${color};border-radius:1px;${isAdded?'border-bottom:1px dashed '+color:''}"></span>`;
-    const closeBtn = isAdded ? `<span onmousedown="mlStabRemove('${f.name}')" style="margin-left:3px;opacity:0.7;font-size:11px" title="Remove">×</span>` : '';
-    btn.innerHTML = `${swatch}${label}${closeBtn}`;
+    // Mini legend showing the 3 line styles
+    btn.innerHTML = `
+      <span style="display:inline-flex;flex-direction:column;gap:2px;margin-right:1px">
+        <span style="width:12px;height:1.5px;background:${color}"></span>
+        <span style="width:12px;height:1.5px;background:${color};opacity:.7;border-top:1.5px dashed ${color};height:0"></span>
+        <span style="width:12px;height:0;border-top:1.5px dotted ${color};opacity:.5"></span>
+      </span>
+      ${label}
+      ${isAdded ? `<span onmousedown="mlStabRemove('${f.name}')" style="margin-left:3px;opacity:0.6;font-size:11px">×</span>` : ''}
+    `;
     btn.onclick = (e) => {
-      if (e.target.tagName === 'SPAN' && e.target.textContent === '×') return;
+      if (e.target.textContent === '×') return;
       const active = btn.dataset.active === 'true';
-      btn.dataset.active  = String(!active);
-      btn.style.background = !active ? `${color}22` : 'transparent';
-      btn.style.opacity    = !active ? '1' : '0.35';
-      _mlStabilityChart.setDatasetVisibility(f.slotIdx, !active);
+      const next   = !active;
+      btn.dataset.active  = String(next);
+      btn.style.background = next ? `${color}22` : 'transparent';
+      btn.style.opacity    = next ? '1' : '0.35';
+      // Hide/show all 3 metric datasets for this feature
+      datasets.forEach((ds, di) => {
+        if (ds._featIdx === fi) {
+          const shouldShow = next && _mlStabShow[ds._metric];
+          _mlStabilityChart.setDatasetVisibility(di, shouldShow);
+        }
+      });
       _mlStabilityChart.update();
     };
     toggleWrap.appendChild(btn);
   });
 
-  // Search box to add more features
-  const searchWrap = document.createElement('div');
-  searchWrap.style.cssText = 'position:relative;display:inline-flex;align-items:center';
-  searchWrap.innerHTML = `
+  // Search box
+  const sw = document.createElement('div');
+  sw.style.cssText = 'position:relative;display:inline-flex;align-items:center';
+  sw.innerHTML = `
     <input id="ml-stab-search" placeholder="+ add feature…"
       style="background:#141414;border:1px dashed #374151;color:#aaa;padding:3px 9px;border-radius:4px;font-size:10px;font-family:monospace;width:140px;outline:none"
       oninput="mlStabSearchUpdate(this.value)"
       onblur="setTimeout(()=>{const d=document.getElementById('ml-stab-drop');if(d)d.style.display='none'},200)"
       onfocus="mlStabSearchUpdate(this.value)">
-    <div id="ml-stab-drop" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:#141414;border:1px solid #374151;border-radius:4px;min-width:220px;max-height:220px;overflow-y:auto;z-index:200"></div>
+    <div id="ml-stab-drop" style="display:none;position:absolute;top:calc(100%+3px);left:0;background:#141414;border:1px solid #374151;border-radius:4px;min-width:220px;max-height:220px;overflow-y:auto;z-index:200"></div>
   `;
-  toggleWrap.appendChild(searchWrap);
+  toggleWrap.appendChild(sw);
+}
+
+// When a metric button is toggled, update visibility of ALL matching datasets without rebuilding
+function _mlStabApplyMetricVisibility() {
+  if (!_mlStabilityChart) return;
+  _mlStabilityChart.data.datasets.forEach((ds, di) => {
+    if (ds._metric) {
+      // Only show if metric is on AND the feature toggle is active
+      const btn = document.querySelector(`[data-feat-idx="${ds._featIdx}"]`);
+      const featOn = !btn || btn.dataset.active === 'true';
+      _mlStabilityChart.setDatasetVisibility(di, _mlStabShow[ds._metric] && featOn);
+    }
+    // p-val reference lines
+    if (ds.label === 'p=0.05' || ds.label === 'p=0.20') {
+      _mlStabilityChart.setDatasetVisibility(di, _mlStabShow.cum_pval);
+    }
+  });
+  _mlStabilityChart.update();
 }
 
 function mlRenderFeatTable() {
