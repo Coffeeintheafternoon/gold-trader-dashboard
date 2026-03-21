@@ -262,15 +262,15 @@
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="ml-cat-filters">
           <button onclick="mlFilterFeats('all')" id="ml-cat-all" class="ml-sort-btn ml-sort-active" style="font-size:11px">All</button>
-          <button onclick="mlFilterFeats('momentum')" id="ml-cat-momentum" class="ml-sort-btn" style="font-size:11px;border-color:#60a5fa;color:#60a5fa">Momentum</button>
-          <button onclick="mlFilterFeats('volume')" id="ml-cat-volume" class="ml-sort-btn" style="font-size:11px;border-color:#22d3ee;color:#22d3ee">Volume</button>
-          <button onclick="mlFilterFeats('volatility')" id="ml-cat-volatility" class="ml-sort-btn" style="font-size:11px;border-color:#fb923c;color:#fb923c">Volatility</button>
-          <button onclick="mlFilterFeats('trend')" id="ml-cat-trend" class="ml-sort-btn" style="font-size:11px;border-color:#4ade80;color:#4ade80">Trend</button>
-          <button onclick="mlFilterFeats('macro')" id="ml-cat-macro" class="ml-sort-btn" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">Macro</button>
+          <button onclick="mlFilterFeats('momentum')" id="ml-cat-momentum" class="ml-sort-btn" style="font-size:11px;border-color:#f59e0b;color:#f59e0b">Momentum</button>
+          <button onclick="mlFilterFeats('volume')" id="ml-cat-volume" class="ml-sort-btn" style="font-size:11px;border-color:#00c832;color:#00c832">Volume</button>
+          <button onclick="mlFilterFeats('volatility')" id="ml-cat-volatility" class="ml-sort-btn" style="font-size:11px;border-color:#f97316;color:#f97316">Volatility</button>
+          <button onclick="mlFilterFeats('trend')" id="ml-cat-trend" class="ml-sort-btn" style="font-size:11px;border-color:#2dd4bf;color:#2dd4bf">Trend</button>
+          <button onclick="mlFilterFeats('macro')" id="ml-cat-macro" class="ml-sort-btn" style="font-size:11px;border-color:#d97706;color:#d97706">Macro</button>
           <button onclick="mlFilterFeats('announcement')" id="ml-cat-announcement" class="ml-sort-btn" style="font-size:11px;border-color:var(--gold);color:var(--gold)">Announcement</button>
         </div>
       </div>
-      <div class="chart-wrap" style="height:320px"><canvas id="ml-feat-chart"></canvas></div>
+      <div id="ml-feat-chart-wrap" class="chart-wrap" style="height:520px"><canvas id="ml-feat-chart"></canvas></div>
     </div>
 
     <!-- Announcement features detail -->
@@ -283,8 +283,27 @@
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
       <div class="chart-title">Weight Stability — Top 5 Features Across Windows</div>
-      <div class="chart-subtitle">Stable weight = reliable signal. Wildly swinging weight = noise or regime instability.</div>
-      <div class="chart-wrap" style="height:220px"><canvas id="ml-stability-chart"></canvas></div>
+      <div class="chart-subtitle">Each line = one feature's signed weight across the 16 rolling train windows. Flat line = the model consistently learns the same relationship. Wild swings = noise.</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="ml-stability-chart"></canvas></div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;align-self:center">Instability guide:</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+          <div style="width:24px;height:3px;background:#00ff41;border-radius:2px"></div>
+          <span style="color:#00ff41;font-weight:600">&lt; 1.0 — Stable</span>
+          <span style="color:var(--muted);margin-left:4px">Weight barely moves window to window. Trust it.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+          <div style="width:24px;height:3px;background:#f5a520;border-radius:2px"></div>
+          <span style="color:#f5a520;font-weight:600">1–2 — Moderate</span>
+          <span style="color:var(--muted);margin-left:4px">Some drift but directionally consistent. Usable.</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px">
+          <div style="width:24px;height:3px;background:#ff2020;border-radius:2px;border:none" style="background:repeating-linear-gradient(90deg,#ff2020 0 6px,transparent 6px 10px)"></div>
+          <span style="color:#ff2020;font-weight:600">&gt; 2 — Unreliable</span>
+          <span style="color:var(--muted);margin-left:4px">Weight flips or jumps between windows — model isn't learning a stable pattern.</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;width:100%">The <strong style="color:#c8b89a">zero line</strong> is the key reference — a feature that repeatedly crosses zero (positive one window, negative the next) is directionally inconsistent and should be treated as noise regardless of average weight.</div>
+      </div>
     </div>
 
     <!-- Full feature table -->
@@ -2044,20 +2063,20 @@ let _mlCurrentFeatures = [];    // full feature list for current ticker
 let _mlCurrentWH = [];          // weight_history for current ticker
 
 const _ML_CAT_COLORS = {
-  momentum:     '#60a5fa',
-  volume:       '#22d3ee',
-  volatility:   '#fb923c',
-  trend:        '#4ade80',
-  macro:        '#a78bfa',
-  announcement: '#f5a520',
-  other:        '#6b7280',
+  momentum:     '#f59e0b',   // warm amber
+  volume:       '#00c832',   // retro green (dimmed)
+  volatility:   '#f97316',   // orange
+  trend:        '#2dd4bf',   // teal
+  macro:        '#d97706',   // darker amber
+  announcement: '#f5a520',   // gold (matches --gold)
+  other:        '#4b5563',   // muted grey
 };
 const _ML_OVERFIT_LABELS = {
-  LOW:           { color:'#16a34a', text:'LOW — consistent edge IS + holdout' },
-  MEDIUM:        { color:'#b45309', text:'MEDIUM — some degradation on holdout' },
-  HIGH:          { color:'#dc2626', text:'HIGH — IS good, holdout fails (overfit)' },
-  NO_EDGE:       { color:'#374151', text:'NO EDGE — weak across both periods' },
-  REGIME_CHANGE: { color:'#7c3aed', text:'REGIME SHIFT — holdout beats IS' },
+  LOW:           { color:'#00ff41', text:'LOW — consistent edge IS + holdout' },
+  MEDIUM:        { color:'#f5a520', text:'MEDIUM — some degradation on holdout' },
+  HIGH:          { color:'#ff2020', text:'HIGH — IS good, holdout fails (overfit)' },
+  NO_EDGE:       { color:'#4b5563', text:'NO EDGE — weak across both periods' },
+  REGIME_CHANGE: { color:'#f59e0b', text:'REGIME SHIFT — holdout beats IS' },
   UNKNOWN:       { color:'#4b5563', text:'UNKNOWN' },
 };
 
@@ -2247,27 +2266,40 @@ function buildMLFeatChart(features, filterCat) {
   let feats = [...features];
   if (filterCat !== 'all') feats = feats.filter(f => f.category === filterCat);
   feats = feats.slice(0, 20);
-  const labels = feats.map(f => f.name.replace('ann_', '★ '));
-  const vals   = feats.map(f => +(f.avg_weight * 1000).toFixed(4));  // ×1000 for readability
-  const colors = feats.map(f => (_ML_CAT_COLORS[f.category] || '#6b7280') + 'cc');
-  const borders= feats.map(f =>  _ML_CAT_COLORS[f.category] || '#6b7280');
+  // Dynamically size container: 28px per bar + 40px header/footer
+  const wrap = document.getElementById('ml-feat-chart-wrap');
+  wrap.style.height = Math.max(280, feats.length * 28 + 40) + 'px';
+  const labels = feats.map(f => f.name.replace('ann_', '★ ann_'));
+  const vals   = feats.map(f => +(f.avg_weight * 1000).toFixed(4));
+  const colors = feats.map(f => (_ML_CAT_COLORS[f.category] || '#4b5563') + 'cc');
+  const borders= feats.map(f =>  _ML_CAT_COLORS[f.category] || '#4b5563');
   const max = Math.max(...vals, 0.001);
   _mlFeatChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderColor: borders, borderWidth: 1, borderRadius: 3 }] },
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderColor: borders, borderWidth: 1, borderRadius: 3, barThickness: 18 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 10 } },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: c => {
           const f = feats[c.dataIndex];
-          return [` Avg |weight| × 1000: ${c.raw.toFixed(3)}`, ` Rank: #${f.rank} of ${features.length}`,
-                  ` Category: ${f.category}`, ` Instability: ${f.stability.toFixed(2)}`];
+          const instLabel = f.stability < 1 ? '✓ stable' : f.stability < 2 ? '~ moderate' : '⚠ unstable';
+          return [` Weight ×1k: ${c.raw.toFixed(3)}`, ` Rank: #${f.rank} / ${features.length}`,
+                  ` Category: ${f.category}`, ` Instability: ${f.stability.toFixed(2)}  ${instLabel}`];
         }}}
       },
       scales: {
-        x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, max: max*1.15 },
-        y: { grid:{display:false}, ticks:{color:'#ddd', font:{size:10}} }
+        x: { grid:{color:'#1e1e1e'}, ticks:{color:'#6b7060', font:{size:10}}, max: max * 1.18,
+             title:{display:true, text:'Avg |weight| × 1000', color:'#5a5040', font:{size:10}} },
+        y: { grid:{display:false},
+             ticks:{ color:'#c8b89a', font:{size:11}, padding:6,
+               callback: (val, idx) => {
+                 const lbl = labels[idx] || '';
+                 return lbl.length > 28 ? lbl.slice(0, 27) + '…' : lbl;
+               }
+             }
+           }
       }
     }
   });
@@ -2327,13 +2359,28 @@ function buildMLStabilityChart(features, weightHistory) {
     tension: 0.3,
     spanGaps: true,
   }));
+  // Zero reference line — helps see which windows flip sign
+  datasets.push({
+    label: '── zero',
+    data: labels.map(() => 0),
+    borderColor: '#444',
+    borderWidth: 1,
+    borderDash: [4, 4],
+    pointRadius: 0,
+    tension: 0,
+    spanGaps: true,
+    order: 99,
+  });
   _mlStabilityChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color:'#aaa', font:{size:10}, boxWidth:12 } },
-                 tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw != null ? (c.raw >= 0 ? '+' : '') + c.raw.toFixed(3) : '—'} ×1k` } } },
+      plugins: {
+        legend: { labels: { color:'#aaa', font:{size:10}, boxWidth:12,
+          filter: item => item.text !== '── zero' } },
+        tooltip: { callbacks: { label: c => c.dataset.label === '── zero' ? null : ` ${c.dataset.label}: ${c.raw != null ? (c.raw >= 0 ? '+' : '') + c.raw.toFixed(3) : '—'} ×1k` } }
+      },
       scales: {
         x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
         y: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, title:{display:true, text:'Weight ×1000', color:'#555', font:{size:10}} }
@@ -2347,16 +2394,20 @@ function mlRenderFeatTable() {
   let feats = annOnly ? _mlCurrentFeatures.filter(f => f.category === 'announcement') : _mlCurrentFeatures;
   const tbody = document.getElementById('ml-feat-tbody');
   const totalFeats = _mlCurrentFeatures.length;
-  tbody.innerHTML = feats.map(f => {
-    const catColor = _ML_CAT_COLORS[f.category] || '#6b7280';
+  tbody.innerHTML = feats.map((f, idx) => {
+    const catColor  = _ML_CAT_COLORS[f.category] || '#6b7280';
     const rankColor = f.rank <= 10 ? 'var(--green)' : f.rank <= 25 ? '#fbbf24' : 'var(--muted)';
     const instColor = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? '#fbbf24' : 'var(--red)';
     const signColor = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
-    return `<tr style="border-bottom:1px solid #141414">
+    const isAnn     = f.category === 'announcement';
+    const nameColor = isAnn ? 'var(--gold)' : '#e5e7eb';
+    const nameFW    = isAnn ? '600' : '400';
+    const rowBg     = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
+    return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
       <td style="padding:5px 10px;font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
-      <td style="padding:5px 10px;font-size:11px;color:#e5e7eb${f.category === 'announcement' ? ';color:var(--gold);font-weight:600' : ''}">${f.name}</td>
+      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW}">${f.name}</td>
       <td style="padding:5px 10px;font-size:11px"><span style="color:${catColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">${f.category}</span></td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px">${(f.avg_weight * 1000).toFixed(3)}</td>
+      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
     </tr>`;
