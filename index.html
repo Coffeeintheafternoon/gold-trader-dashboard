@@ -763,6 +763,9 @@
 Chart.defaults.color = '#7a7060';
 Chart.defaults.borderColor = '#1a1400';
 const _css=getComputedStyle(document.documentElement),GOLD=_css.getPropertyValue('--gold').trim(),GREEN=_css.getPropertyValue('--green').trim(),RED=_css.getPropertyValue('--red').trim(),GREY=_css.getPropertyValue('--grey').trim();
+function hexA(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}
+const GREEN_08=hexA(GREEN,0.08),GREEN_1=hexA(GREEN,0.1),GREEN_12=hexA(GREEN,0.12),GREEN_3=hexA(GREEN,0.3),GREEN_4=hexA(GREEN,0.4),GREEN_6=hexA(GREEN,0.6),GREEN_7=hexA(GREEN,0.7),GREEN_75=hexA(GREEN,0.75);
+const RED_08=hexA(RED,0.08),RED_1=hexA(RED,0.1),RED_3=hexA(RED,0.3),RED_55=hexA(RED,0.55),RED_6=hexA(RED,0.6),RED_65=hexA(RED,0.65),RED_75=hexA(RED,0.75);
 
 // ── Tab management ────────────────────────────────────────────────────────────
 const TABS = ['signal','modellab','universe','meta'];
@@ -894,7 +897,7 @@ function buildCombinedVerdictBanner(verdict) {
   if (!verdict) { el.style.display='none'; return; }
   el.style.display = '';
   const dirColor = verdict.dir==='bullish'?GREEN:verdict.dir==='bearish'?RED:'#9ca3af';
-  const dirBg = verdict.dir==='bullish'?'rgba(34,197,94,0.08)':verdict.dir==='bearish'?'rgba(239,68,68,0.08)':'rgba(107,114,128,0.08)';
+  const dirBg = verdict.dir==='bullish'?GREEN_08:verdict.dir==='bearish'?RED_08:'rgba(107,114,128,0.08)';
   const dirText = verdict.dir==='bullish'?'▲ BULLISH':verdict.dir==='bearish'?'▼ BEARISH':'— NEUTRAL';
   const conflictHtml = verdict.conflicting ? `<div style="margin-top:10px;padding:8px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:12px;color:#fbbf24">⚠ Signals conflict — Claude ${verdict.claudeDir>0?'BULLISH':'BEARISH'} vs Quant ${verdict.quantDir>0?'BULLISH ('+verdict.buyCount+'/'+verdict.total+')':'BEARISH'}. Quant weight ${(verdict.quantWeight/verdict.totalWeight*100).toFixed(0)}% of combined.</div>` : '';
   el.style.borderLeft = `4px solid ${dirColor}`;
@@ -921,7 +924,7 @@ function buildClaudeSignalCard(s, signals) {
   const dir = s.last_direction || '';
   const dirColor = directionColor(dir);
   const dirText = (dir||'—').charAt(0).toUpperCase()+dir.slice(1);
-  const dirBg = dir==='bullish'?'rgba(34,197,94,0.1)':dir==='bearish'?'rgba(239,68,68,0.1)':'rgba(107,114,128,0.1)';
+  const dirBg = dir==='bullish'?GREEN_1:dir==='bearish'?RED_1:'rgba(107,114,128,0.1)';
   let driversHtml = '';
   driverKeys.forEach((k,i) => {
     const v = drivers[k]; if (v == null) return;
@@ -956,7 +959,7 @@ function buildQuantSignalCard(compData) {
       <span style="font-size:13px;font-weight:600;color:#e5e7eb">${t.ticker}</span>
       <span style="font-size:11px;color:var(--muted)">${t.sector||''}</span>
       <span style="font-size:12px;color:${predSign==='+'?GREEN:RED}">${predSign}${t.predicted_5bar_pct.toFixed(2)}%</span>
-      <span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span>
+      <span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?GREEN_1:RED_1};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span>
     </div>`;
   }).join('');
   document.getElementById('quant-signal-card').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -1588,7 +1591,7 @@ function buildMetaTab(screenerData, compData, fullTickers) {
   // Sector avg PF chart
   const secLabels=secEntries.map(([s])=>s);
   const secAvgPF=secEntries.map(([,d])=>d.valid?+(d.pfSum/d.valid).toFixed(3):0);
-  const secBarColors=secAvgPF.map(v=>v>=1.10?'rgba(34,197,94,0.7)':v>=1.05?'rgba(251,191,36,0.7)':'rgba(239,68,68,0.55)');
+  const secBarColors=secAvgPF.map(v=>v>=1.10?GREEN_7:v>=1.05?'rgba(251,191,36,0.7)':RED_55);
   const sCtx=document.getElementById('meta-sector-pf-chart').getContext('2d');
   if(_metaSectorChart)_metaSectorChart.destroy();
   _metaSectorChart=new Chart(sCtx,{type:'bar',data:{labels:secLabels,datasets:[{data:secAvgPF,backgroundColor:secBarColors,borderColor:secBarColors.map(c=>c.replace('0.7','1').replace('0.55','1')),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>[` Avg PF: ${ctx.raw.toFixed(3)}`,` ${secEntries[ctx.dataIndex][1].edge}/${secEntries[ctx.dataIndex][1].valid} with PF≥1.10`]}}},scales:{x:{min:0.95,grid:{color:'#222'},ticks:{callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
@@ -1597,7 +1600,7 @@ function buildMetaTab(screenerData, compData, fullTickers) {
   const bins=[];for(let b=0.85;b<1.65;b+=0.05)bins.push(b);
   const hist=bins.map(b=>valid.filter(t=>t.pf>=b&&t.pf<b+0.05).length);
   const histLabels=bins.map(b=>b.toFixed(2));
-  const histColors=bins.map(b=>b>=1.10?'rgba(34,197,94,0.7)':b>=1.00?'rgba(251,191,36,0.6)':'rgba(239,68,68,0.6)');
+  const histColors=bins.map(b=>b>=1.10?GREEN_7:b>=1.00?'rgba(251,191,36,0.6)':RED_6);
   const hCtx=document.getElementById('meta-pf-hist-chart').getContext('2d');
   if(_metaPfHistChart)_metaPfHistChart.destroy();
   _metaPfHistChart=new Chart(hCtx,{type:'bar',data:{labels:histLabels,datasets:[{data:hist,backgroundColor:histColors,borderColor:histColors,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} tickers`}},annotation:{annotations:{line1:{type:'line',value:3,scaleID:'x',borderColor:'rgba(212,160,23,0.6)',borderWidth:2,borderDash:[4,3]}}}},scales:{x:{grid:{color:'#222'},title:{display:true,text:'Profit Factor bucket (0.05 wide)',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#222'},ticks:{callback:v=>Math.round(v)}}}}});
@@ -1622,7 +1625,7 @@ function buildMetaTab(screenerData, compData, fullTickers) {
     const conColor=buys>sells?GREEN:RED;
     document.getElementById('meta-portfolio-bar').style.cssText+=`;width:${pct}%;background:${conColor}`;
     document.getElementById('meta-portfolio-label').textContent=`${buys} BUY · ${sells} SELL`;
-    document.getElementById('meta-portfolio-tbody').innerHTML=ct.map(t=>{const isBuy=t.signal===1;const sc=isBuy?GREEN:RED;return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:7px 12px;color:var(--muted);font-size:12px">${t.sector||'—'}</td><td style="padding:7px 12px;text-align:center"><span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:${t.predicted_5bar_pct>=0?GREEN:RED}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:7px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:11px">${t.mcpt_p?.toFixed(3)??'—'}</td></tr>`;}).join('');
+    document.getElementById('meta-portfolio-tbody').innerHTML=ct.map(t=>{const isBuy=t.signal===1;const sc=isBuy?GREEN:RED;return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:7px 12px;color:var(--muted);font-size:12px">${t.sector||'—'}</td><td style="padding:7px 12px;text-align:center"><span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?GREEN_1:RED_1};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:${t.predicted_5bar_pct>=0?GREEN:RED}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:7px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:11px">${t.mcpt_p?.toFixed(3)??'—'}</td></tr>`;}).join('');
     const featCount={};ct.forEach(t=>{(t.top_features||[]).forEach(f=>{featCount[f.name]=(featCount[f.name]||0)+1;});});
     const fsorted=Object.entries(featCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const mx=fsorted.length?fsorted[0][1]:1;
@@ -1797,7 +1800,7 @@ async function loadScreenerPanel() {
     <div class="hero-card" style="min-width:200px"><div class="hero-label tip" data-tip="${data.strategy_note||''}">Strategy Winner</div><div class="hero-value color-gold" style="font-size:14px">Linear Regression</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Donchian: 0/22 validated</div></div>`;
   const chartTickers=tickers.filter(t=>t.lr_p!==null&&t.lr_p!==undefined);
   const labels=chartTickers.map(t=>t.ticker),pvals=chartTickers.map(t=>t.lr_p),pfs=chartTickers.map(t=>t.lr_pf);
-  const barColors=chartTickers.map(t=>t.verdict==='ACCEPT'?'rgba(34,197,94,0.75)':t.verdict==='BORDERLINE'?'rgba(251,191,36,0.75)':'rgba(239,68,68,0.65)');
+  const barColors=chartTickers.map(t=>t.verdict==='ACCEPT'?GREEN_75:t.verdict==='BORDERLINE'?'rgba(251,191,36,0.75)':RED_65);
   const borderColors=chartTickers.map(t=>t.verdict==='ACCEPT'?GREEN:t.verdict==='BORDERLINE'?'#fbbf24':RED);
   const pCtx=document.getElementById('screener-pval-chart').getContext('2d');
   if(_screenerPvalChart)_screenerPvalChart.destroy();
@@ -1805,7 +1808,7 @@ async function loadScreenerPanel() {
   const pfCtx=document.getElementById('screener-pf-chart').getContext('2d');
   if(_screenerPfChart)_screenerPfChart.destroy();
   _screenerPfChart=new Chart(pfCtx,{type:'bar',data:{labels,datasets:[{data:pfs,backgroundColor:barColors,borderColor:borderColors,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const t=chartTickers[ctx.dataIndex];return[` PF = ${ctx.raw?.toFixed(3)}`,` p = ${t.lr_p?.toFixed(3)??'—'}`,` ${t.note}`];}}}},scales:{x:{min:0.9,grid:{color:'#222'},ticks:{callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
-  const VERDICT_STYLE={'ACCEPT':{bg:'rgba(34,197,94,0.12)',border:'rgba(34,197,94,0.4)',color:GREEN,label:'ACCEPT ✓'},'BORDERLINE':{bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.4)',color:'#fbbf24',label:'BORDERLINE ~'},'REJECT':{bg:'rgba(239,68,68,0.08)',border:'rgba(239,68,68,0.3)',color:RED,label:'REJECT ✗'},'ERROR':{bg:'rgba(107,114,128,0.08)',border:'rgba(107,114,128,0.3)',color:'#6b7280',label:'NO DATA'}};
+  const VERDICT_STYLE={'ACCEPT':{bg:GREEN_12,border:GREEN_4,color:GREEN,label:'ACCEPT ✓'},'BORDERLINE':{bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.4)',color:'#fbbf24',label:'BORDERLINE ~'},'REJECT':{bg:RED_08,border:RED_3,color:RED,label:'REJECT ✗'},'ERROR':{bg:'rgba(107,114,128,0.08)',border:'rgba(107,114,128,0.3)',color:'#6b7280',label:'NO DATA'}};
   document.getElementById('screener-tbody').innerHTML=tickers.map((t,i)=>{
     const vs=VERDICT_STYLE[t.verdict]||VERDICT_STYLE.REJECT;
     const pvalC=t.lr_p!==null?(t.lr_p<0.01?'var(--green)':t.lr_p<0.05?'#86efac':t.lr_p<0.10?'#fbbf24':'var(--muted)'):'var(--muted)';
@@ -1841,8 +1844,8 @@ async function loadComparisonPanel() {
     <div class="hero-card" style="min-width:160px"><div class="hero-label tip" data-tip="Average number of features with Spearman p &lt; 0.05 across all models.">Avg Significant Features</div><div class="hero-value" style="font-size:18px">${avgSig} / 33</div></div>`;
   document.getElementById('comp-signal-cards').innerHTML=tickers.map(t=>{
     const isBuy=t.signal===1,sc=isBuy?'var(--green)':'var(--red)';
-    const bg=isBuy?'rgba(34,197,94,0.08)':'rgba(239,68,68,0.08)';
-    const border=isBuy?'rgba(34,197,94,0.3)':'rgba(239,68,68,0.3)';
+    const bg=isBuy?GREEN_08:RED_08;
+    const border=isBuy?GREEN_3:RED_3;
     const predSign=t.predicted_5bar_pct>=0?'+':'';
     const safe=t.ticker.replace(/\./g,'_').toLowerCase();
     return`<div class="hero-card" style="cursor:pointer;border:1px solid ${border};background:${bg};padding:14px 16px" onclick="selectTicker('${safe}')" title="Click to view ${t.ticker} full feature breakdown"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><span style="font-size:15px;font-weight:700;color:#e5e7eb">${t.ticker}</span><span style="font-size:12px;font-weight:700;color:${sc};background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></div><div style="font-size:20px;font-weight:800;color:${sc};margin-bottom:4px">${predSign}${t.predicted_5bar_pct.toFixed(2)}%</div><div style="font-size:11px;color:var(--muted)">5-bar prediction</div><div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>A$${t.close.toFixed(2)}</span><span>${t.n_significant}/${t.n_features} sig</span><span>p=${t.mcpt_p?.toFixed(3)??'—'}</span></div></div>`;
@@ -1854,7 +1857,7 @@ async function loadComparisonPanel() {
     const top=t.top_features?.[0];
     const topStr=top?`<span style="font-size:11px;font-family:monospace">${top.name}</span> <span style="color:${top.contribution_pct>=0?'var(--green)':'var(--red)'}">${top.contribution_pct>=0?'+':''}${top.contribution_pct.toFixed(3)}%</span>`:'—';
     const safe=t.ticker.replace(/\./g,'_').toLowerCase();
-    return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="selectTicker('${safe}')" onmouseover="this.style.background='#1f1f1f'" onmouseout="this.style.background=''"><td style="padding:9px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:9px 12px;color:var(--muted);font-size:12px">${t.sector??'—'}</td><td style="padding:9px 12px;text-align:right;font-family:monospace">A$${t.close.toFixed(2)}</td><td style="padding:9px 12px;text-align:center"><span style="color:${sc};font-weight:700;font-size:12px;background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:3px 10px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:9px 12px;text-align:right;font-family:monospace;font-weight:600;color:${pc}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:9px 12px;text-align:right;color:var(--muted)">${t.n_significant}/${t.n_features}</td><td style="padding:9px 12px;text-align:right;font-family:monospace;color:${pvalC}">${t.mcpt_p?.toFixed(3)??'—'}</td><td style="padding:9px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:9px 12px">${topStr}</td></tr>`;
+    return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="selectTicker('${safe}')" onmouseover="this.style.background='#1f1f1f'" onmouseout="this.style.background=''"><td style="padding:9px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:9px 12px;color:var(--muted);font-size:12px">${t.sector??'—'}</td><td style="padding:9px 12px;text-align:right;font-family:monospace">A$${t.close.toFixed(2)}</td><td style="padding:9px 12px;text-align:center"><span style="color:${sc};font-weight:700;font-size:12px;background:${isBuy?GREEN_1:RED_1};padding:3px 10px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:9px 12px;text-align:right;font-family:monospace;font-weight:600;color:${pc}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:9px 12px;text-align:right;color:var(--muted)">${t.n_significant}/${t.n_features}</td><td style="padding:9px 12px;text-align:right;font-family:monospace;color:${pvalC}">${t.mcpt_p?.toFixed(3)??'—'}</td><td style="padding:9px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:9px 12px">${topStr}</td></tr>`;
   }).join('');
 }
 
@@ -1893,7 +1896,7 @@ async function loadFeaturePanel(ticker='waf_ax') {
   document.getElementById('feat-model-summary').innerHTML=summHTML;
   const top15=(data.features||[]).slice(0,15);
   const flabels=top15.map(f=>f.name),values=top15.map(f=>f.contribution_pct);
-  const colors=values.map(v=>v>=0?'rgba(34,197,94,0.75)':'rgba(239,68,68,0.75)');
+  const colors=values.map(v=>v>=0?GREEN_75:RED_75);
   const borderC=values.map(v=>v>=0?GREEN:RED);
   const ctx=document.getElementById('feat-contrib-chart').getContext('2d');
   if(_featContribChart)_featContribChart.destroy();
