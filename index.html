@@ -436,6 +436,59 @@
     </div>
   </div>
 
+  <div id="full-screener-section" style="display:none">
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🌏</span>
+      <span class="section-divider-label">Full ASX Universe — 300 Tickers</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="full-screener-hero-row"></div>
+    <div class="chart-card" style="padding:20px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="chart-title" style="margin-bottom:0">Linear Regression Edge — All ASX Sectors</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--muted)">Sector:</label>
+          <select id="full-screener-sector-filter" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
+            <option value="">All Sectors</option>
+          </select>
+          <label style="font-size:12px;color:var(--muted)">Sort:</label>
+          <select id="full-screener-sort" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
+            <option value="pf_desc">PF ↓</option>
+            <option value="sharpe_desc">Sharpe ↓</option>
+            <option value="mean_desc">Ann Return ↓</option>
+            <option value="oos_desc">OOS Bars ↓</option>
+            <option value="ticker_asc">Ticker A-Z</option>
+          </select>
+          <label style="font-size:12px;color:var(--muted)">Show:</label>
+          <select id="full-screener-show" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
+            <option value="all">All</option>
+            <option value="edge">PF ≥ 1.10</option>
+            <option value="valid">Valid only</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="full-screener-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
+              <th style="text-align:left;padding:7px 10px">Ticker</th>
+              <th style="text-align:left;padding:7px 10px">Sector</th>
+              <th style="text-align:right;padding:7px 10px">PF</th>
+              <th style="text-align:right;padding:7px 10px">Sharpe</th>
+              <th style="text-align:right;padding:7px 10px">Ann Return</th>
+              <th style="text-align:right;padding:7px 10px" title="Lower bound of 95% CI on annual return">CI Low ⓘ</th>
+              <th style="text-align:right;padding:7px 10px">OOS Bars</th>
+              <th style="text-align:left;padding:7px 10px">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="full-screener-tbody"></tbody>
+        </table>
+      </div>
+      <div id="full-screener-count" style="margin-top:8px;font-size:11px;color:var(--muted);text-align:right"></div>
+    </div>
+  </div>
+
   <div id="model-comparison-section" style="display:none">
     <div class="section-divider" style="margin-top:40px">
       <div class="section-divider-line"></div>
@@ -1265,17 +1318,16 @@ function buildFeatureSelection(strategies) {
 function buildRegimeDistChart(dist) { if(!dist||!dist.length)return; }
 
 // ── Asset + Interval switchers ────────────────────────────────────────────────
-function switchAsset(assetId) { const url=new URL(window.location.href);url.searchParams.set('asset',assetId);url.searchParams.set('interval','1h');window.location.href=url.toString(); }
+function switchAsset(compositeKey) { const sep=compositeKey.lastIndexOf('__');if(sep<0)return;const assetId=compositeKey.slice(0,sep),interval=compositeKey.slice(sep+2);const url=new URL(window.location.href);url.searchParams.set('asset',assetId);url.searchParams.set('interval',interval);window.location.href=url.toString(); }
 function switchInterval(interval) { const url=new URL(window.location.href);url.searchParams.set('interval',interval);window.location.href=url.toString(); }
 
 function buildAssetDropdown(assets, currentAsset, currentInterval) {
-  const seen=new Set();const unique=assets.filter(a=>{if(seen.has(a.id))return false;seen.add(a.id);return true;});
-  if(!unique||unique.length<2)return;
+  if(!assets||assets.length<1)return;
   const wrap=document.getElementById('asset-dropdown-wrap');
   const select=document.getElementById('asset-select');
   wrap.style.display='';wrap.dataset.mlVisible='';
   const _ICONS={gold:'🥇',gold_acf:'🥇',oil:'🛢️',oil_acf:'🛢️',dxy:'💵',dxy_acf:'💵',audusd:'🇦🇺',audusd_acf:'🇦🇺',waf:'⛏️'};
-  unique.forEach(a=>{const entry=assets.find(x=>x.id===a.id&&x.interval===currentInterval)||assets.find(x=>x.id===a.id);const opt=document.createElement('option');opt.value=a.id;opt.selected=a.id===currentAsset;const pf=entry&&entry.pf!=null?` · PF ${entry.pf.toFixed(2)}`:'';const sharpe=entry&&entry.sharpe!=null?` · SR ${entry.sharpe.toFixed(2)}`:'';opt.textContent=`${_ICONS[a.id]||'📊'} ${a.label}${pf}${sharpe}`;select.appendChild(opt);});
+  assets.forEach(a=>{const opt=document.createElement('option');const key=a.id+'__'+a.interval;opt.value=key;opt.selected=(a.id===currentAsset&&a.interval===currentInterval);const pf=a.pf!=null?` · PF ${a.pf.toFixed(2)}`:'';opt.textContent=`${_ICONS[a.id]||'📊'} ${a.label} (${a.interval.toUpperCase()})${pf}`;select.appendChild(opt);});
 }
 
 function buildIntervalToggle(assets, currentAsset, currentInterval) {
@@ -1299,6 +1351,7 @@ async function initModelLabTab() {
 async function initUniverseTab() {
   await Promise.all([
     loadScreenerPanel(),
+    loadFullScreenerPanel(),
     loadComparisonPanel().then(() => loadFeaturePanel('waf_ax'))
   ]);
 }
@@ -1382,6 +1435,54 @@ async function loadQuantPanels() {
   buildClusterRulesPanel(qd.cluster_performance||[]);
   buildFeatureSelection(qd.strategies||[]);
   buildTradeLog(qd.trade_log||[]);
+}
+
+// ── Full ASX Universe Screener (300 tickers) ──────────────────────────────────
+let _fullScreenerData=null;
+
+async function loadFullScreenerPanel() {
+  let data;
+  try { const res=await fetch(`screener_full.json?t=${Date.now()}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  const tickers=data.tickers||[];if(!tickers.length)return;
+  _fullScreenerData=tickers;
+  document.getElementById('full-screener-section').style.display='';
+  const valid=tickers.filter(t=>!t.error);
+  const edge=valid.filter(t=>t.pf&&t.pf>=1.10);
+  document.getElementById('full-screener-hero-row').innerHTML=`
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">Tickers Screened</div><div class="hero-value color-gold">${data.n_total}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">ASX equities</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">Valid Results</div><div class="hero-value" style="color:var(--green)">${data.n_valid}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${data.n_error} no data</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">PF ≥ 1.10</div><div class="hero-value color-gold">${edge.length}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${Math.round(edge.length/valid.length*100)}% of valid</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">Sectors</div><div class="hero-value" style="font-size:22px">${new Set(tickers.map(t=>t.sector)).size}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">sector coverage</div></div>`;
+  const sectors=[...new Set(tickers.map(t=>t.sector).filter(Boolean))].sort();
+  const sel=document.getElementById('full-screener-sector-filter');
+  sectors.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  filterFullScreener();
+}
+
+function filterFullScreener() {
+  if(!_fullScreenerData)return;
+  const sectorF=document.getElementById('full-screener-sector-filter').value;
+  const showF=document.getElementById('full-screener-show').value;
+  const sortF=document.getElementById('full-screener-sort').value;
+  let rows=_fullScreenerData.slice();
+  if(sectorF)rows=rows.filter(t=>t.sector===sectorF);
+  if(showF==='edge')rows=rows.filter(t=>t.pf&&t.pf>=1.10);
+  else if(showF==='valid')rows=rows.filter(t=>!t.error);
+  if(sortF==='pf_desc')rows.sort((a,b)=>(b.pf||0)-(a.pf||0));
+  else if(sortF==='sharpe_desc')rows.sort((a,b)=>(b.sharpe||0)-(a.sharpe||0));
+  else if(sortF==='mean_desc')rows.sort((a,b)=>(b.mean_ann_pct||0)-(a.mean_ann_pct||0));
+  else if(sortF==='oos_desc')rows.sort((a,b)=>(b.oos_bars||0)-(a.oos_bars||0));
+  else if(sortF==='ticker_asc')rows.sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  document.getElementById('full-screener-count').textContent=`Showing ${rows.length} of ${_fullScreenerData.length} tickers`;
+  document.getElementById('full-screener-tbody').innerHTML=rows.map((t,i)=>{
+    const rowBg=i%2===0?'':'background:#111';
+    if(t.error)return`<tr style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+    const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
+    const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
+    const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
+    const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
+    return`<tr style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+  }).join('');
 }
 
 // ── Screener Panel ────────────────────────────────────────────────────────────
