@@ -3444,12 +3444,33 @@ async function renderPruningRoadmap(ticker) {
   const rounds = data.rounds || [];
   if (!rounds.length) { placeholder.style.display = ''; return; }
 
-  // Filter feature table/chart to only show features surviving the final pruned model
+  // Filter feature table/chart/correlation to only show features surviving the final pruned model
   const finalExcluded = new Set(data.final_excluded || []);
   if (finalExcluded.size > 0) {
+    // 1. Feature list + table + importance chart
     _mlCurrentFeatures = _mlCurrentFeatures.filter(f => !finalExcluded.has(f.name));
     mlRenderFeatTable();
     mlFilterFeats(_mlFeatFilter || 'all');
+
+    // 2. Correlation matrix — filter rows/cols to surviving features only
+    if (_mlCorrData) {
+      const allFeats   = _mlCorrData.features || [];
+      const surviving  = new Set(allFeats.filter(f => !finalExcluded.has(f)));
+      const keepIdx    = allFeats.map((f,i) => surviving.has(f) ? i : -1).filter(i => i >= 0);
+      const keepSet    = new Set(keepIdx);
+      _mlCorrData = {
+        features:      keepIdx.map(i => allFeats[i]),
+        cluster_order: (_mlCorrData.cluster_order || []).filter(f => surviving.has(f)),
+        matrix:        keepIdx.map(ri => keepIdx.map(ci => (_mlCorrData.matrix[ri]||[])[ci] ?? 0)),
+        linkage:       null,   // linkage not recomputed — dendrogram will be skipped
+      };
+      // Reset built flags so charts rebuild with filtered data
+      _mlHeatmapBuilt = false;
+      _mlDendroBuilt  = false;
+      _mlForceBuilt   = false;
+      if (_mlForceAnim) { cancelAnimationFrame(_mlForceAnim); _mlForceAnim = null; }
+      mlCorrTab('heatmap');
+    }
   }
 
   card.style.display = '';
