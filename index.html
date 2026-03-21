@@ -363,7 +363,7 @@
       <div class="chart-title">Price Chart — Buy &amp; Sell Signals</div>
       <button id="btn-reset-zoom" onclick="resetTradeChartZoom()" style="font-size:11px;padding:3px 10px;background:#222;border:1px solid #444;color:#9ca3af;border-radius:5px;cursor:pointer">Reset zoom</button>
     </div>
-    <div class="chart-subtitle">Full history · shaded region = in-sample training · Ctrl+scroll to zoom · drag to pan</div>
+    <div class="chart-subtitle">Full walk-forward history — every bar shown is out-of-sample · Ctrl+scroll to zoom · drag to pan</div>
     <div style="position:relative;height:340px"><canvas id="chart-trade-signals"></canvas></div>
   </div>
 
@@ -1404,33 +1404,7 @@ function buildTradeSignalChart(equityCurve, tradeLog, clusterPerf) {
   }
   const exitDataset={type:'scatter',label:'Exit',data:allTrades.map(t=>({x:t.exit_date,y:t.exit_price})),backgroundColor:allTrades.map(t=>t.win?'#22c55e55':'#ef444455'),borderColor:allTrades.map(t=>t.win?'#22c55eaa':'#ef4444aa'),borderWidth:1,pointStyle:'crossRot',pointRadius:5,pointHoverRadius:7,_meta:allTrades};
 
-  // Inline plugin: IS→OOS boundary line + shaded IS region
-  const oosBoundaryPlugin={
-    id:'oos-boundary',
-    beforeDraw(chart){
-      if(oosIdx<0)return;
-      const{ctx,chartArea,scales}=chart;
-      const xPos=scales.x.getPixelForValue(oosIdx);
-      if(xPos<chartArea.left||xPos>chartArea.right)return;
-      // Shade IS region
-      ctx.save();
-      ctx.fillStyle='rgba(255,255,255,0.03)';
-      ctx.fillRect(chartArea.left,chartArea.top,xPos-chartArea.left,chartArea.height);
-      // Dashed vertical line
-      ctx.strokeStyle='#6366f188';
-      ctx.lineWidth=1.5;
-      ctx.setLineDash([5,4]);
-      ctx.beginPath();ctx.moveTo(xPos,chartArea.top);ctx.lineTo(xPos,chartArea.bottom);ctx.stroke();
-      // Label
-      ctx.setLineDash([]);
-      ctx.fillStyle='#6366f1';
-      ctx.font='bold 10px sans-serif';
-      ctx.fillText('IS',xPos-18,chartArea.top+13);
-      ctx.fillStyle='#22c55e';
-      ctx.fillText('OOS →',xPos+4,chartArea.top+13);
-      ctx.restore();
-    }
-  };
+  const oosBoundaryPlugin={}; // no IS/OOS line — entire curve is OOS (walk-forward)
 
   const ctx=document.getElementById('chart-trade-signals').getContext('2d');
   _tradeSignalChart=new Chart(ctx,{
