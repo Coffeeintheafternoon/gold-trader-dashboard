@@ -181,7 +181,7 @@
     <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
       <div>
         <div class="chart-title" style="font-size:15px">Squant v1 — Model Performance Overview</div>
-        <div class="chart-subtitle">Walk-forward out-of-sample · XAU/AUD · 1H bars · Adaptive K-Means + Strategy Pool</div>
+        <div class="chart-subtitle" id="metrics-subtitle">Walk-forward out-of-sample</div>
       </div>
       <div style="font-size:12px;color:var(--muted);text-align:right" id="metrics-date-range">—</div>
     </div>
@@ -1267,9 +1267,11 @@ function buildLongShortBreakdown(ls) {
 }
 
 // ── Model Metrics ─────────────────────────────────────────────────────────────
-function buildModelMetrics(equityCurve, strategies, tradeLog) {
+function buildModelMetrics(equityCurve, strategies, tradeLog, qd) {
   if(!equityCurve||equityCurve.length<20)return;
   document.getElementById('quant-metrics-panel').style.display='';
+  const sub=document.getElementById('metrics-subtitle');
+  if(sub&&qd){const ticker=(qd.ticker||'').replace('=','/');const interval=(qd.interval||'').toUpperCase();const label=qd.asset_label||ticker;sub.textContent=`Walk-forward out-of-sample · ${label} (${ticker}) · ${interval} bars`;}
   const oosBars=equityCurve.filter(d=>d.quant_cumlog!=null&&d.quant_cumlog!==0);
   const allBars=oosBars.length?oosBars:equityCurve;
   const startDate=allBars[0].date,endDate=allBars[allBars.length-1].date;
@@ -1590,7 +1592,7 @@ async function loadQuantPanels() {
     buildClusterPerfTable(qd.cluster_performance||[],qd.trade_log||[]);
     buildMonthlyCalendar(qd.equity_curve||[]);
     buildLongShortBreakdown(qd.long_short||{});
-    buildModelMetrics(qd.equity_curve||[],qd.strategies||[],qd.trade_log||[]);
+    buildModelMetrics(qd.equity_curve||[],qd.strategies||[],qd.trade_log||[],qd);
     buildTradeSignalChart(qd.price_series||[],qd.trade_log||[],qd.cluster_performance||[]);
     buildClusterRulesPanel(qd.cluster_performance||[]);
     buildTradeLog(qd.trade_log||[]);
