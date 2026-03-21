@@ -262,25 +262,7 @@
       <div id="ml-metrics-table-wrap"></div>
     </div>
 
-    <!-- Feature importance chart + category filter -->
-    <div class="chart-card" style="margin-bottom:16px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div>
-          <div class="chart-title">Feature Importance — Average |Weight| Across Walk-Forward Windows</div>
-          <div class="chart-subtitle">Top 20 features. Colour = category. Announcement features highlighted in gold.</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="ml-cat-filters">
-          <button onclick="mlFilterFeats('all')" id="ml-cat-all" class="ml-sort-btn ml-sort-active" style="font-size:11px">All</button>
-          <button onclick="mlFilterFeats('momentum')" id="ml-cat-momentum" class="ml-sort-btn" style="font-size:11px;border-color:#f59e0b;color:#f59e0b">Momentum</button>
-          <button onclick="mlFilterFeats('volume')" id="ml-cat-volume" class="ml-sort-btn" style="font-size:11px;border-color:#00c832;color:#00c832">Volume</button>
-          <button onclick="mlFilterFeats('volatility')" id="ml-cat-volatility" class="ml-sort-btn" style="font-size:11px;border-color:#f97316;color:#f97316">Volatility</button>
-          <button onclick="mlFilterFeats('trend')" id="ml-cat-trend" class="ml-sort-btn" style="font-size:11px;border-color:#2dd4bf;color:#2dd4bf">Trend</button>
-          <button onclick="mlFilterFeats('macro')" id="ml-cat-macro" class="ml-sort-btn" style="font-size:11px;border-color:#d97706;color:#d97706">Macro</button>
-          <button onclick="mlFilterFeats('announcement')" id="ml-cat-announcement" class="ml-sort-btn" style="font-size:11px;border-color:var(--gold);color:var(--gold)">Announcement</button>
-        </div>
-      </div>
-      <div id="ml-feat-chart-wrap" class="chart-wrap" style="height:520px"><canvas id="ml-feat-chart"></canvas></div>
-    </div>
+    <!-- Feature importance chart removed (redundant with feature table) -->
 
     <!-- Announcement features detail -->
     <div class="chart-card" style="margin-bottom:16px" id="ml-ann-card">
