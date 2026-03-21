@@ -282,9 +282,15 @@
 
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
-      <div class="chart-title">Weight Stability — Top 6 Features Across Windows</div>
-      <div class="chart-subtitle">Each line = one feature's signed weight across the 16 rolling train windows. Flat line = the model consistently learns the same relationship. Wild swings = noise.</div>
-      <div id="ml-stability-toggles" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div class="chart-title" id="ml-stab-title">Weight Stability — Top 6 Features Across Windows</div>
+      <div class="chart-subtitle" id="ml-stab-subtitle">Each line = one feature's signed weight across the rolling train windows. Flat = consistent. Wild swings = noise or feature swap. Switch metric or add features to compare.</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:0.4px;text-transform:uppercase">Show:</span>
+        <button onclick="mlStabMetric('weight')"   id="ml-stab-m-weight"   class="ml-sort-btn ml-sort-active" style="font-size:10px;padding:2px 8px">Signed Weight</button>
+        <button onclick="mlStabMetric('cum_avg')"  id="ml-stab-m-cum_avg"  class="ml-sort-btn" style="font-size:10px;padding:2px 8px">Running Avg</button>
+        <button onclick="mlStabMetric('cum_pval')" id="ml-stab-m-cum_pval" class="ml-sort-btn" style="font-size:10px;padding:2px 8px">Running p-val</button>
+      </div>
+      <div id="ml-stability-toggles" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center"></div>
       <div class="chart-wrap" style="height:240px"><canvas id="ml-stability-chart"></canvas></div>
       <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;align-self:center">Instability guide:</div>
@@ -2092,6 +2098,8 @@ let _mlFeatChart = null;
 let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
 let _mlCurrentWH = [];          // weight_history for current ticker
+let _mlStabMetric   = 'weight'; // 'weight' | 'cum_avg' | 'cum_pval'
+let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
 const _ML_CAT_COLORS = {
   momentum:     '#f59e0b',   // warm amber
@@ -2197,6 +2205,13 @@ function renderTickerDetail(d) {
   _mlCorrData = d.correlations || null;
   _mlHeatmapBuilt = false; _mlDendroBuilt = false; _mlForceBuilt = false;
   _mlForceAnim = null;
+  _mlStabAdded  = [];
+  _mlStabMetric = 'weight';
+  // Reset metric buttons
+  ['weight','cum_avg','cum_pval'].forEach(k => {
+    const b = document.getElementById(`ml-stab-m-${k}`);
+    if (b) { b.style.background = k==='weight' ? '#f59e0b22':'transparent'; b.style.color = k==='weight' ? '#f59e0b':'#6b7280'; b.style.borderColor = k==='weight' ? '#f59e0b':'#374151'; }
+  });
   const ticker = d.ticker || '—';
   document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
@@ -2384,10 +2399,112 @@ function buildAnnTable(features) {
   </table>`;
 }
 
+// ── t-test helpers (one-sample, H0=0, two-tailed) ─────────────────────────────
+function _lgamma(x) {
+  const c = [76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.001208650973866179,-5.395239384953e-6];
+  let y = x, tmp = x + 5.5, ser = 1.000000000190015;
+  tmp = (x + 0.5) * Math.log(tmp) - tmp;
+  for (let j=0; j<6; j++) { y++; ser += c[j]/y; }
+  return tmp + Math.log(2.5066282746310005 * ser / x);
+}
+function _betaInc(x, a, b) {
+  if (x <= 0) return 0; if (x >= 1) return 1;
+  const lbeta = _lgamma(a) + _lgamma(b) - _lgamma(a+b);
+  const prefix = Math.exp(a*Math.log(x) + b*Math.log(1-x) - lbeta) / a;
+  let C=1, D=1-(a+b)*x/(a+1); if(Math.abs(D)<1e-30)D=1e-30; D=1/D; let res=D;
+  for (let m=1; m<=150; m++) {
+    let am = m*(b-m)*x/((a+2*m-1)*(a+2*m));
+    D=1+am*D; if(Math.abs(D)<1e-30)D=1e-30; D=1/D; C=1+am/C; if(Math.abs(C)<1e-30)C=1e-30; res*=C*D;
+    am=-(a+m)*(a+b+m)*x/((a+2*m)*(a+2*m+1));
+    D=1+am*D; if(Math.abs(D)<1e-30)D=1e-30; D=1/D; C=1+am/C; if(Math.abs(C)<1e-30)C=1e-30; res*=C*D;
+    if(Math.abs(C*D-1)<1e-10) break;
+  }
+  return prefix * res;
+}
+function _tPval(vals) {
+  const n = vals.length;
+  if (n < 3) return 1.0;
+  const mean = vals.reduce((a,b)=>a+b,0)/n;
+  const s2 = vals.reduce((a,b)=>a+(b-mean)**2,0)/(n-1);
+  if (s2 < 1e-20) return mean===0 ? 1.0 : 0.001;
+  const t = Math.abs(mean)/Math.sqrt(s2/n);
+  const df = n-1;
+  return Math.min(1, 2 * 0.5 * _betaInc(df/(df+t*t), df/2, 0.5));
+}
+
+// Extended palette: 6 fixed + 6 extras for user-added features
+const _STAB_PALETTE = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b',
+                       '#38bdf8','#7dd3fc','#c084fc','#e879f9','#fb923c','#a3e635'];
+
+function mlStabMetric(m) {
+  _mlStabMetric = m;
+  const titles = { weight:'Signed Weight', cum_avg:'Running Avg', cum_pval:'Running p-val' };
+  const subtitles = {
+    weight:   'Signed weight at each window ×1000. Shows raw swings — how much the model re-learns each period.',
+    cum_avg:  'Cumulative mean weight across windows seen so far. Converging to near-zero = weak feature.',
+    cum_pval: 'Running p-value (t-test vs zero). Drops as more windows confirm the signal. Below 0.05 = significant.',
+  };
+  document.getElementById('ml-stab-title').textContent    = `Weight Stability — ${titles[m]}`;
+  document.getElementById('ml-stab-subtitle').textContent  = subtitles[m];
+  ['weight','cum_avg','cum_pval'].forEach(k => {
+    const b = document.getElementById(`ml-stab-m-${k}`);
+    if (!b) return;
+    const on = k === m;
+    b.style.background  = on ? '#f59e0b22' : 'transparent';
+    b.style.color       = on ? '#f59e0b'   : '#6b7280';
+    b.style.borderColor = on ? '#f59e0b'   : '#374151';
+  });
+  buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+}
+
+function mlStabAdd(name) {
+  const top6names = _mlCurrentFeatures.slice(0,6).map(f=>f.name);
+  if (top6names.includes(name) || _mlStabAdded.find(s=>s.name===name)) return;
+  _mlStabAdded.push({ name, slotIdx: 6 + _mlStabAdded.length });
+  buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+}
+
+function mlStabRemove(name) {
+  _mlStabAdded = _mlStabAdded.filter(s=>s.name!==name);
+  _mlStabAdded.forEach((s,i) => s.slotIdx = 6+i);
+  buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+}
+
+function mlStabSearchUpdate(val) {
+  const drop = document.getElementById('ml-stab-drop');
+  if (!drop) return;
+  if (!val) { drop.style.display='none'; return; }
+  const top6 = _mlCurrentFeatures.slice(0,6).map(f=>f.name);
+  const added = _mlStabAdded.map(s=>s.name);
+  const matches = _mlCurrentFeatures
+    .filter(f => !top6.includes(f.name) && !added.includes(f.name) && f.name.toLowerCase().includes(val.toLowerCase()))
+    .slice(0, 10);
+  if (!matches.length) { drop.style.display='none'; return; }
+  drop.innerHTML = matches.map(f => {
+    const col = _ML_CAT_COLORS[f.category]||'#aaa';
+    return `<div onmousedown="mlStabAdd('${f.name}')" style="padding:5px 10px;cursor:pointer;font-size:10px;font-family:monospace;color:${col};display:flex;justify-content:space-between;align-items:center">
+      <span>${f.name.replace('ann_','★ ')}</span>
+      <span style="color:#555;font-size:9px">#${f.rank}</span>
+    </div>`;
+  }).join('');
+  drop.style.display = '';
+}
+
+function _stabDataSeries(fname, weightHistory, metric) {
+  const cum = [];
+  return weightHistory.map(w => {
+    const v = w.weights ? (w.weights[fname] ?? null) : null;
+    if (v != null) cum.push(v);
+    if (metric === 'weight')   return v != null ? +(v*1000).toFixed(4) : null;
+    if (metric === 'cum_avg')  return cum.length ? +(cum.reduce((a,b)=>a+b,0)/cum.length*1000).toFixed(4) : null;
+    if (metric === 'cum_pval') return cum.length >= 3 ? +_tPval(cum).toFixed(4) : null;
+    return null;
+  });
+}
+
 function buildMLStabilityChart(features, weightHistory) {
   const ctx = document.getElementById('ml-stability-chart').getContext('2d');
   if (_mlStabilityChart) _mlStabilityChart.destroy();
-
   const toggleWrap = document.getElementById('ml-stability-toggles');
   toggleWrap.innerHTML = '';
 
@@ -2396,37 +2513,35 @@ function buildMLStabilityChart(features, weightHistory) {
     return;
   }
 
-  // Top 6 features — 2 greens, 2 ambers, 2 reds so lines are always distinct
-  const _STABILITY_COLORS = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b'];
-  const top6 = features.slice(0, 6);
-  const labels = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
+  const metric   = _mlStabMetric;
+  const top6     = features.slice(0, 6);
+  const allFeats = [...top6.map((f,i) => ({...f, slotIdx:i})),
+                    ..._mlStabAdded.map(s => { const f=features.find(x=>x.name===s.name); return f ? {...f,slotIdx:s.slotIdx} : null; }).filter(Boolean)];
+  const labels   = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
 
-  const datasets = top6.map((f, slotIdx) => ({
-    label: f.name.replace('ann_','★ '),
-    data: weightHistory.map(w => {
-      const v = w.weights ? (w.weights[f.name] ?? null) : null;
-      return v != null ? +(v * 1000).toFixed(4) : null;
-    }),
-    borderColor: _STABILITY_COLORS[slotIdx],
+  const datasets = allFeats.map(f => ({
+    label:           f.name.replace('ann_','★ '),
+    data:            _stabDataSeries(f.name, weightHistory, metric),
+    borderColor:     _STAB_PALETTE[f.slotIdx % _STAB_PALETTE.length],
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    pointRadius: 2,
-    tension: 0.3,
-    spanGaps: true,
+    borderWidth:     f.slotIdx >= 6 ? 2 : 1.5,
+    borderDash:      f.slotIdx >= 6 ? [5,3] : [],
+    pointRadius:     2,
+    tension:         0.3,
+    spanGaps:        true,
   }));
 
-  // Zero reference line
-  datasets.push({
-    label: '── zero',
-    data: labels.map(() => 0),
-    borderColor: '#444',
-    borderWidth: 1,
-    borderDash: [4, 4],
-    pointRadius: 0,
-    tension: 0,
-    spanGaps: true,
-    order: 99,
-  });
+  // Reference lines
+  if (metric === 'cum_pval') {
+    datasets.push({ label:'p=0.05', data:labels.map(()=>0.05), borderColor:'#00c832', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
+    datasets.push({ label:'p=0.20', data:labels.map(()=>0.20), borderColor:'#f59e0b', borderDash:[3,3], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
+  } else {
+    datasets.push({ label:'── zero', data:labels.map(()=>0), borderColor:'#444', borderDash:[4,4], borderWidth:1, pointRadius:0, spanGaps:true, order:99 });
+  }
+
+  const isPval   = metric === 'cum_pval';
+  const yTitle   = isPval ? 'p-value' : 'Weight ×1000';
+  const refLabels = new Set(['── zero','p=0.05','p=0.20']);
 
   _mlStabilityChart = new Chart(ctx, {
     type: 'line',
@@ -2435,41 +2550,63 @@ function buildMLStabilityChart(features, weightHistory) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => c.dataset.label === '── zero' ? null : ` ${c.dataset.label}: ${c.raw != null ? (c.raw >= 0 ? '+' : '') + c.raw.toFixed(3) : '—'} ×1k` } }
+        tooltip: { callbacks: {
+          label: c => {
+            if (refLabels.has(c.dataset.label)) return null;
+            const v = c.raw;
+            if (v == null) return null;
+            const suffix = isPval ? (v < 0.05 ? ' ✓ sig' : v < 0.20 ? ' ~ marginal' : ' ✗ noise') : ' ×1k';
+            return ` ${c.dataset.label}: ${isPval ? v.toFixed(3) : (v>=0?'+':'')+v.toFixed(3)}${suffix}`;
+          }
+        }}
       },
       scales: {
         x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
-        y: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, title:{display:true, text:'Weight ×1000', color:'#555', font:{size:10}} }
+        y: {
+          grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}},
+          title:{display:true, text:yTitle, color:'#555', font:{size:10}},
+          ...(isPval ? {min:0, max:1} : {}),
+        }
       }
     }
   });
 
-  // Build toggle buttons — one per feature (not the zero line)
-  top6.forEach((f, slotIdx) => {
-    const color = _STABILITY_COLORS[slotIdx];
-    const label = f.name.replace('ann_', '★ ');
+  // Toggle buttons for each active feature
+  allFeats.forEach(f => {
+    const color   = _STAB_PALETTE[f.slotIdx % _STAB_PALETTE.length];
+    const isAdded = f.slotIdx >= 6;
+    const label   = f.name.replace('ann_','★ ');
     const btn = document.createElement('button');
-    btn.dataset.slotIdx = slotIdx;
-    btn.dataset.active = 'true';
-    btn.style.cssText = `
-      display:inline-flex;align-items:center;gap:5px;
-      padding:3px 9px;border-radius:4px;border:1px solid ${color};
-      background:${color}22;color:${color};
-      font-size:10px;font-family:monospace;font-weight:600;
-      cursor:pointer;transition:opacity 0.15s,background 0.15s;
-    `;
-    btn.innerHTML = `<span style="display:inline-block;width:12px;height:2px;background:${color};border-radius:1px"></span>${label}`;
-    btn.onclick = () => {
+    btn.dataset.slotIdx = f.slotIdx;
+    btn.dataset.active  = 'true';
+    btn.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;border:1px solid ${color};background:${color}22;color:${color};font-size:10px;font-family:monospace;font-weight:600;cursor:pointer;transition:opacity 0.15s,background 0.15s;`;
+    const swatch = `<span style="display:inline-block;width:12px;height:2px;background:${color};border-radius:1px;${isAdded?'border-bottom:1px dashed '+color:''}"></span>`;
+    const closeBtn = isAdded ? `<span onmousedown="mlStabRemove('${f.name}')" style="margin-left:3px;opacity:0.7;font-size:11px" title="Remove">×</span>` : '';
+    btn.innerHTML = `${swatch}${label}${closeBtn}`;
+    btn.onclick = (e) => {
+      if (e.target.tagName === 'SPAN' && e.target.textContent === '×') return;
       const active = btn.dataset.active === 'true';
-      const nextActive = !active;
-      btn.dataset.active = String(nextActive);
-      btn.style.background = nextActive ? `${color}22` : 'transparent';
-      btn.style.opacity    = nextActive ? '1' : '0.35';
-      _mlStabilityChart.setDatasetVisibility(slotIdx, nextActive);
+      btn.dataset.active  = String(!active);
+      btn.style.background = !active ? `${color}22` : 'transparent';
+      btn.style.opacity    = !active ? '1' : '0.35';
+      _mlStabilityChart.setDatasetVisibility(f.slotIdx, !active);
       _mlStabilityChart.update();
     };
     toggleWrap.appendChild(btn);
   });
+
+  // Search box to add more features
+  const searchWrap = document.createElement('div');
+  searchWrap.style.cssText = 'position:relative;display:inline-flex;align-items:center';
+  searchWrap.innerHTML = `
+    <input id="ml-stab-search" placeholder="+ add feature…"
+      style="background:#141414;border:1px dashed #374151;color:#aaa;padding:3px 9px;border-radius:4px;font-size:10px;font-family:monospace;width:140px;outline:none"
+      oninput="mlStabSearchUpdate(this.value)"
+      onblur="setTimeout(()=>{const d=document.getElementById('ml-stab-drop');if(d)d.style.display='none'},200)"
+      onfocus="mlStabSearchUpdate(this.value)">
+    <div id="ml-stab-drop" style="display:none;position:absolute;top:calc(100% + 3px);left:0;background:#141414;border:1px solid #374151;border-radius:4px;min-width:220px;max-height:220px;overflow-y:auto;z-index:200"></div>
+  `;
+  toggleWrap.appendChild(searchWrap);
 }
 
 function mlRenderFeatTable() {
