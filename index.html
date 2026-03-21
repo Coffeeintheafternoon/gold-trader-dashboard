@@ -349,19 +349,31 @@
         </label>
       </div>
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+          <colgroup>
+            <col style="width:70px">
+            <col style="width:190px">
+            <col style="width:105px">
+            <col style="width:90px">
+            <col style="width:90px">
+            <col style="width:65px">
+            <col style="width:75px">
+            <col style="width:65px">
+            <col style="width:75px">
+            <col style="width:85px">
+          </colgroup>
           <thead>
             <tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px">
-              <th style="text-align:left;padding:6px 10px">Rank</th>
-              <th style="text-align:left;padding:6px 10px">Feature</th>
-              <th style="text-align:left;padding:6px 10px">Category</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg |Weight|</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign%</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err</th>
-              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability</th>
+              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Rank</th>
+              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Feature</th>
+              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Category</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg |Weight|</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign%</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err</th>
+              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability</th>
             </tr>
           </thead>
           <tbody id="ml-feat-tbody"></tbody>
@@ -2816,7 +2828,7 @@ function mlRenderFeatTable() {
     const spStr      = sp != null ? sp + '%' : '—';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
       <td style="padding:5px 10px;font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
-      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW};cursor:${_featTip(f.name)?'help':'default'}"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
+      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW};cursor:${_featTip(f.name)?'help':'default'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
       <td style="padding:5px 10px;font-size:11px"><span style="color:${catColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">${f.category}</span></td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
