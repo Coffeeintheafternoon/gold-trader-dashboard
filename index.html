@@ -2623,13 +2623,16 @@ function mlFilterFeats(cat) {
 }
 
 function buildMLFeatChart(features, filterCat) {
-  const ctx = document.getElementById('ml-feat-chart').getContext('2d');
+  const el = document.getElementById('ml-feat-chart');
+  if (!el) return;
+  const ctx = el.getContext('2d');
   if (_mlFeatChart) _mlFeatChart.destroy();
   let feats = [...features];
   if (filterCat !== 'all') feats = feats.filter(f => f.category === filterCat);
   feats = feats.slice(0, 20);
   // Dynamically size container: 28px per bar + 40px header/footer
   const wrap = document.getElementById('ml-feat-chart-wrap');
+  if (!wrap) return;
   wrap.style.height = Math.max(280, feats.length * 28 + 40) + 'px';
   const labels = feats.map(f => f.name.replace('ann_', '★ ann_'));
   const vals   = feats.map(f => +(f.avg_weight * 1000).toFixed(4));
