@@ -1296,8 +1296,39 @@ function buildModelMetrics(equityCurve, strategies, tradeLog) {
   function plain(v,dp=2){if(v==null||isNaN(v))return'<span style="color:#4b5563">—</span>';return`<span>${v.toFixed(dp)}</span>`;}
   function na(){return'<span style="color:#4b5563">—</span>';}
   function section(title,rows){const rowsHtml=rows.map(([label,value])=>`<div class="metrics-row"><span class="metrics-label">${label}</span><span class="metrics-value">${value}</span></div>`).join('');return`<div class="metrics-section"><div class="metrics-section-header">${title}</div>${rowsHtml}</div>`;}
+  function th(text,tip){return`<span class="tip tip-down" data-tip="${tip}">${text}</span>`;}
   const grid=document.getElementById('metrics-grid');
-  grid.innerHTML=section('Performance',[['YTD',pct(retYTD)],['1 Month',pct(ret1M)],['Previous Year',pct(retPY)],['1Y',pct(ret1Y)],['Since Inception',pctPA(annSimpleRet)],['Total Return',pct(totalSimple)],['Profit Factor',ratio(pf,3,1.0)],['Win Rate',winRate!=null?ratio(winRate/100,0,50)+` <span style="font-size:11px;color:var(--muted)">(${wins}/${trades.length})</span>`:na()]])+section('Risk-Adjusted',[['Sharpe (0% RF)',ratio(sharpe,2,1.0)],['Sharpe (OOS)',ratio(pfSharpe,2,1.0)],['Calmar Ratio',ratio(calmar,2,0.5)],['Max Drawdown',pct(maxDd)],['Sortino Ratio',ratio(sortino,2,1.0)],['Skewness',plain(skew)],['Kurtosis (excess)',plain(kurt)],['N Trades',`<span>${trades.length}</span>`]])+section('Volatility',[['1Y Annualised',pct(ret1Y!=null?annVol:null)],['Since Inception',pct(annVol)],['Upside Volatility',upVol!=null?`<span>${upVol.toFixed(1)}%</span>`:na()],['Downside Volatility',downVol!=null?`<span>${downVol.toFixed(1)}%</span>`:na()],['Daily Std Dev',plain(stdRet*100)+' <span style="font-size:11px;color:var(--muted)">%</span>']])+section('Benchmark',[['Corr. to Equities',na()],['Corr. to Benchmark',na()],['Beta to Benchmark',na()],['Buy & Hold Return',(()=>{const bh=allBars[allBars.length-1].buyhold_cumlog;return bh!=null?pct((Math.exp(bh)-1)*100):na();})()],['B&H Ann. Return',(()=>{const bh=allBars[allBars.length-1].buyhold_cumlog;if(bh==null)return na();const bhAnn=(Math.exp(bh*annFactor/nTradingDays)-1)*100;return pctPA(bhAnn);})()]]);
+  grid.innerHTML=section('Performance',[
+    ['YTD',pct(retYTD)],
+    ['1 Month',pct(ret1M)],
+    ['Previous Year',pct(retPY)],
+    ['1Y',pct(ret1Y)],
+    [th('Since Inception','Annualised simple return calculated from the first to last OOS bar.'),pctPA(annSimpleRet)],
+    ['Total Return',pct(totalSimple)],
+    [th('Profit Factor','Total gross profit ÷ total gross loss across all OOS trades.&#10;> 1.0 = profitable  |  > 1.2 = meaningful edge  |  < 1.0 = losing strategy.'),ratio(pf,3,1.0)],
+    [th('Win Rate','% of trades that closed with a positive return.&#10;High win rate alone means nothing — check Profit Factor too.'),winRate!=null?ratio(winRate/100,0,50)+` <span style="font-size:11px;color:var(--muted)">(${wins}/${trades.length})</span>`:na()]
+  ])+section('Risk-Adjusted',[
+    [th('Sharpe (0% RF)','Annualised return ÷ annualised volatility, with 0% risk-free rate.&#10;Measures return per unit of total risk.&#10;> 0.5 = decent  |  > 1.0 = good  |  > 2.0 = exceptional.'),ratio(sharpe,2,1.0)],
+    [th('Sharpe (OOS)','Sharpe ratio reported directly by the walk-forward backtest engine.&#10;Complement to the equity-curve Sharpe — should be similar if OOS data is consistent.'),ratio(pfSharpe,2,1.0)],
+    [th('Calmar Ratio','Annualised return ÷ max drawdown.&#10;Measures how much return you get per unit of worst-case pain.&#10;> 0.5 = decent  |  > 1.0 = good.'),ratio(calmar,2,0.5)],
+    [th('Max Drawdown','Largest peak-to-trough decline in the OOS equity curve.&#10;Shown as a percentage. Lower (less negative) = better.'),pct(maxDd)],
+    [th('Sortino Ratio','Like Sharpe, but only penalises downside volatility (negative return days).&#10;Rewards strategies that have high upside variance but low downside variance.&#10;> 1.0 = good.'),ratio(sortino,2,1.0)],
+    [th('Skewness','Asymmetry of the daily return distribution.&#10;Positive = occasional large gains, frequent small losses (preferred).&#10;Negative = occasional large losses — fat left tail (bad for drawdowns).'),plain(skew)],
+    [th('Kurtosis (excess)','Tail fatness vs a normal distribution.&#10;Positive = more extreme events than normal (leptokurtic).&#10;Negative = thinner tails (platykurtic). Near 0 = normal-like.'),plain(kurt)],
+    ['N Trades',`<span>${trades.length}</span>`]
+  ])+section('Volatility',[
+    ['1Y Annualised',pct(ret1Y!=null?annVol:null)],
+    ['Since Inception',pct(annVol)],
+    [th('Upside Volatility','Annualised standard deviation of only the positive daily return bars.&#10;High upside vol = large winning days — generally desirable.'),upVol!=null?`<span>${upVol.toFixed(1)}%</span>`:na()],
+    [th('Downside Volatility','Annualised standard deviation of only the negative daily return bars.&#10;Used as the denominator in the Sortino Ratio. Lower = better.'),downVol!=null?`<span>${downVol.toFixed(1)}%</span>`:na()],
+    [th('Daily Std Dev','Standard deviation of individual daily log-returns.&#10;Raw measure of how much the strategy swings day-to-day.'),plain(stdRet*100)+' <span style="font-size:11px;color:var(--muted)">%</span>']
+  ])+section('Benchmark',[
+    [th('Corr. to Equities','Correlation of daily returns to a broad equity index.&#10;Not yet calculated — requires equity benchmark data feed.')  ,na()],
+    [th('Corr. to Benchmark','Correlation of daily returns to buy-and-hold XAU/AUD.&#10;Not yet calculated.'),na()],
+    [th('Beta to Benchmark','Sensitivity of strategy returns to XAU/AUD moves.&#10;Beta < 1 = less volatile than gold. Not yet calculated.'),na()],
+    [th('Buy & Hold Return','Total return from simply holding XAU/AUD over the same OOS period.&#10;Baseline to beat — your alpha is Squant Return minus this.'),  (()=>{const bh=allBars[allBars.length-1].buyhold_cumlog;return bh!=null?pct((Math.exp(bh)-1)*100):na();})()],
+    [th('B&H Ann. Return','Annualised buy-and-hold return — apples-to-apples comparison to Since Inception above.'),  (()=>{const bh=allBars[allBars.length-1].buyhold_cumlog;if(bh==null)return na();const bhAnn=(Math.exp(bh*annFactor/nTradingDays)-1)*100;return pctPA(bhAnn);})()]
+  ]);
 }
 
 // ── Trade Log ─────────────────────────────────────────────────────────────────
