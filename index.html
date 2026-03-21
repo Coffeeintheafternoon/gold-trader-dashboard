@@ -347,6 +347,8 @@
       <div class="chart-title">Feature Pruning Roadmap</div>
       <div class="chart-subtitle">Systematic elimination of insignificant features — each round removes the weakest features and re-evaluates IS metrics. Green delta = metric improved after pruning.</div>
       <div class="chart-wrap" style="height:220px;margin-bottom:18px"><canvas id="ml-pruning-chart"></canvas></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Category Composition — Original vs Pruned vs Surviving</div>
+      <div class="chart-wrap" style="height:200px;margin-bottom:18px"><canvas id="ml-pruning-cats-chart"></canvas></div>
       <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Round Timeline</div>
       <div id="ml-pruning-rounds" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px"></div>
     </div>
@@ -3275,6 +3277,53 @@ async function loadFeaturePanel(ticker='waf_ax') {
 }
 
 // ── Feature Pruning Roadmap ────────────────────────────────────────────────────
+// Category membership for every known feature — mirrors export_model_lab_data._FEAT_CATEGORIES
+const _FEAT_CAT_MAP = {
+  rsi_14:'momentum',ret_1d:'momentum',ret_5d:'momentum',ret_20d:'momentum',ret_60d:'momentum',ret_126d:'momentum',ret_252d:'momentum',
+  close_vs_ma50:'momentum',close_vs_ma200:'momentum',ma50_vs_ma200:'momentum',ma_cross_sig:'momentum',
+  hurst_20:'momentum',hurst_100:'momentum',eff_ratio_20:'momentum',eff_ratio_60:'momentum',eff_ratio_short:'momentum',eff_ratio_long:'momentum',
+  donchian_pos_20:'momentum',bb_zscore:'momentum',slope_5d:'momentum',slope_20d:'momentum',
+  season_score:'momentum',season_gold:'momentum',price_fd_short:'momentum',price_fd_long:'momentum',
+  volume_ratio:'volume',vol_zscore_20:'volume',vol_ratio_5_20:'volume',vol_trend_60d:'volume',vol_cv_20d:'volume',
+  up_vol_ratio_20d:'volume',dollar_vol_zscore:'volume',buy_vol_fd:'volume',sell_vol_fd:'volume',
+  buy_vol_chg_fd:'volume',sell_vol_chg_fd:'volume',buy_sell_ratio_5d:'volume',buy_sell_ratio_chg:'volume',
+  distribution_signal:'volume',cmf_20:'volume',mfi_14:'volume',
+  atr_14_pct:'volatility',vol_fd:'volatility',vol_ratio:'volatility',vol_60d:'volatility',vol_252d:'volatility',vol_z_score:'volatility',bb_width_20:'volatility',
+  adx_14:'trend',trend_signed_adx:'trend',trend_regime:'trend',
+  candle_body_pct:'candle',candle_upper_shadow:'candle',candle_lower_shadow:'candle',candle_close_pos:'candle',
+  body_pct:'candle',upper_wick_pct:'candle',lower_wick_pct:'candle',close_position:'candle',bar_range_pct:'candle',
+  si_chg_5d:'short_interest',si_zscore_120d:'short_interest',si_squeeze_flag:'short_interest',
+  beta_dxy_30:'macro',macro_dxy_mom5d:'macro',macro_dxy_mom20d:'macro',
+  macro_aud_mom5d:'macro',macro_aud_mom20d:'macro',macro_aud_vol20d:'macro',macro_audjpy_mom5d:'macro',
+  macro_au10yr_mom5d:'macro',macro_au10yr_mom20d:'macro',macro_au2yr_mom5d:'macro',
+  macro_yield_curve:'macro',macro_yield_curve_acc5:'macro',macro_us10yr_mom5d:'macro',macro_us10yr_mom20d:'macro',
+  macro_au_us_spread:'macro',macro_gold_mom5d:'macro',macro_gold_mom20d:'macro',macro_gold_vol20d:'macro',
+  macro_oil_mom5d:'macro',macro_oil_mom20d:'macro',macro_oil_vol20d:'macro',
+  macro_copper_mom5d:'macro',macro_copper_mom20d:'macro',
+  macro_gold_oil_ratio:'macro',macro_gold_oil_mom5d:'macro',macro_copper_gold_ratio:'macro',macro_copper_gold_mom5d:'macro',
+  macro_vix_mom5d:'macro',macro_vix_regime_20:'macro',macro_vix_regime_30:'macro',
+  macro_stress_composite:'macro',macro_riskoff_momentum:'macro',macro_commodity_tailwind:'macro',
+  macro_dxy_5d:'macro',macro_dxy_20d:'macro',macro_gold_usd_5d:'macro',macro_gold_usd_20d:'macro',
+  macro_oil_5d:'macro',macro_copper_5d:'macro',macro_audusd_5d:'macro',macro_audusd_20d:'macro',
+  ix_yield_gold:'interaction',ix_yield_gold_au:'interaction',ix_curve_gold:'interaction',
+  ix_yield_oil:'interaction',ix_curve_oil:'interaction',ix_gold_vix:'interaction',ix_crisis_gold:'interaction',
+  ix_vix_volume:'interaction',ix_vix_dollar_vol:'interaction',ix_vix_vol:'interaction',ix_vix_vol_regime:'interaction',
+  ix_gold_aud:'interaction',ix_gold_aud_20d:'interaction',ix_curve_vix:'interaction',
+  ix_copper_gold_curve:'interaction',ix_spread_aud:'interaction',ix_momentum_vol:'interaction',
+  ix_trend_momentum:'interaction',ix_vix_momentum:'interaction',ix_ann_volume:'interaction',ix_ann_gold:'interaction',
+  ann_days_since_drilling:'announcement',ann_days_since_capital:'announcement',ann_days_since_quarterly:'announcement',
+  ann_days_since_sensitive:'announcement',ann_drilling_today:'announcement',ann_capital_today:'announcement',
+  ann_quarterly_today:'announcement',ann_sensitive_today:'announcement',ann_impact_pos_5d:'announcement',
+  ann_impact_neg_5d:'announcement',ann_neg_kw_today:'announcement',
+};
+
+const _CAT_ORDER   = ['momentum','volume','volatility','trend','candle','short_interest','macro','interaction','announcement'];
+const _CAT_COLOURS = {
+  momentum:'#f59e0b', volume:'#00c832', volatility:'#f97316', trend:'#2dd4bf',
+  candle:'#a78bfa', short_interest:'#f472b6', macro:'#d97706', interaction:'#60a5fa', announcement:'#f5a520',
+};
+
+let _mlPruningCatsChart = null;
 let _mlPruningChart = null;
 
 async function renderPruningRoadmap(ticker) {
@@ -3398,6 +3447,77 @@ async function renderPruningRoadmap(ticker) {
       },
     },
   });
+
+  // ── B. Category composition chart ────────────────────────────────────────
+  {
+    const catCtx = document.getElementById('ml-pruning-cats-chart').getContext('2d');
+    if (_mlPruningCatsChart) _mlPruningCatsChart.destroy();
+
+    // Build category counts from current model features (_mlCurrentFeatures) + pruned list
+    const finalExcluded = data.final_excluded || [];
+    const surviving = _mlCurrentFeatures.map(f => f.name);
+
+    // Count per category for: surviving, pruned
+    const survCount   = {};
+    const pruneCount  = {};
+    _CAT_ORDER.forEach(c => { survCount[c] = 0; pruneCount[c] = 0; });
+
+    surviving.forEach(name => {
+      const cat = _FEAT_CAT_MAP[name] || 'other';
+      if (survCount[cat] !== undefined) survCount[cat]++;
+    });
+    finalExcluded.forEach(name => {
+      const cat = _FEAT_CAT_MAP[name] || 'other';
+      if (pruneCount[cat] !== undefined) pruneCount[cat]++;
+    });
+
+    _mlPruningCatsChart = new Chart(catCtx, {
+      type: 'bar',
+      data: {
+        labels: _CAT_ORDER.map(c => c.replace('_', ' ')),
+        datasets: [
+          {
+            label: 'Surviving',
+            data: _CAT_ORDER.map(c => survCount[c]),
+            backgroundColor: _CAT_ORDER.map(c => (_CAT_COLOURS[c] || '#888') + 'cc'),
+            borderColor:     _CAT_ORDER.map(c =>  _CAT_COLOURS[c] || '#888'),
+            borderWidth: 1, borderRadius: 3,
+          },
+          {
+            label: 'Pruned',
+            data: _CAT_ORDER.map(c => pruneCount[c]),
+            backgroundColor: '#ff202055',
+            borderColor:     '#ff2020',
+            borderWidth: 1, borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#aaa', font: { size: 10 }, boxWidth: 16 } },
+          tooltip: {
+            callbacks: {
+              label: c => {
+                const cat  = _CAT_ORDER[c.dataIndex];
+                const tot  = (survCount[cat] || 0) + (pruneCount[cat] || 0);
+                const pct  = tot ? Math.round(c.raw / tot * 100) : 0;
+                return ` ${c.dataset.label}: ${c.raw} / ${tot}  (${pct}% of category)`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { stacked: false, grid: { color: '#1a1a1a' }, ticks: { color: '#aaa', font: { size: 10 } } },
+          y: {
+            stacked: false, grid: { color: '#1a1a1a' },
+            ticks: { color: '#555', font: { size: 10 }, stepSize: 1 },
+            title: { display: true, text: 'Feature count', color: '#555', font: { size: 9 } },
+          },
+        },
+      },
+    });
+  }
 
   // Legend note below chart
   const chartNote = document.createElement('div');
