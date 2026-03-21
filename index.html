@@ -255,6 +255,13 @@
       <div class="chart-wrap" style="height:220px"><canvas id="ml-equity-chart"></canvas></div>
     </div>
 
+    <!-- Key Metrics Summary -->
+    <div class="chart-card" style="margin-bottom:16px" id="ml-metrics-card">
+      <div class="chart-title">Key Performance Metrics</div>
+      <div class="chart-subtitle">Computed from IS walk-forward equity curve and individual trades</div>
+      <div id="ml-metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px"></div>
+    </div>
+
     <!-- Feature importance chart + category filter -->
     <div class="chart-card" style="margin-bottom:16px">
       <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -403,6 +410,48 @@
       <div class="chart-title">Rolling Performance — 90-Day Sharpe &amp; Drawdown</div>
       <div class="chart-subtitle">Sliding 90-day window · Sharpe annualised · Drawdown from rolling peak</div>
       <div class="chart-wrap" style="height:260px"><canvas id="ml-rolling-chart"></canvas></div>
+    </div>
+
+    <!-- Price Chart with trade signals -->
+    <div class="chart-card" style="margin-top:16px" id="ml-price-card">
+      <div class="chart-title">Price Chart — Signals &amp; Trades</div>
+      <div class="chart-subtitle">
+        <span style="color:#4fc3f7">■</span> IS price &nbsp;
+        <span style="color:#f5a520">■</span> Holdout price &nbsp;
+        <span style="color:#00ff41">▲</span> Long entry &nbsp;
+        <span style="color:#ff6b6b">▼</span> Short entry &nbsp;
+        <span style="color:rgba(245,165,32,0.25)">░</span> Holdout region
+      </div>
+      <div class="chart-wrap" style="height:320px"><canvas id="ml-price-chart"></canvas></div>
+    </div>
+
+    <!-- Trade Log -->
+    <div class="chart-card" style="margin-top:16px" id="ml-trade-log-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div class="chart-title" style="margin:0">Trade Log — IS Walk-Forward</div>
+          <div class="chart-subtitle" style="margin:0">Individual completed trades from IS signal. Entry/exit on next-bar open (1-bar lag).</div>
+        </div>
+        <div id="ml-trade-log-summary" style="font-size:12px;color:var(--muted);text-align:right"></div>
+      </div>
+      <div style="max-height:340px;overflow-y:auto">
+        <table style="border-collapse:collapse;font-size:12px;width:100%">
+          <thead>
+            <tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;background:#141414">
+              <th style="text-align:left;padding:6px 8px">#</th>
+              <th style="text-align:left;padding:6px 8px">Entry</th>
+              <th style="text-align:left;padding:6px 8px">Exit</th>
+              <th style="text-align:left;padding:6px 8px">Dir</th>
+              <th style="text-align:right;padding:6px 8px">Entry $</th>
+              <th style="text-align:right;padding:6px 8px">Exit $</th>
+              <th style="text-align:right;padding:6px 8px">Bars</th>
+              <th style="text-align:right;padding:6px 8px">Return</th>
+              <th style="text-align:center;padding:6px 8px">W/L</th>
+            </tr>
+          </thead>
+          <tbody id="ml-trade-log-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1871,6 +1920,7 @@ let _mlSortKey = 'is_sharpe';   // current sort column
 let _mlTickerCache = {};         // model_lab_*.json cache
 let _mlEquityChart = null;
 let _mlRollingChart = null;
+let _mlPriceChart  = null;
 let _mlFeatChart = null;
 let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
@@ -1984,6 +2034,7 @@ function renderTickerDetail(d) {
   _mlCurrentWH = d.weight_history || [];
   _mlCorrData = d.correlations || null;
   if (_mlRollingChart) { _mlRollingChart.destroy(); _mlRollingChart = null; }
+  if (_mlPriceChart)  { _mlPriceChart.destroy();  _mlPriceChart  = null; }
   _mlHeatmapBuilt = false; _mlDendroBuilt = false; _mlForceBuilt = false;
   _mlForceAnim = null;
   _mlStabAdded = [];
@@ -2067,6 +2118,15 @@ function renderTickerDetail(d) {
 
   // Rolling performance chart from equity_is
   buildMLRollingPerf(d.equity_is || []);
+
+  // Key metrics summary
+  buildMLMetrics(d.equity_is || [], d.trades_is || []);
+
+  // Price chart with trade signals
+  buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || []);
+
+  // Trade log table
+  buildMLTradeLog(d.trades_is || []);
 }
 
 function buildMLEquityChart(equityIS, equityHO, hoStart) {
@@ -2152,6 +2212,232 @@ function buildMLRollingPerf(equityIS) {
       }
     }
   });
+}
+
+// ── Key Metrics Summary ────────────────────────────────────────────────────────
+function buildMLMetrics(equityIS, tradesIS) {
+  const grid = document.getElementById('ml-metrics-grid');
+  if (!grid) return;
+
+  function metricTile(label, value, sub, color) {
+    return `<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:12px 14px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">${label}</div>
+      <div style="font-size:22px;font-weight:700;color:${color||'var(--gold)'};font-family:monospace">${value}</div>
+      ${sub ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${sub}</div>` : ''}
+    </div>`;
+  }
+
+  // — Equity-derived metrics —
+  let totalRet = 0, annRet = 0, sharpe = 0, maxDD = 0;
+  if (equityIS.length >= 2) {
+    const last = equityIS[equityIS.length - 1];
+    const first = equityIS[0];
+    totalRet = (last.cum_ret || 0) * 100;
+
+    // Annualised: assume 252 trading days per year
+    const years = (equityIS.length - 1) / 252;
+    annRet = years > 0 ? ((Math.exp((last.cum_ret||0) / years) - 1) * 100) : 0;
+
+    // Sharpe from daily log returns
+    const rets = [];
+    for (let i = 1; i < equityIS.length; i++) rets.push((equityIS[i].cum_ret||0) - (equityIS[i-1].cum_ret||0));
+    const mean = rets.reduce((a,b)=>a+b,0) / rets.length;
+    const std  = Math.sqrt(rets.reduce((a,r)=>a+(r-mean)**2,0) / rets.length);
+    sharpe = std > 0 ? mean / std * Math.sqrt(252) : 0;
+
+    // Max drawdown
+    let peak = -Infinity;
+    for (const e of equityIS) {
+      const v = e.cum_ret || 0;
+      if (v > peak) peak = v;
+      const dd = (v - peak) * 100;
+      if (dd < maxDD) maxDD = dd;
+    }
+  }
+
+  // — Trade-derived metrics —
+  const nTrades  = tradesIS.length;
+  const wins     = tradesIS.filter(t=>t.win);
+  const losses   = tradesIS.filter(t=>!t.win);
+  const winRate  = nTrades > 0 ? (wins.length / nTrades * 100) : 0;
+  const avgWin   = wins.length  > 0 ? wins.reduce((a,t)=>a+t.return_pct,0)  / wins.length  : 0;
+  const avgLoss  = losses.length> 0 ? losses.reduce((a,t)=>a+t.return_pct,0)/ losses.length: 0;
+  const avgBars  = nTrades > 0 ? tradesIS.reduce((a,t)=>a+t.bars,0) / nTrades : 0;
+
+  const fmt = (v, d=1) => (v >= 0 ? '+' : '') + v.toFixed(d) + '%';
+  const ddColor = maxDD < -10 ? '#ff2020' : maxDD < -5 ? '#f5a520' : '#00ff41';
+
+  grid.innerHTML = [
+    metricTile('Total Return',    fmt(totalRet, 1),  `${equityIS.length} bars (~${(equityIS.length/252).toFixed(1)}y)`, totalRet >= 0 ? '#00ff41' : '#ff2020'),
+    metricTile('Ann. Return',     fmt(annRet, 1),    'Log-linear, 252d/yr',  annRet >= 0 ? '#00ff41' : '#ff2020'),
+    metricTile('IS Sharpe',       sharpe.toFixed(2), 'Annualised from daily rets', sharpe >= 1 ? '#00ff41' : sharpe >= 0 ? '#f5a520' : '#ff2020'),
+    metricTile('Max Drawdown',    maxDD.toFixed(1)+'%', 'From equity peak', ddColor),
+    metricTile('Win Rate',        winRate.toFixed(0)+'%', `${wins.length}W / ${losses.length}L of ${nTrades}`, winRate >= 55 ? '#00ff41' : winRate >= 45 ? '#f5a520' : '#ff2020'),
+    metricTile('Avg Win',         avgWin.toFixed(2)+'%',  `${wins.length} winning trades`,  '#00ff41'),
+    metricTile('Avg Loss',        avgLoss.toFixed(2)+'%', `${losses.length} losing trades`, '#ff6b6b'),
+    metricTile('Avg Hold',        avgBars.toFixed(1)+' bars', `~${(avgBars/5).toFixed(1)} weeks`, '#9ca3af'),
+  ].join('');
+}
+
+// ── Price Chart with trade signals ────────────────────────────────────────────
+function buildMLPriceChart(priceIS, priceHO, tradesIS) {
+  const card = document.getElementById('ml-price-card');
+  if (!card) return;
+  if (_mlPriceChart) { _mlPriceChart.destroy(); _mlPriceChart = null; }
+
+  if (!priceIS || priceIS.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const ctx = document.getElementById('ml-price-chart').getContext('2d');
+
+  // Build label set: IS dates first, then HO dates
+  const isLabels = priceIS.map(p => p.date);
+  const hoLabels = priceHO.map(p => p.date);
+  const allLabels = [...isLabels, ...hoLabels];
+  const hoStartDate = priceHO.length > 0 ? priceHO[0].date : null;
+
+  // IS price dataset (index-aligned to allLabels)
+  const isClose = allLabels.map((l, i) => i < priceIS.length ? priceIS[i].close : null);
+  // HO price dataset
+  const hoClose = allLabels.map((l, i) => {
+    const hi = i - priceIS.length;
+    return (hi >= 0 && hi < priceHO.length) ? priceHO[hi].close : null;
+  });
+
+  // Holdout boundary start index
+  const hoStartIdx = hoStartDate ? allLabels.indexOf(hoStartDate) : -1;
+
+  // Trade entry/exit scatter points (mapped to label indices)
+  const dateToIdx = {};
+  allLabels.forEach((l, i) => { dateToIdx[l] = i; });
+
+  // Scatter points — use numeric index on x so they align with category axis
+  const longEntries = [], shortEntries = [], winExits = [], lossExits = [];
+  for (const t of tradesIS) {
+    const ei = dateToIdx[t.entry_date];
+    const xi = dateToIdx[t.exit_date];
+    const entryClose = priceIS[ei] ? priceIS[ei].close : null;
+    const xiInIS = xi !== undefined && xi < priceIS.length;
+    const xiInHO = xi !== undefined && xi >= priceIS.length;
+    const exitClosePt = xiInIS ? priceIS[xi] : (xiInHO ? priceHO[xi - priceIS.length] : null);
+    if (ei !== undefined && entryClose != null) {
+      if (t.direction === 'long')  longEntries.push({x: ei, y: entryClose});
+      else                          shortEntries.push({x: ei, y: entryClose});
+    }
+    if (xi !== undefined && exitClosePt) {
+      if (t.win) winExits.push({x: xi, y: exitClosePt.close});
+      else       lossExits.push({x: xi, y: exitClosePt.close});
+    }
+  }
+
+  // Inline plugin to shade holdout region and draw boundary line
+  const hoShadePlugin = {
+    id: 'hoShade',
+    beforeDraw(chart) {
+      if (hoStartIdx < 0) return;
+      const xAxis = chart.scales.x;
+      const xStart = xAxis.getPixelForValue(hoStartIdx);
+      const xEnd   = xAxis.right;
+      const {ctx: c, chartArea: {top, bottom}} = chart;
+      c.save();
+      // Shaded region
+      c.fillStyle = 'rgba(245,165,32,0.06)';
+      c.fillRect(xStart, top, xEnd - xStart, bottom - top);
+      // Boundary line
+      c.strokeStyle = 'rgba(245,165,32,0.5)';
+      c.lineWidth = 1.5;
+      c.setLineDash([6,3]);
+      c.beginPath(); c.moveTo(xStart, top); c.lineTo(xStart, bottom); c.stroke();
+      c.setLineDash([]);
+      // Label
+      c.fillStyle = '#f5a520';
+      c.font = '10px sans-serif';
+      c.fillText('Holdout ▶', xStart + 4, top + 14);
+      c.restore();
+    }
+  };
+
+  _mlPriceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        // IS price line
+        { label: 'IS Price', data: isClose, borderColor: '#4fc3f7', borderWidth: 1.5,
+          pointRadius: 0, tension: 0, fill: false, spanGaps: false },
+        // Holdout price line
+        { label: 'Holdout Price', data: hoClose, borderColor: '#f5a520', borderWidth: 2,
+          pointRadius: 0, tension: 0, fill: false, spanGaps: false, borderDash: [4,3] },
+        // Long entries
+        { label: 'Long Entry', data: longEntries, type: 'scatter',
+          borderColor: '#00ff41', backgroundColor: '#00ff41',
+          pointStyle: 'triangle', pointRadius: 6, pointHoverRadius: 8, showLine: false },
+        // Short entries
+        { label: 'Short Entry', data: shortEntries, type: 'scatter',
+          borderColor: '#ff6b6b', backgroundColor: '#ff6b6b',
+          pointStyle: 'triangle', rotation: 180, pointRadius: 6, pointHoverRadius: 8, showLine: false },
+        // Win exits
+        { label: 'Win Exit', data: winExits, type: 'scatter',
+          borderColor: '#00ff41', backgroundColor: 'transparent',
+          pointStyle: 'circle', borderWidth: 2, pointRadius: 4, showLine: false },
+        // Loss exits
+        { label: 'Loss Exit', data: lossExits, type: 'scatter',
+          borderColor: '#ff2020', backgroundColor: 'transparent',
+          pointStyle: 'crossRot', borderWidth: 2, pointRadius: 5, showLine: false },
+      ]
+    },
+    plugins: [hoShadePlugin],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: {size:11}, boxWidth: 12 } },
+        tooltip: { callbacks: { label: c => {
+          if (c.datasetIndex === 0) return ` IS: $${(c.parsed.y||0).toFixed(3)}`;
+          if (c.datasetIndex === 1) return ` HO: $${(c.parsed.y||0).toFixed(3)}`;
+          return ` ${c.dataset.label}: $${(c.parsed.y||0).toFixed(3)}`;
+        }}}
+      },
+      scales: {
+        x: { ticks: {maxTicksLimit:12, color:'#555', font:{size:10}}, grid: {color:'#1a1a1a'} },
+        y: { ticks: {color:'#555', font:{size:10}, callback: v => '$'+v.toFixed(2)}, grid: {color:'#1a1a1a'} }
+      }
+    }
+  });
+}
+
+// ── Trade Log Table ────────────────────────────────────────────────────────────
+function buildMLTradeLog(tradesIS) {
+  const card    = document.getElementById('ml-trade-log-card');
+  const tbody   = document.getElementById('ml-trade-log-tbody');
+  const summary = document.getElementById('ml-trade-log-summary');
+  if (!card || !tbody) return;
+
+  if (!tradesIS || tradesIS.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+
+  const wins   = tradesIS.filter(t => t.win).length;
+  const losses = tradesIS.length - wins;
+  const totRet = tradesIS.reduce((a,t) => a + t.return_pct, 0);
+  summary.innerHTML = `<span style="color:#00ff41">${wins}W</span> / <span style="color:#ff6b6b">${losses}L</span> &nbsp;·&nbsp; Total: <span style="color:${totRet>=0?'#00ff41':'#ff6b6b'}">${totRet>=0?'+':''}${totRet.toFixed(2)}%</span>`;
+
+  tbody.innerHTML = tradesIS.map((t, i) => {
+    const dirColor = t.direction === 'long' ? '#4fc3f7' : '#ff6b6b';
+    const dirIcon  = t.direction === 'long' ? '▲' : '▼';
+    const retColor = t.win ? '#00ff41' : '#ff6b6b';
+    const wl       = t.win ? '<span style="color:#00ff41">✓ W</span>' : '<span style="color:#ff2020">✗ L</span>';
+    return `<tr style="border-bottom:1px solid #1e1e1e;${i%2===0?'background:#0d0d0d':''}">
+      <td style="padding:5px 8px;color:var(--muted)">${i+1}</td>
+      <td style="padding:5px 8px;font-family:monospace;font-size:11px">${t.entry_date}</td>
+      <td style="padding:5px 8px;font-family:monospace;font-size:11px">${t.exit_date}</td>
+      <td style="padding:5px 8px;color:${dirColor};font-weight:700">${dirIcon} ${t.direction}</td>
+      <td style="padding:5px 8px;text-align:right;font-family:monospace;font-size:11px">$${t.entry_price.toFixed(3)}</td>
+      <td style="padding:5px 8px;text-align:right;font-family:monospace;font-size:11px">$${t.exit_price.toFixed(3)}</td>
+      <td style="padding:5px 8px;text-align:right;color:var(--muted)">${t.bars}</td>
+      <td style="padding:5px 8px;text-align:right;font-weight:700;color:${retColor}">${t.return_pct>=0?'+':''}${t.return_pct.toFixed(2)}%</td>
+      <td style="padding:5px 8px;text-align:center">${wl}</td>
+    </tr>`;
+  }).join('');
 }
 
 let _mlFeatFilter = 'all';
