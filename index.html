@@ -1715,7 +1715,7 @@ async function openTickerInModelLab(ticker, data) {
   const safe=ticker.toLowerCase().replace(/\./g,'_');
   // ── Priority 1: new model_lab_*.json detail view ─────────────────────
   // Try to load the rich per-ticker model lab file first
-  const mlRes=await fetch(`./model_lab_${safe}.json?v=${_CV}`).catch(()=>null);
+  const mlRes=await fetch(`./model_lab_${safe}.json?_=${Date.now()}`).catch(()=>null);
   if(mlRes&&mlRes.ok){
     switchTab('modellab');
     // Ensure screener is loaded so back button works
@@ -1725,9 +1725,10 @@ async function openTickerInModelLab(ticker, data) {
     document.getElementById('ml-ticker-detail').style.display='';
     document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
     document.getElementById('ml-screener-stats').style.display='none';
-    const mlData=await mlRes.json();
+    let mlData;
+    try { mlData=await mlRes.json(); } catch(e) { alert('JSON parse error for '+ticker+': '+e.message); return; }
     _mlTickerCache[safe]=mlData;
-    renderTickerDetail(mlData);
+    try { renderTickerDetail(mlData); } catch(e) { console.error('renderTickerDetail error:',e); document.getElementById('ml-detail-title').textContent=ticker+' — render error: '+e.message; }
     document.getElementById('ml-ticker-detail').scrollIntoView({behavior:'smooth',block:'start'});
     return;
   }
