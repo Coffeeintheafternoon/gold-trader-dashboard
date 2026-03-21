@@ -771,7 +771,7 @@ function switchTab(id) {
     const el = document.getElementById(elId);
     if (el) el.style.display = id === 'modellab' ? (el.dataset.mlVisible !== undefined ? el.dataset.mlVisible : 'none') : 'none';
   });
-  history.replaceState(null,'','#'+id);
+  history.replaceState(null,'',(window.location.search||'')+'#'+id);
   if (!_tabInit.has(id)) {
     _tabInit.add(id);
     if (id === 'signal') initSignalTab();
@@ -1606,12 +1606,22 @@ async function openTickerInModelLab(ticker, data) {
   }
   const match=_allAssets.find(a=>a.id===tickerId||a.ticker===ticker);
   if(match){
-    // Full backtest exists — navigate to it (full page reload picks up ?asset= param)
-    const url=new URL(window.location.href);
-    url.searchParams.set('asset',match.id);
-    url.searchParams.set('interval',match.interval);
-    url.hash='modellab';
-    window.location.href=url.toString();
+    // Full backtest exists — update URL params and reload panels in-page (no full page reload)
+    const sp=new URLSearchParams(window.location.search);
+    sp.set('asset',match.id);
+    sp.set('interval',match.interval);
+    history.replaceState(null,'','?'+sp.toString()+'#modellab');
+    // Destroy any existing Chart.js instances on quant canvases so they can be redrawn
+    ['chart-cluster-dist','chart-rolling','chart-equity','chart-mcpt-hist','chart-regime-timeline','chart-trade-signals'].forEach(id=>{
+      const c=document.getElementById(id);if(c){const ch=Chart.getChart(c);if(ch)ch.destroy();}
+    });
+    // Hide all panels and clear dynamic content so stale data doesn't show
+    document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
+    document.getElementById('ml-screener-stats').style.display='none';
+    // Switch to tab (won't re-init since _tabInit may already have modellab)
+    switchTab('modellab');
+    // Always re-run panels with the new URL params
+    loadQuantPanels();
     return;
   }
   // No full backtest — show screener stats only, hide all gold/WAF panels
