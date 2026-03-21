@@ -632,7 +632,7 @@ const _tabInit = new Set();
 
 function switchTab(id) {
   TABS.forEach(t => {
-    document.getElementById('tab-'+t).style.display = t === id ? '' : 'none';
+    document.getElementById('tab-'+t).style.display = t === id ? 'block' : 'none';
     document.getElementById('tabnav-'+t).classList.toggle('active', t === id);
   });
   ['asset-dropdown-wrap','interval-toggle-wrap'].forEach(elId => {
