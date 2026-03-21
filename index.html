@@ -439,10 +439,19 @@
         <div style="position:relative;height:120px"><canvas id="ml-conc-chart"></canvas></div>
       </div>
       <!-- Long vs Short comparison -->
-      <div style="margin-top:14px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Long vs Short — Performance Split</div>
-        <div id="ml-ls-wrap"></div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">
+        <!-- Grouped bar chart -->
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Long vs Short — Key Metrics</div>
+          <div style="position:relative;height:150px"><canvas id="ml-ls-chart"></canvas></div>
+        </div>
+        <!-- Return scatter coloured by direction -->
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution by Direction</div>
+          <div style="position:relative;height:150px"><canvas id="ml-ls-scatter"></canvas></div>
+        </div>
       </div>
+      <div id="ml-ls-wrap" style="margin-top:10px"></div>
     </div>
 
     <!-- Trade Log -->
@@ -2591,7 +2600,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
 }
 
 // ── Trade Analytics ────────────────────────────────────────────────────────────
-let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null;
+let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null;
 let _mlTradesIS = [], _mlTradesHO = [];
 
 function mlSwitchTradeTab(tab) {
@@ -2618,6 +2627,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO) {
   if (_mlRetDistChart) { _mlRetDistChart.destroy(); _mlRetDistChart = null; }
   if (_mlDurRetChart)  { _mlDurRetChart.destroy();  _mlDurRetChart  = null; }
   if (_mlConcChart)    { _mlConcChart.destroy();    _mlConcChart    = null; }
+  if (_mlLsChart)      { _mlLsChart.destroy();      _mlLsChart      = null; }
+  if (_mlLsScatter)    { _mlLsScatter.destroy();    _mlLsScatter    = null; }
 
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
@@ -2779,30 +2790,98 @@ function buildMLTradeAnalytics(tradesIS, tradesHO) {
   const allTrades = [...tradesIS, ...(tradesHO || [])];
   const longs  = allTrades.filter(t => t.direction === 'long');
   const shorts = allTrades.filter(t => t.direction === 'short');
+
   function tradeStats(arr) {
     if (!arr.length) return null;
-    const wins = arr.filter(t => t.win);
-    const wr   = wins.length / arr.length * 100;
-    const avg  = arr.reduce((a,t) => a + t.return_pct, 0) / arr.length;
-    const pf   = losses => losses.length
-      ? Math.abs(wins.reduce((a,t)=>a+t.return_pct,0)) / Math.abs(arr.filter(t=>!t.win).reduce((a,t)=>a+t.return_pct,0))
-      : null;
-    return { n: arr.length, wr: wr.toFixed(0), avg: avg.toFixed(2), pf: pf() };
+    const wins  = arr.filter(t => t.win);
+    const loss  = arr.filter(t => !t.win);
+    const wr    = wins.length / arr.length * 100;
+    const avg   = arr.reduce((a,t) => a + t.return_pct, 0) / arr.length;
+    const grossW = Math.abs(wins.reduce((a,t) => a + t.return_pct, 0));
+    const grossL = Math.abs(loss.reduce((a,t) => a + t.return_pct, 0));
+    const pf    = grossL > 0 ? grossW / grossL : null;
+    const avgBars = arr.reduce((a,t) => a + (t.bars||0), 0) / arr.length;
+    return { n: arr.length, wr, avg, pf, avgBars };
   }
-  const lstats = tradeStats(longs), sstats = tradeStats(shorts);
+
+  const lstats = tradeStats(longs);
+  const sstats = tradeStats(shorts);
+
+  // ── Grouped bar chart: Win Rate, Avg Return, Profit Factor ─────────────────
+  const lsChartEl = document.getElementById('ml-ls-chart');
+  if (lsChartEl && (lstats || sstats)) {
+    const lColor = 'rgba(79,195,247,0.75)', lBorder = '#4fc3f7';
+    const sColor = 'rgba(244,114,182,0.75)', sBorder = '#f472b6';
+    const metrics = ['Win Rate %', 'Avg Return %', 'Profit Factor', 'Avg Bars'];
+    const lVals = lstats ? [+lstats.wr.toFixed(1), +lstats.avg.toFixed(2), lstats.pf!=null?+lstats.pf.toFixed(2):0, +lstats.avgBars.toFixed(1)] : [0,0,0,0];
+    const sVals = sstats ? [+sstats.wr.toFixed(1), +sstats.avg.toFixed(2), sstats.pf!=null?+sstats.pf.toFixed(2):0, +sstats.avgBars.toFixed(1)] : [0,0,0,0];
+
+    _mlLsChart = new Chart(lsChartEl.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: metrics,
+        datasets: [
+          { label: '▲ Long',  data: lVals, backgroundColor: lColor, borderColor: lBorder, borderWidth: 1, borderRadius: 3 },
+          { label: '▼ Short', data: sVals, backgroundColor: sColor, borderColor: sBorder, borderWidth: 1, borderRadius: 3 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}` } }
+        },
+        scales: {
+          x: { ticks: { ...axStyle }, grid: { display: false } },
+          y: { ticks: { ...axStyle }, grid: gridStyle, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── Return distribution scatter by direction ────────────────────────────────
+  const lsScEl = document.getElementById('ml-ls-scatter');
+  if (lsScEl) {
+    const longPts  = longs.map((t,i)  => ({ x: i+1, y: +(t.return_pct).toFixed(2) }));
+    const shortPts = shorts.map((t,i) => ({ x: i+1, y: +(t.return_pct).toFixed(2) }));
+    _mlLsScatter = new Chart(lsScEl.getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label: '▲ Long',  data: longPts,  backgroundColor: 'rgba(79,195,247,0.6)',  borderColor: '#4fc3f7', pointRadius: 5, pointHoverRadius: 7 },
+        { label: '▼ Short', data: shortPts, backgroundColor: 'rgba(244,114,182,0.6)', borderColor: '#f472b6', pointRadius: 5, pointHoverRadius: 7 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          tooltip: { callbacks: { label: ctx => {
+            const arr = ctx.dataset.label.includes('Long') ? longs : shorts;
+            const t = arr[ctx.dataIndex];
+            return t ? ` ${ctx.dataset.label}: ${t.entry_date}  ${t.return_pct >= 0 ? '+' : ''}${t.return_pct.toFixed(2)}%` : '';
+          }}}
+        },
+        scales: {
+          x: { display: false },
+          y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle,
+               title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  // ── Stats tile summary ──────────────────────────────────────────────────────
   const lsWrap = document.getElementById('ml-ls-wrap');
   if (lsWrap && (lstats || sstats)) {
-    const fmt = (s, col) => s ? `
-      <div style="flex:1;background:#111;border-radius:6px;padding:10px 14px;border:1px solid #222">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:${col};margin-bottom:6px;font-weight:600">${s === lstats ? '▲ Long' : '▼ Short'}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px">
-          <div style="color:#6b7280">Trades</div><div style="font-family:monospace;color:#e0e0e0">${s.n}</div>
-          <div style="color:#6b7280">Win Rate</div><div style="font-family:monospace;color:${+s.wr>=50?'#00ff41':'#ff6b6b'}">${s.wr}%</div>
-          <div style="color:#6b7280">Avg Return</div><div style="font-family:monospace;color:${+s.avg>=0?'#00ff41':'#ff6b6b'}">${+s.avg>=0?'+':''}${s.avg}%</div>
-          <div style="color:#6b7280">Profit Factor</div><div style="font-family:monospace;color:${s.pf>=1.2?'#00ff41':s.pf>=1?'#f5a520':'#ff6b6b'}">${s.pf!=null?s.pf.toFixed(2):'—'}</div>
-        </div>
-      </div>` : '';
-    lsWrap.innerHTML = `<div style="display:flex;gap:10px">${fmt(lstats,'#4fc3f7')}${fmt(sstats,'#f472b6')}</div>`;
+    const tile = (s, label, col) => !s ? '' : `
+      <div style="flex:1;background:#111;border-radius:5px;padding:8px 12px;border:1px solid #1e1e1e;font-size:12px">
+        <span style="color:${col};font-weight:700">${label}</span>
+        <span style="color:#6b7280;margin-left:8px">${s.n} trades</span>
+        <span style="color:${+s.wr>=50?'#00ff41':'#ff6b6b'};margin-left:10px">${s.wr.toFixed(0)}% WR</span>
+        <span style="color:${s.avg>=0?'#00ff41':'#ff6b6b'};margin-left:10px">${s.avg>=0?'+':''}${s.avg.toFixed(2)}% avg</span>
+        <span style="color:${s.pf>=1.2?'#00ff41':s.pf>=1?'#f5a520':'#ff6b6b'};margin-left:10px">PF ${s.pf!=null?s.pf.toFixed(2):'—'}</span>
+        <span style="color:#6b7280;margin-left:10px">${s.avgBars.toFixed(1)} bars avg</span>
+      </div>`;
+    lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px">${tile(lstats,'▲ Long','#4fc3f7')}${tile(sstats,'▼ Short','#f472b6')}</div>`;
   }
 }
 
