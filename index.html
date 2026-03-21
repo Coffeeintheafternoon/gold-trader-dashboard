@@ -3261,22 +3261,21 @@ function mlForceThresholdChange(val) {
 // ── Heatmap ────────────────────────────────────────────────────────────────────
 function buildMLHeatmap(cd) {
   const canvas = document.getElementById('ml-corr-heatmap');
-  const features = cd.cluster_order;   // sorted by cluster
+  const features = cd.cluster_order;
   const orig     = cd.features;
   const matrix   = cd.matrix;
   const n        = features.length;
 
   const CELL   = Math.max(9, Math.min(18, Math.floor(560 / n)));
-  const LPAD   = 130;   // left label area
-  const TPAD   = 130;   // top label area
+  const LPAD   = 130;
+  const TPAD   = 130;
   const W      = LPAD + n * CELL;
   const H      = TPAD + n * CELL;
   canvas.width  = W;
   canvas.height = H;
 
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#0d0d0d';
-  ctx.fillRect(0, 0, W, H);
+  const ctx   = canvas.getContext('2d');
+  const fsize = Math.min(11, CELL);
 
   function getCorr(fa, fb) {
     const ia = orig.indexOf(fa), ib = orig.indexOf(fb);
@@ -3292,39 +3291,98 @@ function buildMLHeatmap(cd) {
     }
   }
 
-  // Draw cells
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const v = getCorr(features[i], features[j]);
-      ctx.fillStyle = i === j ? '#2a2a2a' : corrColor(v);
-      ctx.fillRect(LPAD + j*CELL, TPAD + i*CELL, CELL-1, CELL-1);
+  function drawBase(hoverRow=-1, hoverCol=-1) {
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, W, H);
+
+    // Cells
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const v = getCorr(features[i], features[j]);
+        ctx.fillStyle = i === j ? '#2a2a2a' : corrColor(v);
+        ctx.fillRect(LPAD + j*CELL, TPAD + i*CELL, CELL-1, CELL-1);
+      }
     }
+
+    // Highlight strips
+    if (hoverRow >= 0 && hoverCol >= 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.10)';
+      ctx.fillRect(LPAD, TPAD + hoverRow*CELL, n*CELL, CELL);      // row strip
+      ctx.fillRect(LPAD + hoverCol*CELL, TPAD, CELL, n*CELL);      // col strip
+      // Hovered cell border
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(LPAD + hoverCol*CELL + 0.5, TPAD + hoverRow*CELL + 0.5, CELL-1, CELL-1);
+    }
+
+    // Row labels
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    features.forEach((name, i) => {
+      const active = i === hoverRow;
+      ctx.font = (active ? 'bold ' : '') + `${fsize}px monospace`;
+      ctx.fillStyle = active ? '#ffffff' : _corrCatColor(name);
+      const label = name.replace('ann_','★ ');
+      ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label,
+                   LPAD - 5, TPAD + i*CELL + CELL/2);
+    });
+
+    // Column labels (rotated)
+    ctx.textAlign = 'left';
+    features.forEach((name, j) => {
+      const active = j === hoverCol;
+      ctx.save();
+      ctx.translate(LPAD + j*CELL + CELL/2, TPAD - 5);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = (active ? 'bold ' : '') + `${fsize}px monospace`;
+      ctx.fillStyle = active ? '#ffffff' : _corrCatColor(name);
+      const label = name.replace('ann_','★ ');
+      ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label, 0, 0);
+      ctx.restore();
+    });
   }
 
-  // Row labels
-  const fsize = Math.min(11, CELL);
-  ctx.font = `${fsize}px monospace`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  features.forEach((name, i) => {
-    ctx.fillStyle = _corrCatColor(name);
-    const label = name.replace('ann_','★ ');
-    ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label,
-                 LPAD - 5, TPAD + i*CELL + CELL/2);
-  });
+  drawBase();
 
-  // Column labels (rotated)
-  ctx.font = `${fsize}px monospace`;
-  ctx.textAlign = 'left';
-  features.forEach((name, j) => {
-    ctx.save();
-    ctx.translate(LPAD + j*CELL + CELL/2, TPAD - 5);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = _corrCatColor(name);
-    const label = name.replace('ann_','★ ');
-    ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label, 0, 0);
-    ctx.restore();
-  });
+  // Floating tooltip div
+  let tipDiv = document.getElementById('ml-heatmap-tip');
+  if (!tipDiv) {
+    tipDiv = document.createElement('div');
+    tipDiv.id = 'ml-heatmap-tip';
+    tipDiv.style.cssText = 'position:fixed;background:#1c1c1c;border:1px solid #333;border-radius:5px;padding:7px 11px;font-size:11px;color:#e5e7eb;pointer-events:none;z-index:9999;display:none;line-height:1.6;box-shadow:0 4px 12px #000a';
+    document.body.appendChild(tipDiv);
+  }
+
+  canvas.onmousemove = function(e) {
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top)  * scaleY;
+    const col = Math.floor((cx - LPAD) / CELL);
+    const row = Math.floor((cy - TPAD) / CELL);
+    if (col >= 0 && col < n && row >= 0 && row < n) {
+      drawBase(row, col);
+      const v = getCorr(features[row], features[col]);
+      const vStr  = (v >= 0 ? '+' : '') + v.toFixed(3);
+      const vCol  = v > 0.6 ? '#00ff41' : v < -0.6 ? '#ff6b6b' : v > 0.3 ? '#f5a520' : '#9ca3af';
+      tipDiv.innerHTML =
+        `<div><span style="color:#6b7280">Row:</span> <span style="color:#e5e7eb;font-weight:600">${features[row]}</span></div>` +
+        `<div><span style="color:#6b7280">Col:</span> <span style="color:#e5e7eb;font-weight:600">${features[col]}</span></div>` +
+        `<div style="margin-top:3px"><span style="color:#6b7280">Correlation:</span> <span style="color:${vCol};font-weight:700;font-family:monospace">${vStr}</span></div>`;
+      tipDiv.style.display = 'block';
+      tipDiv.style.left = (e.clientX + 16) + 'px';
+      tipDiv.style.top  = (e.clientY - 10) + 'px';
+    } else {
+      drawBase();
+      tipDiv.style.display = 'none';
+    }
+  };
+
+  canvas.onmouseleave = function() {
+    drawBase();
+    tipDiv.style.display = 'none';
+  };
 }
 
 // ── Dendrogram ────────────────────────────────────────────────────────────────
