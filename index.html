@@ -23,6 +23,16 @@
     .tab-btn { padding: 6px 18px; border-radius: 3px; border: 1px solid #2a2a2a; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; background: #0a0a0a; color: var(--muted); transition: border-color 0.15s, color 0.15s; white-space: nowrap; }
     .tab-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 900; }
     .tab-btn:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+    .ml-sort-btn { padding:4px 12px;border-radius:3px;border:1px solid #333;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;background:#0a0a0a;color:var(--muted);transition:border-color 0.15s,color 0.15s; }
+    .ml-sort-btn.ml-sort-active { background:var(--gold);color:#000;border-color:var(--gold); }
+    .ml-sort-btn:hover:not(.ml-sort-active) { border-color:var(--gold);color:var(--gold); }
+    .ml-ticker-card { background:var(--card);border:1px solid #222;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s,background 0.1s; }
+    .ml-ticker-card:hover { background:#141414; }
+    .ml-ticker-card.ml-card-low    { border-color:#16a34a; }
+    .ml-ticker-card.ml-card-medium { border-color:#b45309; }
+    .ml-ticker-card.ml-card-high   { border-color:#991b1b; }
+    .ml-ticker-card.ml-card-noedge { border-color:#374151; }
+    .ml-ticker-card.ml-card-regime { border-color:#7c3aed; }
     .header-right { display: flex; align-items: center; gap: 10px; }
     main { max-width: 1300px; margin: 0 auto; padding: 24px 20px 40px; }
     .tab-pane { display: none; }
@@ -163,6 +173,147 @@
 <!-- TAB 2: MODEL LAB                                                       -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <div id="tab-modellab" class="tab-pane">
+
+  <!-- ══ GOLD SCREENER GRID ══════════════════════════════════════════════ -->
+  <div id="ml-gold-screener">
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">⛏</span>
+      <span class="section-divider-label">Gold Miner Model Screener — 38 Tickers</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div id="ml-grid-spinner" style="color:var(--muted);font-size:13px;padding:20px 0">Loading screener data…</div>
+    <div id="ml-grid-wrap" style="display:none">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <span style="font-size:12px;color:var(--muted)">Sort by:</span>
+        <button onclick="mlSortGrid('is_sharpe')" id="ml-sort-is_sharpe" class="ml-sort-btn ml-sort-active">IS Sharpe</button>
+        <button onclick="mlSortGrid('ho_sharpe')" id="ml-sort-ho_sharpe" class="ml-sort-btn">HO Sharpe</button>
+        <button onclick="mlSortGrid('is_pf')" id="ml-sort-is_pf" class="ml-sort-btn">IS PF</button>
+        <button onclick="mlSortGrid('ho_pf')" id="ml-sort-ho_pf" class="ml-sort-btn">HO PF</button>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">Border colour = overfit risk</span>
+      </div>
+      <div id="ml-ticker-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"></div>
+    </div>
+  </div>
+
+  <!-- ══ PER-TICKER DETAIL ═══════════════════════════════════════════════ -->
+  <div id="ml-ticker-detail" style="display:none">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+      <button onclick="mlBackToGrid()" style="background:#1a1a1a;color:var(--muted);border:1px solid #333;border-radius:5px;padding:5px 14px;font-size:12px;cursor:pointer;letter-spacing:0.5px">← Back</button>
+      <div style="font-size:16px;font-weight:800;color:var(--gold)" id="ml-detail-title">—</div>
+      <div style="font-size:12px;color:var(--muted)" id="ml-detail-period">—</div>
+    </div>
+
+    <!-- IS vs Holdout hero row -->
+    <div style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0;margin-bottom:16px" class="chart-card" id="ml-is-ho-card">
+      <div style="padding:16px 20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">In-Sample (Walk-Forward)</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div class="hero-card" style="min-width:110px;padding:10px 14px">
+            <div class="hero-label tip" data-tip="Profit Factor on all walk-forward OOS windows.&#10;&gt;1.2 = meaningful edge.">Profit Factor</div>
+            <div class="hero-value" id="ml-is-pf">—</div>
+          </div>
+          <div class="hero-card" style="min-width:110px;padding:10px 14px">
+            <div class="hero-label tip" data-tip="Annualised Sharpe ratio on OOS windows.&#10;&gt;0.5 = decent retail edge.">Sharpe</div>
+            <div class="hero-value" id="ml-is-sharpe">—</div>
+          </div>
+          <div class="hero-card" style="min-width:90px;padding:10px 14px">
+            <div class="hero-label">Windows</div>
+            <div class="hero-value color-gold" id="ml-is-windows">—</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#1e1e1e"></div>
+      <div style="padding:16px 20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Holdout (Last 180 Bars — Never Seen)</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div class="hero-card" style="min-width:110px;padding:10px 14px">
+            <div class="hero-label tip" data-tip="Profit Factor on the held-out 6 months the model was never trained on.&#10;This is the real test.">Profit Factor</div>
+            <div class="hero-value" id="ml-ho-pf">—</div>
+          </div>
+          <div class="hero-card" style="min-width:110px;padding:10px 14px">
+            <div class="hero-label tip" data-tip="Sharpe ratio on the holdout period.&#10;If IS Sharpe is positive but this is negative: overfit.">Sharpe</div>
+            <div class="hero-value" id="ml-ho-sharpe">—</div>
+          </div>
+          <div class="hero-card" style="min-width:130px;padding:10px 14px">
+            <div class="hero-label tip" data-tip="LOW = consistent IS+holdout edge.&#10;HIGH = performs in-sample but fails on holdout (overfit).&#10;REGIME_CHANGE = holdout better than IS (regime shifted).">Overfit Risk</div>
+            <div class="hero-value" id="ml-overfit-badge">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overfit explanation -->
+    <div id="ml-overfit-explain" style="display:none;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:16px;border-left:3px solid var(--red)"></div>
+
+    <!-- IS vs Holdout equity chart -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-title">IS Walk-Forward vs Holdout — Equity Curves</div>
+      <div class="chart-subtitle">In-sample (all OOS windows) vs holdout period — divergence here = overfit</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ml-equity-chart"></canvas></div>
+    </div>
+
+    <!-- Feature importance chart + category filter -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div>
+          <div class="chart-title">Feature Importance — Average |Weight| Across Walk-Forward Windows</div>
+          <div class="chart-subtitle">Top 20 features. Colour = category. Announcement features highlighted in gold.</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="ml-cat-filters">
+          <button onclick="mlFilterFeats('all')" id="ml-cat-all" class="ml-sort-btn ml-sort-active" style="font-size:11px">All</button>
+          <button onclick="mlFilterFeats('momentum')" id="ml-cat-momentum" class="ml-sort-btn" style="font-size:11px;border-color:#60a5fa;color:#60a5fa">Momentum</button>
+          <button onclick="mlFilterFeats('volume')" id="ml-cat-volume" class="ml-sort-btn" style="font-size:11px;border-color:#22d3ee;color:#22d3ee">Volume</button>
+          <button onclick="mlFilterFeats('volatility')" id="ml-cat-volatility" class="ml-sort-btn" style="font-size:11px;border-color:#fb923c;color:#fb923c">Volatility</button>
+          <button onclick="mlFilterFeats('trend')" id="ml-cat-trend" class="ml-sort-btn" style="font-size:11px;border-color:#4ade80;color:#4ade80">Trend</button>
+          <button onclick="mlFilterFeats('macro')" id="ml-cat-macro" class="ml-sort-btn" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">Macro</button>
+          <button onclick="mlFilterFeats('announcement')" id="ml-cat-announcement" class="ml-sort-btn" style="font-size:11px;border-color:var(--gold);color:var(--gold)">Announcement</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:320px"><canvas id="ml-feat-chart"></canvas></div>
+    </div>
+
+    <!-- Announcement features detail -->
+    <div class="chart-card" style="margin-bottom:16px" id="ml-ann-card">
+      <div class="chart-title">Announcement Features — Detail</div>
+      <div class="chart-subtitle">How each announcement category ranks and how often it fires</div>
+      <div id="ml-ann-table-wrap" style="overflow-x:auto"></div>
+    </div>
+
+    <!-- Weight stability chart -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-title">Weight Stability — Top 5 Features Across Windows</div>
+      <div class="chart-subtitle">Stable weight = reliable signal. Wildly swinging weight = noise or regime instability.</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ml-stability-chart"></canvas></div>
+    </div>
+
+    <!-- Full feature table -->
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="chart-title" style="margin:0">All Features — Ranked by Avg |Weight|</div>
+        <label style="font-size:12px;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="ml-ann-only" onchange="mlRenderFeatTable()"> Announcement only
+        </label>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px">
+              <th style="text-align:left;padding:6px 10px">Rank</th>
+              <th style="text-align:left;padding:6px 10px">Feature</th>
+              <th style="text-align:left;padding:6px 10px">Category</th>
+              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Average absolute weight across all walk-forward windows.">Avg |Weight|</th>
+              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed</th>
+              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability</th>
+            </tr>
+          </thead>
+          <tbody id="ml-feat-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EXISTING ADAPTIVE MODEL PANELS (below screener) ════════════════ -->
   <div id="ml-screener-stats" style="display:none;margin-bottom:16px">
     <div class="chart-card" style="padding:20px;border:1px solid #333">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -1542,7 +1693,7 @@ function buildIntervalToggle(assets, currentAsset, currentInterval) {
 
 // ── Tab init functions ────────────────────────────────────────────────────────
 async function initModelLabTab() {
-  await loadQuantPanels();
+  await Promise.all([loadGoldScreener(), loadQuantPanels()]);
 }
 
 async function initUniverseTab() {
@@ -1676,36 +1827,47 @@ async function loadQuantPanels() {
 
 // ── Open ticker in Model Lab ──────────────────────────────────────────────────
 async function openTickerInModelLab(ticker, data) {
-  // Check if we have a full quant_data for this ticker
-  // Asset IDs are lowercased ticker without .AX, e.g. NST.AX → nst
+  const safe=ticker.toLowerCase().replace(/\./g,'_');
+  // ── Priority 1: new model_lab_*.json detail view ─────────────────────
+  // Try to load the rich per-ticker model lab file first
+  const mlRes=await fetch(`./model_lab_${safe}.json?v=${_CV}`).catch(()=>null);
+  if(mlRes&&mlRes.ok){
+    switchTab('modellab');
+    // Ensure screener is loaded so back button works
+    if(!_mlSummary) await loadGoldScreener();
+    // Hide screener grid, show detail
+    document.getElementById('ml-gold-screener').style.display='none';
+    document.getElementById('ml-ticker-detail').style.display='';
+    document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
+    document.getElementById('ml-screener-stats').style.display='none';
+    const mlData=await mlRes.json();
+    _mlTickerCache[safe]=mlData;
+    renderTickerDetail(mlData);
+    document.getElementById('ml-ticker-detail').scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  // ── Priority 2: legacy quant_data_*.json (gold/oil adaptive model) ───
   const tickerId=ticker.replace(/\.AX$/i,'').toLowerCase();
-  // If Model Lab hasn't been visited yet _allAssets is empty — load index now
   if(!_allAssets.length){
     try{const r=await fetch(`./quant_data_index.json?v=${_CV}`);if(r.ok){const idx=await r.json();_allAssets=idx.assets||[];}}catch(_){}
   }
   const match=_allAssets.find(a=>a.id===tickerId||a.ticker===ticker);
   if(match){
-    // Full backtest exists — update URL params and reload panels in-page (no full page reload)
     const sp=new URLSearchParams(window.location.search);
-    sp.set('asset',match.id);
-    sp.set('interval',match.interval);
+    sp.set('asset',match.id);sp.set('interval',match.interval);
     history.replaceState(null,'','?'+sp.toString()+'#modellab');
-    // Destroy any existing Chart.js instances on quant canvases so they can be redrawn
     _tradeSignalChart=null;
     ['chart-cluster-dist','chart-rolling','chart-equity','chart-mcpt-hist','chart-regime-timeline','chart-trade-signals'].forEach(id=>{
       const c=document.getElementById(id);if(c){const ch=Chart.getChart(c);if(ch)ch.destroy();}
     });
-    // Hide all panels and clear dynamic content so stale data doesn't show
     document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
     document.getElementById('ml-screener-stats').style.display='none';
-    // Switch to tab (won't re-init since _tabInit may already have modellab)
     switchTab('modellab');
-    // Always re-run panels with the new URL params
     loadQuantPanels();
     return;
   }
-  // No full backtest — show screener stats only, hide all gold/WAF panels
-  _tabInit.add('modellab'); // mark as init so loadQuantPanels doesn't run
+  // ── Priority 3: screener-only fallback (no model data at all) ────────
+  _tabInit.add('modellab');
   switchTab('modellab');
   // Hide every quant panel so gold data doesn't bleed through
   document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
@@ -1867,6 +2029,338 @@ function selectTicker(safe) {
   document.getElementById('feature-model-section').scrollIntoView({behavior:'smooth',block:'start'});
   const divLabel=document.querySelector('#feature-model-section .section-divider-label');
   if(divLabel)divLabel.textContent=safe.replace('_ax','').toUpperCase()+'.AX — Ridge Regression Feature Model';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODEL LAB — GOLD SCREENER + PER-TICKER DETAIL
+// ══════════════════════════════════════════════════════════════════════════════
+let _mlSummary = null;          // gold_screener_summary.json
+let _mlSortKey = 'is_sharpe';   // current sort column
+let _mlTickerCache = {};         // model_lab_*.json cache
+let _mlEquityChart = null;
+let _mlFeatChart = null;
+let _mlStabilityChart = null;
+let _mlCurrentFeatures = [];    // full feature list for current ticker
+let _mlCurrentWH = [];          // weight_history for current ticker
+
+const _ML_CAT_COLORS = {
+  momentum:     '#60a5fa',
+  volume:       '#22d3ee',
+  volatility:   '#fb923c',
+  trend:        '#4ade80',
+  macro:        '#a78bfa',
+  announcement: '#f5a520',
+  other:        '#6b7280',
+};
+const _ML_OVERFIT_LABELS = {
+  LOW:           { color:'#16a34a', text:'LOW — consistent edge IS + holdout' },
+  MEDIUM:        { color:'#b45309', text:'MEDIUM — some degradation on holdout' },
+  HIGH:          { color:'#dc2626', text:'HIGH — IS good, holdout fails (overfit)' },
+  NO_EDGE:       { color:'#374151', text:'NO EDGE — weak across both periods' },
+  REGIME_CHANGE: { color:'#7c3aed', text:'REGIME SHIFT — holdout beats IS' },
+  UNKNOWN:       { color:'#4b5563', text:'UNKNOWN' },
+};
+
+async function loadGoldScreener() {
+  try {
+    const res = await fetch(`./gold_screener_summary.json?v=${_CV}`);
+    if (!res.ok) { document.getElementById('ml-grid-spinner').textContent='No screener data yet. Run: python scripts/export_model_lab_data.py'; return; }
+    _mlSummary = await res.json();
+    buildScreenerGrid(_mlSummary.tickers || []);
+  } catch(e) {
+    document.getElementById('ml-grid-spinner').textContent = 'Screener data unavailable.';
+  }
+}
+
+function mlSortGrid(key) {
+  _mlSortKey = key;
+  document.querySelectorAll('.ml-sort-btn[id^="ml-sort-"]').forEach(b => b.classList.remove('ml-sort-active'));
+  const btn = document.getElementById('ml-sort-' + key);
+  if (btn) btn.classList.add('ml-sort-active');
+  if (_mlSummary) buildScreenerGrid(_mlSummary.tickers || []);
+}
+
+function buildScreenerGrid(tickers) {
+  document.getElementById('ml-grid-spinner').style.display = 'none';
+  document.getElementById('ml-grid-wrap').style.display = '';
+  const sorted = [...tickers].filter(t => t.status === 'OK').sort((a,b) => {
+    const av = a[_mlSortKey] ?? -99, bv = b[_mlSortKey] ?? -99;
+    return bv - av;
+  });
+  const grid = document.getElementById('ml-ticker-grid');
+  grid.innerHTML = sorted.map(t => {
+    const ov = t.overfit_signal || 'UNKNOWN';
+    const cardClass = { LOW:'ml-card-low', MEDIUM:'ml-card-medium', HIGH:'ml-card-high', NO_EDGE:'ml-card-noedge', REGIME_CHANGE:'ml-card-regime', UNKNOWN:'ml-card-noedge' }[ov] || 'ml-card-noedge';
+    const isPF = t.is_pf != null ? t.is_pf.toFixed(3) : '—';
+    const isSh = t.is_sharpe != null ? (t.is_sharpe >= 0 ? '+' : '') + t.is_sharpe.toFixed(2) : '—';
+    const hoSh = t.ho_sharpe != null ? (t.ho_sharpe >= 0 ? '+' : '') + t.ho_sharpe.toFixed(2) : '—';
+    const hoPF = t.ho_pf != null ? t.ho_pf.toFixed(3) : '—';
+    const isSc = t.is_sharpe >= 0.5 ? 'var(--green)' : t.is_sharpe > 0 ? '#fbbf24' : 'var(--red)';
+    const hoSc = (t.ho_sharpe||0) >= 0.5 ? 'var(--green)' : (t.ho_sharpe||0) > 0 ? '#fbbf24' : 'var(--red)';
+    const safe = t.ticker.toLowerCase().replace(/\./g,'_');
+    const ovLabel = { LOW:'✓ LOW', MEDIUM:'~ MED', HIGH:'⚠ HIGH', NO_EDGE:'✕ NONE', REGIME_CHANGE:'↑ SHIFT', UNKNOWN:'? UNK' }[ov] || ov;
+    const ovColor = (_ML_OVERFIT_LABELS[ov]||{}).color || '#4b5563';
+    return `<div class="ml-ticker-card ${cardClass}" onclick="openModelLabTicker('${safe}')" title="${t.ticker} — ${ov}">
+      <div style="font-size:15px;font-weight:800;color:#e5e7eb;margin-bottom:8px">${t.ticker}</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--muted)">IS PF</span><span style="font-family:monospace;font-weight:600">${isPF}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--muted)">IS Shr</span><span style="font-family:monospace;color:${isSc};font-weight:600">${isSh}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--muted)">HO PF</span><span style="font-family:monospace;font-weight:600">${hoPF}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px">
+        <span style="color:var(--muted)">HO Shr</span><span style="font-family:monospace;color:${hoSc};font-weight:600">${hoSh}</span>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:${ovColor};letter-spacing:0.5px">${ovLabel}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${t.ann_count} anns</div>
+    </div>`;
+  }).join('');
+}
+
+async function openModelLabTicker(safe) {
+  let data = _mlTickerCache[safe];
+  if (!data) {
+    try {
+      const res = await fetch(`./model_lab_${safe}.json?v=${_CV}`);
+      if (!res.ok) { alert('No model lab data for ' + safe + '. Run: python scripts/export_model_lab_data.py'); return; }
+      data = await res.json();
+      _mlTickerCache[safe] = data;
+    } catch(e) { console.error(e); return; }
+  }
+  document.getElementById('ml-gold-screener').style.display = 'none';
+  document.getElementById('ml-ticker-detail').style.display = '';
+  renderTickerDetail(data);
+  document.getElementById('ml-ticker-detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function mlBackToGrid() {
+  document.getElementById('ml-ticker-detail').style.display = 'none';
+  document.getElementById('ml-gold-screener').style.display = '';
+}
+
+function renderTickerDetail(d) {
+  _mlCurrentFeatures = d.features || [];
+  _mlCurrentWH = d.weight_history || [];
+  const ticker = d.ticker || '—';
+  document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
+  document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
+
+  // IS metrics
+  const isM = d.is_model || {};
+  const hoM = d.holdout  || {};
+  const ov  = d.overfit_signal || 'UNKNOWN';
+  const ovInfo = _ML_OVERFIT_LABELS[ov] || _ML_OVERFIT_LABELS.UNKNOWN;
+
+  function fmt(v, decimals=3) { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(decimals) : '—'; }
+  function pfColor(v)  { return v > 1.1 ? 'var(--green)' : v > 1.0 ? '#fbbf24' : 'var(--red)'; }
+  function shrColor(v) { return v > 0.5 ? 'var(--green)' : v > 0 ? '#fbbf24' : 'var(--red)'; }
+
+  document.getElementById('ml-is-pf').innerHTML    = `<span style="color:${pfColor(isM.pf||0)}">${(isM.pf||0).toFixed(3)}</span>`;
+  document.getElementById('ml-is-sharpe').innerHTML = `<span style="color:${shrColor(isM.sharpe||0)}">${fmt(isM.sharpe)}</span>`;
+  document.getElementById('ml-is-windows').textContent = isM.n_windows || '—';
+  document.getElementById('ml-ho-pf').innerHTML    = `<span style="color:${pfColor(hoM.pf||0)}">${hoM.pf != null ? hoM.pf.toFixed(3) : '—'}</span>`;
+  document.getElementById('ml-ho-sharpe').innerHTML = `<span style="color:${shrColor(hoM.sharpe||0)}">${fmt(hoM.sharpe)}</span>`;
+  document.getElementById('ml-overfit-badge').innerHTML = `<span style="color:${ovInfo.color};font-size:14px;font-weight:700">${ov}</span>`;
+  if (hoM.period_start) {
+    document.getElementById('ml-detail-period').textContent +=
+      `  |  Holdout: ${hoM.period_start} → ${hoM.period_end}`;
+  }
+
+  // Overfit explanation
+  const explEl = document.getElementById('ml-overfit-explain');
+  const explMap = {
+    HIGH:          { bg:'rgba(220,38,38,0.08)', border:'var(--red)',   text:`⚠️ HIGH OVERFIT — the model shows a Sharpe of ${fmt(isM.sharpe,2)} in-sample but ${fmt(hoM.sharpe,2)} on held-out data. The model memorised the training windows rather than learning genuine price patterns. Use cautiously.` },
+    LOW:           { bg:'rgba(22,163,74,0.08)',  border:'#16a34a',     text:`✓ LOW OVERFIT — consistent performance: IS Sharpe ${fmt(isM.sharpe,2)}, holdout Sharpe ${fmt(hoM.sharpe,2)}. The model generalises well.` },
+    MEDIUM:        { bg:'rgba(180,83,9,0.08)',   border:'#b45309',     text:`~ MEDIUM OVERFIT — some performance degradation on holdout (IS ${fmt(isM.sharpe,2)} → HO ${fmt(hoM.sharpe,2)}). Monitor closely.` },
+    NO_EDGE:       { bg:'rgba(55,65,81,0.08)',   border:'#374151',     text:`✕ NO EDGE — weak performance across both IS and holdout. This stock may not have a modelable pattern with these features.` },
+    REGIME_CHANGE: { bg:'rgba(124,58,237,0.08)', border:'#7c3aed',     text:`↑ REGIME SHIFT — holdout (${fmt(hoM.sharpe,2)}) significantly outperforms IS (${fmt(isM.sharpe,2)}). The recent regime may be more favourable than the historical period.` },
+  };
+  const expl = explMap[ov];
+  if (expl) {
+    explEl.style.display = '';
+    explEl.style.background = expl.bg;
+    explEl.style.borderColor = expl.border;
+    explEl.textContent = expl.text;
+  } else {
+    explEl.style.display = 'none';
+  }
+
+  // Equity curves
+  buildMLEquityChart(d.equity_is || [], d.equity_holdout || [], hoM.period_start);
+
+  // Feature chart
+  mlFilterFeats('all');
+
+  // Announcement table
+  buildAnnTable(_mlCurrentFeatures);
+
+  // Weight stability
+  buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+
+  // Feature table
+  mlRenderFeatTable();
+}
+
+function buildMLEquityChart(equityIS, equityHO, hoStart) {
+  const ctx = document.getElementById('ml-equity-chart').getContext('2d');
+  if (_mlEquityChart) _mlEquityChart.destroy();
+  const isLabels  = equityIS.map(e => e.date);
+  const isVals    = equityIS.map(e => +(e.cum_ret * 100).toFixed(4));
+  const hoLabels  = equityHO.map(e => e.date);
+  const hoVals    = equityHO.map(e => +(e.cum_ret * 100).toFixed(4));
+  _mlEquityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: isLabels,
+      datasets: [
+        { label: 'IS Walk-Forward', data: isVals, borderColor: '#60a5fa', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2 },
+        { label: 'Holdout (never seen)', data: hoVals.map((v,i) => ({ x: hoLabels[i], y: v })), borderColor: '#f5a520', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.2, borderDash: [5,3] },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#aaa', font:{size:11} } },
+                 tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw >= 0 ? '+' : ''}${c.raw.toFixed(2)}%` } } },
+      scales: {
+        x: { grid: {color:'#1a1a1a'}, ticks: {color:'#555', maxTicksLimit:8, font:{size:10}} },
+        y: { grid: {color:'#1a1a1a'}, ticks: {color:'#555', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(1)+'%'} }
+      }
+    }
+  });
+}
+
+let _mlFeatFilter = 'all';
+function mlFilterFeats(cat) {
+  _mlFeatFilter = cat;
+  document.querySelectorAll('#ml-cat-filters .ml-sort-btn').forEach(b => b.classList.remove('ml-sort-active'));
+  const btn = document.getElementById('ml-cat-' + cat);
+  if (btn) btn.classList.add('ml-sort-active');
+  buildMLFeatChart(_mlCurrentFeatures, cat);
+}
+
+function buildMLFeatChart(features, filterCat) {
+  const ctx = document.getElementById('ml-feat-chart').getContext('2d');
+  if (_mlFeatChart) _mlFeatChart.destroy();
+  let feats = [...features];
+  if (filterCat !== 'all') feats = feats.filter(f => f.category === filterCat);
+  feats = feats.slice(0, 20);
+  const labels = feats.map(f => f.name.replace('ann_', '★ '));
+  const vals   = feats.map(f => +(f.avg_weight * 1000).toFixed(4));  // ×1000 for readability
+  const colors = feats.map(f => (_ML_CAT_COLORS[f.category] || '#6b7280') + 'cc');
+  const borders= feats.map(f =>  _ML_CAT_COLORS[f.category] || '#6b7280');
+  const max = Math.max(...vals, 0.001);
+  _mlFeatChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderColor: borders, borderWidth: 1, borderRadius: 3 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => {
+          const f = feats[c.dataIndex];
+          return [` Avg |weight| × 1000: ${c.raw.toFixed(3)}`, ` Rank: #${f.rank} of ${features.length}`,
+                  ` Category: ${f.category}`, ` Instability: ${f.stability.toFixed(2)}`];
+        }}}
+      },
+      scales: {
+        x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, max: max*1.15 },
+        y: { grid:{display:false}, ticks:{color:'#ddd', font:{size:10}} }
+      }
+    }
+  });
+}
+
+function buildAnnTable(features) {
+  const annFeats = features.filter(f => f.category === 'announcement');
+  const wrap = document.getElementById('ml-ann-table-wrap');
+  if (!annFeats.length) { wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">No announcement features in model (no announcement data for this ticker).</div>'; return; }
+  const rows = annFeats.map(f => {
+    const wc = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
+    const rc = f.rank <= 20 ? 'var(--green)' : f.rank <= 35 ? '#fbbf24' : 'var(--muted)';
+    const instC = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? '#fbbf24' : 'var(--red)';
+    const nameClean = f.name.replace('ann_','').replace(/_/g,' ');
+    return `<tr style="border-bottom:1px solid #1a1a1a">
+      <td style="padding:7px 10px;font-weight:600;color:var(--gold)">${f.name}</td>
+      <td style="padding:7px 10px;font-size:12px;color:#9ca3af">${nameClean}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${rc};font-weight:600">#${f.rank}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace">${(f.avg_weight*1000).toFixed(3)}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${wc}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed*1000).toFixed(3)}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${instC}">${f.stability.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase">
+      <th style="text-align:left;padding:6px 10px">Feature</th>
+      <th style="text-align:left;padding:6px 10px">Description</th>
+      <th style="text-align:right;padding:6px 10px">Rank</th>
+      <th style="text-align:right;padding:6px 10px" title="Average absolute weight ×1000">Avg |W| ×1k</th>
+      <th style="text-align:right;padding:6px 10px" title="Average signed weight ×1000. + = bullish predictor.">Avg Signed ×1k</th>
+      <th style="text-align:right;padding:6px 10px" title="Weight instability across windows. >2 = unreliable.">Instability</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function buildMLStabilityChart(features, weightHistory) {
+  const ctx = document.getElementById('ml-stability-chart').getContext('2d');
+  if (_mlStabilityChart) _mlStabilityChart.destroy();
+  if (!weightHistory.length || !features.length) {
+    ctx.canvas.parentElement.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px">No weight history available.</div>';
+    return;
+  }
+  // Top 5 features by avg |weight|
+  const top5 = features.slice(0, 5);
+  const labels = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
+  const datasets = top5.map(f => ({
+    label: f.name.replace('ann_','★ '),
+    data: weightHistory.map(w => {
+      const v = w.weights ? (w.weights[f.name] ?? null) : null;
+      return v != null ? +(v * 1000).toFixed(4) : null;
+    }),
+    borderColor: _ML_CAT_COLORS[f.category] || '#6b7280',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    pointRadius: 2,
+    tension: 0.3,
+    spanGaps: true,
+  }));
+  _mlStabilityChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#aaa', font:{size:10}, boxWidth:12 } },
+                 tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw != null ? (c.raw >= 0 ? '+' : '') + c.raw.toFixed(3) : '—'} ×1k` } } },
+      scales: {
+        x: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
+        y: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, title:{display:true, text:'Weight ×1000', color:'#555', font:{size:10}} }
+      }
+    }
+  });
+}
+
+function mlRenderFeatTable() {
+  const annOnly = document.getElementById('ml-ann-only')?.checked;
+  let feats = annOnly ? _mlCurrentFeatures.filter(f => f.category === 'announcement') : _mlCurrentFeatures;
+  const tbody = document.getElementById('ml-feat-tbody');
+  const totalFeats = _mlCurrentFeatures.length;
+  tbody.innerHTML = feats.map(f => {
+    const catColor = _ML_CAT_COLORS[f.category] || '#6b7280';
+    const rankColor = f.rank <= 10 ? 'var(--green)' : f.rank <= 25 ? '#fbbf24' : 'var(--muted)';
+    const instColor = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? '#fbbf24' : 'var(--red)';
+    const signColor = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<tr style="border-bottom:1px solid #141414">
+      <td style="padding:5px 10px;font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
+      <td style="padding:5px 10px;font-size:11px;color:#e5e7eb${f.category === 'announcement' ? ';color:var(--gold);font-weight:600' : ''}">${f.name}</td>
+      <td style="padding:5px 10px;font-size:11px"><span style="color:${catColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">${f.category}</span></td>
+      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px">${(f.avg_weight * 1000).toFixed(3)}</td>
+      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
+      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── Feature Panel ─────────────────────────────────────────────────────────────
