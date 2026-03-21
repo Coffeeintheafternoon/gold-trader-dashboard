@@ -2102,13 +2102,15 @@ let _mlStabShow     = { weight: true, cum_avg: true, cum_pval: true }; // which 
 let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
 const _ML_CAT_COLORS = {
-  momentum:     '#f59e0b',   // warm amber
-  volume:       '#00c832',   // retro green (dimmed)
-  volatility:   '#f97316',   // orange
-  trend:        '#2dd4bf',   // teal
-  macro:        '#d97706',   // darker amber
-  announcement: '#f5a520',   // gold (matches --gold)
-  other:        '#4b5563',   // muted grey
+  momentum:      '#f59e0b',   // warm amber
+  volume:        '#00c832',   // retro green
+  volatility:    '#f97316',   // orange
+  trend:         '#2dd4bf',   // teal
+  macro:         '#d97706',   // darker amber
+  announcement:  '#f5a520',   // gold
+  candle:        '#a78bfa',   // soft purple
+  short_interest:'#f87171',   // coral red
+  other:         '#4b5563',   // muted grey
 };
 const _ML_OVERFIT_LABELS = {
   LOW:           { color:'#00ff41', text:'LOW — consistent edge IS + holdout' },
@@ -2720,10 +2722,51 @@ const _FEAT_GLOSSARY = {
   macro_commodity_tailwind: ["Commodity Tailwind","Composite score of gold, copper, oil all moving in same direction. Strong = favourable macro environment for miners."],
   macro_audusd_5d:     ["AUD/USD 5-day",         "5-day return of the Australian Dollar. Miners report in AUD — rising AUD compresses AUD gold price."],
   macro_audusd_20d:    ["AUD/USD 20-day",        "20-day return of AUD/USD. Medium-term FX trend affecting all ASX gold miners' revenue in AUD."],
+  // ── Candle Structure ─────────────────────────────────────────────────────
+  candle_body_pct:     ["Candle Body %",          "Body size (|Open−Close|) as % of the full High−Low range. Small = indecision / doji. Large = conviction."],
+  candle_upper_shadow: ["Upper Shadow",           "Upper wick length as % of range. Large upper wick = price tested higher but was rejected (bearish resistance)."],
+  candle_lower_shadow: ["Lower Shadow",           "Lower wick length as % of range. Large lower wick = price tested lower but recovered (bullish support)."],
+  candle_close_pos:    ["Candle Close Position",  "Where the close sits in today's High−Low range (0=at low, 1=at high). High = bullish close, low = bearish close."],
   // ── Short Interest (ASIC) ─────────────────────────────────────────────────
-  si_chg_5d:           ["Short Interest Chg 5d", "5-day change in ASIC-reported short interest %. Rising = increasing bearish conviction from shorts."],
-  si_zscore_120d:      ["Short Interest Z-Score","Current short interest vs its 120-day mean/std. High = unusually crowded short position — potential short squeeze."],
-  si_squeeze_flag:     ["Short Squeeze Flag",    "Binary: 1 when price is rising AND short interest is unusually high. Classic short-squeeze setup."],
+  si_chg_5d:           ["Short Interest Chg 5d",  "5-day change in ASIC-reported short interest %. Rising = increasing bearish conviction from institutional shorts."],
+  si_zscore_120d:      ["Short Interest Z-Score", "Current short interest vs its 120-day mean/std. High = unusually crowded short — potential short squeeze fuel."],
+  si_squeeze_flag:     ["Short Squeeze Flag",     "Binary: 1 when price is rising AND short interest is at a high z-score. Classic short-squeeze setup."],
+  // ── Bonds & Rates ─────────────────────────────────────────────────────────
+  macro_au10yr_mom5d:    ["AU 10yr Yield Mom 5d",  "5-day % change in Australian 10-year government bond yield. Rising yields = tightening financial conditions."],
+  macro_au10yr_mom20d:   ["AU 10yr Yield Mom 20d", "20-day % change in AU 10yr yield. Medium-term direction of Australian interest rates."],
+  macro_au2yr_mom5d:     ["AU 2yr Yield Mom 5d",   "5-day % change in Australian 2-year bond yield. Short-rate movements reflect RBA expectations."],
+  macro_yield_curve:     ["AU Yield Curve",         "AU 10yr yield minus AU 2yr yield. Positive = normal (upward sloping). Negative = inverted = recession signal."],
+  macro_yield_curve_acc5:["Yield Curve Acceleration","5-day change in the AU yield curve slope. Steepening = economic optimism, flattening = concern."],
+  macro_au_us_spread:    ["AU-US 10yr Spread",      "AU 10yr bond yield minus US 10yr Treasury yield. Positive = AU rates attractive vs US = AUD capital inflow."],
+  macro_us10yr_mom5d:    ["US 10yr Yield Mom 5d",   "5-day % change in US 10-year Treasury yield. Rising US yields = USD strength = headwind for gold."],
+  macro_us10yr_mom20d:   ["US 10yr Yield Mom 20d",  "20-day % change in US Treasury yield. Medium-term US rates direction — key driver of gold price."],
+  // ── FX ────────────────────────────────────────────────────────────────────
+  macro_dxy_mom5d:       ["DXY Momentum 5d",        "5-day % change in the US Dollar Index. Dollar strengthening = gold headwind. Falling dollar = tailwind."],
+  macro_dxy_mom20d:      ["DXY Momentum 20d",       "20-day % change in the US Dollar Index. Medium-term USD direction."],
+  macro_aud_mom5d:       ["AUD/USD Momentum 5d",    "5-day return of AUD/USD. Rising AUD compresses the AUD gold price — reduces miner revenue in AUD terms."],
+  macro_aud_mom20d:      ["AUD/USD Momentum 20d",   "20-day return of AUD/USD. Longer-term FX trend affecting all ASX miners' revenues."],
+  macro_aud_vol20d:      ["AUD/USD Volatility 20d", "20-day annualised volatility of AUD/USD. High FX vol = uncertainty for miners with USD revenues."],
+  macro_audjpy_mom5d:    ["AUD/JPY Momentum 5d",    "5-day return of AUD/JPY. Classic risk-on/risk-off barometer. Rising = risk-on, falling = flight to safety."],
+  // ── Commodities extended ──────────────────────────────────────────────────
+  macro_gold_mom5d:      ["Gold USD Momentum 5d",   "5-day return of spot gold in USD (GC=F). The most direct driver of all ASX gold miner prices."],
+  macro_gold_mom20d:     ["Gold USD Momentum 20d",  "20-day return of USD gold. Medium-term gold price cycle."],
+  macro_gold_vol20d:     ["Gold Volatility 20d",    "20-day annualised vol of gold price. High = uncertain commodity environment, model may struggle."],
+  macro_oil_mom5d:       ["Oil Momentum 5d",        "5-day return of Brent crude. Affects mining energy costs and broader inflation/commodity sentiment."],
+  macro_oil_mom20d:      ["Oil Momentum 20d",       "20-day return of Brent crude. Longer-term oil trend — sustained high oil = margin pressure for miners."],
+  macro_oil_vol20d:      ["Oil Volatility 20d",     "20-day annualised volatility of Brent crude. High oil vol often co-occurs with macro stress events."],
+  macro_copper_mom20d:   ["Copper Momentum 20d",    "20-day return of copper. Medium-term industrial demand proxy."],
+  macro_gold_oil_ratio:  ["Gold/Oil Ratio",         "Spot gold price divided by Brent crude oil price. High ratio = gold outperforming energy costs = miner margin expansion."],
+  macro_gold_oil_mom5d:  ["Gold/Oil Ratio Mom 5d",  "5-day change in the gold/oil ratio. Rising = improving miner profit margins (revenue up, cost input down)."],
+  macro_copper_gold_ratio:  ["Copper/Gold Ratio",      "Copper price divided by gold price. High = risk-on (growth expected), low = risk-off (safe-haven demand)."],
+  macro_copper_gold_mom5d:  ["Copper/Gold Ratio Mom 5d","5-day change in copper/gold ratio. Useful regime signal — miners often outperform when this ratio rises."],
+  // ── VIX ───────────────────────────────────────────────────────────────────
+  macro_vix_mom5d:       ["VIX Momentum 5d",        "5-day % change in CBOE VIX. Rising VIX = accelerating fear — usually negative for risk assets including miners."],
+  macro_vix_regime_20:   ["VIX > 20 Flag",          "Binary: 1 when VIX is above 20 (elevated fear). Market in cautious / defensive mode."],
+  macro_vix_regime_30:   ["VIX > 30 Flag",          "Binary: 1 when VIX is above 30 (crisis threshold). Extreme stress — historically gold bullish but miners volatile."],
+  // ── Composite scores ──────────────────────────────────────────────────────
+  macro_stress_composite:  ["Macro Stress Composite", "Z-score composite of VIX + inverted yield curve + DXY. High = broad market stress. Useful regime signal."],
+  macro_riskoff_momentum:  ["Risk-Off Momentum",      "Composite of VIX acceleration + rising yields + rising USD, all z-scored. Captures fear accelerating across multiple markets simultaneously."],
+  macro_commodity_tailwind:["Commodity Tailwind",     "Composite: gold rising + copper rising + oil stable/falling. High = favourable macro backdrop for gold miners."],
   // ── Announcement features ─────────────────────────────────────────────────
   ann_days_since_drilling:  ["Days Since Drilling",  "Calendar days since the last drilling result announcement. Fresh results = higher information value."],
   ann_days_since_capital:   ["Days Since Capital",   "Days since last capital raise (placement / rights issue). Recent raises can dilute or signal confidence."],
