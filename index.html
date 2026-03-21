@@ -2159,7 +2159,8 @@ function renderTickerDetail(d) {
   buildMLRollingPerf(d.equity_is || []);
 
   // Key metrics summary
-  buildMLMetrics(d.equity_is || [], d.trades_is || [], d.equity_holdout || [], d.trades_ho || []);
+  buildMLMetrics(d.equity_is || [], d.trades_is || [], d.equity_holdout || [], d.trades_ho || [],
+                 (d.is_model || {}).pf, (d.holdout || {}).pf);
 
   // Price chart with trade signals (IS + HO trades)
   buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || [], d.trades_ho || []);
@@ -2263,7 +2264,7 @@ function buildMLRollingPerf(equityIS) {
 }
 
 // ── Key Metrics Summary ────────────────────────────────────────────────────────
-function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO) {
+function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO, isPF, hoPF) {
   const wrap = document.getElementById('ml-metrics-table-wrap');
   if (!wrap) return;
 
@@ -2385,9 +2386,9 @@ function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO) {
       hasHO ? pct(ho.annRet,1)+' p.a.' : na, posC(ho.annRet),
       'Constant annual rate that produces the total return over the period.\nFormula: (exp(total_log_ret / years) − 1) × 100'],
     ['Profit Factor',
-      isTr.profitFactor.toFixed(3), ratC(isTr.profitFactor,1.3,1.0),
-      hasHO ? hoTr.profitFactor.toFixed(3) : na, ratC(hoTr.profitFactor,1.3,1.0),
-      'Gross winning returns ÷ gross losing returns.\n> 1.0 = profitable  |  > 1.3 = good  |  > 1.5 = strong.'],
+      isPF != null ? isPF.toFixed(3) : isTr.profitFactor.toFixed(3), ratC(isPF ?? isTr.profitFactor,1.3,1.0),
+      hasHO ? (hoPF != null ? hoPF.toFixed(3) : hoTr.profitFactor.toFixed(3)) : na, ratC(hoPF ?? hoTr.profitFactor,1.3,1.0),
+      'Gross winning daily returns ÷ gross losing daily returns (bar-level, consistent with hero card).\n> 1.0 = profitable  |  > 1.3 = good  |  > 1.5 = strong.'],
     ['Sharpe Ratio',
       is.sharpe.toFixed(2), ratC(is.sharpe,1.0,0.5),
       hasHO ? ho.sharpe.toFixed(2) : na, ratC(ho.sharpe,1.0,0.5),
