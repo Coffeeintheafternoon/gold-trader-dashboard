@@ -164,6 +164,16 @@
 <!-- TAB 2: MODEL LAB                                                       -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <div id="tab-modellab" class="tab-pane">
+  <div id="ml-screener-stats" style="display:none;margin-bottom:16px">
+    <div class="chart-card" style="padding:20px;border:1px solid #333">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <button onclick="document.getElementById('ml-screener-stats').style.display='none'" style="background:#222;color:var(--muted);border:1px solid #444;border-radius:5px;padding:4px 12px;font-size:12px;cursor:pointer">← Back</button>
+        <div class="chart-title" style="margin:0" id="ml-stats-title">—</div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="ml-stats-heroes"></div>
+      <div id="ml-stats-note" style="color:#6b7280;font-size:12px;margin-top:4px"></div>
+    </div>
+  </div>
   <div class="section-divider">
     <div class="section-divider-line"></div>
     <span class="section-divider-icon">📊</span>
@@ -588,20 +598,40 @@
     <div class="spin"></div><span>Loading meta data…</span>
   </div>
   <div id="meta-content" style="display:none">
+
+    <!-- Hero row -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;margin-top:8px" id="meta-hero-row"></div>
+
+    <!-- Sector performance chart + PF distribution side by side -->
     <div class="section-divider" style="margin-top:8px">
       <div class="section-divider-line"></div>
       <span class="section-divider-icon">🏭</span>
-      <span class="section-divider-label">Sector Breakdown</span>
+      <span class="section-divider-label">Sector Analysis — 300 Tickers</span>
       <div class="section-divider-line"></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title" style="margin-bottom:12px">Sector Pass Rates — Linear Regression Strategy</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Avg Profit Factor by Sector</div>
+        <div class="chart-subtitle">Mean LR walk-forward PF across valid tickers per sector</div>
+        <div class="chart-wrap" style="height:380px;margin-top:14px"><canvas id="meta-sector-pf-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">PF Distribution — All 241 Valid Tickers</div>
+        <div class="chart-subtitle">Histogram of walk-forward profit factor · dashed = PF 1.0 (break-even)</div>
+        <div class="chart-wrap" style="height:380px;margin-top:14px"><canvas id="meta-pf-hist-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Sector pass rates table -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title" style="margin-bottom:12px">Sector Pass Rates — PF ≥ 1.10 threshold</div>
       <div style="overflow-x:auto">
         <table class="meta-table">
           <thead>
             <tr>
-              <th>Sector</th><th style="text-align:center">Screened</th><th style="text-align:center;color:var(--green)">Accept</th>
-              <th style="text-align:center;color:#fbbf24">Borderline</th><th style="text-align:center;color:var(--red)">Reject</th>
+              <th>Sector</th><th style="text-align:center">Screened</th><th style="text-align:center">Valid</th>
+              <th style="text-align:center;color:var(--green)">PF ≥ 1.10</th>
+              <th style="text-align:right">Avg PF</th><th style="text-align:right">Best PF</th>
               <th style="min-width:160px">Pass Rate</th>
             </tr>
           </thead>
@@ -610,23 +640,48 @@
       </div>
     </div>
 
+    <!-- Top 20 tickers -->
+    <div class="section-divider">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🏆</span>
+      <span class="section-divider-label">Top 20 Tickers by Profit Factor</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-subtitle" style="margin-bottom:12px">Linear regression walk-forward OOS · click any row to open in Model Lab</div>
+      <div style="overflow-x:auto">
+        <table class="meta-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Ticker</th><th>Sector</th>
+              <th style="text-align:right">PF</th><th style="text-align:right">Sharpe</th>
+              <th style="text-align:right">Ann Return</th><th style="text-align:right">CI Low</th><th style="text-align:right">OOS Bars</th>
+            </tr>
+          </thead>
+          <tbody id="meta-top20-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Strategy comparison -->
     <div class="section-divider">
       <div class="section-divider-line"></div>
       <span class="section-divider-icon">🎯</span>
-      <span class="section-divider-label">Strategy Win Summary</span>
+      <span class="section-divider-label">Strategy Win Summary — 300 Tickers</span>
       <div class="section-divider-line"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <div class="chart-card" style="margin-bottom:0">
-        <div class="chart-title" style="margin-bottom:12px">Linear Regression</div>
+        <div class="chart-title" style="margin-bottom:12px">Linear Regression (Ridge)</div>
         <div id="meta-lr-stat" style="text-align:center;padding:20px 0"><span style="font-size:28px;font-weight:800;color:#22c55e">—</span></div>
       </div>
       <div class="chart-card" style="margin-bottom:0">
         <div class="chart-title" style="margin-bottom:12px">Donchian Breakout</div>
-        <div id="meta-don-stat" style="text-align:center;padding:20px 0"><span style="font-size:28px;font-weight:800;color:#ef4444">0/22</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div></div>
+        <div id="meta-don-stat" style="text-align:center;padding:20px 0"><span style="font-size:28px;font-weight:800;color:#ef4444">0/300</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div></div>
       </div>
     </div>
 
+    <!-- Portfolio alignment -->
     <div class="section-divider">
       <div class="section-divider-line"></div>
       <span class="section-divider-icon">📡</span>
@@ -636,7 +691,7 @@
     <div class="chart-card">
       <div style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:12px;color:var(--muted)">Consensus Direction</span>
+          <span style="font-size:12px;color:var(--muted)">Consensus Direction — validated models with active predictions</span>
           <span style="font-size:12px;color:var(--muted)" id="meta-portfolio-label">—</span>
         </div>
         <div style="height:10px;background:#222;border-radius:5px;overflow:hidden">
@@ -656,6 +711,7 @@
       </div>
     </div>
 
+    <!-- Feature frequency -->
     <div class="section-divider">
       <div class="section-divider-line"></div>
       <span class="section-divider-icon">🔬</span>
@@ -664,7 +720,7 @@
     </div>
     <div class="chart-card">
       <div class="chart-title" style="margin-bottom:4px">Feature Frequency Across Validated Models</div>
-      <div class="chart-subtitle" style="margin-bottom:16px">How often each feature appears in top_features across all 6 models</div>
+      <div class="chart-subtitle" style="margin-bottom:16px">How often each feature appears in top_features across all validated models</div>
       <div id="meta-feature-freq"></div>
     </div>
   </div>
@@ -711,6 +767,7 @@ window.addEventListener('DOMContentLoaded', () => {
 let _signalData = null;
 let _compData = null;
 let _screenerData = null;
+let _allAssets = [];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function toAWST(isoStr) {
@@ -1327,7 +1384,12 @@ function buildAssetDropdown(assets, currentAsset, currentInterval) {
   const select=document.getElementById('asset-select');
   wrap.style.display='';wrap.dataset.mlVisible='';
   const _ICONS={gold:'🥇',gold_acf:'🥇',oil:'🛢️',oil_acf:'🛢️',dxy:'💵',dxy_acf:'💵',audusd:'🇦🇺',audusd_acf:'🇦🇺',waf:'⛏️'};
-  assets.forEach(a=>{const opt=document.createElement('option');const key=a.id+'__'+a.interval;opt.value=key;opt.selected=(a.id===currentAsset&&a.interval===currentInterval);const pf=a.pf!=null?` · PF ${a.pf.toFixed(2)}`:'';opt.textContent=`${_ICONS[a.id]||'📊'} ${a.label} (${a.interval.toUpperCase()})${pf}`;select.appendChild(opt);});
+  // Sort by PF desc, show top 10 — current asset always included even if outside top 10
+  const sorted=[...assets].sort((a,b)=>(b.pf||0)-(a.pf||0));
+  const top10=sorted.slice(0,10);
+  const inTop10=top10.some(a=>a.id===currentAsset&&a.interval===currentInterval);
+  const shown=inTop10?top10:[...top10,assets.find(a=>a.id===currentAsset&&a.interval===currentInterval)].filter(Boolean);
+  shown.forEach(a=>{const opt=document.createElement('option');const key=a.id+'__'+a.interval;opt.value=key;opt.selected=(a.id===currentAsset&&a.interval===currentInterval);const pf=a.pf!=null?` · PF ${a.pf.toFixed(2)}`:'';opt.textContent=`${_ICONS[a.id]||'📊'} ${a.label} (${a.interval.toUpperCase()})${pf}`;select.appendChild(opt);});
 }
 
 function buildIntervalToggle(assets, currentAsset, currentInterval) {
@@ -1357,48 +1419,82 @@ async function initUniverseTab() {
 }
 
 async function initMetaTab() {
-  if (!_screenerData) {
-    try { const r=await fetch('./screener_summary.json?t='+Date.now()); if(r.ok)_screenerData=await r.json(); } catch(e) {}
-  }
-  if (!_compData) {
-    try { const r=await fetch('./models_comparison.json?t='+Date.now()); if(r.ok)_compData=await r.json(); } catch(e) {}
-  }
-  buildMetaTab(_screenerData, _compData);
+  const loads=[];
+  if(!_screenerData) loads.push(fetch('./screener_summary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_screenerData=d;}).catch(()=>{}));
+  if(!_compData) loads.push(fetch('./models_comparison.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
+  if(!_fullScreenerData) loads.push(fetch('./screener_full.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_fullScreenerData=d.tickers||[];}).catch(()=>{}));
+  await Promise.all(loads);
+  buildMetaTab(_screenerData, _compData, _fullScreenerData);
 }
 
-function buildMetaTab(screenerData, compData) {
+let _metaSectorChart=null,_metaPfHistChart=null;
+
+function buildMetaTab(screenerData, compData, fullTickers) {
   document.getElementById('meta-spinner').style.display='none';
   document.getElementById('meta-content').style.display='';
-  if (screenerData && screenerData.tickers) {
-    const sectors={};
-    screenerData.tickers.forEach(t=>{const sec=t.sector||'Other';if(!sectors[sec])sectors[sec]={total:0,accept:0,borderline:0,reject:0,error:0};sectors[sec].total++;const v=(t.verdict||'').toLowerCase();if(v==='accept')sectors[sec].accept++;else if(v==='borderline')sectors[sec].borderline++;else if(v==='reject')sectors[sec].reject++;else sectors[sec].error++;});
-    let sectorHtml='';
-    Object.entries(sectors).sort((a,b)=>b[1].total-a[1].total).forEach(([name,d])=>{const passRate=d.total>0?Math.round((d.accept/d.total)*100):0;const barColor=passRate>40?'#22c55e':passRate>15?'#f59e0b':'#ef4444';sectorHtml+=`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:8px 12px;font-weight:600;color:#e5e7eb">${name}</td><td style="padding:8px 12px;text-align:center;color:var(--muted)">${d.total}</td><td style="padding:8px 12px;text-align:center;color:#22c55e">${d.accept}</td><td style="padding:8px 12px;text-align:center;color:#fbbf24">${d.borderline}</td><td style="padding:8px 12px;text-align:center;color:#ef4444">${d.reject}</td><td style="padding:8px 12px;min-width:120px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${passRate}%;background:${barColor};border-radius:3px"></div></div><span style="font-size:12px;color:${barColor};min-width:30px">${passRate}%</span></div></td></tr>`;});
-    document.getElementById('meta-sector-tbody').innerHTML=sectorHtml;
-  }
-  if (screenerData) {
-    const accepted=screenerData.n_accept||0,total=screenerData.n_total||22;
-    const lrPct=total>0?Math.round(accepted/total*100):0;
-    document.getElementById('meta-lr-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:#22c55e">${accepted}/${total}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">${lrPct}% pass rate</div>`;
-    document.getElementById('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:#ef4444">0/${total}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div>`;
-  }
-  if (compData && compData.tickers) {
-    const tickers=compData.tickers;
-    const buys=tickers.filter(t=>t.signal===1).length;
-    const sells=tickers.filter(t=>t.signal===-1).length;
-    const pct=Math.round(buys/tickers.length*100);
+  const ticks=fullTickers||[];
+  const valid=ticks.filter(t=>!t.error&&t.pf!=null);
+  const edge=valid.filter(t=>t.pf>=1.10);
+  const total=ticks.length,nValid=valid.length;
+  const avgPF=valid.length?valid.reduce((s,t)=>s+(t.pf||0),0)/valid.length:0;
+  const bestTicker=valid.length?valid.reduce((b,t)=>t.pf>b.pf?t:b,valid[0]):null;
+
+  // ── Hero row ────────────────────────────────────────────────────────────────
+  document.getElementById('meta-hero-row').innerHTML=`
+    <div class="hero-card" style="min-width:140px"><div class="hero-label">Tickers Screened</div><div class="hero-value color-gold">${total}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${nValid} valid · ${total-nValid} no data</div></div>
+    <div class="hero-card" style="min-width:140px"><div class="hero-label">PF ≥ 1.10 (Edge)</div><div class="hero-value" style="color:var(--green)">${edge.length}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${nValid?Math.round(edge.length/nValid*100):0}% of valid</div></div>
+    <div class="hero-card" style="min-width:140px"><div class="hero-label">Avg Profit Factor</div><div class="hero-value" style="color:${avgPF>=1.05?'var(--green)':'var(--muted)'};font-size:22px">${avgPF.toFixed(3)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">across valid tickers</div></div>
+    <div class="hero-card" style="min-width:160px"><div class="hero-label">Top Ticker by PF</div><div class="hero-value color-gold">${bestTicker?bestTicker.ticker:'—'}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${bestTicker?'PF '+bestTicker.pf.toFixed(3)+' · '+bestTicker.sector:'—'}</div></div>
+    <div class="hero-card" style="min-width:140px"><div class="hero-label">Sectors Covered</div><div class="hero-value" style="font-size:22px">${new Set(ticks.map(t=>t.sector).filter(Boolean)).size}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">unique sectors</div></div>`;
+
+  // ── Sector stats (for charts + table) ──────────────────────────────────────
+  const secMap={};
+  valid.forEach(t=>{const s=t.sector||'Other';if(!secMap[s])secMap[s]={total:0,valid:0,edge:0,pfSum:0,best:0};secMap[s].total++;secMap[s].valid++;secMap[s].pfSum+=t.pf||0;if(t.pf>=1.10)secMap[s].edge++;if(t.pf>secMap[s].best)secMap[s].best=t.pf;});
+  ticks.filter(t=>t.error||t.pf==null).forEach(t=>{const s=t.sector||'Other';if(!secMap[s])secMap[s]={total:0,valid:0,edge:0,pfSum:0,best:0};secMap[s].total++;});
+  const secEntries=Object.entries(secMap).sort((a,b)=>{const avgA=a[1].valid?a[1].pfSum/a[1].valid:0;const avgB=b[1].valid?b[1].pfSum/b[1].valid:0;return avgB-avgA;});
+
+  // Sector avg PF chart
+  const secLabels=secEntries.map(([s])=>s);
+  const secAvgPF=secEntries.map(([,d])=>d.valid?+(d.pfSum/d.valid).toFixed(3):0);
+  const secBarColors=secAvgPF.map(v=>v>=1.10?'rgba(34,197,94,0.7)':v>=1.05?'rgba(251,191,36,0.7)':'rgba(239,68,68,0.55)');
+  const sCtx=document.getElementById('meta-sector-pf-chart').getContext('2d');
+  if(_metaSectorChart)_metaSectorChart.destroy();
+  _metaSectorChart=new Chart(sCtx,{type:'bar',data:{labels:secLabels,datasets:[{data:secAvgPF,backgroundColor:secBarColors,borderColor:secBarColors.map(c=>c.replace('0.7','1').replace('0.55','1')),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>[` Avg PF: ${ctx.raw.toFixed(3)}`,` ${secEntries[ctx.dataIndex][1].edge}/${secEntries[ctx.dataIndex][1].valid} with PF≥1.10`]}}},scales:{x:{min:0.95,grid:{color:'#222'},ticks:{callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+
+  // PF histogram
+  const bins=[];for(let b=0.85;b<1.65;b+=0.05)bins.push(b);
+  const hist=bins.map(b=>valid.filter(t=>t.pf>=b&&t.pf<b+0.05).length);
+  const histLabels=bins.map(b=>b.toFixed(2));
+  const histColors=bins.map(b=>b>=1.10?'rgba(34,197,94,0.7)':b>=1.00?'rgba(251,191,36,0.6)':'rgba(239,68,68,0.6)');
+  const hCtx=document.getElementById('meta-pf-hist-chart').getContext('2d');
+  if(_metaPfHistChart)_metaPfHistChart.destroy();
+  _metaPfHistChart=new Chart(hCtx,{type:'bar',data:{labels:histLabels,datasets:[{data:hist,backgroundColor:histColors,borderColor:histColors,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} tickers`}},annotation:{annotations:{line1:{type:'line',value:3,scaleID:'x',borderColor:'rgba(212,160,23,0.6)',borderWidth:2,borderDash:[4,3]}}}},scales:{x:{grid:{color:'#222'},title:{display:true,text:'Profit Factor bucket (0.05 wide)',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#222'},ticks:{callback:v=>Math.round(v)}}}}}});
+
+  // Sector table
+  let sectorHtml=secEntries.map(([name,d])=>{const avgP=d.valid?d.pfSum/d.valid:0;const pass=d.valid?Math.round(d.edge/d.valid*100):0;const barColor=pass>=30?'#22c55e':pass>=10?'#f59e0b':'#ef4444';const avgC=avgP>=1.10?'var(--green)':avgP>=1.05?'#fbbf24':'var(--muted)';return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:8px 12px;font-weight:600;color:#e5e7eb">${name}</td><td style="padding:8px 12px;text-align:center;color:var(--muted)">${d.total}</td><td style="padding:8px 12px;text-align:center;color:var(--muted)">${d.valid}</td><td style="padding:8px 12px;text-align:center;color:#22c55e">${d.edge}</td><td style="padding:8px 12px;text-align:right;font-family:monospace;color:${avgC}">${d.valid?avgP.toFixed(3):'—'}</td><td style="padding:8px 12px;text-align:right;font-family:monospace;color:var(--green)">${d.best?d.best.toFixed(3):'—'}</td><td style="padding:8px 12px;min-width:140px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${pass}%;background:${barColor};border-radius:3px"></div></div><span style="font-size:12px;color:${barColor};min-width:32px">${pass}%</span></div></td></tr>`;}).join('');
+  document.getElementById('meta-sector-tbody').innerHTML=sectorHtml;
+
+  // Top 20 tickers
+  const top20=[...valid].sort((a,b)=>b.pf-a.pf).slice(0,20);
+  document.getElementById('meta-top20-tbody').innerHTML=top20.map((t,i)=>{const pfC=t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';const shC=t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';const retC=t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';const ciC=(t.ci95_lower||0)>0?'var(--green)':'var(--red)';return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="openTickerInModelLab('${t.ticker}',${JSON.stringify({pf:t.pf,sharpe:t.sharpe,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower,oos_bars:t.oos_bars,sector:t.sector})})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:#e5e7eb">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${t.pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td></tr>`;}).join('');
+
+  // Strategy comparison
+  document.getElementById('meta-lr-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:#22c55e">${edge.length}/${nValid}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">${nValid?Math.round(edge.length/nValid*100):0}% with PF ≥ 1.10</div><div style="font-size:12px;color:#4b5563;margin-top:6px">${valid.filter(t=>t.pf>=1.05).length} with PF ≥ 1.05</div>`;
+  document.getElementById('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:#ef4444">0/${total}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div><div style="font-size:12px;color:#4b5563;margin-top:6px">No validated edge found</div>`;
+
+  // Portfolio alignment
+  if(compData&&compData.tickers){
+    const ct=compData.tickers;
+    const buys=ct.filter(t=>t.signal===1).length,sells=ct.filter(t=>t.signal===-1).length;
+    const pct=Math.round(buys/ct.length*100);
     const conColor=buys>sells?'#22c55e':'#ef4444';
-    document.getElementById('meta-portfolio-bar').style.width=pct+'%';
-    document.getElementById('meta-portfolio-bar').style.background=conColor;
+    document.getElementById('meta-portfolio-bar').style.cssText+=`;width:${pct}%;background:${conColor}`;
     document.getElementById('meta-portfolio-label').textContent=`${buys} BUY · ${sells} SELL`;
-    let portHtml=tickers.map(t=>{const isBuy=t.signal===1;const sc=isBuy?'#22c55e':'#ef4444';return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:7px 12px;color:var(--muted);font-size:12px">${t.sector||'—'}</td><td style="padding:7px 12px;text-align:center"><span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:${t.predicted_5bar_pct>=0?'#22c55e':'#ef4444'}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:7px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:11px">${t.mcpt_p?.toFixed(3)??'—'}</td></tr>`;}).join('');
-    document.getElementById('meta-portfolio-tbody').innerHTML=portHtml;
-    const featCount={};
-    tickers.forEach(t=>{(t.top_features||[]).forEach(f=>{featCount[f.name]=(featCount[f.name]||0)+1;});});
-    const sorted=Object.entries(featCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const maxCount=sorted.length?sorted[0][1]:1;
-    let featHtml=sorted.map(([name,count])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-family:monospace;color:#e5e7eb">${name}</span><span style="font-size:11px;color:var(--muted)">${count}/${tickers.length} models</span></div><div style="height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${Math.round(count/maxCount*100)}%;background:var(--gold);border-radius:3px"></div></div></div>`).join('');
-    document.getElementById('meta-feature-freq').innerHTML=featHtml;
+    document.getElementById('meta-portfolio-tbody').innerHTML=ct.map(t=>{const isBuy=t.signal===1;const sc=isBuy?'#22c55e':'#ef4444';return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 12px;font-weight:600;color:#e5e7eb">${t.ticker}</td><td style="padding:7px 12px;color:var(--muted);font-size:12px">${t.sector||'—'}</td><td style="padding:7px 12px;text-align:center"><span style="font-size:11px;font-weight:700;color:${sc};background:${isBuy?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};padding:2px 8px;border-radius:4px">${isBuy?'BUY':'SELL'}</span></td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:${t.predicted_5bar_pct>=0?'#22c55e':'#ef4444'}">${t.predicted_5bar_pct>=0?'+':''}${t.predicted_5bar_pct.toFixed(2)}%</td><td style="padding:7px 12px;text-align:right;font-family:monospace">${t.walk_fwd_pf?.toFixed(3)??'—'}</td><td style="padding:7px 12px;text-align:right;color:var(--muted);font-size:11px">${t.mcpt_p?.toFixed(3)??'—'}</td></tr>`;}).join('');
+    const featCount={};ct.forEach(t=>{(t.top_features||[]).forEach(f=>{featCount[f.name]=(featCount[f.name]||0)+1;});});
+    const fsorted=Object.entries(featCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const mx=fsorted.length?fsorted[0][1]:1;
+    document.getElementById('meta-feature-freq').innerHTML=fsorted.map(([name,count])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-family:monospace;color:#e5e7eb">${name}</span><span style="font-size:11px;color:var(--muted)">${count}/${ct.length} models</span></div><div style="height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${Math.round(count/mx*100)}%;background:var(--gold);border-radius:3px"></div></div></div>`).join('');
   }
 }
 
@@ -1410,7 +1506,7 @@ async function loadQuantPanels() {
   let allAssets=[];
   try {
     const idxResp=await fetch('./quant_data_index.json?t='+Date.now());
-    if(idxResp.ok){const idx=await idxResp.json();allAssets=idx.assets||[];buildAssetDropdown(allAssets,urlAsset,urlIntvl);buildIntervalToggle(allAssets,urlAsset,urlIntvl);}
+    if(idxResp.ok){const idx=await idxResp.json();allAssets=idx.assets||[];_allAssets=allAssets;buildAssetDropdown(allAssets,urlAsset,urlIntvl);buildIntervalToggle(allAssets,urlAsset,urlIntvl);}
   } catch(_) {}
   const entry=allAssets.find(a=>a.id===urlAsset&&a.interval===urlIntvl);
   const filename=entry?entry.file:`quant_data_${urlAsset}_${urlIntvl}.json`;
@@ -1435,6 +1531,44 @@ async function loadQuantPanels() {
   buildClusterRulesPanel(qd.cluster_performance||[]);
   buildFeatureSelection(qd.strategies||[]);
   buildTradeLog(qd.trade_log||[]);
+}
+
+// ── Open ticker in Model Lab ──────────────────────────────────────────────────
+function openTickerInModelLab(ticker, data) {
+  // Check if we have a full quant_data for this ticker
+  // Asset IDs are lowercased ticker without .AX, e.g. NST.AX → nst
+  const tickerId=ticker.replace(/\.AX$/i,'').toLowerCase();
+  const match=_allAssets.find(a=>a.id===tickerId||a.ticker===ticker);
+  if(match){
+    // Full backtest exists — navigate to it
+    const url=new URL(window.location.href);
+    url.searchParams.set('asset',match.id);
+    url.searchParams.set('interval',match.interval);
+    url.hash='modellab';
+    window.location.href=url.toString();
+    return;
+  }
+  // No full backtest — show screener stats panel in Model Lab
+  // Ensure Model Lab is initialised first (so quant panels load), then show overlay
+  if(!_tabInit.has('modellab')){_tabInit.add('modellab');initModelLabTab();}
+  switchTab('modellab');
+  const statsDiv=document.getElementById('ml-screener-stats');
+  statsDiv.style.display='block';
+  document.getElementById('ml-stats-title').textContent=`${ticker} — Screener Results (no full backtest yet)`;
+  const pf=data.pf,sh=data.sharpe,ret=data.mean_ann_pct,ci=data.ci95_lower,oos=data.oos_bars;
+  const pfC=pf===null?'var(--muted)':pf>=1.10?'var(--green)':pf>=1.05?'#fbbf24':'var(--muted)';
+  const shC=sh===null?'var(--muted)':sh>=0.5?'var(--green)':sh>=0.25?'#fbbf24':'var(--muted)';
+  const retC=ret===null?'var(--muted)':ret>=20?'var(--green)':ret>=10?'#fbbf24':'var(--muted)';
+  const ciC=ci===null?'var(--muted)':ci>0?'var(--green)':'var(--red)';
+  document.getElementById('ml-stats-heroes').innerHTML=`
+    <div class="hero-card" style="min-width:140px"><div class="hero-label">Sector</div><div class="hero-value color-gold" style="font-size:16px">${data.sector||'—'}</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">Profit Factor</div><div class="hero-value" style="color:${pfC}">${pf!=null?pf.toFixed(3):'—'}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">LR walk-forward</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">Sharpe</div><div class="hero-value" style="color:${shC}">${sh!=null?sh.toFixed(2):'—'}</div></div>
+    <div class="hero-card" style="min-width:160px"><div class="hero-label">Ann Return (mean)</div><div class="hero-value" style="color:${retC}">${ret!=null?(ret>=0?'+':'')+ret.toFixed(1)+'%':'—'}</div></div>
+    <div class="hero-card" style="min-width:180px"><div class="hero-label" title="95% CI lower bound on annual return">95% CI Low</div><div class="hero-value" style="color:${ciC}">${ci!=null?(ci>=0?'+':'')+ci.toFixed(1)+'%':'—'}</div></div>
+    <div class="hero-card" style="min-width:130px"><div class="hero-label">OOS Bars</div><div class="hero-value" style="font-size:20px">${oos!=null?oos.toLocaleString():'—'}</div></div>`;
+  document.getElementById('ml-stats-note').textContent=`No full backtest run for ${ticker} yet. To generate: python quant/run_backtest.py --asset-class ${tickerId} --ticker ${ticker} --interval 1d`;
+  document.getElementById('ml-screener-stats').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ── Full ASX Universe Screener (300 tickers) ──────────────────────────────────
@@ -1476,12 +1610,13 @@ function filterFullScreener() {
   document.getElementById('full-screener-count').textContent=`Showing ${rows.length} of ${_fullScreenerData.length} tickers`;
   document.getElementById('full-screener-tbody').innerHTML=rows.map((t,i)=>{
     const rowBg=i%2===0?'':'background:#111';
-    if(t.error)return`<tr style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+    const clickable=`style="cursor:pointer" onclick="openTickerInModelLab('${t.ticker}',${JSON.stringify({pf:t.pf,sharpe:t.sharpe,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower,oos_bars:t.oos_bars,sector:t.sector})})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
+    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
     const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
     const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
-    return`<tr style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
   }).join('');
 }
 
