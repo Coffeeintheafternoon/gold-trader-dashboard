@@ -258,8 +258,8 @@
     <!-- Key Metrics Summary -->
     <div class="chart-card" style="margin-bottom:16px" id="ml-metrics-card">
       <div class="chart-title">Key Performance Metrics</div>
-      <div class="chart-subtitle">Computed from IS walk-forward equity curve and individual trades</div>
-      <div id="ml-metrics-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px"></div>
+      <div class="chart-subtitle">IS walk-forward equity curve &amp; trade statistics</div>
+      <div id="ml-metrics-table-wrap"></div>
     </div>
 
     <!-- Feature importance chart + category filter -->
@@ -2226,67 +2226,146 @@ function buildMLRollingPerf(equityIS) {
 
 // ── Key Metrics Summary ────────────────────────────────────────────────────────
 function buildMLMetrics(equityIS, tradesIS) {
-  const grid = document.getElementById('ml-metrics-grid');
-  if (!grid) return;
+  const wrap = document.getElementById('ml-metrics-table-wrap');
+  if (!wrap) return;
 
-  function metricTile(label, value, sub, color) {
-    return `<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:12px 14px">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">${label}</div>
-      <div style="font-size:22px;font-weight:700;color:${color||'var(--gold)'};font-family:monospace">${value}</div>
-      ${sub ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${sub}</div>` : ''}
-    </div>`;
-  }
+  // ── Equity-derived metrics ───────────────────────────────────────────────
+  let totalRet=0, annRet=0, ret1Y=0, sharpe=0, sortino=0, calmar=0;
+  let ulcer=0, serenity=0, annVol=0, upVol=0, downVol=0, skew=0, kurt=0, maxDD=0;
 
-  // — Equity-derived metrics —
-  let totalRet = 0, annRet = 0, sharpe = 0, maxDD = 0;
   if (equityIS.length >= 2) {
-    const last = equityIS[equityIS.length - 1];
-    const first = equityIS[0];
-    totalRet = (last.cum_ret || 0) * 100;
-
-    // Annualised: assume 252 trading days per year
+    const last  = equityIS[equityIS.length - 1];
+    totalRet    = (last.cum_ret || 0) * 100;
     const years = (equityIS.length - 1) / 252;
-    annRet = years > 0 ? ((Math.exp((last.cum_ret||0) / years) - 1) * 100) : 0;
+    annRet      = years > 0 ? ((Math.exp((last.cum_ret||0) / years) - 1) * 100) : 0;
 
-    // Sharpe from daily log returns
+    // 1-year return
+    const y1start = Math.max(0, equityIS.length - 252);
+    ret1Y = ((equityIS[equityIS.length-1].cum_ret||0) - (equityIS[y1start].cum_ret||0)) * 100;
+
+    // Daily log returns
     const rets = [];
-    for (let i = 1; i < equityIS.length; i++) rets.push((equityIS[i].cum_ret||0) - (equityIS[i-1].cum_ret||0));
-    const mean = rets.reduce((a,b)=>a+b,0) / rets.length;
-    const std  = Math.sqrt(rets.reduce((a,r)=>a+(r-mean)**2,0) / rets.length);
-    sharpe = std > 0 ? mean / std * Math.sqrt(252) : 0;
+    for (let i = 1; i < equityIS.length; i++)
+      rets.push((equityIS[i].cum_ret||0) - (equityIS[i-1].cum_ret||0));
+    const n    = rets.length;
+    const mean = rets.reduce((a,b)=>a+b,0) / n;
+    const std  = Math.sqrt(rets.reduce((a,r)=>a+(r-mean)**2,0) / n);
 
-    // Max drawdown
+    sharpe = std > 0 ? mean / std * Math.sqrt(252) : 0;
+    annVol = std * Math.sqrt(252) * 100;
+
+    const upRets   = rets.filter(r=>r>0);
+    const downRets = rets.filter(r=>r<0);
+    upVol   = upRets.length>1   ? Math.sqrt(upRets.reduce((a,r)=>a+r**2,0)/upRets.length)*Math.sqrt(252)*100     : 0;
+    downVol = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length)*Math.sqrt(252)*100 : 0;
+
+    const downStd = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length) : 0;
+    sortino = downStd > 0 ? mean / downStd * Math.sqrt(252) : 0;
+
+    // Max drawdown & Ulcer Index
     let peak = -Infinity;
+    const dds = [];
     for (const e of equityIS) {
       const v = e.cum_ret || 0;
       if (v > peak) peak = v;
-      const dd = (v - peak) * 100;
-      if (dd < maxDD) maxDD = dd;
+      const dd = v - peak;
+      dds.push(dd);
+      if (dd * 100 < maxDD) maxDD = dd * 100;
+    }
+    ulcer    = Math.sqrt(dds.reduce((a,d)=>a+d**2,0)/dds.length) * 100;
+    calmar   = maxDD < 0 ? annRet / Math.abs(maxDD) : 0;
+    serenity = ulcer  > 0 ? annRet / ulcer : 0;
+
+    // Skewness & Kurtosis (excess)
+    if (std > 0 && n > 2) {
+      skew = rets.reduce((a,r)=>a+((r-mean)/std)**3,0)/n;
+      kurt = rets.reduce((a,r)=>a+((r-mean)/std)**4,0)/n - 3;
     }
   }
 
-  // — Trade-derived metrics —
-  const nTrades  = tradesIS.length;
-  const wins     = tradesIS.filter(t=>t.win);
-  const losses   = tradesIS.filter(t=>!t.win);
-  const winRate  = nTrades > 0 ? (wins.length / nTrades * 100) : 0;
-  const avgWin   = wins.length  > 0 ? wins.reduce((a,t)=>a+t.return_pct,0)  / wins.length  : 0;
-  const avgLoss  = losses.length> 0 ? losses.reduce((a,t)=>a+t.return_pct,0)/ losses.length: 0;
-  const avgBars  = nTrades > 0 ? tradesIS.reduce((a,t)=>a+t.bars,0) / nTrades : 0;
+  // ── Trade-derived metrics ────────────────────────────────────────────────
+  const nTrades = tradesIS.length;
+  const wins    = tradesIS.filter(t=>t.win);
+  const losses  = tradesIS.filter(t=>!t.win);
+  const winRate = nTrades > 0 ? wins.length/nTrades*100 : 0;
+  const avgWin  = wins.length   > 0 ? wins.reduce((a,t)=>a+t.return_pct,0)/wins.length   : 0;
+  const avgLoss = losses.length > 0 ? losses.reduce((a,t)=>a+t.return_pct,0)/losses.length : 0;
+  const avgBars = nTrades > 0 ? tradesIS.reduce((a,t)=>a+t.bars,0)/nTrades : 0;
 
-  const fmt = (v, d=1) => (v >= 0 ? '+' : '') + v.toFixed(d) + '%';
-  const ddColor = maxDD < -10 ? '#ff2020' : maxDD < -5 ? '#f5a520' : '#00ff41';
+  const profitFactor = losses.length > 0
+    ? Math.abs(wins.reduce((a,t)=>a+t.return_pct,0)) / Math.abs(losses.reduce((a,t)=>a+t.return_pct,0))
+    : 0;
+  const expectancy  = (winRate/100)*avgWin + (1-winRate/100)*avgLoss;
+  const bestTrade   = nTrades > 0 ? Math.max(...tradesIS.map(t=>t.return_pct)) : 0;
+  const worstTrade  = nTrades > 0 ? Math.min(...tradesIS.map(t=>t.return_pct)) : 0;
 
-  grid.innerHTML = [
-    metricTile('Total Return',    fmt(totalRet, 1),  `${equityIS.length} bars (~${(equityIS.length/252).toFixed(1)}y)`, totalRet >= 0 ? '#00ff41' : '#ff2020'),
-    metricTile('Ann. Return',     fmt(annRet, 1),    'Log-linear, 252d/yr',  annRet >= 0 ? '#00ff41' : '#ff2020'),
-    metricTile('IS Sharpe',       sharpe.toFixed(2), 'Annualised from daily rets', sharpe >= 1 ? '#00ff41' : sharpe >= 0 ? '#f5a520' : '#ff2020'),
-    metricTile('Max Drawdown',    maxDD.toFixed(1)+'%', 'From equity peak', ddColor),
-    metricTile('Win Rate',        winRate.toFixed(0)+'%', `${wins.length}W / ${losses.length}L of ${nTrades}`, winRate >= 55 ? '#00ff41' : winRate >= 45 ? '#f5a520' : '#ff2020'),
-    metricTile('Avg Win',         avgWin.toFixed(2)+'%',  `${wins.length} winning trades`,  '#00ff41'),
-    metricTile('Avg Loss',        avgLoss.toFixed(2)+'%', `${losses.length} losing trades`, '#ff6b6b'),
-    metricTile('Avg Hold',        avgBars.toFixed(1)+' bars', `~${(avgBars/5).toFixed(1)} weeks`, '#9ca3af'),
-  ].join('');
+  let maxCW=0, maxCL=0, cW=0, cL=0;
+  for (const t of tradesIS) {
+    if (t.win) { cW++; cL=0; maxCW=Math.max(maxCW,cW); }
+    else        { cL++; cW=0; maxCL=Math.max(maxCL,cL); }
+  }
+  const tradesPerYear = equityIS.length > 0 ? nTrades/(equityIS.length/252) : 0;
+
+  // ── Render helpers ───────────────────────────────────────────────────────
+  const pct = (v,d=1) => (v>=0?'+':'')+v.toFixed(d)+'%';
+  const posCol  = v => v >= 0 ? '#00ff41' : '#ff6b6b';
+  const ddColor = maxDD < -15 ? '#ff2020' : maxDD < -8 ? '#f5a520' : '#00ff41';
+  const ratioC  = (v,good,ok) => v>=good ? '#00ff41' : v>=ok ? '#f5a520' : '#ff6b6b';
+
+  const ROW_H = 'padding:6px 12px;font-size:12px;border-bottom:1px solid #1a1a1a';
+  function tbl(title, rows) {
+    const body = rows.map(([lbl,val,clr],i) => `
+      <tr style="background:${i%2?'#0d0d0d':'#111'}">
+        <td style="${ROW_H};color:#6b7280;width:58%">${lbl}</td>
+        <td style="${ROW_H};text-align:right;font-family:monospace;font-weight:700;color:${clr||'var(--gold)'}">${val}</td>
+      </tr>`).join('');
+    return `<table style="width:100%;border-collapse:collapse;border:1px solid #222;border-radius:6px;overflow:hidden;margin-bottom:0">
+      <thead><tr style="background:#1c1c1c"><th colspan="2" style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);border-bottom:1px solid #2a2a2a;font-weight:600">${title}</th></tr></thead>
+      <tbody>${body}</tbody></table>`;
+  }
+
+  const perf = tbl('Performance', [
+    ['Total Return',       pct(totalRet,1)+` (${equityIS.length} bars)`,  posCol(totalRet)],
+    ['1Y Return',          pct(ret1Y,1),                                   posCol(ret1Y)],
+    ['Ann. Return',        pct(annRet,1)+' p.a.',                          posCol(annRet)],
+    ['Profit Factor',      profitFactor.toFixed(3),                        ratioC(profitFactor,1.3,1.0)],
+    ['Expectancy / Trade', pct(expectancy,2),                              posCol(expectancy)],
+    ['Win Rate',           winRate.toFixed(0)+'%  ('+wins.length+'W / '+losses.length+'L)', ratioC(winRate,55,45)],
+  ]);
+
+  const risk = tbl('Risk Ratios', [
+    ['Sharpe Ratio',    sharpe.toFixed(2),              ratioC(sharpe,1.0,0.5)],
+    ['Sortino Ratio',   sortino.toFixed(2),             ratioC(sortino,1.5,0.8)],
+    ['Calmar Ratio',    calmar.toFixed(2)+'×',          ratioC(calmar,2.0,1.0)],
+    ['Max DrawDown',    maxDD.toFixed(1)+'%',           ddColor],
+    ['Ulcer Index',     ulcer.toFixed(2)+'%',           ulcer<3?'#00ff41':ulcer<8?'#f5a520':'#ff6b6b'],
+    ['Serenity Ratio',  serenity.toFixed(2),            ratioC(serenity,2.0,1.0)],
+  ]);
+
+  const vol = tbl('Volatility', [
+    ['Ann. Volatility',     annVol.toFixed(1)+'%',   '#9ca3af'],
+    ['Upside Volatility',   upVol.toFixed(1)+'%',    '#9ca3af'],
+    ['Downside Volatility', downVol.toFixed(1)+'%',  '#9ca3af'],
+    ['Skewness',            (skew>=0?'+':'')+skew.toFixed(2), skew>=0?'#00ff41':'#ff6b6b'],
+    ['Kurtosis (excess)',   kurt.toFixed(1),         kurt>3?'#f5a520':'#9ca3af'],
+  ]);
+
+  const trades = tbl('Trade Statistics', [
+    ['Total Trades',       nTrades+'  ('+tradesPerYear.toFixed(0)+'/yr)',  '#9ca3af'],
+    ['Avg Win',            pct(avgWin,2),   '#00ff41'],
+    ['Avg Loss',           pct(avgLoss,2),  '#ff6b6b'],
+    ['Best Trade',         pct(bestTrade,2),'#00ff41'],
+    ['Worst Trade',        pct(worstTrade,2),'#ff6b6b'],
+    ['Max Consec. Wins',   maxCW.toString(), '#9ca3af'],
+    ['Max Consec. Losses', maxCL.toString(), '#9ca3af'],
+    ['Avg Hold',           avgBars.toFixed(1)+' bars  (~'+(avgBars/5).toFixed(1)+' wks)', '#9ca3af'],
+  ]);
+
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <div style="display:flex;flex-direction:column;gap:10px">${perf}${vol}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">${risk}${trades}</div>
+    </div>`;
 }
 
 // ── Price Chart with trade signals ────────────────────────────────────────────
