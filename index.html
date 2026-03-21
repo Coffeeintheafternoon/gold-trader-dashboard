@@ -1614,10 +1614,12 @@ async function openTickerInModelLab(ticker, data) {
     window.location.href=url.toString();
     return;
   }
-  // No full backtest — show screener stats panel in Model Lab
-  // Ensure Model Lab is initialised first (so quant panels load), then show overlay
-  if(!_tabInit.has('modellab')){_tabInit.add('modellab');initModelLabTab();}
+  // No full backtest — show screener stats only, hide all gold/WAF panels
+  _tabInit.add('modellab'); // mark as init so loadQuantPanels doesn't run
   switchTab('modellab');
+  // Hide every quant panel so gold data doesn't bleed through
+  document.querySelectorAll('[id^="quant-"]').forEach(el=>el.style.display='none');
+  document.getElementById('quant-section-label') && (document.getElementById('quant-section-label').textContent='');
   const statsDiv=document.getElementById('ml-screener-stats');
   statsDiv.style.display='block';
   document.getElementById('ml-stats-title').textContent=`${ticker} — Screener Results (no full backtest yet)`;
