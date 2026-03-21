@@ -1579,13 +1579,17 @@ async function loadQuantPanels() {
 }
 
 // ── Open ticker in Model Lab ──────────────────────────────────────────────────
-function openTickerInModelLab(ticker, data) {
+async function openTickerInModelLab(ticker, data) {
   // Check if we have a full quant_data for this ticker
   // Asset IDs are lowercased ticker without .AX, e.g. NST.AX → nst
   const tickerId=ticker.replace(/\.AX$/i,'').toLowerCase();
+  // If Model Lab hasn't been visited yet _allAssets is empty — load index now
+  if(!_allAssets.length){
+    try{const r=await fetch(`./quant_data_index.json?v=${_CV}`);if(r.ok){const idx=await r.json();_allAssets=idx.assets||[];}}catch(_){}
+  }
   const match=_allAssets.find(a=>a.id===tickerId||a.ticker===ticker);
   if(match){
-    // Full backtest exists — navigate to it
+    // Full backtest exists — navigate to it (full page reload picks up ?asset= param)
     const url=new URL(window.location.href);
     url.searchParams.set('asset',match.id);
     url.searchParams.set('interval',match.interval);
