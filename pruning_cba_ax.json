@@ -1,0 +1,202 @@
+{
+  "ticker": "CBA.AX",
+  "generated_at": "2026-03-21T20:36:56Z",
+  "baseline_features": 87,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 87,
+      "metrics": {
+        "is_pf": 0.9481,
+        "is_sharpe": -0.3113,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 87,
+        "n_significant_p05": 19,
+        "n_marginal_p10": 6,
+        "pct_significant": 21.8,
+        "avg_pval": 0.3929,
+        "avg_std_err": 0.000333,
+        "avg_sign_pct": 65.1,
+        "avg_instability": 17.62
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "bb_width_50",
+          "prune_score": 47.0568,
+          "p_value": 0.9942,
+          "instability": 464.2123,
+          "sign_pct": 53.8,
+          "reason": "p=0.99 insig, instability=464.21, sign=54%"
+        },
+        {
+          "name": "vol_ratio",
+          "prune_score": 30.0551,
+          "p_value": 0.9908,
+          "instability": 294.4436,
+          "sign_pct": 61.5,
+          "reason": "p=0.99 insig, instability=294.44, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_width_50",
+        "vol_ratio"
+      ],
+      "features_remaining": 85,
+      "metrics": {
+        "is_pf": 0.9069,
+        "is_sharpe": -0.5715,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 85,
+        "n_significant_p05": 18,
+        "n_marginal_p10": 6,
+        "pct_significant": 21.2,
+        "avg_pval": 0.3822,
+        "avg_std_err": 0.000335,
+        "avg_sign_pct": 65.5,
+        "avg_instability": 9.448
+      },
+      "delta": {
+        "is_pf": -0.0412,
+        "is_sharpe": -0.2602,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "mfi_14",
+          "prune_score": 14.9294,
+          "p_value": 0.9811,
+          "instability": 143.0037,
+          "sign_pct": 53.8,
+          "reason": "p=0.98 insig, instability=143.00, sign=54%"
+        },
+        {
+          "name": "buy_sell_ratio_chg",
+          "prune_score": 8.93,
+          "p_value": 0.9676,
+          "instability": 83.5388,
+          "sign_pct": 69.2,
+          "reason": "p=0.97 insig, instability=83.54, sign=69%"
+        }
+      ],
+      "excluded_total": [
+        "bb_width_50",
+        "buy_sell_ratio_chg",
+        "mfi_14",
+        "vol_ratio"
+      ],
+      "features_remaining": 83,
+      "metrics": {
+        "is_pf": 0.921,
+        "is_sharpe": -0.4804,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 83,
+        "n_significant_p05": 17,
+        "n_marginal_p10": 7,
+        "pct_significant": 20.5,
+        "avg_pval": 0.3824,
+        "avg_std_err": 0.000339,
+        "avg_sign_pct": 65.4,
+        "avg_instability": 6.874
+      },
+      "delta": {
+        "is_pf": 0.0141,
+        "is_sharpe": 0.0911,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "adx_14",
+          "prune_score": 9.7665,
+          "p_value": 0.9703,
+          "instability": 91.1982,
+          "sign_pct": 46.2,
+          "reason": "p=0.97 insig, instability=91.20, sign=46%"
+        },
+        {
+          "name": "macro_gold_mom20d",
+          "prune_score": 4.5454,
+          "p_value": 0.931,
+          "instability": 39.1841,
+          "sign_pct": 46.2,
+          "reason": "p=0.93 insig, instability=39.18, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "bb_width_50",
+        "buy_sell_ratio_chg",
+        "macro_gold_mom20d",
+        "mfi_14",
+        "vol_ratio"
+      ],
+      "features_remaining": 81,
+      "metrics": {
+        "is_pf": 0.899,
+        "is_sharpe": -0.6215,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 81,
+        "n_significant_p05": 16,
+        "n_marginal_p10": 8,
+        "pct_significant": 19.8,
+        "avg_pval": 0.3666,
+        "avg_std_err": 0.000336,
+        "avg_sign_pct": 65.8,
+        "avg_instability": 19.985
+      },
+      "delta": {
+        "is_pf": -0.022,
+        "is_sharpe": -0.1411,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "adx_14",
+    "bb_width_50",
+    "buy_sell_ratio_chg",
+    "macro_gold_mom20d",
+    "mfi_14",
+    "vol_ratio"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}
