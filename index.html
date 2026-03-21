@@ -351,19 +351,31 @@
         </label>
       </div>
       <div style="overflow-x:auto">
-        <table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%">
+        <table style="border-collapse:collapse;font-size:12px;table-layout:fixed;width:100%">
+          <colgroup>
+            <col style="width:72px">
+            <col style="width:190px">
+            <col style="width:112px">
+            <col style="width:88px">
+            <col style="width:88px">
+            <col style="width:58px">
+            <col style="width:68px">
+            <col style="width:58px">
+            <col style="width:68px">
+            <col style="width:82px">
+          </colgroup>
           <thead>
             <tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px">
-              <th onclick="mlSortTable('rank')"       style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th" data-col="rank">Rank <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('name')"       style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:185px;cursor:pointer" class="ml-sort-th" data-col="name">Feature <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('category')"   style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:105px;cursor:pointer" class="ml-sort-th" data-col="category">Category <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('avg_weight')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:90px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_weight" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg |Weight| <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('avg_signed')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:90px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_signed" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('p_value')"    style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:60px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="p_value" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('active_pct')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="active_pct" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('sign_pct')"   style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:60px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="sign_pct" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign% <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('std_err')"    style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="std_err" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err <span class="ml-sort-icon">↕</span></th>
-              <th onclick="mlSortTable('stability')"  style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:85px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="stability" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('rank')"       style="text-align:left;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th" data-col="rank">Rank <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('name')"       style="text-align:left;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th" data-col="name">Feature <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('category')"   style="text-align:left;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th" data-col="category">Category <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('avg_weight')" style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_weight" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg|Wt| <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('avg_signed')" style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_signed" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Signed <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('p_value')"    style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="p_value" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('active_pct')" style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="active_pct" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('sign_pct')"   style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="sign_pct" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign% <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('std_err')"    style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="std_err" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">StdErr <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('stability')"  style="text-align:right;padding:6px 8px;white-space:nowrap;overflow:hidden;cursor:pointer" class="ml-sort-th tip tip-down" data-col="stability" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instab. <span class="ml-sort-icon">↕</span></th>
             </tr>
           </thead>
           <tbody id="ml-feat-tbody"></tbody>
@@ -2857,17 +2869,18 @@ function mlRenderFeatTable() {
     const sp         = f.sign_pct != null ? f.sign_pct : null;
     const spColor    = sp == null ? 'var(--muted)' : sp >= 80 ? 'var(--green)' : sp >= 60 ? '#f59e0b' : 'var(--red)';
     const spStr      = sp != null ? sp + '%' : '—';
+    const _p = 'padding:5px 8px;overflow:hidden;white-space:nowrap;';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
-      <td style="padding:5px 10px;font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
-      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW};cursor:${_featTip(f.name)?'help':'default'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
-      <td style="padding:5px 10px;font-size:11px"><span style="color:${catColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">${f.category}</span></td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${pvColor};font-weight:${pv < 0.05 ? '600' : '400'}">${pvStr}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${activeColor}">${nActive}/${nTotal}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${spColor}">${spStr}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#9ca3af">${f.std_err != null ? (f.std_err * 1000).toFixed(3) : '—'}</td>
-      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
+      <td style="${_p}font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
+      <td style="${_p}font-size:11px;color:${nameColor};font-weight:${nameFW};text-overflow:ellipsis;cursor:${_featTip(f.name)?'help':'default'}"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
+      <td style="${_p}font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:${catColor}">${f.category}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${pvColor};font-weight:${pv < 0.05 ? '600' : '400'}">${pvStr}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${activeColor}">${nActive}/${nTotal}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${spColor}">${spStr}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:#9ca3af">${f.std_err != null ? (f.std_err * 1000).toFixed(3) : '—'}</td>
+      <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
     </tr>`;
   }).join('');
 }
