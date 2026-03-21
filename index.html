@@ -2125,6 +2125,7 @@ const _ML_CAT_COLORS = {
   announcement:  '#f5a520',   // gold
   candle:        '#a78bfa',   // soft purple
   short_interest:'#f87171',   // coral red
+  interaction:   '#22d3ee',   // cyan — cross-asset products
   other:         '#4b5563',   // muted grey
 };
 const _ML_OVERFIT_LABELS = {
@@ -2784,6 +2785,28 @@ const _FEAT_GLOSSARY = {
   macro_vix_mom5d:       ["VIX Momentum 5d",        "5-day % change in CBOE VIX. Rising VIX = accelerating fear — usually negative for risk assets including miners."],
   macro_vix_regime_20:   ["VIX > 20 Flag",          "Binary: 1 when VIX is above 20 (elevated fear). Market in cautious / defensive mode."],
   macro_vix_regime_30:   ["VIX > 30 Flag",          "Binary: 1 when VIX is above 30 (crisis threshold). Extreme stress — historically gold bullish but miners volatile."],
+  // ── Interaction features ──────────────────────────────────────────────────
+  ix_yield_gold:        ["Yield × Gold (US)",     "US 10yr yield momentum × gold momentum. Both falling = max tailwind. Yields up + gold down = max headwind. Captures the inverse yield-gold relationship."],
+  ix_yield_gold_au:     ["AU Yield × Gold",       "AU 10yr yield momentum × gold momentum. RBA tightening squeezes miners on both the cost of capital side and the revenue side simultaneously."],
+  ix_curve_gold:        ["Yield Curve × Gold",    "AU yield curve level × gold momentum. Inverted curve + rising gold = recession fear driving safe-haven demand. Normal curve + rising gold = inflation trade. Different regimes."],
+  ix_yield_oil:         ["US Yield × Oil",        "US 10yr yield momentum × oil momentum. Both rising = stagflation signal — bad for growth and margins. Yields up + oil down = deflationary collapse."],
+  ix_curve_oil:         ["Yield Curve × Oil",     "Yield curve slope × oil momentum. Steepening + oil rising = reflation trade (miner tailwind). Inverted + oil rising = stagflation (miner headwind)."],
+  ix_gold_vix:          ["Gold × VIX",            "Gold momentum × VIX momentum. Gold up + VIX rising = fear-driven safe-haven demand (durable signal). Gold up + VIX falling = risk-on gold (weaker, more speculative)."],
+  ix_crisis_gold:       ["Crisis Flag × Gold",    "VIX>30 binary × gold momentum. Gold behaviour in full crisis conditions is structurally different from normal. Captures the tail-risk flight-to-safety regime."],
+  ix_vix_volume:        ["VIX × Volume",          "VIX momentum × volume z-score. High VIX + volume spike = panic selling / capitulation. High volume on a calm day = accumulation. Very different market states."],
+  ix_vix_dollar_vol:    ["VIX Regime × $ Volume", "VIX>20 flag × dollar volume z-score. Large trades in a fear environment = forced selling / margin calls. Same large trades in calm = institutional positioning."],
+  ix_vix_vol:           ["VIX × Realised Vol",    "VIX momentum × stock realised volatility (frac-diff). Market fear amplifying stock-specific vol = stress compounding. VIX elevated but stock vol contained = resilience signal."],
+  ix_vix_vol_regime:    ["VIX Regime × Vol Ratio","VIX>20 flag × vol ratio (short/long). Is short-term stock volatility expanding during a fear spike? Captures whether macro stress is spilling into this specific stock."],
+  ix_gold_aud:          ["Gold × AUD (5d)",       "Gold momentum × AUD/USD momentum. Gold up 2% but AUD up 2% = zero net revenue gain for miners. Negative product = FX tailwind (gold up, AUD down = revenue expansion)."],
+  ix_gold_aud_20d:      ["Gold × AUD (20d)",      "Same gold/AUD squeeze measured medium-term (20d). Persistent AUD strength erodes the benefit of rising USD gold prices for ASX miners."],
+  ix_curve_vix:         ["Yield Curve × VIX",     "Yield curve level × VIX momentum. Inverted curve + VIX surging = double-barrel recession fear signal. Gold bullish but miners operationally stressed."],
+  ix_copper_gold_curve: ["Cu/Au Ratio × Curve",   "Copper/gold ratio × yield curve slope. Both positive = growth expansion = miners outperform. Both negative = risk-off + recession = miners underperform. Regime confirmation."],
+  ix_spread_aud:        ["AU-US Spread × AUD",    "AU-US 10yr rate spread × AUD momentum. High AU rate premium + rising AUD = strong capital inflow into ASX assets. The carry-trade tailwind for Australian equities."],
+  ix_momentum_vol:      ["Momentum × Vol Regime", "Price frac-diff (short) × vol ratio. Momentum in contracting volatility = clean, reliable trend. Momentum in expanding vol = noisy, whipsaw-prone. Vol regime gates the momentum signal."],
+  ix_trend_momentum:    ["Trend × Momentum",      "Signed ADX × price momentum. Both pointing same direction = high-conviction trend. ADX strong but price momentum diverging = trend exhaustion signal."],
+  ix_vix_momentum:      ["VIX Regime × Momentum", "VIX>20 flag × price momentum. Upward price momentum in a high-fear environment = buying into fear = institutional conviction. Stronger signal than momentum in calm markets."],
+  ix_ann_volume:        ["Ann × Volume",          "Sensitive announcement binary × volume z-score. Announcement + abnormal volume = confirmed catalyst (market reacting). Announcement on thin volume = already priced in / not impactful."],
+  ix_ann_gold:          ["Ann × Gold",            "Positive announcement impact × gold momentum. Company positive news aligned with rising gold price = both tailwinds simultaneously. Multiplicative effect on miner returns."],
   // ── Composite scores ──────────────────────────────────────────────────────
   macro_stress_composite:  ["Macro Stress Composite", "Z-score composite of VIX + inverted yield curve + DXY. High = broad market stress. Useful regime signal."],
   macro_riskoff_momentum:  ["Risk-Off Momentum",      "Composite of VIX acceleration + rising yields + rising USD, all z-scored. Captures fear accelerating across multiple markets simultaneously."],
