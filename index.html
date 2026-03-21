@@ -2308,26 +2308,26 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
   // Holdout boundary start index
   const hoStartIdx = hoStartDate ? allLabels.indexOf(hoStartDate) : -1;
 
-  // Trade entry/exit scatter points (mapped to label indices)
+  // Trade entry/exit scatter points
+  // Use date strings as x so Chart.js category scale locates them correctly
   const dateToIdx = {};
   allLabels.forEach((l, i) => { dateToIdx[l] = i; });
+  const idxToISPrice  = Object.fromEntries(priceIS.map((p,i) => [i, p.close]));
+  const idxToHOPrice  = Object.fromEntries(priceHO.map((p,i) => [priceIS.length + i, p.close]));
 
-  // Scatter points — use numeric index on x so they align with category axis
   const longEntries = [], shortEntries = [], winExits = [], lossExits = [];
   for (const t of tradesIS) {
     const ei = dateToIdx[t.entry_date];
     const xi = dateToIdx[t.exit_date];
-    const entryClose = priceIS[ei] ? priceIS[ei].close : null;
-    const xiInIS = xi !== undefined && xi < priceIS.length;
-    const xiInHO = xi !== undefined && xi >= priceIS.length;
-    const exitClosePt = xiInIS ? priceIS[xi] : (xiInHO ? priceHO[xi - priceIS.length] : null);
+    const entryClose = ei !== undefined ? (idxToISPrice[ei] ?? idxToHOPrice[ei] ?? null) : null;
+    const exitClose  = xi !== undefined ? (idxToISPrice[xi] ?? idxToHOPrice[xi] ?? null) : null;
     if (ei !== undefined && entryClose != null) {
-      if (t.direction === 'long')  longEntries.push({x: ei, y: entryClose});
-      else                          shortEntries.push({x: ei, y: entryClose});
+      if (t.direction === 'long')  longEntries.push({x: t.entry_date, y: entryClose});
+      else                          shortEntries.push({x: t.entry_date, y: entryClose});
     }
-    if (xi !== undefined && exitClosePt) {
-      if (t.win) winExits.push({x: xi, y: exitClosePt.close});
-      else       lossExits.push({x: xi, y: exitClosePt.close});
+    if (xi !== undefined && exitClose != null) {
+      if (t.win) winExits.push({x: t.exit_date, y: exitClose});
+      else       lossExits.push({x: t.exit_date, y: exitClose});
     }
   }
 
