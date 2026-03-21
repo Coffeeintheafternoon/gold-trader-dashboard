@@ -55,12 +55,8 @@
     .metrics-label { color: var(--muted); font-size: 12px; }
     .metrics-value { font-weight: 600; font-size: 13px; color: var(--text); text-align: right; }
     footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px 0 10px; border-top: 1px solid var(--border); margin-top: 8px; }
-    .tip { position: relative; cursor: help; border-bottom: 1px dashed #4a4a4a; display: inline-block; }
-    .tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: #111827; border: 1px solid #374151; color: #e0e0e0; font-size: 12px; font-weight: 400; line-height: 1.6; padding: 9px 13px; border-radius: 7px; white-space: pre-line; width: max-content; max-width: 300px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.6); }
-    .tip::before { content: ''; position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #374151; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
-    .tip:hover::after, .tip:hover::before { opacity: 1; }
-    .tip-down::after { bottom: auto; top: calc(100% + 10px); }
-    .tip-down::before { bottom: auto; top: calc(100% + 4px); border-top-color: transparent; border-bottom-color: #374151; }
+    .tip { cursor: help; border-bottom: 1px dashed #4a4a4a; display: inline-block; }
+    #_tip { position: fixed; background: #111827; border: 1px solid #374151; color: #e0e0e0; font-size: 12px; font-weight: 400; line-height: 1.6; padding: 9px 13px; border-radius: 7px; white-space: pre-line; max-width: 300px; z-index: 99999; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.6); display: none; }
     @media (max-width: 800px) { .chart-row, .chart-row-bottom { grid-template-columns: 1fr; } }
     @media (max-width: 768px) { .tab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; } .tab-nav::-webkit-scrollbar { display: none; } .tab-btn { white-space: nowrap; padding: 7px 14px; font-size: 13px; } }
     @media (max-width: 600px) { .hero-grid { grid-template-columns: 1fr 1fr; } }
@@ -736,6 +732,27 @@
 <footer>Squant Bot — Paper trading only. Not financial advice.</footer>
 
 <script>
+// ── JS tooltip (fixed-position, escapes overflow:hidden containers) ────────────
+(function(){
+  const el=document.createElement('div');el.id='_tip';document.body.appendChild(el);
+  document.addEventListener('mouseover',e=>{
+    const t=e.target.closest('[data-tip]');
+    if(!t){el.style.display='none';return;}
+    el.textContent=t.dataset.tip;el.style.display='block';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(el.style.display==='none')return;
+    const tw=el.offsetWidth,th=el.offsetHeight,vw=window.innerWidth;
+    let left=e.clientX-tw/2,top=e.clientY-th-14;
+    if(top<8)top=e.clientY+18;
+    el.style.left=Math.max(8,Math.min(left,vw-tw-8))+'px';
+    el.style.top=top+'px';
+  });
+  document.addEventListener('mouseout',e=>{
+    if(!e.relatedTarget||!e.relatedTarget.closest('[data-tip]'))el.style.display='none';
+  });
+})();
+
 // ── Chart defaults ────────────────────────────────────────────────────────────
 Chart.defaults.color = '#9ca3af';
 Chart.defaults.borderColor = '#2a2a2a';
