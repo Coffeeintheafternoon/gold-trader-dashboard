@@ -2159,7 +2159,7 @@ function renderTickerDetail(d) {
   buildMLRollingPerf(d.equity_is || []);
 
   // Key metrics summary
-  buildMLMetrics(d.equity_is || [], d.trades_is || []);
+  buildMLMetrics(d.equity_is || [], d.trades_is || [], d.equity_holdout || [], d.trades_ho || []);
 
   // Price chart with trade signals (IS + HO trades)
   buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || [], d.trades_ho || []);
@@ -2263,176 +2263,212 @@ function buildMLRollingPerf(equityIS) {
 }
 
 // ── Key Metrics Summary ────────────────────────────────────────────────────────
-function buildMLMetrics(equityIS, tradesIS) {
+function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO) {
   const wrap = document.getElementById('ml-metrics-table-wrap');
   if (!wrap) return;
 
-  // ── Equity-derived metrics ───────────────────────────────────────────────
-  let totalRet=0, annRet=0, ret1Y=0, sharpe=0, sortino=0, calmar=0;
-  let ulcer=0, serenity=0, annVol=0, upVol=0, downVol=0, skew=0, kurt=0, maxDD=0;
-
-  if (equityIS.length >= 2) {
-    const last  = equityIS[equityIS.length - 1];
-    // cum_ret is cumulative LOG return — convert to simple % for display
-    totalRet    = (Math.exp(last.cum_ret || 0) - 1) * 100;
-    const years = (equityIS.length - 1) / 252;
-    annRet      = years > 0 ? ((Math.exp((last.cum_ret||0) / years) - 1) * 100) : 0;
-
-    // 1-year return (log-ret diff → exp-space)
-    const y1start  = Math.max(0, equityIS.length - 252);
-    const ret1YLog = (equityIS[equityIS.length-1].cum_ret||0) - (equityIS[y1start].cum_ret||0);
-    ret1Y = (Math.exp(ret1YLog) - 1) * 100;
-
-    // Daily log returns
+  // ── Compute equity + trade stats for one period ──────────────────────────
+  function calcEquityStats(equity) {
+    const s = { totalRet:0, annRet:0, ret1Y:0, sharpe:0, sortino:0, calmar:0,
+                ulcer:0, serenity:0, annVol:0, upVol:0, downVol:0, skew:0, kurt:0, maxDD:0 };
+    if (!equity || equity.length < 2) return s;
+    const last  = equity[equity.length - 1];
+    s.totalRet  = (Math.exp(last.cum_ret || 0) - 1) * 100;
+    const years = (equity.length - 1) / 252;
+    s.annRet    = years > 0 ? ((Math.exp((last.cum_ret||0) / years) - 1) * 100) : 0;
+    const y1start  = Math.max(0, equity.length - 252);
+    const ret1YLog = (equity[equity.length-1].cum_ret||0) - (equity[y1start].cum_ret||0);
+    s.ret1Y = (Math.exp(ret1YLog) - 1) * 100;
     const rets = [];
-    for (let i = 1; i < equityIS.length; i++)
-      rets.push((equityIS[i].cum_ret||0) - (equityIS[i-1].cum_ret||0));
-    const n    = rets.length;
-    const mean = rets.reduce((a,b)=>a+b,0) / n;
-    const std  = Math.sqrt(rets.reduce((a,r)=>a+(r-mean)**2,0) / n);
-
-    sharpe = std > 0 ? mean / std * Math.sqrt(252) : 0;
-    annVol = std * Math.sqrt(252) * 100;
-
-    const upRets   = rets.filter(r=>r>0);
-    const downRets = rets.filter(r=>r<0);
-    upVol   = upRets.length>1   ? Math.sqrt(upRets.reduce((a,r)=>a+r**2,0)/upRets.length)*Math.sqrt(252)*100     : 0;
-    downVol = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length)*Math.sqrt(252)*100 : 0;
-
-    const downStd = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length) : 0;
-    sortino = downStd > 0 ? mean / downStd * Math.sqrt(252) : 0;
-
-    // Max drawdown & Ulcer Index — computed in price space (exp of log-ret)
-    let peak = -Infinity;
-    const dds = [];
-    for (const e of equityIS) {
-      const v = e.cum_ret || 0;
-      if (v > peak) peak = v;
-      const dd = (Math.exp(v - peak) - 1) * 100;   // actual % drawdown in price space
-      dds.push(dd);
-      if (dd < maxDD) maxDD = dd;
+    for (let i = 1; i < equity.length; i++)
+      rets.push((equity[i].cum_ret||0) - (equity[i-1].cum_ret||0));
+    const n = rets.length, mean = rets.reduce((a,b)=>a+b,0)/n;
+    const std = Math.sqrt(rets.reduce((a,r)=>a+(r-mean)**2,0)/n);
+    s.sharpe = std > 0 ? mean/std*Math.sqrt(252) : 0;
+    s.annVol = std * Math.sqrt(252) * 100;
+    const upRets = rets.filter(r=>r>0), downRets = rets.filter(r=>r<0);
+    s.upVol   = upRets.length>1   ? Math.sqrt(upRets.reduce((a,r)=>a+r**2,0)/upRets.length)*Math.sqrt(252)*100   : 0;
+    s.downVol = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length)*Math.sqrt(252)*100 : 0;
+    const dStd = downRets.length>1 ? Math.sqrt(downRets.reduce((a,r)=>a+r**2,0)/downRets.length) : 0;
+    s.sortino = dStd > 0 ? mean/dStd*Math.sqrt(252) : 0;
+    let peak = -Infinity; const dds = [];
+    for (const e of equity) {
+      const v = e.cum_ret||0; if (v>peak) peak=v;
+      const dd = (Math.exp(v-peak)-1)*100; dds.push(dd); if (dd<s.maxDD) s.maxDD=dd;
     }
-    ulcer    = Math.sqrt(dds.reduce((a,d)=>a+d**2,0)/dds.length);  // already in %
-    calmar   = maxDD < 0 ? annRet / Math.abs(maxDD) : 0;
-    serenity = ulcer  > 0 ? annRet / ulcer : 0;
-
-    // Skewness & Kurtosis (excess)
-    if (std > 0 && n > 2) {
-      skew = rets.reduce((a,r)=>a+((r-mean)/std)**3,0)/n;
-      kurt = rets.reduce((a,r)=>a+((r-mean)/std)**4,0)/n - 3;
+    s.ulcer    = Math.sqrt(dds.reduce((a,d)=>a+d**2,0)/dds.length);
+    s.calmar   = s.maxDD<0 ? s.annRet/Math.abs(s.maxDD) : 0;
+    s.serenity = s.ulcer>0 ? s.annRet/s.ulcer : 0;
+    if (std>0 && n>2) {
+      s.skew = rets.reduce((a,r)=>a+((r-mean)/std)**3,0)/n;
+      s.kurt = rets.reduce((a,r)=>a+((r-mean)/std)**4,0)/n - 3;
     }
+    return s;
   }
 
-  // ── Trade-derived metrics ────────────────────────────────────────────────
-  const nTrades = tradesIS.length;
-  const wins    = tradesIS.filter(t=>t.win);
-  const losses  = tradesIS.filter(t=>!t.win);
-  const winRate = nTrades > 0 ? wins.length/nTrades*100 : 0;
-  const avgWin  = wins.length   > 0 ? wins.reduce((a,t)=>a+t.return_pct,0)/wins.length   : 0;
-  const avgLoss = losses.length > 0 ? losses.reduce((a,t)=>a+t.return_pct,0)/losses.length : 0;
-  const avgBars = nTrades > 0 ? tradesIS.reduce((a,t)=>a+t.bars,0)/nTrades : 0;
-
-  const profitFactor = losses.length > 0
-    ? Math.abs(wins.reduce((a,t)=>a+t.return_pct,0)) / Math.abs(losses.reduce((a,t)=>a+t.return_pct,0))
-    : 0;
-  const expectancy  = (winRate/100)*avgWin + (1-winRate/100)*avgLoss;
-  const bestTrade   = nTrades > 0 ? Math.max(...tradesIS.map(t=>t.return_pct)) : 0;
-  const worstTrade  = nTrades > 0 ? Math.min(...tradesIS.map(t=>t.return_pct)) : 0;
-
-  let maxCW=0, maxCL=0, cW=0, cL=0;
-  for (const t of tradesIS) {
-    if (t.win) { cW++; cL=0; maxCW=Math.max(maxCW,cW); }
-    else        { cL++; cW=0; maxCL=Math.max(maxCL,cL); }
+  function calcTradeStats(trades, equityLen) {
+    const s = { nTrades:0, winRate:0, avgWin:0, avgLoss:0, avgBars:0,
+                profitFactor:0, expectancy:0, bestTrade:0, worstTrade:0,
+                maxCW:0, maxCL:0, tradesPerYear:0 };
+    if (!trades || trades.length === 0) return s;
+    s.nTrades = trades.length;
+    const wins = trades.filter(t=>t.win), losses = trades.filter(t=>!t.win);
+    s.winRate  = s.nTrades > 0 ? wins.length/s.nTrades*100 : 0;
+    s.avgWin   = wins.length   > 0 ? wins.reduce((a,t)=>a+t.return_pct,0)/wins.length   : 0;
+    s.avgLoss  = losses.length > 0 ? losses.reduce((a,t)=>a+t.return_pct,0)/losses.length : 0;
+    s.avgBars  = trades.reduce((a,t)=>a+(t.bars||0),0)/s.nTrades;
+    s.profitFactor = losses.length > 0
+      ? Math.abs(wins.reduce((a,t)=>a+t.return_pct,0)) / Math.abs(losses.reduce((a,t)=>a+t.return_pct,0))
+      : (wins.length > 0 ? 99 : 0);
+    s.expectancy = (s.winRate/100)*s.avgWin + (1-s.winRate/100)*s.avgLoss;
+    s.bestTrade  = Math.max(...trades.map(t=>t.return_pct));
+    s.worstTrade = Math.min(...trades.map(t=>t.return_pct));
+    let cW=0, cL=0;
+    for (const t of trades) {
+      if (t.win) { cW++; cL=0; s.maxCW=Math.max(s.maxCW,cW); }
+      else        { cL++; cW=0; s.maxCL=Math.max(s.maxCL,cL); }
+    }
+    s.tradesPerYear = equityLen > 0 ? s.nTrades/(equityLen/252) : 0;
+    return s;
   }
-  const tradesPerYear = equityIS.length > 0 ? nTrades/(equityIS.length/252) : 0;
+
+  const is = calcEquityStats(equityIS);
+  const ho = calcEquityStats(equityHO);
+  const isTr = calcTradeStats(tradesIS, equityIS.length);
+  const hoTr = calcTradeStats(tradesHO, equityHO.length);
+  const hasHO = equityHO && equityHO.length > 1;
 
   // ── Render helpers ───────────────────────────────────────────────────────
-  const pct = (v,d=1) => (v>=0?'+':'')+v.toFixed(d)+'%';
-  const posCol  = v => v >= 0 ? '#00ff41' : '#ff6b6b';
-  const ddColor = maxDD < -15 ? '#ff2020' : maxDD < -8 ? '#f5a520' : '#00ff41';
-  const ratioC  = (v,good,ok) => v>=good ? '#00ff41' : v>=ok ? '#f5a520' : '#ff6b6b';
+  const pct  = (v,d=1) => (v>=0?'+':'')+v.toFixed(d)+'%';
+  const posC = v => v>=0 ? '#00ff41' : '#ff6b6b';
+  const ratC = (v,good,ok) => v>=good ? '#00ff41' : v>=ok ? '#f5a520' : '#ff6b6b';
+  const ddC  = v => v < -15 ? '#ff2020' : v < -8 ? '#f5a520' : '#00ff41';
+  const ulcC = v => v<3 ? '#00ff41' : v<8 ? '#f5a520' : '#ff6b6b';
+  const na   = `<span style="color:#333">—</span>`;
 
-  const ROW_H = 'padding:6px 12px;font-size:12px;border-bottom:1px solid #1a1a1a';
-  // rows: [label, value, color, tooltipText]
+  // 3-column table: Metric | IS | HO
+  // rows: [label, isVal, isColor, hoVal, hoColor, tip]
   function tbl(title, rows) {
-    const body = rows.map(([lbl,val,clr,tip],i) => {
+    const subHdr = hasHO ? `
+      <tr style="background:#161616;border-bottom:1px solid #222">
+        <td style="padding:3px 12px;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:1px;width:50%"></td>
+        <td style="padding:3px 8px;font-size:9px;color:#4fc3f7;text-align:right;letter-spacing:1px;text-transform:uppercase">IS</td>
+        <td style="padding:3px 8px;font-size:9px;color:#f5a520;text-align:right;letter-spacing:1px;text-transform:uppercase">HO</td>
+      </tr>` : '';
+    const body = rows.map(([lbl,isV,isC,hoV,hoC,tip],i) => {
       const tipAttr = tip ? `data-tip="${tip.replace(/"/g,"'")}"` : '';
       const cursor  = tip ? 'cursor:help;' : '';
-      return `<tr style="background:${i%2?'#0d0d0d':'#111'}">
-        <td style="${ROW_H};color:#6b7280;width:58%;${cursor}border-left:2px solid transparent" ${tipAttr}>${lbl}${tip?` <span style="color:#444;font-size:10px">ⓘ</span>`:''}</td>
-        <td style="${ROW_H};text-align:right;font-family:monospace;font-weight:700;color:${clr||'var(--gold)'}">${val}</td>
+      const bg = i%2 ? '#0d0d0d' : '#111';
+      const TD = `padding:5px 8px;font-size:12px;border-bottom:1px solid #1a1a1a;text-align:right;font-family:monospace;font-weight:700`;
+      return `<tr style="background:${bg}">
+        <td style="padding:5px 12px;font-size:12px;border-bottom:1px solid #1a1a1a;color:#6b7280;${cursor}" ${tipAttr}>${lbl}${tip?` <span style="color:#333;font-size:10px">ⓘ</span>`:''}</td>
+        <td style="${TD};color:${isC||'var(--gold)'}">${isV}</td>
+        ${hasHO ? `<td style="${TD};color:${hoC||'#9ca3af'}">${hoV??na}</td>` : ''}
       </tr>`;
     }).join('');
+    const cols = hasHO ? 3 : 2;
     return `<table style="width:100%;border-collapse:collapse;border:1px solid #222;border-radius:6px;overflow:hidden;margin-bottom:0">
-      <thead><tr style="background:#1c1c1c"><th colspan="2" style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);border-bottom:1px solid #2a2a2a;font-weight:600">${title}</th></tr></thead>
+      <thead>
+        <tr style="background:#1c1c1c"><th colspan="${cols}" style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);border-bottom:1px solid #2a2a2a;font-weight:600">${title}</th></tr>
+        ${subHdr}
+      </thead>
       <tbody>${body}</tbody></table>`;
   }
 
   const perf = tbl('Performance', [
-    ['Total Return',       pct(totalRet,1)+` (${equityIS.length} bars)`, posCol(totalRet),
-     'Total cumulative return over the entire IS walk-forward period.\nFormula: (exp(final_log_ret) − 1) × 100\nPositive = strategy made money overall. The bar count tells you the sample size.'],
-    ['1Y Return',          pct(ret1Y,1),                                  posCol(ret1Y),
-     'Simple return over the most recent 252 trading days (~1 calendar year).\nFormula: (exp(cum_ret_now − cum_ret_252bars_ago) − 1) × 100\nShows recent performance independent of the full-period result.'],
-    ['Ann. Return',        pct(annRet,1)+' p.a.',                         posCol(annRet),
-     'Annualised return — the constant annual rate that would produce the total return over the IS period.\nFormula: (exp(total_log_ret / years) − 1) × 100\nUsed to compare strategies of different lengths on equal footing.'],
-    ['Profit Factor',      profitFactor.toFixed(3),                       ratioC(profitFactor,1.3,1.0),
-     'Gross winning trade returns ÷ gross losing trade returns (absolute).\nFormula: Σ(wins) / |Σ(losses)|\n> 1.0 = profitable overall  |  > 1.3 = good  |  > 1.5 = strong.\nUnlike Sharpe, not sensitive to return distribution shape.'],
-    ['Expectancy / Trade', pct(expectancy,2),                             posCol(expectancy),
-     'Expected average return per trade, weighted by win/loss rate.\nFormula: (Win Rate × Avg Win) + ((1 − Win Rate) × Avg Loss)\nThe core edge metric: if positive, the strategy has positive expected value per trade.'],
-    ['Win Rate',           winRate.toFixed(0)+'%  ('+wins.length+'W / '+losses.length+'L)', ratioC(winRate,55,45),
-     'Percentage of closed trades that were profitable.\nFormula: Winning trades / Total trades × 100\nNote: a high win rate with small wins and large losses can still be unprofitable — always read alongside Expectancy and Profit Factor.'],
+    ['Total Return',
+      pct(is.totalRet,1)+` (${equityIS.length}d)`, posC(is.totalRet),
+      hasHO ? pct(ho.totalRet,1)+` (${equityHO.length}d)` : na, posC(ho.totalRet),
+      'Total cumulative return over the period.\nFormula: (exp(final_log_ret) − 1) × 100'],
+    ['Ann. Return',
+      pct(is.annRet,1)+' p.a.', posC(is.annRet),
+      hasHO ? pct(ho.annRet,1)+' p.a.' : na, posC(ho.annRet),
+      'Constant annual rate that produces the total return over the period.\nFormula: (exp(total_log_ret / years) − 1) × 100'],
+    ['Profit Factor',
+      isTr.profitFactor.toFixed(3), ratC(isTr.profitFactor,1.3,1.0),
+      hasHO ? hoTr.profitFactor.toFixed(3) : na, ratC(hoTr.profitFactor,1.3,1.0),
+      'Gross winning returns ÷ gross losing returns.\n> 1.0 = profitable  |  > 1.3 = good  |  > 1.5 = strong.'],
+    ['Sharpe Ratio',
+      is.sharpe.toFixed(2), ratC(is.sharpe,1.0,0.5),
+      hasHO ? ho.sharpe.toFixed(2) : na, ratC(ho.sharpe,1.0,0.5),
+      'Annualised return per unit of total volatility.\nFormula: mean(daily_log_ret) / std(daily_log_ret) × √252\n> 0.5 decent  |  > 1.0 good  |  > 2.0 exceptional.'],
+    ['Sortino Ratio',
+      is.sortino.toFixed(2), ratC(is.sortino,1.5,0.8),
+      hasHO ? ho.sortino.toFixed(2) : na, ratC(ho.sortino,1.5,0.8),
+      'Like Sharpe but only penalises downside volatility.\nFormula: mean(daily_log_ret) / std(negative_rets) × √252'],
+    ['Expectancy / Trade',
+      pct(isTr.expectancy,2), posC(isTr.expectancy),
+      hasHO ? pct(hoTr.expectancy,2) : na, posC(hoTr.expectancy),
+      'Expected average return per trade.\nFormula: (Win Rate × Avg Win) + ((1 − Win Rate) × Avg Loss)'],
+    ['Win Rate',
+      isTr.winRate.toFixed(0)+'%  ('+tradesIS.filter(t=>t.win).length+'W/'+tradesIS.filter(t=>!t.win).length+'L)',
+      ratC(isTr.winRate,55,45),
+      hasHO ? hoTr.winRate.toFixed(0)+'%  ('+(tradesHO||[]).filter(t=>t.win).length+'W/'+(tradesHO||[]).filter(t=>!t.win).length+'L)' : na,
+      ratC(hoTr.winRate,55,45),
+      'Percentage of closed trades that were profitable.'],
   ]);
 
-  const risk = tbl('Risk Ratios', [
-    ['Sharpe Ratio',    sharpe.toFixed(2),     ratioC(sharpe,1.0,0.5),
-     'Annualised return per unit of total volatility (both up and down swings penalised equally).\nFormula: mean(daily_log_ret) / std(daily_log_ret) × √252\nRisk-free rate = 0%. Benchmark: > 0.5 acceptable  |  > 1.0 good  |  > 2.0 exceptional.'],
-    ['Sortino Ratio',   sortino.toFixed(2),    ratioC(sortino,1.5,0.8),
-     'Like Sharpe but only penalises downside volatility — upside variance is not counted as risk.\nFormula: mean(daily_log_ret) / std(negative_daily_rets only) × √252\nBetter metric for strategies with positive skew. > 1.0 good  |  > 1.5 strong.'],
-    ['Calmar Ratio',    calmar.toFixed(2)+'×', ratioC(calmar,2.0,1.0),
-     'Annualised return divided by the absolute maximum drawdown.\nFormula: Ann. Return % / |Max DrawDown %|\nAnswers: "how much annual return do I get per 1% of worst-case pain?" > 1.0 decent  |  > 2.0 strong.'],
-    ['Max DrawDown',    maxDD.toFixed(1)+'%',  ddColor,
-     'Largest peak-to-trough decline in portfolio value during the IS period.\nFormula: min over all bars of (exp(cum_ret − running_peak) − 1) × 100\nMeasured in price space (not log-return space). The key risk metric for position sizing.'],
-    ['Ulcer Index',     ulcer.toFixed(2)+'%',  ulcer<3?'#00ff41':ulcer<8?'#f5a520':'#ff6b6b',
-     'Root-mean-square of all drawdowns — measures average pain across the full period, not just the worst single event.\nFormula: √(mean(all_drawdowns²))\nLower = smoother equity curve. < 3% excellent  |  < 8% acceptable.'],
-    ['Serenity Ratio',  serenity.toFixed(2),   ratioC(serenity,2.0,1.0),
-     'Annualised return divided by the Ulcer Index — a Calmar-style ratio using average pain instead of worst-case pain.\nFormula: Ann. Return % / Ulcer Index\nFavours strategies with consistently smooth equity curves over those with occasional large recoveries.'],
-  ]);
-
-  const vol = tbl('Volatility', [
-    ['Ann. Volatility',     annVol.toFixed(1)+'%',  '#9ca3af',
-     'Annualised standard deviation of daily log-returns — total volatility in both directions.\nFormula: std(daily_log_rets) × √252 × 100\nContext for Sharpe: a strategy with 8% vol and 1% ann. return has Sharpe ≈ 0.12.'],
-    ['Upside Volatility',   upVol.toFixed(1)+'%',   '#9ca3af',
-     'Annualised standard deviation of positive daily returns only.\nFormula: √(mean(positive_rets²)) × √252 × 100\nHigh upside vol relative to downside vol = positive skew — the strategy has occasional large wins.'],
-    ['Downside Volatility', downVol.toFixed(1)+'%', '#9ca3af',
-     'Annualised standard deviation of negative daily returns only — the denominator of the Sortino Ratio.\nFormula: √(mean(negative_rets²)) × √252 × 100\nThe risk that matters most for drawdown. Lower = fewer nasty days.'],
-    ['Skewness',            (skew>=0?'+':'')+skew.toFixed(2), skew>=0?'#00ff41':'#ff6b6b',
-     'Asymmetry of the return distribution. Positive = more frequent small losses, occasional large wins (desirable). Negative = opposite.\nFormula: mean((r − μ)³) / σ³\nPositive skew strategies survive drawdowns better; negative skew strategies feel smoother but tail-risk is higher.'],
-    ['Kurtosis (excess)',   kurt.toFixed(1),        kurt>3?'#f5a520':'#9ca3af',
-     'Fat-tailedness of the return distribution relative to a normal distribution (excess over 3).\nFormula: mean((r − μ)⁴) / σ⁴ − 3\n0 = normal  |  > 0 = fat tails (more extreme events than expected)  |  < 0 = thin tails. High kurtosis means tail risk is underestimated by Sharpe.'],
+  const risk = tbl('Risk', [
+    ['Max DrawDown',
+      is.maxDD.toFixed(1)+'%', ddC(is.maxDD),
+      hasHO ? ho.maxDD.toFixed(1)+'%' : na, ddC(ho.maxDD),
+      'Largest peak-to-trough decline.\nFormula: min(exp(cum_ret − running_peak) − 1) × 100'],
+    ['Calmar Ratio',
+      is.calmar.toFixed(2)+'×', ratC(is.calmar,2.0,1.0),
+      hasHO ? ho.calmar.toFixed(2)+'×' : na, ratC(ho.calmar,2.0,1.0),
+      'Ann. Return ÷ |Max DrawDown|.\n> 1.0 decent  |  > 2.0 strong.'],
+    ['Ulcer Index',
+      is.ulcer.toFixed(2)+'%', ulcC(is.ulcer),
+      hasHO ? ho.ulcer.toFixed(2)+'%' : na, ulcC(ho.ulcer),
+      'RMS of all drawdowns — average pain, not just the worst event.\n< 3% excellent  |  < 8% acceptable.'],
+    ['Serenity Ratio',
+      is.serenity.toFixed(2), ratC(is.serenity,2.0,1.0),
+      hasHO ? ho.serenity.toFixed(2) : na, ratC(ho.serenity,2.0,1.0),
+      'Ann. Return ÷ Ulcer Index. Favours consistently smooth equity curves.'],
+    ['Ann. Volatility',
+      is.annVol.toFixed(1)+'%', '#9ca3af',
+      hasHO ? ho.annVol.toFixed(1)+'%' : na, '#9ca3af',
+      'Annualised std of daily log-returns.\nFormula: std(daily_log_rets) × √252 × 100'],
+    ['Skewness',
+      (is.skew>=0?'+':'')+is.skew.toFixed(2), is.skew>=0?'#00ff41':'#ff6b6b',
+      hasHO ? (ho.skew>=0?'+':'')+ho.skew.toFixed(2) : na, ho.skew>=0?'#00ff41':'#ff6b6b',
+      'Positive = occasional large wins (desirable). Negative = occasional large losses.'],
   ]);
 
   const trades = tbl('Trade Statistics', [
-    ['Total Trades',       nTrades+'  ('+tradesPerYear.toFixed(0)+'/yr)', '#9ca3af',
-     'Total number of completed round-trip trades in the IS walk-forward period, and the annualised trade frequency.\nFormula: trades / (bars / 252)\nLow frequency = each trade has more weight on the metrics; high frequency = more statistical confidence.'],
-    ['Avg Win',            pct(avgWin,2),    '#00ff41',
-     'Average return of all winning trades.\nFormula: mean(return_pct) across all trades where return > 0\nRead alongside Avg Loss to understand the risk/reward ratio: Avg Win / |Avg Loss| should ideally be > 1.'],
-    ['Avg Loss',           pct(avgLoss,2),   '#ff6b6b',
-     'Average return of all losing trades (will be negative).\nFormula: mean(return_pct) across all trades where return ≤ 0\nThe risk/reward ratio Avg Win / |Avg Loss| tells you how large wins need to be to offset losses.'],
-    ['Best Trade',         pct(bestTrade,2), '#00ff41',
-     'The single largest winning trade in the IS period.\nA very large best trade relative to Avg Win can indicate the overall result depends on a few outlier trades — check if removing it changes the profit factor significantly.'],
-    ['Worst Trade',        pct(worstTrade,2),'#ff6b6b',
-     'The single largest losing trade in the IS period.\nA much larger worst trade than Avg Loss suggests occasional tail-risk events. If |Worst Trade| > 2× |Avg Loss|, consider stop-loss sizing.'],
-    ['Max Consec. Wins',   maxCW.toString(), '#9ca3af',
-     'Longest unbroken winning streak in the IS trade sequence.\nHigh consecutive wins can indicate regime-dependency — the model performs well in specific market conditions and must exit cleanly when conditions change.'],
-    ['Max Consec. Losses', maxCL.toString(), '#9ca3af',
-     'Longest unbroken losing streak in the IS trade sequence.\nCritical for position sizing: if max consec. losses = 6, you must be able to withstand 6× per-trade loss without being wiped out or margin-called.'],
-    ['Avg Hold',           avgBars.toFixed(1)+' bars  (~'+(avgBars/5).toFixed(1)+' wks)', '#9ca3af',
-     'Average number of daily bars a trade is held open, across all IS trades.\nFormula: mean(exit_bar − entry_bar) across all trades\nDetermines the strategy\'s time-frame: < 5 bars = short-term swing  |  > 20 bars = position trading.'],
+    ['Total Trades',
+      isTr.nTrades+'  ('+isTr.tradesPerYear.toFixed(0)+'/yr)', '#9ca3af',
+      hasHO ? hoTr.nTrades+'' : na, '#9ca3af',
+      'Completed round-trip trades and annualised frequency.'],
+    ['Avg Win',
+      pct(isTr.avgWin,2), '#00ff41',
+      hasHO ? pct(hoTr.avgWin,2) : na, '#00ff41',
+      'Average return of all winning trades.'],
+    ['Avg Loss',
+      pct(isTr.avgLoss,2), '#ff6b6b',
+      hasHO ? pct(hoTr.avgLoss,2) : na, '#ff6b6b',
+      'Average return of all losing trades.'],
+    ['Best Trade',
+      pct(isTr.bestTrade,2), '#00ff41',
+      hasHO ? pct(hoTr.bestTrade,2) : na, '#00ff41',
+      'Single largest winning trade in the period.'],
+    ['Worst Trade',
+      pct(isTr.worstTrade,2), '#ff6b6b',
+      hasHO ? pct(hoTr.worstTrade,2) : na, '#ff6b6b',
+      'Single largest losing trade in the period.'],
+    ['Avg Hold',
+      isTr.avgBars.toFixed(1)+' bars (~'+(isTr.avgBars/5).toFixed(1)+'wk)', '#9ca3af',
+      hasHO ? hoTr.avgBars.toFixed(1)+' bars' : na, '#9ca3af',
+      'Average number of bars a trade is held open.'],
+    ['Max Consec. Losses',
+      isTr.maxCL.toString(), '#9ca3af',
+      hasHO ? hoTr.maxCL.toString() : na, '#9ca3af',
+      'Longest unbroken losing streak. Key for position sizing.'],
   ]);
 
   wrap.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-      <div style="display:flex;flex-direction:column;gap:10px">${perf}${vol}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">${perf}</div>
       <div style="display:flex;flex-direction:column;gap:10px">${risk}${trades}</div>
     </div>`;
 }
