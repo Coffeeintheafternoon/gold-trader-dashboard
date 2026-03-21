@@ -428,15 +428,15 @@
             <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
               <th style="text-align:left;padding:7px 10px">Ticker</th>
               <th style="text-align:left;padding:7px 10px">Sector</th>
-              <th style="text-align:center;padding:7px 10px">Verdict</th>
-              <th style="text-align:right;padding:7px 10px">LR p-val</th>
-              <th style="text-align:right;padding:7px 10px">LR PF</th>
-              <th style="text-align:right;padding:7px 10px">Sharpe</th>
-              <th style="text-align:right;padding:7px 10px" title="Annualised SE of mean return">SE %/yr ⓘ</th>
-              <th style="text-align:right;padding:7px 10px" title="Lower bound 95% CI">95% CI Low ⓘ</th>
-              <th style="text-align:right;padding:7px 10px">Don p-val</th>
-              <th style="text-align:right;padding:7px 10px">Don PF</th>
-              <th style="text-align:right;padding:7px 10px">OOS Bars</th>
+              <th style="text-align:center;padding:7px 10px"><span class="tip tip-down" data-tip="ACCEPT: MCPT p &lt; 0.05 — statistically validated edge&#10;BORDERLINE: p 0.05–0.10 — weak signal&#10;REJECT: p > 0.10 — no validated edge&#10;ERROR: no price data available">Verdict</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Monte Carlo Permutation Test p-value for Linear Regression strategy.&#10;Strategy run 200× on shuffled returns — p = % that beat real strategy.&#10;p &lt; 0.05 = validated · p &lt; 0.01 = strong">LR p-val</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Linear Regression walk-forward Profit Factor.&#10;Total gross profit ÷ total gross loss (OOS only).&#10;> 1.10 = meaningful edge">LR PF</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Sharpe Ratio: annualised return ÷ annualised volatility.&#10;> 0.5 = decent · > 1.0 = strong">Sharpe</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Standard Error of the mean annual return estimate.&#10;Small SE = precise estimate. Large SE = wide uncertainty.&#10;Formula: std(annual returns) ÷ √n">SE %/yr</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Lower bound of 95% confidence interval on mean annual return.&#10;CI Low > 0% → 97.5% confident the true edge is positive.&#10;CI Low &lt; 0% → edge could plausibly be zero.">95% CI Low</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Monte Carlo Permutation Test p-value for Donchian Breakout strategy.&#10;Donchian: enter when price breaks N-bar high/low.">Don p-val</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Donchian Breakout walk-forward Profit Factor.&#10;No validated edge found on any ticker tested.">Don PF</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Out-of-sample bars used in walk-forward validation.&#10;250 ≈ 1yr · 1250 ≈ 5yr · 2500 ≈ 10yr">OOS Bars</span></th>
               <th style="text-align:left;padding:7px 10px">Notes</th>
             </tr>
           </thead>
@@ -484,11 +484,11 @@
             <tr style="border-bottom:1px solid var(--border);color:var(--muted)">
               <th style="text-align:left;padding:7px 10px">Ticker</th>
               <th style="text-align:left;padding:7px 10px">Sector</th>
-              <th style="text-align:right;padding:7px 10px">PF</th>
-              <th style="text-align:right;padding:7px 10px">Sharpe</th>
-              <th style="text-align:right;padding:7px 10px">Ann Return</th>
-              <th style="text-align:right;padding:7px 10px" title="Lower bound of 95% CI on annual return">CI Low ⓘ</th>
-              <th style="text-align:right;padding:7px 10px">OOS Bars</th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Profit Factor: total gross profit ÷ total gross loss (OOS trades).&#10;> 1.0 = net profitable&#10;> 1.10 = meaningful edge&#10;> 1.20 = strong edge">PF</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Sharpe Ratio: annualised return ÷ annualised volatility.&#10;Measures risk-adjusted performance.&#10;> 0.5 = decent · > 1.0 = strong">Sharpe</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Mean annualised return estimated from walk-forward OOS performance.&#10;How much $ the strategy makes per year on average (%).">Ann Return</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Lower bound of the 95% confidence interval on mean annual return.&#10;CI Low > 0% means we are 97.5% confident the true edge is positive.&#10;CI Low < 0% = edge could plausibly be zero or negative.">CI Low</span></th>
+              <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Out-of-sample bars: trading days used in walk-forward validation.&#10;More bars = more reliable statistic.&#10;250 bars ≈ 1 year · 1250 bars ≈ 5 years">OOS Bars</span></th>
               <th style="text-align:left;padding:7px 10px">Notes</th>
             </tr>
           </thead>
@@ -524,11 +524,11 @@
               <th style="text-align:left;padding:8px 12px">Sector</th>
               <th style="text-align:right;padding:8px 12px">Close</th>
               <th style="text-align:center;padding:8px 12px">Signal</th>
-              <th style="text-align:right;padding:8px 12px">Pred 5-Bar%</th>
-              <th style="text-align:right;padding:8px 12px">Sig Features</th>
-              <th style="text-align:right;padding:8px 12px">MCPT p</th>
-              <th style="text-align:right;padding:8px 12px">WF Profit Factor</th>
-              <th style="text-align:left;padding:8px 12px">Top Driver</th>
+              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Ridge regression model's predicted return over next 5 bars (~1 week).&#10;Positive = BUY · Negative = SELL&#10;Based on current feature values.">Pred 5-Bar%</span></th>
+              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of features with Spearman rank correlation p &lt; 0.05 vs 5-bar forward returns.&#10;More significant features = more evidence for the model's signal.">Sig Features</span></th>
+              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Monte Carlo Permutation Test p-value (200 permutations).&#10;p &lt; 0.05 = statistically significant · p &lt; 0.01 = strong">MCPT p</span></th>
+              <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Walk-Forward Profit Factor: total gross profit ÷ gross loss on OOS data only.&#10;> 1.10 = meaningful edge">WF PF</span></th>
+              <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="The single feature contributing most to the current prediction.&#10;Contribution % = feature's ridge weight × standardised value.">Top Driver</span></th>
             </tr>
           </thead>
           <tbody id="comp-tbody"></tbody>
@@ -654,8 +654,11 @@
           <thead>
             <tr>
               <th>#</th><th>Ticker</th><th>Sector</th>
-              <th style="text-align:right">PF</th><th style="text-align:right">Sharpe</th>
-              <th style="text-align:right">Ann Return</th><th style="text-align:right">CI Low</th><th style="text-align:right">OOS Bars</th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Profit Factor: total gross profit ÷ gross loss (OOS).&#10;> 1.10 = meaningful edge · > 1.20 = strong">PF</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Sharpe Ratio: annualised return ÷ annualised volatility.&#10;> 0.5 = decent · > 1.0 = strong">Sharpe</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Mean annualised return from walk-forward OOS performance (%).">Ann Return</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Lower bound of 95% CI on mean annual return.&#10;CI Low > 0% = 97.5% confident edge is real and positive.">CI Low</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Out-of-sample trading days used in validation.&#10;250 ≈ 1yr · 1250 ≈ 5yr · 2500 ≈ 10yr">OOS Bars</span></th>
             </tr>
           </thead>
           <tbody id="meta-top20-tbody"></tbody>
@@ -703,7 +706,9 @@
           <thead>
             <tr>
               <th>Ticker</th><th>Sector</th><th style="text-align:center">Signal</th>
-              <th style="text-align:right">Pred 5-Bar%</th><th style="text-align:right">WF PF</th><th style="text-align:right">MCPT p</th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Ridge regression model's predicted return over the next 5 trading days (~1 week).&#10;Positive = BUY · Negative = SELL">Pred 5-Bar%</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Walk-Forward Profit Factor: profit factor measured on unseen (OOS) data only.&#10;> 1.10 = validated edge">WF PF</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Monte Carlo Permutation Test p-value.&#10;Strategy run 200× on shuffled data.&#10;p &lt; 0.05 = statistically significant edge">MCPT p</span></th>
             </tr>
           </thead>
           <tbody id="meta-portfolio-tbody"></tbody>
@@ -1475,8 +1480,8 @@ function buildMetaTab(screenerData, compData, fullTickers) {
   document.getElementById('meta-sector-tbody').innerHTML=sectorHtml;
 
   // Top 20 tickers
-  const top20=[...valid].sort((a,b)=>b.pf-a.pf).slice(0,20);
-  document.getElementById('meta-top20-tbody').innerHTML=top20.map((t,i)=>{const pfC=t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';const shC=t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';const retC=t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';const ciC=(t.ci95_lower||0)>0?'var(--green)':'var(--red)';return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="openTickerInModelLab('${t.ticker}',${JSON.stringify({pf:t.pf,sharpe:t.sharpe,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower,oos_bars:t.oos_bars,sector:t.sector})})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:#e5e7eb">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${t.pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td></tr>`;}).join('');
+  _metaTop20=[...valid].sort((a,b)=>b.pf-a.pf).slice(0,20);
+  document.getElementById('meta-top20-tbody').innerHTML=_metaTop20.map((t,i)=>{const pfC=t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';const shC=t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';const retC=t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';const ciC=(t.ci95_lower||0)>0?'var(--green)':'var(--red)';return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="openTickerInModelLab(_metaTop20[${i}].ticker,_metaTop20[${i}])" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:#e5e7eb">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${t.pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td></tr>`;}).join('');
 
   // Strategy comparison
   document.getElementById('meta-lr-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:#22c55e">${edge.length}/${nValid}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">${nValid?Math.round(edge.length/nValid*100):0}% with PF ≥ 1.10</div><div style="font-size:12px;color:#4b5563;margin-top:6px">${valid.filter(t=>t.pf>=1.05).length} with PF ≥ 1.05</div>`;
@@ -1573,6 +1578,8 @@ function openTickerInModelLab(ticker, data) {
 
 // ── Full ASX Universe Screener (300 tickers) ──────────────────────────────────
 let _fullScreenerData=null;
+let _filteredRows=[];
+let _metaTop20=[];
 
 async function loadFullScreenerPanel() {
   let data;
@@ -1607,10 +1614,11 @@ function filterFullScreener() {
   else if(sortF==='mean_desc')rows.sort((a,b)=>(b.mean_ann_pct||0)-(a.mean_ann_pct||0));
   else if(sortF==='oos_desc')rows.sort((a,b)=>(b.oos_bars||0)-(a.oos_bars||0));
   else if(sortF==='ticker_asc')rows.sort((a,b)=>a.ticker.localeCompare(b.ticker));
+  _filteredRows=rows;
   document.getElementById('full-screener-count').textContent=`Showing ${rows.length} of ${_fullScreenerData.length} tickers`;
   document.getElementById('full-screener-tbody').innerHTML=rows.map((t,i)=>{
     const rowBg=i%2===0?'':'background:#111';
-    const clickable=`style="cursor:pointer" onclick="openTickerInModelLab('${t.ticker}',${JSON.stringify({pf:t.pf,sharpe:t.sharpe,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower,oos_bars:t.oos_bars,sector:t.sector})})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
+    const clickable=`onclick="openTickerInModelLab(_filteredRows[${i}].ticker,_filteredRows[${i}])" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
     if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
     const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
