@@ -2346,16 +2346,18 @@ function buildMLStabilityChart(features, weightHistory) {
     ctx.canvas.parentElement.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px">No weight history available.</div>';
     return;
   }
-  // Top 5 features by avg |weight|
-  const top5 = features.slice(0, 5);
+  // Top 6 features by avg |weight| — each gets a distinct slot colour
+  // 2 greens, 2 ambers, 2 reds so lines are always distinguishable
+  const _STABILITY_COLORS = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b'];
+  const top5 = features.slice(0, 6);
   const labels = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
-  const datasets = top5.map(f => ({
+  const datasets = top5.map((f, slotIdx) => ({
     label: f.name.replace('ann_','★ '),
     data: weightHistory.map(w => {
       const v = w.weights ? (w.weights[f.name] ?? null) : null;
       return v != null ? +(v * 1000).toFixed(4) : null;
     }),
-    borderColor: _ML_CAT_COLORS[f.category] || '#6b7280',
+    borderColor: _STABILITY_COLORS[slotIdx % _STABILITY_COLORS.length],
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     pointRadius: 2,
