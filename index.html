@@ -307,6 +307,33 @@
       </div>
     </div>
 
+    <!-- Feature correlation analysis -->
+    <div class="chart-card" style="margin-bottom:16px" id="ml-corr-card">
+      <div class="chart-title">Feature Correlation Analysis</div>
+      <div class="chart-subtitle">Highly correlated features compete for the same signal — the model swaps weight between them every window, causing instability. Use these views to identify redundant features to prune.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <button onclick="mlCorrTab('heatmap')" id="ml-corr-tab-heatmap" class="ml-sort-btn ml-sort-active" style="border-color:#f59e0b;color:#f59e0b;background:#f59e0b22">Heatmap</button>
+        <button onclick="mlCorrTab('dendro')"  id="ml-corr-tab-dendro"  class="ml-sort-btn">Dendrogram</button>
+        <button onclick="mlCorrTab('force')"   id="ml-corr-tab-force"   class="ml-sort-btn">Force Graph</button>
+        <span id="ml-corr-threshold-wrap" style="display:none;margin-left:8px;align-items:center;gap:6px;font-size:11px;color:var(--muted)">
+          Edge threshold: <input id="ml-force-threshold" type="range" min="20" max="80" value="40" step="5"
+            style="width:70px;vertical-align:middle" oninput="mlForceThresholdChange(this.value)">
+          <span id="ml-force-threshold-val">0.40</span>
+        </span>
+      </div>
+      <div id="ml-corr-heatmap-wrap" style="overflow:auto"><canvas id="ml-corr-heatmap"></canvas></div>
+      <div id="ml-corr-dendro-wrap"  style="display:none;overflow:auto"><canvas id="ml-corr-dendro"></canvas></div>
+      <div id="ml-corr-force-wrap"   style="display:none"><canvas id="ml-corr-force" style="width:100%;display:block"></canvas></div>
+      <div id="ml-corr-empty" style="display:none;color:var(--muted);font-size:12px;padding:20px 0">No correlation data — re-run <code>export_model_lab_data.py</code> to generate.</div>
+      <!-- Heatmap legend -->
+      <div id="ml-heatmap-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:11px">
+        <span style="color:var(--muted)">Correlation:</span>
+        <span style="display:inline-block;width:60px;height:10px;background:linear-gradient(to right,#ff2020,#141414,#00ff41);border-radius:3px"></span>
+        <span style="color:var(--muted)">−1.0 → 0 → +1.0</span>
+        <span style="color:var(--muted);margin-left:10px">Feature names coloured by category. Diagonal is always 1 (feature vs itself).</span>
+      </div>
+    </div>
+
     <!-- Full feature table -->
     <div class="chart-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2167,6 +2194,9 @@ function mlBackToGrid() {
 function renderTickerDetail(d) {
   _mlCurrentFeatures = d.features || [];
   _mlCurrentWH = d.weight_history || [];
+  _mlCorrData = d.correlations || null;
+  _mlHeatmapBuilt = false; _mlDendroBuilt = false; _mlForceBuilt = false;
+  _mlForceAnim = null;
   const ticker = d.ticker || '—';
   document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
@@ -2222,6 +2252,20 @@ function renderTickerDetail(d) {
 
   // Weight stability
   buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
+
+  // Correlation analysis
+  const corrCard  = document.getElementById('ml-corr-card');
+  const corrEmpty = document.getElementById('ml-corr-empty');
+  if (_mlCorrData) {
+    corrCard.style.display  = '';
+    corrEmpty.style.display = 'none';
+    mlCorrTab('heatmap');
+  } else {
+    corrEmpty.style.display = '';
+    document.getElementById('ml-corr-heatmap-wrap').style.display = 'none';
+    document.getElementById('ml-corr-dendro-wrap').style.display  = 'none';
+    document.getElementById('ml-corr-force-wrap').style.display   = 'none';
+  }
 
   // Feature table
   mlRenderFeatTable();
@@ -2466,6 +2510,315 @@ function mlRenderFeatTable() {
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
     </tr>`;
   }).join('');
+}
+
+// ── Correlation Analysis ───────────────────────────────────────────────────────
+let _mlCorrData = null;
+let _mlHeatmapBuilt = false, _mlDendroBuilt = false, _mlForceBuilt = false;
+let _mlForceAnim = null;   // RAF handle — cancel if tab switches away
+
+function _corrCatColor(name) {
+  const f = _mlCurrentFeatures.find(f => f.name === name);
+  return f ? (_ML_CAT_COLORS[f.category] || '#6b7280') : '#6b7280';
+}
+
+function mlCorrTab(name) {
+  ['heatmap','dendro','force'].forEach(t => {
+    const wrap = document.getElementById(`ml-corr-${t}-wrap`);
+    if (wrap) wrap.style.display = t === name ? '' : 'none';
+    const btn = document.getElementById(`ml-corr-tab-${t}`);
+    if (btn) {
+      const on = t === name;
+      btn.style.background   = on ? '#f59e0b22' : 'transparent';
+      btn.style.color        = on ? '#f59e0b'   : '#6b7280';
+      btn.style.borderColor  = on ? '#f59e0b'   : '#374151';
+    }
+  });
+  // Threshold slider only relevant for force graph
+  const thresh = document.getElementById('ml-corr-threshold-wrap');
+  if (thresh) thresh.style.display = name === 'force' ? 'inline-flex' : 'none';
+  // Heatmap legend only for heatmap
+  const legend = document.getElementById('ml-heatmap-legend');
+  if (legend) legend.style.display = name === 'heatmap' ? '' : 'none';
+
+  // Cancel any running force animation when leaving that tab
+  if (name !== 'force' && _mlForceAnim) { cancelAnimationFrame(_mlForceAnim); _mlForceAnim = null; }
+
+  if (!_mlCorrData) return;
+  if (name === 'heatmap' && !_mlHeatmapBuilt) { buildMLHeatmap(_mlCorrData); _mlHeatmapBuilt = true; }
+  if (name === 'dendro'  && !_mlDendroBuilt)  { buildMLDendro(_mlCorrData);  _mlDendroBuilt  = true; }
+  if (name === 'force'   && !_mlForceBuilt)   { buildMLForce(_mlCorrData);   _mlForceBuilt   = true; }
+}
+
+function mlForceThresholdChange(val) {
+  document.getElementById('ml-force-threshold-val').textContent = (val / 100).toFixed(2);
+  // Rebuild force graph with new threshold
+  _mlForceBuilt = false;
+  if (_mlForceAnim) { cancelAnimationFrame(_mlForceAnim); _mlForceAnim = null; }
+  if (_mlCorrData) { buildMLForce(_mlCorrData); _mlForceBuilt = true; }
+}
+
+// ── Heatmap ────────────────────────────────────────────────────────────────────
+function buildMLHeatmap(cd) {
+  const canvas = document.getElementById('ml-corr-heatmap');
+  const features = cd.cluster_order;   // sorted by cluster
+  const orig     = cd.features;
+  const matrix   = cd.matrix;
+  const n        = features.length;
+
+  const CELL   = Math.max(9, Math.min(18, Math.floor(560 / n)));
+  const LPAD   = 130;   // left label area
+  const TPAD   = 130;   // top label area
+  const W      = LPAD + n * CELL;
+  const H      = TPAD + n * CELL;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0, 0, W, H);
+
+  function getCorr(fa, fb) {
+    const ia = orig.indexOf(fa), ib = orig.indexOf(fb);
+    return (ia < 0 || ib < 0) ? 0 : matrix[ia][ib];
+  }
+  function corrColor(v) {
+    if (v >= 0) {
+      const t = Math.min(v, 1);
+      return `rgb(${Math.round(t*0)},${Math.round(30+t*225)},${Math.round(30+t*35)})`;
+    } else {
+      const t = Math.min(-v, 1);
+      return `rgb(${Math.round(30+t*225)},${Math.round(30*t)},${Math.round(30*t)})`;
+    }
+  }
+
+  // Draw cells
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const v = getCorr(features[i], features[j]);
+      ctx.fillStyle = i === j ? '#2a2a2a' : corrColor(v);
+      ctx.fillRect(LPAD + j*CELL, TPAD + i*CELL, CELL-1, CELL-1);
+    }
+  }
+
+  // Row labels
+  const fsize = Math.min(11, CELL);
+  ctx.font = `${fsize}px monospace`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  features.forEach((name, i) => {
+    ctx.fillStyle = _corrCatColor(name);
+    const label = name.replace('ann_','★ ');
+    ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label,
+                 LPAD - 5, TPAD + i*CELL + CELL/2);
+  });
+
+  // Column labels (rotated)
+  ctx.font = `${fsize}px monospace`;
+  ctx.textAlign = 'left';
+  features.forEach((name, j) => {
+    ctx.save();
+    ctx.translate(LPAD + j*CELL + CELL/2, TPAD - 5);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = _corrCatColor(name);
+    const label = name.replace('ann_','★ ');
+    ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label, 0, 0);
+    ctx.restore();
+  });
+}
+
+// ── Dendrogram ────────────────────────────────────────────────────────────────
+function buildMLDendro(cd) {
+  const canvas   = document.getElementById('ml-corr-dendro');
+  const features = cd.cluster_order;
+  const orig     = cd.features;
+  const Z        = cd.linkage;   // [[left, right, dist, count], ...]
+  const n        = features.length;
+
+  const ROW_H  = 15;
+  const LPAD   = 140;  // left label area
+  const RPAD   = 20;
+  const TPAD   = 10;
+  const W      = LPAD + 500 + RPAD;
+  const H      = TPAD + n * ROW_H;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0, 0, W, H);
+
+  // Leaf y positions (based on cluster order)
+  const leafY = {};
+  features.forEach((name, i) => { leafY[name] = TPAD + i * ROW_H + ROW_H / 2; });
+
+  // Node y and x (rightmost reach per node index)
+  const nodeY = new Array(n + Z.length);
+  const nodeX = new Array(n + Z.length);
+  orig.forEach((name, i) => { nodeY[i] = leafY[name]; nodeX[i] = LPAD; });
+
+  const maxDist = Math.max(...Z.map(r => r[2])) || 1;
+  const distScale = 490 / maxDist;
+
+  Z.forEach(([left, right, dist, count], k) => {
+    const mergeIdx = n + k;
+    const x        = LPAD + dist * distScale;
+    const ly       = nodeY[left];
+    const ry       = nodeY[right];
+    const lx       = nodeX[left];
+    const rx       = nodeX[right];
+
+    // Color: green for close clusters (correlated), amber/red for far (independent)
+    const t = dist / maxDist;
+    ctx.strokeStyle = t < 0.33 ? '#00c832' : t < 0.66 ? '#f59e0b' : '#ff6b6b';
+    ctx.lineWidth   = 1;
+
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, ly); ctx.stroke();  // left arm
+    ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(x, ry); ctx.stroke();  // right arm
+    ctx.beginPath(); ctx.moveTo(x, ly);  ctx.lineTo(x, ry); ctx.stroke();  // vertical join
+
+    nodeY[mergeIdx] = (ly + ry) / 2;
+    nodeX[mergeIdx] = x;
+  });
+
+  // Leaf labels
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  features.forEach(name => {
+    ctx.fillStyle = _corrCatColor(name);
+    const label = name.replace('ann_','★ ');
+    ctx.fillText(label.length > 20 ? label.slice(0,19)+'…' : label, LPAD - 5, leafY[name]);
+  });
+
+  // Distance axis (top)
+  ctx.font = '9px monospace';
+  ctx.fillStyle = '#444';
+  ctx.textAlign = 'center';
+  [0, 0.25, 0.5, 0.75, 1.0].forEach(frac => {
+    const x = LPAD + frac * 490;
+    ctx.fillText((frac * maxDist).toFixed(2), x, TPAD - 2);
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, TPAD); ctx.lineTo(x, H); ctx.stroke();
+  });
+}
+
+// ── Force Graph ────────────────────────────────────────────────────────────────
+function buildMLForce(cd) {
+  const canvas = document.getElementById('ml-corr-force');
+  const W = canvas.offsetWidth || 700;
+  const H = 540;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const features = cd.features;
+  const matrix   = cd.matrix;
+  const n        = features.length;
+  const THRESHOLD = (parseInt(document.getElementById('ml-force-threshold')?.value || 40) / 100);
+
+  // Build edges
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const v = matrix[i][j];
+      if (Math.abs(v) > THRESHOLD) edges.push({i, j, corr: v});
+    }
+  }
+
+  // Node size from rank in _mlCurrentFeatures
+  function nodeRadius(name) {
+    const idx = _mlCurrentFeatures.findIndex(f => f.name === name);
+    return idx < 0 ? 5 : Math.max(4, 12 - idx * 0.18);
+  }
+
+  // Init nodes in circle
+  const nodes = features.map((name, i) => {
+    const angle = (2 * Math.PI * i) / n;
+    const r = Math.min(W, H) * 0.32;
+    return { name, i, x: W/2 + r * Math.cos(angle), y: H/2 + r * Math.sin(angle), vx: 0, vy: 0 };
+  });
+
+  const REPEL  = 1200;
+  const K      = 0.018;
+  const DAMP   = 0.84;
+  const DT     = 0.5;
+  let frame    = 0;
+  const MAX_F  = 180;
+
+  function tick() {
+    // Repulsion
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        const d  = Math.sqrt(dx*dx + dy*dy) + 0.5;
+        const f  = REPEL / (d * d);
+        nodes[i].vx += (dx/d)*f; nodes[i].vy += (dy/d)*f;
+        nodes[j].vx -= (dx/d)*f; nodes[j].vy -= (dy/d)*f;
+      }
+    }
+    // Spring forces on edges
+    edges.forEach(({i, j, corr}) => {
+      const dx = nodes[j].x - nodes[i].x, dy = nodes[j].y - nodes[i].y;
+      const d  = Math.sqrt(dx*dx + dy*dy) + 0.5;
+      const targetLen = 20 + (1 - Math.abs(corr)) * 140;
+      const f  = K * (d - targetLen);
+      nodes[i].vx += (dx/d)*f; nodes[i].vy += (dy/d)*f;
+      nodes[j].vx -= (dx/d)*f; nodes[j].vy -= (dy/d)*f;
+    });
+    // Gravity to centre
+    nodes.forEach(nd => {
+      nd.vx += (W/2 - nd.x) * 0.004;
+      nd.vy += (H/2 - nd.y) * 0.004;
+      nd.vx *= DAMP; nd.vy *= DAMP;
+      nd.x = Math.max(20, Math.min(W-20, nd.x + nd.vx * DT));
+      nd.y = Math.max(20, Math.min(H-20, nd.y + nd.vy * DT));
+    });
+  }
+
+  function draw() {
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, W, H);
+
+    // Edges
+    edges.forEach(({i, j, corr}) => {
+      const alpha = 0.15 + Math.min(Math.abs(corr), 1) * 0.55;
+      ctx.strokeStyle = corr > 0 ? `rgba(0,200,50,${alpha})` : `rgba(255,40,40,${alpha})`;
+      ctx.lineWidth   = Math.abs(corr) * 2.5;
+      ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
+    });
+
+    // Nodes
+    nodes.forEach(nd => {
+      const r   = nodeRadius(nd.name);
+      const col = _corrCatColor(nd.name);
+      ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, Math.PI*2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = '#0d0d0d'; ctx.lineWidth = 1; ctx.stroke();
+    });
+
+    // Labels for top-ranked features only
+    ctx.font = '9px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    nodes.forEach(nd => {
+      const idx = _mlCurrentFeatures.findIndex(f => f.name === nd.name);
+      if (idx < 0 || idx >= 18) return;
+      ctx.fillStyle = 'rgba(200,200,200,0.75)';
+      ctx.fillText(nd.name.replace('ann_','★ '), nd.x, nd.y + nodeRadius(nd.name) + 2);
+    });
+  }
+
+  function animate() {
+    if (frame < MAX_F) {
+      tick(); frame++;
+      draw();
+      _mlForceAnim = requestAnimationFrame(animate);
+    } else {
+      draw();  // final static frame
+    }
+  }
+  frame = 0;
+  animate();
 }
 
 // ── Feature Panel ─────────────────────────────────────────────────────────────
