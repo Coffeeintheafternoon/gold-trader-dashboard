@@ -1,0 +1,950 @@
+{
+  "ticker": "AMP.AX",
+  "generated_at": "2026-03-21T21:07:48Z",
+  "baseline_features": 98,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 0.8975,
+        "is_sharpe": -0.5534,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 98,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 11,
+        "pct_significant": 20.4,
+        "avg_pval": 0.3438,
+        "avg_std_err": 0.000515,
+        "avg_sign_pct": 65.8,
+        "avg_instability": 12.615
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "eff_ratio_20",
+          "prune_score": 65.9627,
+          "p_value": 0.9959,
+          "instability": 653.0323,
+          "sign_pct": 46.2,
+          "reason": "p=1.00 insig, instability=653.03, sign=46%"
+        },
+        {
+          "name": "macro_oil_mom5d",
+          "prune_score": 8.5691,
+          "p_value": 0.9661,
+          "instability": 79.7069,
+          "sign_pct": 61.5,
+          "reason": "p=0.97 insig, instability=79.71, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "eff_ratio_20",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 0.9175,
+        "is_sharpe": -0.4412,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 96,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 10,
+        "pct_significant": 21.9,
+        "avg_pval": 0.3407,
+        "avg_std_err": 0.000519,
+        "avg_sign_pct": 66.4,
+        "avg_instability": 6.345
+      },
+      "delta": {
+        "is_pf": 0.02,
+        "is_sharpe": 0.1122,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "ix_ann_gold",
+          "prune_score": 13.0175,
+          "p_value": 0.978,
+          "instability": 122.9776,
+          "sign_pct": 23.1,
+          "reason": "p=0.98 insig, instability=122.98, sign=23%"
+        },
+        {
+          "name": "ix_vix_dollar_vol",
+          "prune_score": 5.6849,
+          "p_value": 0.9467,
+          "instability": 50.731,
+          "sign_pct": 53.8,
+          "reason": "p=0.95 insig, instability=50.73, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_vix_dollar_vol",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 94,
+      "metrics": {
+        "is_pf": 0.8757,
+        "is_sharpe": -0.6788,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 94,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 7,
+        "pct_significant": 24.5,
+        "avg_pval": 0.326,
+        "avg_std_err": 0.000524,
+        "avg_sign_pct": 67.1,
+        "avg_instability": 5.706
+      },
+      "delta": {
+        "is_pf": -0.0418,
+        "is_sharpe": -0.2376,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_oil",
+          "prune_score": 13.8168,
+          "p_value": 0.9796,
+          "instability": 132.578,
+          "sign_pct": 76.9,
+          "reason": "p=0.98 insig, instability=132.58, sign=77%"
+        },
+        {
+          "name": "ann_days_since_sensitive",
+          "prune_score": 4.736,
+          "p_value": 0.9345,
+          "instability": 41.3026,
+          "sign_pct": 53.8,
+          "reason": "p=0.93 insig, instability=41.30, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_oil",
+        "ix_vix_dollar_vol",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 92,
+      "metrics": {
+        "is_pf": 0.8691,
+        "is_sharpe": -0.7175,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 92,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 6,
+        "pct_significant": 25.0,
+        "avg_pval": 0.3201,
+        "avg_std_err": 0.000528,
+        "avg_sign_pct": 66.3,
+        "avg_instability": 3.859
+      },
+      "delta": {
+        "is_pf": -0.0066,
+        "is_sharpe": -0.0387,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_mom20d",
+          "prune_score": 4.5853,
+          "p_value": 0.9317,
+          "instability": 39.5796,
+          "sign_pct": 46.2,
+          "reason": "p=0.93 insig, instability=39.58, sign=46%"
+        },
+        {
+          "name": "macro_dxy_mom5d",
+          "prune_score": 2.9658,
+          "p_value": 0.8869,
+          "instability": 23.8391,
+          "sign_pct": 53.8,
+          "reason": "p=0.89 insig, instability=23.84, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_oil",
+        "ix_vix_dollar_vol",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 90,
+      "metrics": {
+        "is_pf": 0.9312,
+        "is_sharpe": -0.3649,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 90,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 6,
+        "pct_significant": 25.6,
+        "avg_pval": 0.3001,
+        "avg_std_err": 0.000529,
+        "avg_sign_pct": 66.1,
+        "avg_instability": 3.311
+      },
+      "delta": {
+        "is_pf": 0.0621,
+        "is_sharpe": 0.3526,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 5,
+      "pruned_this_round": [
+        {
+          "name": "macro_au10yr_mom5d",
+          "prune_score": 2.2303,
+          "p_value": 0.8351,
+          "instability": 16.2815,
+          "sign_pct": 38.5,
+          "reason": "p=0.84 insig, instability=16.28, sign=38%"
+        },
+        {
+          "name": "macro_au2yr_mom5d",
+          "prune_score": 1.7541,
+          "p_value": 0.7821,
+          "instability": 12.246,
+          "sign_pct": 53.8,
+          "reason": "p=0.78 insig, instability=12.25, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_oil",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 88,
+      "metrics": {
+        "is_pf": 0.9502,
+        "is_sharpe": -0.2612,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 88,
+        "n_significant_p05": 24,
+        "n_marginal_p10": 6,
+        "pct_significant": 27.3,
+        "avg_pval": 0.2797,
+        "avg_std_err": 0.000528,
+        "avg_sign_pct": 67.5,
+        "avg_instability": 3.045
+      },
+      "delta": {
+        "is_pf": 0.019,
+        "is_sharpe": 0.1037,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 6,
+      "pruned_this_round": [
+        {
+          "name": "ix_copper_gold_curve",
+          "prune_score": 1.8097,
+          "p_value": 0.7973,
+          "instability": 13.1875,
+          "sign_pct": 69.2,
+          "reason": "p=0.80 insig, instability=13.19, sign=69%"
+        },
+        {
+          "name": "bb_width_20",
+          "prune_score": 1.6066,
+          "p_value": 0.7468,
+          "instability": 10.4861,
+          "sign_pct": 38.5,
+          "reason": "p=0.75 insig, instability=10.49, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 86,
+      "metrics": {
+        "is_pf": 0.8986,
+        "is_sharpe": -0.5468,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 86,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 7,
+        "pct_significant": 26.7,
+        "avg_pval": 0.2813,
+        "avg_std_err": 0.000531,
+        "avg_sign_pct": 67.7,
+        "avg_instability": 2.822
+      },
+      "delta": {
+        "is_pf": -0.0516,
+        "is_sharpe": -0.2856,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 7,
+      "pruned_this_round": [
+        {
+          "name": "vov_20d",
+          "prune_score": 1.5858,
+          "p_value": 0.7424,
+          "instability": 10.2995,
+          "sign_pct": 38.5,
+          "reason": "p=0.74 insig, instability=10.30, sign=38%"
+        },
+        {
+          "name": "vol_ratio",
+          "prune_score": 1.3793,
+          "p_value": 0.6972,
+          "instability": 8.6919,
+          "sign_pct": 46.2,
+          "reason": "p=0.70 insig, instability=8.69, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_oil_mom5d",
+        "vol_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 84,
+      "metrics": {
+        "is_pf": 0.8652,
+        "is_sharpe": -0.74,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 84,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 8,
+        "pct_significant": 26.2,
+        "avg_pval": 0.262,
+        "avg_std_err": 0.000532,
+        "avg_sign_pct": 68.2,
+        "avg_instability": 2.875
+      },
+      "delta": {
+        "is_pf": -0.0334,
+        "is_sharpe": -0.1932,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 8,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_oil_ratio",
+          "prune_score": 3.1634,
+          "p_value": 0.8953,
+          "instability": 25.7732,
+          "sign_pct": 53.8,
+          "reason": "p=0.90 insig, instability=25.77, sign=54%"
+        },
+        {
+          "name": "ix_gold_aud_20d",
+          "prune_score": 1.6037,
+          "p_value": 0.7555,
+          "instability": 10.8746,
+          "sign_pct": 53.8,
+          "reason": "p=0.76 insig, instability=10.87, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud_20d",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom5d",
+        "vol_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 82,
+      "metrics": {
+        "is_pf": 0.8553,
+        "is_sharpe": -0.7987,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 82,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 9,
+        "pct_significant": 24.4,
+        "avg_pval": 0.2517,
+        "avg_std_err": 0.000533,
+        "avg_sign_pct": 67.9,
+        "avg_instability": 2.561
+      },
+      "delta": {
+        "is_pf": -0.0099,
+        "is_sharpe": -0.0587,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 9,
+      "pruned_this_round": [
+        {
+          "name": "close_position",
+          "prune_score": 1.4767,
+          "p_value": 0.7283,
+          "instability": 9.7408,
+          "sign_pct": 53.8,
+          "reason": "p=0.73 insig, instability=9.74, sign=54%"
+        },
+        {
+          "name": "garman_klass_20d",
+          "prune_score": 1.2716,
+          "p_value": 0.679,
+          "instability": 8.1676,
+          "sign_pct": 61.5,
+          "reason": "p=0.68 insig, instability=8.17, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud_20d",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom5d",
+        "vol_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 80,
+      "metrics": {
+        "is_pf": 0.8955,
+        "is_sharpe": -0.5645,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 80,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 9,
+        "pct_significant": 25.0,
+        "avg_pval": 0.2713,
+        "avg_std_err": 0.000539,
+        "avg_sign_pct": 67.6,
+        "avg_instability": 2.464
+      },
+      "delta": {
+        "is_pf": 0.0402,
+        "is_sharpe": 0.2342,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 10,
+      "pruned_this_round": [
+        {
+          "name": "ix_gold_aud",
+          "prune_score": 1.1608,
+          "p_value": 0.6235,
+          "instability": 6.8753,
+          "sign_pct": 46.2,
+          "reason": "p=0.62 insig, instability=6.88, sign=46%"
+        },
+        {
+          "name": "season_score",
+          "prune_score": 1.1569,
+          "p_value": 0.6398,
+          "instability": 7.2163,
+          "sign_pct": 61.5,
+          "reason": "p=0.64 insig, instability=7.22, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom5d",
+        "season_score",
+        "vol_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 78,
+      "metrics": {
+        "is_pf": 0.874,
+        "is_sharpe": -0.6884,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 78,
+        "n_significant_p05": 18,
+        "n_marginal_p10": 12,
+        "pct_significant": 23.1,
+        "avg_pval": 0.2562,
+        "avg_std_err": 0.000541,
+        "avg_sign_pct": 68.9,
+        "avg_instability": 2.463
+      },
+      "delta": {
+        "is_pf": -0.0215,
+        "is_sharpe": -0.1239,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 11,
+      "pruned_this_round": [
+        {
+          "name": "vol_ratio_5_20",
+          "prune_score": 1.7096,
+          "p_value": 0.7786,
+          "instability": 12.0487,
+          "sign_pct": 61.5,
+          "reason": "p=0.78 insig, instability=12.05, sign=62%"
+        },
+        {
+          "name": "ix_gold_vix",
+          "prune_score": 1.1902,
+          "p_value": 0.635,
+          "instability": 7.1117,
+          "sign_pct": 46.2,
+          "reason": "p=0.64 insig, instability=7.11, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom5d",
+        "season_score",
+        "vol_ratio",
+        "vol_ratio_5_20",
+        "vov_20d"
+      ],
+      "features_remaining": 76,
+      "metrics": {
+        "is_pf": 0.8834,
+        "is_sharpe": -0.634,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 76,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 12,
+        "pct_significant": 26.3,
+        "avg_pval": 0.2294,
+        "avg_std_err": 0.000544,
+        "avg_sign_pct": 69.4,
+        "avg_instability": 2.255
+      },
+      "delta": {
+        "is_pf": 0.0094,
+        "is_sharpe": 0.0544,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 12,
+      "pruned_this_round": [
+        {
+          "name": "macro_copper_mom5d",
+          "prune_score": 1.0594,
+          "p_value": 0.6004,
+          "instability": 6.4382,
+          "sign_pct": 61.5,
+          "reason": "p=0.60 insig, instability=6.44, sign=62%"
+        },
+        {
+          "name": "macro_gold_oil_mom5d",
+          "prune_score": 1.0335,
+          "p_value": 0.567,
+          "instability": 5.8847,
+          "sign_pct": 46.2,
+          "reason": "p=0.57 insig, instability=5.88, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom5d",
+        "season_score",
+        "vol_ratio",
+        "vol_ratio_5_20",
+        "vov_20d"
+      ],
+      "features_remaining": 74,
+      "metrics": {
+        "is_pf": 0.8678,
+        "is_sharpe": -0.7248,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 74,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 12,
+        "pct_significant": 27.0,
+        "avg_pval": 0.1989,
+        "avg_std_err": 0.000547,
+        "avg_sign_pct": 70.0,
+        "avg_instability": 2.167
+      },
+      "delta": {
+        "is_pf": -0.0156,
+        "is_sharpe": -0.0908,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 13,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_vol20d",
+          "prune_score": 1.0211,
+          "p_value": 0.5936,
+          "instability": 6.3197,
+          "sign_pct": 69.2,
+          "reason": "p=0.59 insig, instability=6.32, sign=69%"
+        },
+        {
+          "name": "ret_20d",
+          "prune_score": 1.0149,
+          "p_value": 0.5692,
+          "instability": 5.9179,
+          "sign_pct": 53.8,
+          "reason": "p=0.57 insig, instability=5.92, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom5d",
+        "ret_20d",
+        "season_score",
+        "vol_ratio",
+        "vol_ratio_5_20",
+        "vov_20d"
+      ],
+      "features_remaining": 72,
+      "metrics": {
+        "is_pf": 0.8897,
+        "is_sharpe": -0.5972,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 72,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 13,
+        "pct_significant": 29.2,
+        "avg_pval": 0.2154,
+        "avg_std_err": 0.00055,
+        "avg_sign_pct": 69.1,
+        "avg_instability": 2.098
+      },
+      "delta": {
+        "is_pf": 0.0219,
+        "is_sharpe": 0.1276,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 14,
+      "pruned_this_round": [
+        {
+          "name": "ann_impact_pos_5d",
+          "prune_score": 1.2702,
+          "p_value": 0.6712,
+          "instability": 7.9609,
+          "sign_pct": 53.8,
+          "reason": "p=0.67 insig, instability=7.96, sign=54%"
+        },
+        {
+          "name": "vol_cv_20d",
+          "prune_score": 0.9993,
+          "p_value": 0.5728,
+          "instability": 5.9751,
+          "sign_pct": 61.5,
+          "reason": "p=0.57 insig, instability=5.98, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "ann_impact_pos_5d",
+        "bb_width_20",
+        "close_position",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_gold_vix",
+        "ix_vix_dollar_vol",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom5d",
+        "ret_20d",
+        "season_score",
+        "vol_cv_20d",
+        "vol_ratio",
+        "vol_ratio_5_20",
+        "vov_20d"
+      ],
+      "features_remaining": 70,
+      "metrics": {
+        "is_pf": 0.8373,
+        "is_sharpe": -0.9089,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 70,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 9,
+        "pct_significant": 32.9,
+        "avg_pval": 0.2271,
+        "avg_std_err": 0.000549,
+        "avg_sign_pct": 69.8,
+        "avg_instability": 1.997
+      },
+      "delta": {
+        "is_pf": -0.0524,
+        "is_sharpe": -0.3117,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "ann_days_since_sensitive",
+    "ann_impact_pos_5d",
+    "bb_width_20",
+    "close_position",
+    "eff_ratio_20",
+    "garman_klass_20d",
+    "ix_ann_gold",
+    "ix_copper_gold_curve",
+    "ix_curve_oil",
+    "ix_gold_aud",
+    "ix_gold_aud_20d",
+    "ix_gold_vix",
+    "ix_vix_dollar_vol",
+    "macro_au10yr_mom5d",
+    "macro_au2yr_mom5d",
+    "macro_copper_mom5d",
+    "macro_dxy_mom5d",
+    "macro_gold_mom20d",
+    "macro_gold_oil_mom5d",
+    "macro_gold_oil_ratio",
+    "macro_gold_vol20d",
+    "macro_oil_mom5d",
+    "ret_20d",
+    "season_score",
+    "vol_cv_20d",
+    "vol_ratio",
+    "vol_ratio_5_20",
+    "vov_20d"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}

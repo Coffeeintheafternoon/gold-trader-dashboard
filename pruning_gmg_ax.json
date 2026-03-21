@@ -1,0 +1,92 @@
+{
+  "ticker": "GMG.AX",
+  "generated_at": "2026-03-21T22:10:18Z",
+  "baseline_features": 98,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 1.0295,
+        "is_sharpe": 0.1679,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 98,
+        "n_significant_p05": 29,
+        "n_marginal_p10": 6,
+        "pct_significant": 29.6,
+        "avg_pval": 0.2972,
+        "avg_std_err": 0.00041,
+        "avg_sign_pct": 64.7,
+        "avg_instability": 6.155
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "macro_us10yr_mom20d",
+          "prune_score": 12.6799,
+          "p_value": 0.9775,
+          "instability": 120.2961,
+          "sign_pct": 46.2,
+          "reason": "p=0.98 insig, instability=120.30, sign=46%"
+        },
+        {
+          "name": "parkinson_20d",
+          "prune_score": 7.8676,
+          "p_value": 0.9625,
+          "instability": 72.2481,
+          "sign_pct": 46.2,
+          "reason": "p=0.96 insig, instability=72.25, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "macro_us10yr_mom20d",
+        "parkinson_20d"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 0.9459,
+        "is_sharpe": -0.3212,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 96,
+        "n_significant_p05": 27,
+        "n_marginal_p10": 7,
+        "pct_significant": 28.1,
+        "avg_pval": 0.296,
+        "avg_std_err": 0.000411,
+        "avg_sign_pct": 65.4,
+        "avg_instability": 4.058
+      },
+      "delta": {
+        "is_pf": -0.0836,
+        "is_sharpe": -0.4891,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "macro_us10yr_mom20d",
+    "parkinson_20d"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}

@@ -1,0 +1,320 @@
+{
+  "ticker": "WES.AX",
+  "generated_at": "2026-03-21T21:02:06Z",
+  "baseline_features": 98,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 0.9238,
+        "is_sharpe": -0.4617,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 98,
+        "n_significant_p05": 36,
+        "n_marginal_p10": 3,
+        "pct_significant": 36.7,
+        "avg_pval": 0.2882,
+        "avg_std_err": 0.000315,
+        "avg_sign_pct": 66.5,
+        "avg_instability": 6.166
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_oil",
+          "prune_score": 15.2161,
+          "p_value": 0.9815,
+          "instability": 146.0995,
+          "sign_pct": 61.5,
+          "reason": "p=0.98 insig, instability=146.10, sign=62%"
+        },
+        {
+          "name": "macro_vix_mom5d",
+          "prune_score": 7.658,
+          "p_value": 0.9616,
+          "instability": 70.3871,
+          "sign_pct": 53.8,
+          "reason": "p=0.96 insig, instability=70.39, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ix_curve_oil",
+        "macro_vix_mom5d"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 0.9331,
+        "is_sharpe": -0.4035,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 96,
+        "n_significant_p05": 37,
+        "n_marginal_p10": 2,
+        "pct_significant": 38.5,
+        "avg_pval": 0.2696,
+        "avg_std_err": 0.000318,
+        "avg_sign_pct": 66.6,
+        "avg_instability": 4.053
+      },
+      "delta": {
+        "is_pf": 0.0093,
+        "is_sharpe": 0.0582,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_gold",
+          "prune_score": 4.1742,
+          "p_value": 0.9239,
+          "instability": 35.5071,
+          "sign_pct": 46.2,
+          "reason": "p=0.92 insig, instability=35.51, sign=46%"
+        },
+        {
+          "name": "parkinson_20d",
+          "prune_score": 3.1892,
+          "p_value": 0.8963,
+          "instability": 26.0259,
+          "sign_pct": 53.8,
+          "reason": "p=0.90 insig, instability=26.03, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "macro_vix_mom5d",
+        "parkinson_20d"
+      ],
+      "features_remaining": 94,
+      "metrics": {
+        "is_pf": 0.9406,
+        "is_sharpe": -0.3563,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 94,
+        "n_significant_p05": 36,
+        "n_marginal_p10": 3,
+        "pct_significant": 38.3,
+        "avg_pval": 0.2604,
+        "avg_std_err": 0.000319,
+        "avg_sign_pct": 66.5,
+        "avg_instability": 3.71
+      },
+      "delta": {
+        "is_pf": 0.0075,
+        "is_sharpe": 0.0472,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "macro_copper_mom20d",
+          "prune_score": 4.3657,
+          "p_value": 0.9286,
+          "instability": 37.8604,
+          "sign_pct": 61.5,
+          "reason": "p=0.93 insig, instability=37.86, sign=62%"
+        },
+        {
+          "name": "macro_gold_mom5d",
+          "prune_score": 4.0993,
+          "p_value": 0.9228,
+          "instability": 34.9942,
+          "sign_pct": 53.8,
+          "reason": "p=0.92 insig, instability=34.99, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "macro_copper_mom20d",
+        "macro_gold_mom5d",
+        "macro_vix_mom5d",
+        "parkinson_20d"
+      ],
+      "features_remaining": 92,
+      "metrics": {
+        "is_pf": 0.9006,
+        "is_sharpe": -0.6086,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 92,
+        "n_significant_p05": 33,
+        "n_marginal_p10": 6,
+        "pct_significant": 35.9,
+        "avg_pval": 0.2554,
+        "avg_std_err": 0.000321,
+        "avg_sign_pct": 67.5,
+        "avg_instability": 3.378
+      },
+      "delta": {
+        "is_pf": -0.04,
+        "is_sharpe": -0.2523,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "ann_days_since_sensitive",
+          "prune_score": 5.9141,
+          "p_value": 0.949,
+          "instability": 53.011,
+          "sign_pct": 53.8,
+          "reason": "p=0.95 insig, instability=53.01, sign=54%"
+        },
+        {
+          "name": "macro_us10yr_mom5d",
+          "prune_score": 2.1898,
+          "p_value": 0.8356,
+          "instability": 16.3357,
+          "sign_pct": 53.8,
+          "reason": "p=0.84 insig, instability=16.34, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "macro_copper_mom20d",
+        "macro_gold_mom5d",
+        "macro_us10yr_mom5d",
+        "macro_vix_mom5d",
+        "parkinson_20d"
+      ],
+      "features_remaining": 90,
+      "metrics": {
+        "is_pf": 0.9071,
+        "is_sharpe": -0.5678,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 90,
+        "n_significant_p05": 34,
+        "n_marginal_p10": 5,
+        "pct_significant": 37.8,
+        "avg_pval": 0.2252,
+        "avg_std_err": 0.000323,
+        "avg_sign_pct": 68.0,
+        "avg_instability": 2.581
+      },
+      "delta": {
+        "is_pf": 0.0065,
+        "is_sharpe": 0.0408,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 5,
+      "pruned_this_round": [
+        {
+          "name": "ix_spread_aud",
+          "prune_score": 1.5439,
+          "p_value": 0.7482,
+          "instability": 10.5445,
+          "sign_pct": 61.5,
+          "reason": "p=0.75 insig, instability=10.54, sign=62%"
+        },
+        {
+          "name": "bb_width_50",
+          "prune_score": 1.4935,
+          "p_value": 0.7374,
+          "instability": 10.0944,
+          "sign_pct": 61.5,
+          "reason": "p=0.74 insig, instability=10.09, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_50",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_spread_aud",
+        "macro_copper_mom20d",
+        "macro_gold_mom5d",
+        "macro_us10yr_mom5d",
+        "macro_vix_mom5d",
+        "parkinson_20d"
+      ],
+      "features_remaining": 88,
+      "metrics": {
+        "is_pf": 0.8531,
+        "is_sharpe": -0.9228,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 88,
+        "n_significant_p05": 35,
+        "n_marginal_p10": 6,
+        "pct_significant": 39.8,
+        "avg_pval": 0.2051,
+        "avg_std_err": 0.00032,
+        "avg_sign_pct": 69.0,
+        "avg_instability": 2.475
+      },
+      "delta": {
+        "is_pf": -0.054,
+        "is_sharpe": -0.355,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "ann_days_since_sensitive",
+    "bb_width_50",
+    "ix_curve_gold",
+    "ix_curve_oil",
+    "ix_spread_aud",
+    "macro_copper_mom20d",
+    "macro_gold_mom5d",
+    "macro_us10yr_mom5d",
+    "macro_vix_mom5d",
+    "parkinson_20d"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}

@@ -1,0 +1,1646 @@
+{
+  "ticker": "AGL.AX",
+  "generated_at": "2026-03-21T22:27:23Z",
+  "baseline_features": 98,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 0.8793,
+        "is_sharpe": -0.7083,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 98,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 4,
+        "pct_significant": 23.5,
+        "avg_pval": 0.3994,
+        "avg_std_err": 0.000433,
+        "avg_sign_pct": 62.1,
+        "avg_instability": 9.313
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "rsi_14",
+          "prune_score": 18.7835,
+          "p_value": 0.9851,
+          "instability": 181.7552,
+          "sign_pct": 61.5,
+          "reason": "p=0.99 insig, instability=181.76, sign=62%"
+        },
+        {
+          "name": "cmf_20",
+          "prune_score": 8.848,
+          "p_value": 0.9671,
+          "instability": 82.2597,
+          "sign_pct": 53.8,
+          "reason": "p=0.97 insig, instability=82.26, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "cmf_20",
+        "rsi_14"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 0.9005,
+        "is_sharpe": -0.5758,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 96,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 3,
+        "pct_significant": 24.0,
+        "avg_pval": 0.3731,
+        "avg_std_err": 0.000435,
+        "avg_sign_pct": 62.6,
+        "avg_instability": 9.022
+      },
+      "delta": {
+        "is_pf": 0.0212,
+        "is_sharpe": 0.1325,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_vix",
+          "prune_score": 20.3639,
+          "p_value": 0.9863,
+          "instability": 197.5536,
+          "sign_pct": 61.5,
+          "reason": "p=0.99 insig, instability=197.55, sign=62%"
+        },
+        {
+          "name": "parkinson_10d",
+          "prune_score": 13.3158,
+          "p_value": 0.9786,
+          "instability": 126.419,
+          "sign_pct": 38.5,
+          "reason": "p=0.98 insig, instability=126.42, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "cmf_20",
+        "ix_curve_vix",
+        "parkinson_10d",
+        "rsi_14"
+      ],
+      "features_remaining": 94,
+      "metrics": {
+        "is_pf": 0.879,
+        "is_sharpe": -0.7091,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 94,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 5,
+        "pct_significant": 22.3,
+        "avg_pval": 0.3618,
+        "avg_std_err": 0.000436,
+        "avg_sign_pct": 63.0,
+        "avg_instability": 46.152
+      },
+      "delta": {
+        "is_pf": -0.0215,
+        "is_sharpe": -0.1333,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "ret_1d",
+          "prune_score": 368.1684,
+          "p_value": 0.9993,
+          "instability": 3675.3025,
+          "sign_pct": 53.8,
+          "reason": "p=1.00 insig, instability=3675.30, sign=54%"
+        },
+        {
+          "name": "bb_zscore",
+          "prune_score": 18.3951,
+          "p_value": 0.9848,
+          "instability": 177.6426,
+          "sign_pct": 53.8,
+          "reason": "p=0.98 insig, instability=177.64, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "ix_curve_vix",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14"
+      ],
+      "features_remaining": 92,
+      "metrics": {
+        "is_pf": 0.8688,
+        "is_sharpe": -0.7751,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 92,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 5,
+        "pct_significant": 22.8,
+        "avg_pval": 0.3768,
+        "avg_std_err": 0.00044,
+        "avg_sign_pct": 62.7,
+        "avg_instability": 5.648
+      },
+      "delta": {
+        "is_pf": -0.0102,
+        "is_sharpe": -0.066,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "season_score",
+          "prune_score": 12.4245,
+          "p_value": 0.977,
+          "instability": 117.5142,
+          "sign_pct": 38.5,
+          "reason": "p=0.98 insig, instability=117.51, sign=38%"
+        },
+        {
+          "name": "macro_aud_vol20d",
+          "prune_score": 3.1839,
+          "p_value": 0.8952,
+          "instability": 25.7473,
+          "sign_pct": 46.2,
+          "reason": "p=0.90 insig, instability=25.75, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "ix_curve_vix",
+        "macro_aud_vol20d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score"
+      ],
+      "features_remaining": 90,
+      "metrics": {
+        "is_pf": 0.8568,
+        "is_sharpe": -0.8517,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 90,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 5,
+        "pct_significant": 24.4,
+        "avg_pval": 0.333,
+        "avg_std_err": 0.000439,
+        "avg_sign_pct": 62.6,
+        "avg_instability": 5.13
+      },
+      "delta": {
+        "is_pf": -0.012,
+        "is_sharpe": -0.0766,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 5,
+      "pruned_this_round": [
+        {
+          "name": "macro_au2yr_mom5d",
+          "prune_score": 8.4421,
+          "p_value": 0.9654,
+          "instability": 78.2089,
+          "sign_pct": 53.8,
+          "reason": "p=0.97 insig, instability=78.21, sign=54%"
+        },
+        {
+          "name": "up_vol_ratio_20d",
+          "prune_score": 3.5458,
+          "p_value": 0.9079,
+          "instability": 29.3034,
+          "sign_pct": 46.2,
+          "reason": "p=0.91 insig, instability=29.30, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "ix_curve_vix",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d"
+      ],
+      "features_remaining": 88,
+      "metrics": {
+        "is_pf": 0.851,
+        "is_sharpe": -0.8889,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 88,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 4,
+        "pct_significant": 26.1,
+        "avg_pval": 0.337,
+        "avg_std_err": 0.00044,
+        "avg_sign_pct": 64.1,
+        "avg_instability": 4.189
+      },
+      "delta": {
+        "is_pf": -0.0058,
+        "is_sharpe": -0.0372,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 6,
+      "pruned_this_round": [
+        {
+          "name": "ix_ann_gold",
+          "prune_score": 4.0093,
+          "p_value": 0.9186,
+          "instability": 33.192,
+          "sign_pct": 23.1,
+          "reason": "p=0.92 insig, instability=33.19, sign=23%"
+        },
+        {
+          "name": "macro_dxy_mom5d",
+          "prune_score": 2.4416,
+          "p_value": 0.8531,
+          "instability": 18.3042,
+          "sign_pct": 38.5,
+          "reason": "p=0.85 insig, instability=18.30, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_dxy_mom5d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d"
+      ],
+      "features_remaining": 86,
+      "metrics": {
+        "is_pf": 0.8494,
+        "is_sharpe": -0.8993,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 86,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 6,
+        "pct_significant": 25.6,
+        "avg_pval": 0.3443,
+        "avg_std_err": 0.000442,
+        "avg_sign_pct": 63.7,
+        "avg_instability": 3.566
+      },
+      "delta": {
+        "is_pf": -0.0016,
+        "is_sharpe": -0.0104,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 7,
+      "pruned_this_round": [
+        {
+          "name": "upper_wick_pct",
+          "prune_score": 2.316,
+          "p_value": 0.8448,
+          "instability": 17.3206,
+          "sign_pct": 46.2,
+          "reason": "p=0.84 insig, instability=17.32, sign=46%"
+        },
+        {
+          "name": "eff_ratio_20",
+          "prune_score": 1.7239,
+          "p_value": 0.7733,
+          "instability": 11.7571,
+          "sign_pct": 46.2,
+          "reason": "p=0.77 insig, instability=11.76, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_dxy_mom5d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 84,
+      "metrics": {
+        "is_pf": 0.8742,
+        "is_sharpe": -0.7405,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 84,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 5,
+        "pct_significant": 27.4,
+        "avg_pval": 0.3245,
+        "avg_std_err": 0.000446,
+        "avg_sign_pct": 63.9,
+        "avg_instability": 3.388
+      },
+      "delta": {
+        "is_pf": 0.0248,
+        "is_sharpe": 0.1588,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 8,
+      "pruned_this_round": [
+        {
+          "name": "macro_copper_gold_ratio",
+          "prune_score": 1.7113,
+          "p_value": 0.7711,
+          "instability": 11.6425,
+          "sign_pct": 46.2,
+          "reason": "p=0.77 insig, instability=11.64, sign=46%"
+        },
+        {
+          "name": "macro_us10yr_mom20d",
+          "prune_score": 1.6991,
+          "p_value": 0.773,
+          "instability": 11.741,
+          "sign_pct": 53.8,
+          "reason": "p=0.77 insig, instability=11.74, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_us10yr_mom20d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 82,
+      "metrics": {
+        "is_pf": 0.8676,
+        "is_sharpe": -0.7824,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 82,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 6,
+        "pct_significant": 25.6,
+        "avg_pval": 0.3206,
+        "avg_std_err": 0.000446,
+        "avg_sign_pct": 64.6,
+        "avg_instability": 3.16
+      },
+      "delta": {
+        "is_pf": -0.0066,
+        "is_sharpe": -0.0419,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 9,
+      "pruned_this_round": [
+        {
+          "name": "lower_wick_pct",
+          "prune_score": 1.8293,
+          "p_value": 0.7968,
+          "instability": 13.1552,
+          "sign_pct": 61.5,
+          "reason": "p=0.80 insig, instability=13.16, sign=62%"
+        },
+        {
+          "name": "buy_sell_ratio_5d",
+          "prune_score": 1.4407,
+          "p_value": 0.7077,
+          "instability": 9.0227,
+          "sign_pct": 38.5,
+          "reason": "p=0.71 insig, instability=9.02, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_us10yr_mom20d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 80,
+      "metrics": {
+        "is_pf": 0.8573,
+        "is_sharpe": -0.848,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 80,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 7,
+        "pct_significant": 27.5,
+        "avg_pval": 0.2988,
+        "avg_std_err": 0.000446,
+        "avg_sign_pct": 64.8,
+        "avg_instability": 2.991
+      },
+      "delta": {
+        "is_pf": -0.0103,
+        "is_sharpe": -0.0656,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 10,
+      "pruned_this_round": [
+        {
+          "name": "ix_yield_gold",
+          "prune_score": 1.5496,
+          "p_value": 0.7446,
+          "instability": 10.3887,
+          "sign_pct": 53.8,
+          "reason": "p=0.74 insig, instability=10.39, sign=54%"
+        },
+        {
+          "name": "ix_vix_momentum",
+          "prune_score": 1.4041,
+          "p_value": 0.7103,
+          "instability": 9.1049,
+          "sign_pct": 53.8,
+          "reason": "p=0.71 insig, instability=9.10, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_us10yr_mom20d",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 78,
+      "metrics": {
+        "is_pf": 0.8526,
+        "is_sharpe": -0.8783,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 78,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 6,
+        "pct_significant": 26.9,
+        "avg_pval": 0.2836,
+        "avg_std_err": 0.00045,
+        "avg_sign_pct": 65.1,
+        "avg_instability": 2.832
+      },
+      "delta": {
+        "is_pf": -0.0047,
+        "is_sharpe": -0.0303,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 11,
+      "pruned_this_round": [
+        {
+          "name": "body_pct",
+          "prune_score": 1.3724,
+          "p_value": 0.708,
+          "instability": 9.0302,
+          "sign_pct": 61.5,
+          "reason": "p=0.71 insig, instability=9.03, sign=62%"
+        },
+        {
+          "name": "macro_yield_curve",
+          "prune_score": 1.2631,
+          "p_value": 0.6612,
+          "instability": 7.7101,
+          "sign_pct": 46.2,
+          "reason": "p=0.66 insig, instability=7.71, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_curve_vix",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_us10yr_mom20d",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 76,
+      "metrics": {
+        "is_pf": 0.9055,
+        "is_sharpe": -0.5459,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 76,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 8,
+        "pct_significant": 28.9,
+        "avg_pval": 0.2667,
+        "avg_std_err": 0.000452,
+        "avg_sign_pct": 66.4,
+        "avg_instability": 2.721
+      },
+      "delta": {
+        "is_pf": 0.0529,
+        "is_sharpe": 0.3324,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 12,
+      "pruned_this_round": [
+        {
+          "name": "vol_zscore_20",
+          "prune_score": 1.3441,
+          "p_value": 0.687,
+          "instability": 8.391,
+          "sign_pct": 46.2,
+          "reason": "p=0.69 insig, instability=8.39, sign=46%"
+        },
+        {
+          "name": "ix_copper_gold_curve",
+          "prune_score": 1.3128,
+          "p_value": 0.6774,
+          "instability": 8.126,
+          "sign_pct": 46.2,
+          "reason": "p=0.68 insig, instability=8.13, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_vix",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_us10yr_mom20d",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 74,
+      "metrics": {
+        "is_pf": 0.8538,
+        "is_sharpe": -0.8684,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 74,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 5,
+        "pct_significant": 31.1,
+        "avg_pval": 0.2742,
+        "avg_std_err": 0.000454,
+        "avg_sign_pct": 65.7,
+        "avg_instability": 2.629
+      },
+      "delta": {
+        "is_pf": -0.0517,
+        "is_sharpe": -0.3225,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 13,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_oil",
+          "prune_score": 1.336,
+          "p_value": 0.6914,
+          "instability": 8.5185,
+          "sign_pct": 53.8,
+          "reason": "p=0.69 insig, instability=8.52, sign=54%"
+        },
+        {
+          "name": "macro_oil_vol20d",
+          "prune_score": 1.2698,
+          "p_value": 0.6711,
+          "instability": 7.9583,
+          "sign_pct": 53.8,
+          "reason": "p=0.67 insig, instability=7.96, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 72,
+      "metrics": {
+        "is_pf": 0.8755,
+        "is_sharpe": -0.7307,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 72,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 4,
+        "pct_significant": 30.6,
+        "avg_pval": 0.2648,
+        "avg_std_err": 0.000456,
+        "avg_sign_pct": 65.3,
+        "avg_instability": 2.469
+      },
+      "delta": {
+        "is_pf": 0.0217,
+        "is_sharpe": 0.1377,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 14,
+      "pruned_this_round": [
+        {
+          "name": "macro_vix_mom5d",
+          "prune_score": 1.2563,
+          "p_value": 0.6741,
+          "instability": 8.0383,
+          "sign_pct": 61.5,
+          "reason": "p=0.67 insig, instability=8.04, sign=62%"
+        },
+        {
+          "name": "ix_momentum_vol",
+          "prune_score": 1.1576,
+          "p_value": 0.6313,
+          "instability": 7.0349,
+          "sign_pct": 53.8,
+          "reason": "p=0.63 insig, instability=7.03, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "eff_ratio_20",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_momentum_vol",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 70,
+      "metrics": {
+        "is_pf": 0.8436,
+        "is_sharpe": -0.934,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 70,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 4,
+        "pct_significant": 31.4,
+        "avg_pval": 0.2425,
+        "avg_std_err": 0.000453,
+        "avg_sign_pct": 66.9,
+        "avg_instability": 2.283
+      },
+      "delta": {
+        "is_pf": -0.0319,
+        "is_sharpe": -0.2033,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 15,
+      "pruned_this_round": [
+        {
+          "name": "garman_klass_20d",
+          "prune_score": 1.1194,
+          "p_value": 0.616,
+          "instability": 6.7289,
+          "sign_pct": 53.8,
+          "reason": "p=0.62 insig, instability=6.73, sign=54%"
+        },
+        {
+          "name": "donchian_pos_20",
+          "prune_score": 1.0025,
+          "p_value": 0.5631,
+          "instability": 5.8244,
+          "sign_pct": 53.8,
+          "reason": "p=0.56 insig, instability=5.82, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_momentum_vol",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 68,
+      "metrics": {
+        "is_pf": 0.8475,
+        "is_sharpe": -0.9087,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 68,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 7,
+        "pct_significant": 32.4,
+        "avg_pval": 0.22,
+        "avg_std_err": 0.000453,
+        "avg_sign_pct": 67.4,
+        "avg_instability": 2.207
+      },
+      "delta": {
+        "is_pf": 0.0039,
+        "is_sharpe": 0.0253,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 16,
+      "pruned_this_round": [
+        {
+          "name": "close_position",
+          "prune_score": 1.064,
+          "p_value": 0.6024,
+          "instability": 6.4743,
+          "sign_pct": 61.5,
+          "reason": "p=0.60 insig, instability=6.47, sign=62%"
+        },
+        {
+          "name": "macro_vix_regime_30",
+          "prune_score": 1.025,
+          "p_value": 0.5628,
+          "instability": 5.8205,
+          "sign_pct": 46.2,
+          "reason": "p=0.56 insig, instability=5.82, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_momentum_vol",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 66,
+      "metrics": {
+        "is_pf": 0.8446,
+        "is_sharpe": -0.9276,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 66,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 3,
+        "pct_significant": 33.3,
+        "avg_pval": 0.2405,
+        "avg_std_err": 0.000457,
+        "avg_sign_pct": 67.2,
+        "avg_instability": 2.086
+      },
+      "delta": {
+        "is_pf": -0.0029,
+        "is_sharpe": -0.0189,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 17,
+      "pruned_this_round": [
+        {
+          "name": "macro_oil_mom5d",
+          "prune_score": 1.027,
+          "p_value": 0.5638,
+          "instability": 5.8356,
+          "sign_pct": 46.2,
+          "reason": "p=0.56 insig, instability=5.84, sign=46%"
+        },
+        {
+          "name": "macro_oil_mom20d",
+          "prune_score": 0.9846,
+          "p_value": 0.5421,
+          "instability": 5.5203,
+          "sign_pct": 46.2,
+          "reason": "p=0.54 insig, instability=5.52, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_momentum_vol",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 64,
+      "metrics": {
+        "is_pf": 0.8617,
+        "is_sharpe": -0.8176,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 64,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 4,
+        "pct_significant": 34.4,
+        "avg_pval": 0.2203,
+        "avg_std_err": 0.000456,
+        "avg_sign_pct": 67.8,
+        "avg_instability": 1.988
+      },
+      "delta": {
+        "is_pf": 0.0171,
+        "is_sharpe": 0.11,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 18,
+      "pruned_this_round": [
+        {
+          "name": "ix_gold_aud_20d",
+          "prune_score": 0.9886,
+          "p_value": 0.5676,
+          "instability": 5.8941,
+          "sign_pct": 61.5,
+          "reason": "p=0.57 insig, instability=5.89, sign=62%"
+        },
+        {
+          "name": "ix_spread_aud",
+          "prune_score": 0.8909,
+          "p_value": 0.5159,
+          "instability": 5.1753,
+          "sign_pct": 61.5,
+          "reason": "p=0.52 insig, instability=5.18, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud_20d",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 62,
+      "metrics": {
+        "is_pf": 0.9486,
+        "is_sharpe": -0.2893,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 62,
+        "n_significant_p05": 24,
+        "n_marginal_p10": 5,
+        "pct_significant": 38.7,
+        "avg_pval": 0.2089,
+        "avg_std_err": 0.000455,
+        "avg_sign_pct": 69.7,
+        "avg_instability": 1.9
+      },
+      "delta": {
+        "is_pf": 0.0869,
+        "is_sharpe": 0.5283,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 19,
+      "pruned_this_round": [
+        {
+          "name": "vol_cv_20d",
+          "prune_score": 1.0192,
+          "p_value": 0.5822,
+          "instability": 6.127,
+          "sign_pct": 61.5,
+          "reason": "p=0.58 insig, instability=6.13, sign=62%"
+        },
+        {
+          "name": "macro_audjpy_mom5d",
+          "prune_score": 0.9629,
+          "p_value": 0.5428,
+          "instability": 5.53,
+          "sign_pct": 53.8,
+          "reason": "p=0.54 insig, instability=5.53, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud_20d",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_cv_20d",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 60,
+      "metrics": {
+        "is_pf": 0.8888,
+        "is_sharpe": -0.6479,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 60,
+        "n_significant_p05": 23,
+        "n_marginal_p10": 2,
+        "pct_significant": 38.3,
+        "avg_pval": 0.1886,
+        "avg_std_err": 0.000448,
+        "avg_sign_pct": 69.5,
+        "avg_instability": 1.734
+      },
+      "delta": {
+        "is_pf": -0.0598,
+        "is_sharpe": -0.3586,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 20,
+      "pruned_this_round": [
+        {
+          "name": "vol_ratio_5_20",
+          "prune_score": 0.7941,
+          "p_value": 0.4413,
+          "instability": 4.3503,
+          "sign_pct": 53.8,
+          "reason": "p=0.44 insig, instability=4.35, sign=54%"
+        },
+        {
+          "name": "macro_au10yr_mom20d",
+          "prune_score": 0.7464,
+          "p_value": 0.408,
+          "instability": 4.0396,
+          "sign_pct": 53.8,
+          "reason": "p=0.41 insig, instability=4.04, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud_20d",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_cv_20d",
+        "vol_ratio_5_20",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 58,
+      "metrics": {
+        "is_pf": 0.8342,
+        "is_sharpe": -0.9998,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 58,
+        "n_significant_p05": 20,
+        "n_marginal_p10": 5,
+        "pct_significant": 34.5,
+        "avg_pval": 0.241,
+        "avg_std_err": 0.000448,
+        "avg_sign_pct": 67.5,
+        "avg_instability": 1.759
+      },
+      "delta": {
+        "is_pf": -0.0546,
+        "is_sharpe": -0.3519,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 21,
+      "pruned_this_round": [
+        {
+          "name": "ann_days_since_sensitive",
+          "prune_score": 0.8581,
+          "p_value": 0.4053,
+          "instability": 4.0158,
+          "sign_pct": 15.4,
+          "reason": "p=0.41 insig, instability=4.02, sign=15%"
+        },
+        {
+          "name": "bb_width_50",
+          "prune_score": 0.8313,
+          "p_value": 0.5082,
+          "instability": 5.0798,
+          "sign_pct": 76.9,
+          "reason": "p=0.51 insig, instability=5.08, sign=77%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_50",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud_20d",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_cv_20d",
+        "vol_ratio_5_20",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 56,
+      "metrics": {
+        "is_pf": 0.8625,
+        "is_sharpe": -0.8165,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 56,
+        "n_significant_p05": 22,
+        "n_marginal_p10": 3,
+        "pct_significant": 39.3,
+        "avg_pval": 0.2063,
+        "avg_std_err": 0.000449,
+        "avg_sign_pct": 70.4,
+        "avg_instability": 1.662
+      },
+      "delta": {
+        "is_pf": 0.0283,
+        "is_sharpe": 0.1833,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 22,
+      "pruned_this_round": [
+        {
+          "name": "macro_au10yr_mom5d",
+          "prune_score": 0.7621,
+          "p_value": 0.4026,
+          "instability": 3.9924,
+          "sign_pct": 46.2,
+          "reason": "p=0.40 insig, instability=3.99, sign=46%"
+        },
+        {
+          "name": "macro_dxy_mom20d",
+          "prune_score": 0.7551,
+          "p_value": 0.4142,
+          "instability": 4.0953,
+          "sign_pct": 53.8,
+          "reason": "p=0.41 insig, instability=4.10, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_sensitive",
+        "bb_width_50",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_position",
+        "cmf_20",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "ix_ann_gold",
+        "ix_copper_gold_curve",
+        "ix_curve_oil",
+        "ix_curve_vix",
+        "ix_gold_aud_20d",
+        "ix_momentum_vol",
+        "ix_spread_aud",
+        "ix_vix_momentum",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_ratio",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_mom5d",
+        "macro_vix_regime_30",
+        "macro_yield_curve",
+        "parkinson_10d",
+        "ret_1d",
+        "rsi_14",
+        "season_score",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_cv_20d",
+        "vol_ratio_5_20",
+        "vol_zscore_20"
+      ],
+      "features_remaining": 54,
+      "metrics": {
+        "is_pf": 0.8029,
+        "is_sharpe": -1.2106,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 54,
+        "n_significant_p05": 21,
+        "n_marginal_p10": 6,
+        "pct_significant": 38.9,
+        "avg_pval": 0.2199,
+        "avg_std_err": 0.000442,
+        "avg_sign_pct": 68.9,
+        "avg_instability": 1.648
+      },
+      "delta": {
+        "is_pf": -0.0596,
+        "is_sharpe": -0.3941,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "ann_days_since_sensitive",
+    "bb_width_50",
+    "bb_zscore",
+    "body_pct",
+    "buy_sell_ratio_5d",
+    "close_position",
+    "cmf_20",
+    "donchian_pos_20",
+    "eff_ratio_20",
+    "garman_klass_20d",
+    "ix_ann_gold",
+    "ix_copper_gold_curve",
+    "ix_curve_oil",
+    "ix_curve_vix",
+    "ix_gold_aud_20d",
+    "ix_momentum_vol",
+    "ix_spread_aud",
+    "ix_vix_momentum",
+    "ix_yield_gold",
+    "lower_wick_pct",
+    "macro_au10yr_mom20d",
+    "macro_au10yr_mom5d",
+    "macro_au2yr_mom5d",
+    "macro_aud_vol20d",
+    "macro_audjpy_mom5d",
+    "macro_copper_gold_ratio",
+    "macro_dxy_mom20d",
+    "macro_dxy_mom5d",
+    "macro_oil_mom20d",
+    "macro_oil_mom5d",
+    "macro_oil_vol20d",
+    "macro_us10yr_mom20d",
+    "macro_vix_mom5d",
+    "macro_vix_regime_30",
+    "macro_yield_curve",
+    "parkinson_10d",
+    "ret_1d",
+    "rsi_14",
+    "season_score",
+    "up_vol_ratio_20d",
+    "upper_wick_pct",
+    "vol_cv_20d",
+    "vol_ratio_5_20",
+    "vol_zscore_20"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}

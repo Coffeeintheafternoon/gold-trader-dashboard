@@ -1,0 +1,146 @@
+{
+  "ticker": "ORG.AX",
+  "generated_at": "2026-03-21T22:25:59Z",
+  "baseline_features": 98,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 1.1,
+        "is_sharpe": 0.4133,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 98,
+        "n_significant_p05": 24,
+        "n_marginal_p10": 8,
+        "pct_significant": 24.5,
+        "avg_pval": 0.3093,
+        "avg_std_err": 0.000432,
+        "avg_sign_pct": 65.1,
+        "avg_instability": 3.887
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "macro_oil_mom5d",
+          "prune_score": 5.4091,
+          "p_value": 0.9439,
+          "instability": 48.218,
+          "sign_pct": 61.5,
+          "reason": "p=0.94 insig, instability=48.22, sign=62%"
+        },
+        {
+          "name": "macro_copper_gold_ratio",
+          "prune_score": 2.4269,
+          "p_value": 0.8519,
+          "instability": 18.1635,
+          "sign_pct": 38.5,
+          "reason": "p=0.85 insig, instability=18.16, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "macro_copper_gold_ratio",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 1.1142,
+        "is_sharpe": 0.4689,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 96,
+        "n_significant_p05": 24,
+        "n_marginal_p10": 7,
+        "pct_significant": 25.0,
+        "avg_pval": 0.295,
+        "avg_std_err": 0.000437,
+        "avg_sign_pct": 65.4,
+        "avg_instability": 3.537
+      },
+      "delta": {
+        "is_pf": 0.0142,
+        "is_sharpe": 0.0556,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "macro_oil_mom20d",
+          "prune_score": 2.5904,
+          "p_value": 0.8695,
+          "instability": 20.6332,
+          "sign_pct": 69.2,
+          "reason": "p=0.87 insig, instability=20.63, sign=69%"
+        },
+        {
+          "name": "ix_copper_gold_curve",
+          "prune_score": 2.273,
+          "p_value": 0.8451,
+          "instability": 17.3507,
+          "sign_pct": 61.5,
+          "reason": "p=0.85 insig, instability=17.35, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ix_copper_gold_curve",
+        "macro_copper_gold_ratio",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d"
+      ],
+      "features_remaining": 94,
+      "metrics": {
+        "is_pf": 1.0236,
+        "is_sharpe": 0.1014,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 94,
+        "n_significant_p05": 24,
+        "n_marginal_p10": 7,
+        "pct_significant": 25.5,
+        "avg_pval": 0.2865,
+        "avg_std_err": 0.000436,
+        "avg_sign_pct": 64.9,
+        "avg_instability": 3.423
+      },
+      "delta": {
+        "is_pf": -0.0906,
+        "is_sharpe": -0.3675,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": true
+    }
+  ],
+  "final_excluded": [
+    "ix_copper_gold_curve",
+    "macro_copper_gold_ratio",
+    "macro_oil_mom20d",
+    "macro_oil_mom5d"
+  ],
+  "stop_reason": "over_pruned",
+  "params": {
+    "max_rounds": 26,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}
