@@ -363,7 +363,7 @@
       <div class="chart-title">Price Chart — Buy &amp; Sell Signals</div>
       <button id="btn-reset-zoom" onclick="resetTradeChartZoom()" style="font-size:11px;padding:3px 10px;background:#222;border:1px solid #444;color:#9ca3af;border-radius:5px;cursor:pointer">Reset zoom</button>
     </div>
-    <div class="chart-subtitle">Scroll to zoom · drag to pan · Last 365 days of walk-forward OOS trades.</div>
+    <div class="chart-subtitle">Full history · shaded region = in-sample training · Ctrl+scroll to zoom · drag to pan</div>
     <div style="position:relative;height:340px"><canvas id="chart-trade-signals"></canvas></div>
   </div>
 
@@ -1370,33 +1370,86 @@ function buildTradeLog(tradeLog) {
 }
 
 // ── Trade Signal Chart ────────────────────────────────────────────────────────
-function buildTradeSignalChart(priceSeries, tradeLog, clusterPerf) {
-  if(!priceSeries||priceSeries.length<5)return;
+function buildTradeSignalChart(equityCurve, tradeLog, clusterPerf) {
+  if(!equityCurve||equityCurve.length<5)return;
   document.getElementById('quant-trade-chart-panel').style.display='';
+
+  // Full history price from equity curve
+  const priceLabels=equityCurve.map(d=>d.date);
+  const priceValues=equityCurve.map(d=>d.close_price);
+
+  // Find IS→OOS boundary (first bar where strategy is live)
+  const oosBar=equityCurve.find(d=>d.quant_cumlog!=null&&d.quant_cumlog!==0);
+  const oosDate=oosBar?oosBar.date:null;
+  const oosIdx=oosDate?priceLabels.indexOf(oosDate):-1;
+
+  // All trades (full history, no date filter)
+  const allTrades=tradeLog||[];
   const clusterLabelMap={};(clusterPerf||[]).forEach(cp=>{clusterLabelMap[cp.cluster]=cp.label||`Cluster ${cp.cluster}`;});
-  const priceStart=priceSeries[0].date,priceEnd=priceSeries[priceSeries.length-1].date;
-  const visibleTrades=(tradeLog||[]).filter(t=>t.entry_date>=priceStart&&t.entry_date<=priceEnd);
-  const priceLabels=priceSeries.map(p=>p.date),priceValues=priceSeries.map(p=>p.close);
-  const clusterIds=[...new Set(visibleTrades.map(t=>t.cluster).filter(c=>c!=null))].sort();
+  const clusterIds=[...new Set(allTrades.map(t=>t.cluster).filter(c=>c!=null))].sort();
+
   let entryDatasets;
   if(clusterIds.length){
-    // Cluster-coloured entries
     entryDatasets=clusterIds.map(cid=>{
-      const cc=clusterColor(cid),label=clusterLabelMap[cid]||`Cluster ${cid}`;
-      const points=visibleTrades.filter(t=>t.cluster===cid).map(t=>({x:t.entry_date,y:t.entry_price,dir:t.direction,trade:t}));
-      return{type:'scatter',label:`C${cid} Entry`,data:points.map(p=>({x:p.x,y:p.y})),backgroundColor:points.map(p=>p.dir==='long'?cc.text+'ee':'#f472b6ee'),borderColor:points.map(p=>p.dir==='long'?cc.text:'#f472b6'),borderWidth:1,pointStyle:points.map(p=>p.dir==='long'?'triangle':'rectRot'),pointRadius:6,pointHoverRadius:8,_meta:points.map(p=>p.trade)};
+      const cc=clusterColor(cid);
+      const pts=allTrades.filter(t=>t.cluster===cid);
+      return{type:'scatter',label:`C${cid} Entry`,data:pts.map(t=>({x:t.entry_date,y:t.entry_price})),backgroundColor:pts.map(t=>t.direction==='long'?cc.text+'ee':'#f472b6ee'),borderColor:pts.map(t=>t.direction==='long'?cc.text:'#f472b6'),borderWidth:1,pointStyle:pts.map(t=>t.direction==='long'?'triangle':'rectRot'),pointRadius:6,pointHoverRadius:8,_meta:pts};
     });
   } else {
-    // No cluster data — split by direction
-    const longs=visibleTrades.filter(t=>t.direction==='long');
-    const shorts=visibleTrades.filter(t=>t.direction!=='long');
+    const longs=allTrades.filter(t=>t.direction==='long');
+    const shorts=allTrades.filter(t=>t.direction!=='long');
     entryDatasets=[];
     if(longs.length)entryDatasets.push({type:'scatter',label:'Long Entry',data:longs.map(t=>({x:t.entry_date,y:t.entry_price})),backgroundColor:'#22c55eee',borderColor:'#22c55e',borderWidth:1,pointStyle:'triangle',pointRadius:6,pointHoverRadius:8,_meta:longs});
     if(shorts.length)entryDatasets.push({type:'scatter',label:'Short Entry',data:shorts.map(t=>({x:t.entry_date,y:t.entry_price})),backgroundColor:'#f472b6ee',borderColor:'#f472b6',borderWidth:1,pointStyle:'rectRot',pointRadius:6,pointHoverRadius:8,_meta:shorts});
   }
-  const exitDataset={type:'scatter',label:'Exit',data:visibleTrades.map(t=>({x:t.exit_date,y:t.exit_price})),backgroundColor:visibleTrades.map(t=>t.win?'#22c55e55':'#ef444455'),borderColor:visibleTrades.map(t=>t.win?'#22c55eaa':'#ef4444aa'),borderWidth:1,pointStyle:'crossRot',pointRadius:5,pointHoverRadius:7};
+  const exitDataset={type:'scatter',label:'Exit',data:allTrades.map(t=>({x:t.exit_date,y:t.exit_price})),backgroundColor:allTrades.map(t=>t.win?'#22c55e55':'#ef444455'),borderColor:allTrades.map(t=>t.win?'#22c55eaa':'#ef4444aa'),borderWidth:1,pointStyle:'crossRot',pointRadius:5,pointHoverRadius:7,_meta:allTrades};
+
+  // Inline plugin: IS→OOS boundary line + shaded IS region
+  const oosBoundaryPlugin={
+    id:'oos-boundary',
+    beforeDraw(chart){
+      if(oosIdx<0)return;
+      const{ctx,chartArea,scales}=chart;
+      const xPos=scales.x.getPixelForValue(oosIdx);
+      if(xPos<chartArea.left||xPos>chartArea.right)return;
+      // Shade IS region
+      ctx.save();
+      ctx.fillStyle='rgba(255,255,255,0.03)';
+      ctx.fillRect(chartArea.left,chartArea.top,xPos-chartArea.left,chartArea.height);
+      // Dashed vertical line
+      ctx.strokeStyle='#6366f188';
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([5,4]);
+      ctx.beginPath();ctx.moveTo(xPos,chartArea.top);ctx.lineTo(xPos,chartArea.bottom);ctx.stroke();
+      // Label
+      ctx.setLineDash([]);
+      ctx.fillStyle='#6366f1';
+      ctx.font='bold 10px sans-serif';
+      ctx.fillText('IS',xPos-18,chartArea.top+13);
+      ctx.fillStyle='#22c55e';
+      ctx.fillText('OOS →',xPos+4,chartArea.top+13);
+      ctx.restore();
+    }
+  };
+
   const ctx=document.getElementById('chart-trade-signals').getContext('2d');
-  _tradeSignalChart=new Chart(ctx,{data:{labels:priceLabels,datasets:[{type:'line',label:'Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0.2,fill:false,yAxisID:'y',order:10},...entryDatasets,exitDataset]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:true,labels:{color:'#9ca3af',boxWidth:12,padding:10}},tooltip:{callbacks:{label(ctx){if(ctx.dataset.label==='Close')return` Price: $${ctx.parsed.y.toFixed(2)}`;const trade=(ctx.dataset._meta||[])[ctx.dataIndex];if(trade)return[` ${trade.direction.toUpperCase()} entry @ $${trade.entry_price}`,` Exit @ $${trade.exit_price}  (${trade.return_pct>0?'+':''}${trade.return_pct}%)`,` ${trade.bars} bars  ${trade.win?'✓ Win':'✗ Loss'}`];return` Exit @ $${ctx.parsed.y.toFixed(2)}`; }}},zoom:{pan:{enabled:true,mode:'x'},zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'}}},scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:10},grid:{color:'#ffffff08'}},y:{ticks:{color:'#6b7280',callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff08'},position:'left'}}}});
+  _tradeSignalChart=new Chart(ctx,{
+    plugins:[oosBoundaryPlugin],
+    data:{labels:priceLabels,datasets:[{type:'line',label:'Close',data:priceValues,borderColor:'#d4af37',borderWidth:1.5,pointRadius:0,tension:0,fill:false,yAxisID:'y',order:10},...entryDatasets,exitDataset]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},
+      plugins:{
+        legend:{display:true,labels:{color:'#9ca3af',boxWidth:12,padding:10}},
+        tooltip:{callbacks:{label(c){
+          if(c.dataset.label==='Close')return` Price: $${c.parsed.y.toFixed(2)}`;
+          const trade=(c.dataset._meta||[])[c.dataIndex];
+          if(trade)return[` ${trade.direction.toUpperCase()} entry @ $${trade.entry_price}`,` Exit @ $${trade.exit_price}  (${trade.return_pct>0?'+':''}${trade.return_pct}%)`,` ${trade.bars} bars  ${trade.win?'✓ Win':'✗ Loss'}`];
+          return` Exit @ $${c.parsed.y.toFixed(2)}`;
+        }}},
+        zoom:{pan:{enabled:true,mode:'x'},zoom:{wheel:{enabled:true,modifierKey:'ctrl'},pinch:{enabled:true},mode:'x'}}
+      },
+      scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:12},grid:{color:'#ffffff08'}},y:{ticks:{color:'#6b7280',callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff08'},position:'left'}}
+    }
+  });
 }
 
 // ── Cluster Rules Panel ───────────────────────────────────────────────────────
@@ -1609,7 +1662,7 @@ async function loadQuantPanels() {
     buildMonthlyCalendar(qd.equity_curve||[]);
     buildLongShortBreakdown(qd.long_short||{});
     buildModelMetrics(qd.equity_curve||[],qd.strategies||[],qd.trade_log||[],qd);
-    buildTradeSignalChart(qd.price_series||[],qd.trade_log||[],qd.cluster_performance||[]);
+    buildTradeSignalChart(qd.equity_curve||[],qd.trade_log||[],qd.cluster_performance||[]);
     buildClusterRulesPanel(qd.cluster_performance||[]);
     buildTradeLog(qd.trade_log||[]);
   }, 0);
