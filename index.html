@@ -1929,6 +1929,7 @@ let _mlEquityChart = null;
 let _mlRollingChart = null;
 let _mlPriceChart  = null;
 let _mlPriceLabels = [];
+let _mlPriceDateToY = {};
 let _mlActiveTradeRow = null;
 let _mlFeatChart = null;
 let _mlStabilityChart = null;
@@ -2304,6 +2305,9 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
   const hoLabels = priceHO.map(p => p.date);
   const allLabels = [...isLabels, ...hoLabels];
   _mlPriceLabels = allLabels;
+  _mlPriceDateToY = {};
+  priceIS.forEach(p => { _mlPriceDateToY[p.date] = p.close; });
+  priceHO.forEach(p => { _mlPriceDateToY[p.date] = p.close; });
   const hoStartDate = priceHO.length > 0 ? priceHO[0].date : null;
 
   // IS price dataset (index-aligned to allLabels)
@@ -2394,6 +2398,15 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
         { label: 'Loss Exit', data: lossExits, type: 'scatter',
           borderColor: '#ff2020', backgroundColor: 'transparent',
           pointStyle: 'crossRot', borderWidth: 2, pointRadius: 5, showLine: false },
+        // Highlight rings — populated by mlZoomToTrade (datasets[6] entry, [7] exit)
+        { label: '', data: [], type: 'scatter',
+          borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.12)',
+          pointStyle: 'circle', borderWidth: 2.5, pointRadius: 14, pointHoverRadius: 14,
+          showLine: false, order: -1 },
+        { label: '', data: [], type: 'scatter',
+          borderColor: '#f5a520', backgroundColor: 'rgba(245,165,32,0.18)',
+          pointStyle: 'circle', borderWidth: 2.5, pointRadius: 14, pointHoverRadius: 14,
+          showLine: false, order: -1 },
       ]
     },
     plugins: [hoShadePlugin],
@@ -2458,19 +2471,26 @@ function buildMLTradeLog(tradesIS) {
   }).join('');
 }
 
-// ── Trade zoom: click row → zoom price chart to that trade ────────────────────
+// ── Trade zoom: click row → zoom + highlight trade on price chart ─────────────
+function _mlClearTradeHighlight() {
+  if (!_mlPriceChart) return;
+  _mlPriceChart.data.datasets[6].data = [];
+  _mlPriceChart.data.datasets[7].data = [];
+  _mlPriceChart.update('none');
+}
+
 function mlZoomToTrade(row, entryDate, exitDate) {
   // Deactivate previous row
   if (_mlActiveTradeRow && _mlActiveTradeRow !== row) {
     _mlActiveTradeRow.classList.remove('ml-trade-active');
     _mlActiveTradeRow.style.background = _mlActiveTradeRow._origBg || '';
   }
-  // Toggle active on clicked row
+  // Toggle: click same row again → deselect
   if (_mlActiveTradeRow === row) {
     row.classList.remove('ml-trade-active');
     row.style.background = row._origBg || '';
     _mlActiveTradeRow = null;
-    if (_mlPriceChart) _mlPriceChart.resetZoom();
+    if (_mlPriceChart) { _mlPriceChart.resetZoom(); _mlClearTradeHighlight(); }
     return;
   }
   row._origBg = row.style.background;
@@ -2478,11 +2498,18 @@ function mlZoomToTrade(row, entryDate, exitDate) {
   row.style.background = '#1e2d1e';
   _mlActiveTradeRow = row;
 
-  // Scroll trade row into view
   row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 
-  // Zoom chart
   if (!_mlPriceChart || !_mlPriceLabels.length) return;
+
+  // Highlight entry ring (dataset 6) and exit ring (dataset 7)
+  const entryY = _mlPriceDateToY[entryDate];
+  const exitY  = _mlPriceDateToY[exitDate];
+  _mlPriceChart.data.datasets[6].data = entryY != null ? [{x: entryDate, y: entryY}] : [];
+  _mlPriceChart.data.datasets[7].data = exitY  != null ? [{x: exitDate,  y: exitY}]  : [];
+  _mlPriceChart.update('none');
+
+  // Zoom to trade window
   const ei = _mlPriceLabels.indexOf(entryDate);
   const xi = _mlPriceLabels.indexOf(exitDate);
   if (ei < 0) return;
