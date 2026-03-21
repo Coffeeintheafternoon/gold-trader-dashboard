@@ -427,6 +427,16 @@
           <div style="position:relative;height:140px"><canvas id="ml-dur-ret-chart"></canvas></div>
         </div>
       </div>
+      <!-- Trade Concentration (full width) -->
+      <div style="margin-top:14px">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">P&L Concentration — Trade Weight</div>
+          <div id="ml-conc-label" style="font-size:11px;color:#6b7280"></div>
+        </div>
+        <div style="position:relative;height:160px;overflow-x:auto">
+          <canvas id="ml-conc-chart"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- Trade Log -->
@@ -2549,7 +2559,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
 }
 
 // ── Trade Analytics ────────────────────────────────────────────────────────────
-let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null;
+let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null;
 
 function buildMLTradeAnalytics(tradesIS) {
   const card = document.getElementById('ml-trade-analytics-card');
@@ -2560,6 +2570,7 @@ function buildMLTradeAnalytics(tradesIS) {
   if (_mlMonthlyChart) { _mlMonthlyChart.destroy(); _mlMonthlyChart = null; }
   if (_mlRetDistChart) { _mlRetDistChart.destroy(); _mlRetDistChart = null; }
   if (_mlDurRetChart)  { _mlDurRetChart.destroy();  _mlDurRetChart  = null; }
+  if (_mlConcChart)    { _mlConcChart.destroy();    _mlConcChart    = null; }
 
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
@@ -2651,6 +2662,65 @@ function buildMLTradeAnalytics(tradesIS) {
         x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color: '#6b7280', font: { size: 10 } } },
         y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border: { display: false },
              title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // ── 4. P&L Concentration ────────────────────────────────────────────────────
+  // Sort trades by absolute return descending — biggest movers first
+  const sorted = [...tradesIS].sort((a,b) => Math.abs(b.return_pct) - Math.abs(a.return_pct));
+  const totalGross = sorted.reduce((a,t) => a + Math.abs(t.return_pct), 0);
+  const concLabels = sorted.map((_,i) => `#${i+1}`);
+  const concBars   = sorted.map(t => +(t.return_pct).toFixed(2));
+  const concColors = sorted.map(t => t.win ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)');
+  const concBorder = sorted.map(t => t.win ? '#00ff41' : '#ff5050');
+
+  // Cumulative % of total gross P&L (right axis)
+  let cumAbs = 0;
+  const cumPct = sorted.map(t => { cumAbs += Math.abs(t.return_pct); return +(cumAbs / totalGross * 100).toFixed(1); });
+
+  // Concentration label: top-N trades covering 80% of gross P&L
+  const top80 = cumPct.findIndex(v => v >= 80) + 1;
+  const top1Pct = totalGross > 0 ? (Math.abs(sorted[0].return_pct) / totalGross * 100).toFixed(0) : 0;
+  const concLabelEl = document.getElementById('ml-conc-label');
+  if (concLabelEl) {
+    const flag = top80 <= 3 ? '⚠ concentrated' : top80 <= Math.round(tradesIS.length * 0.2) ? 'moderate' : 'well spread';
+    concLabelEl.textContent = `Top ${top80} trade${top80>1?'s':''} = 80% of gross P&L  ·  largest trade = ${top1Pct}% of gross  ·  ${flag}`;
+    concLabelEl.style.color = top80 <= 3 ? '#ff6b6b' : top80 <= 5 ? '#f5a520' : '#6b7280';
+  }
+
+  // Size canvas dynamically — 18px per bar, min 400px
+  const concW = Math.max(400, sorted.length * 18);
+  const concCanvas = document.getElementById('ml-conc-chart');
+  concCanvas.style.width  = concW + 'px';
+  concCanvas.style.height = '150px';
+  concCanvas.width  = concW * window.devicePixelRatio;
+  concCanvas.height = 150  * window.devicePixelRatio;
+
+  _mlConcChart = new Chart(concCanvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: concLabels,
+      datasets: [
+        { label: 'Trade return %', data: concBars, backgroundColor: concColors, borderColor: concBorder, borderWidth: 1, borderRadius: 2, yAxisID: 'yRet', order: 2 },
+        { label: 'Cumulative % of gross P&L', data: cumPct, type: 'line', borderColor: '#f5a520', borderWidth: 2, pointRadius: 0, tension: 0.2, yAxisID: 'yCum', order: 1, fill: false }
+      ]
+    },
+    options: {
+      responsive: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+        tooltip: { callbacks: {
+          label: ctx => ctx.datasetIndex === 0
+            ? ` ${sorted[ctx.dataIndex].entry_date} → ${sorted[ctx.dataIndex].exit_date}: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw}%`
+            : ` Cumulative: ${ctx.raw}% of gross P&L`
+        }}
+      },
+      scales: {
+        x:    { ticks: { ...axStyle, maxRotation: 0 }, grid: { display: false } },
+        yRet: { position: 'left',  ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } },
+        yCum: { position: 'right', min: 0, max: 100, ticks: { ...axStyle, callback: v => v+'%' }, grid: { display: false }, title: { display: true, text: 'Cumul. gross', color: '#f5a520', font: { size: 10 } } }
       }
     }
   });
