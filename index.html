@@ -2648,6 +2648,102 @@ function _mlStabApplyMetricVisibility() {
   _mlStabilityChart.update();
 }
 
+// ── Feature glossary — full name + one-line description for every feature ──────
+const _FEAT_GLOSSARY = {
+  // ── Momentum / Price ──────────────────────────────────────────────────────
+  rsi_14:              ["RSI 14",               "Relative Strength Index (14-bar). Momentum oscillator 0–100. >70 = overbought, <30 = oversold."],
+  ret_1d:              ["Return 1-day",          "Yesterday's log return. Immediate short-term price change."],
+  ret_5d:              ["Return 5-day",          "5-day (1-week) log return. Short-term momentum."],
+  ret_20d:             ["Return 20-day",         "20-day (1-month) log return. Medium-term trend direction."],
+  ret_60d:             ["Return 60-day",         "60-day (3-month) log return. Intermediate trend."],
+  ret_126d:            ["Return 126-day",        "126-day (6-month) log return. Classic momentum factor used in factor investing."],
+  ret_252d:            ["Return 252-day",        "252-day (1-year) log return. Full-year price momentum."],
+  price_fd_short:      ["Price Frac-Diff Short", "Fractionally-differenced log price (d=0.3). Long memory (~100-bar decay) short-term signal. Replaces ret_2d / ret_7d."],
+  price_fd_long:       ["Price Frac-Diff Long",  "Fractionally-differenced log price (d=0.5). Medium memory (~50-bar decay) signal. Replaces ret_6bar."],
+  close_vs_ma50:       ["Close vs MA50",         "How far today's close sits above/below the 50-day moving average, as a %. Trend positioning."],
+  close_vs_ma200:      ["Close vs MA200",        "How far today's close sits above/below the 200-day moving average. Long-run trend positioning."],
+  ma50_vs_ma200:       ["MA50 vs MA200",         "Gap between 50-day and 200-day MA. Positive = golden cross (uptrend), negative = death cross."],
+  bb_zscore:           ["Bollinger Z-Score",     "How many standard deviations price is from its 20-day mean. +2 = upper band, −2 = lower band."],
+  bb_width_20:         ["Bollinger Width",       "Width of Bollinger Bands relative to centre. High = volatile expanding range, low = tight coil before breakout."],
+  donchian_pos_20:     ["Donchian Position",     "Where today's price sits in the 20-day highest-high / lowest-low channel. 1 = at the high, 0 = at the low."],
+  slope_5d:            ["Price Slope 5-day",     "Linear regression slope of price over last 5 bars, normalised. Direction and steepness of very recent move."],
+  slope_20d:           ["Price Slope 20-day",    "Linear regression slope of price over last 20 bars, normalised. Direction and steepness of medium-term move."],
+  ma_cross_sig:        ["MA Cross Signal",       "Binary: +1 when 50-day MA is above 200-day MA (uptrend), −1 when below (downtrend). Golden/death cross detector."],
+  hurst_20:            ["Hurst 20-bar",          "Hurst exponent over 20 bars. >0.5 = trending (momentum works), <0.5 = mean-reverting, =0.5 = random walk."],
+  hurst_100:           ["Hurst 100-bar",         "Hurst exponent over 100 bars. Longer-term measure of whether the stock trends or oscillates."],
+  eff_ratio_20:        ["Efficiency Ratio 20",   "Kaufman Efficiency Ratio (20-bar). How efficiently price moved in one direction. 1 = perfectly trended, 0 = pure noise."],
+  eff_ratio_60:        ["Efficiency Ratio 60",   "Kaufman Efficiency Ratio (60-bar). Same measure over a longer horizon."],
+  eff_ratio_short:     ["Efficiency Ratio Short","Efficiency Ratio short window. Captures short-horizon trend quality."],
+  eff_ratio_long:      ["Efficiency Ratio Long", "Efficiency Ratio long window. Captures sustained trend quality."],
+  season_score:        ["Seasonality Score",     "Gold-specific seasonal bias score based on calendar month. E.g. gold tends to be stronger in Q1."],
+  season_gold:         ["Seasonality Gold",      "Gold calendar seasonality factor. Higher = historically bullish month for gold."],
+  adx_14:              ["ADX 14",                "Average Directional Index (14-bar). Measures TREND STRENGTH, not direction. >25 = strong trend, <20 = ranging/choppy market."],
+  trend_regime:        ["Trend Regime",          "Composite trend label from ADX + MA alignment. Encodes whether market is trending or range-bound."],
+  // ── Volatility ───────────────────────────────────────────────────────────
+  atr_14_pct:          ["ATR 14 %",              "Average True Range over 14 bars as % of price. How much the stock moves day-to-day. High = bigger swings."],
+  vol_fd:              ["Volatility Frac-Diff",  "Fractionally-differenced log realised volatility (d=0.4). Replaces vol_5d and vol_20d — single feature with power-law memory decay."],
+  vol_ratio:           ["Vol Ratio Short/Long",  "Ratio of 5-day to 20-day realised volatility. >1 = volatility expanding (regime change), <1 = contracting (calm)."],
+  vol_60d:             ["Volatility 60-day",     "Realised volatility (annualised) over 60 trading days. Medium-term vol level."],
+  vol_252d:            ["Volatility 252-day",    "Realised volatility (annualised) over 1 year. The long-run baseline vol for this stock."],
+  vol_z_score:         ["Volatility Z-Score",    "How unusual today's short-term vol is versus the 1-year baseline. +2 = stress event, −2 = unusually calm."],
+  vol_zscore_20:       ["Volume Z-Score 20",     "How unusual today's traded VOLUME is versus its 20-day average. High = abnormal activity / news event."],
+  vol_ratio_5_20:      ["Volume Ratio 5/20",     "5-day average volume divided by 20-day average volume. >1 = volume picking up, <1 = drying up."],
+  vol_trend_60d:       ["Volume Trend 60-day",   "Normalised slope of volume over 60 days. Is liquidity structurally growing or shrinking in this stock?"],
+  vol_cv_20d:          ["Volume CV 20-day",      "Coefficient of variation of volume (std/mean). High = erratic volume pattern, often signals informed trading."],
+  // ── Volume & Order Flow ───────────────────────────────────────────────────
+  volume_ratio:        ["Volume Ratio",          "Today's volume divided by its rolling average. >1 = unusually active day."],
+  up_vol_ratio_20d:    ["Up-Volume Ratio 20d",   "% of 20-day total volume that occurred on up-bars (close ≥ open). High = buying dominates."],
+  dollar_vol_zscore:   ["Dollar Volume Z-Score", "Z-score of price × volume over 60 days. Captures size-adjusted trading activity — useful for small-caps."],
+  buy_vol_fd:          ["Buy Volume Frac-Diff",  "Fractionally-differenced log buyer volume (d=0.4). Buyer vol = close-position × volume. Replaces buy_vol_5/10/20d."],
+  sell_vol_fd:         ["Sell Volume Frac-Diff", "Fractionally-differenced log seller volume (d=0.4). Seller vol = (1 − close-position) × volume. Replaces sell_vol_5/10/20d."],
+  buy_vol_chg_fd:      ["Buy Vol Change FD",     "Frac-diff of log(short-term buy vol / 20d baseline). Is buying pressure accelerating? Replaces buy_vol_chg_5/10d."],
+  sell_vol_chg_fd:     ["Sell Vol Change FD",    "Frac-diff of log(short-term sell vol / 20d baseline). Is selling pressure accelerating? Replaces sell_vol_chg_5/10d."],
+  buy_sell_ratio_5d:   ["Buy/Sell Ratio 5d",     "5-day buyer volume ÷ 5-day seller volume. >1 = buyers winning the day, <1 = sellers dominating."],
+  buy_sell_ratio_chg:  ["Buy/Sell Ratio Change", "5-day buy/sell ratio ÷ 20-day ratio − 1. Is the balance of power shifting toward buyers or sellers?"],
+  distribution_signal: ["Distribution Signal",   "Large volume + price gave back most of its range. High = sellers absorbed buyers = possible pullback ahead."],
+  cmf_20:              ["Chaikin Money Flow 20", "Standard institutional buy/sell pressure indicator over 20 days. +1 = sustained buying, −1 = sustained distribution."],
+  mfi_14:              ["Money Flow Index 14",   "Volume-weighted RSI over 14 bars. >80 = overbought with high volume, <20 = oversold with high volume."],
+  // ── Candle Structure ──────────────────────────────────────────────────────
+  candle_body_pct:     ["Candle Body %",         "Body size (|Open−Close|) as % of the full candle range. Small = indecision / doji. Large = conviction."],
+  candle_upper_shadow: ["Upper Shadow",          "Upper wick length as % of range. Large = price tried to go higher but was rejected (bearish resistance)."],
+  candle_lower_shadow: ["Lower Shadow",          "Lower wick length as % of range. Large = price tested lower but recovered (bullish support)."],
+  candle_close_pos:    ["Close Position",        "Where the close sits within the day's high−low range (0=at low, 1=at high). High = bullish close."],
+  // ── Macro / DXY / Gold drivers ───────────────────────────────────────────
+  beta_dxy_30:         ["Beta to DXY 30d",       "30-day rolling beta of this stock vs US Dollar Index. Negative = stock rises when USD falls (gold-positive regime)."],
+  macro_dxy_5d:        ["DXY 5-day Return",      "5-day return of the US Dollar Index. Falling USD = tailwind for gold and gold miners."],
+  macro_dxy_20d:       ["DXY 20-day Return",     "20-day return of the US Dollar Index. Longer-term USD trend direction."],
+  macro_gold_usd_5d:   ["Gold USD 5-day",        "5-day return of spot gold in USD terms (GC=F). Direct commodity price input."],
+  macro_gold_usd_20d:  ["Gold USD 20-day",       "20-day return of spot gold in USD. Captures the medium-term gold price cycle."],
+  macro_oil_5d:        ["Oil 5-day Return",      "5-day return of crude oil. Correlated with gold via inflation expectations and risk appetite."],
+  macro_copper_5d:     ["Copper 5-day Return",   "5-day return of copper. Often a leading indicator of global economic activity ('Dr Copper')."],
+  macro_copper_mom5d:  ["Copper Momentum 5d",    "Short-term copper momentum. Copper and gold are both commodity plays — copper leads risk-on."],
+  macro_commodity_tailwind: ["Commodity Tailwind","Composite score of gold, copper, oil all moving in same direction. Strong = favourable macro environment for miners."],
+  macro_audusd_5d:     ["AUD/USD 5-day",         "5-day return of the Australian Dollar. Miners report in AUD — rising AUD compresses AUD gold price."],
+  macro_audusd_20d:    ["AUD/USD 20-day",        "20-day return of AUD/USD. Medium-term FX trend affecting all ASX gold miners' revenue in AUD."],
+  // ── Short Interest (ASIC) ─────────────────────────────────────────────────
+  si_chg_5d:           ["Short Interest Chg 5d", "5-day change in ASIC-reported short interest %. Rising = increasing bearish conviction from shorts."],
+  si_zscore_120d:      ["Short Interest Z-Score","Current short interest vs its 120-day mean/std. High = unusually crowded short position — potential short squeeze."],
+  si_squeeze_flag:     ["Short Squeeze Flag",    "Binary: 1 when price is rising AND short interest is unusually high. Classic short-squeeze setup."],
+  // ── Announcement features ─────────────────────────────────────────────────
+  ann_days_since_drilling:  ["Days Since Drilling",  "Calendar days since the last drilling result announcement. Fresh results = higher information value."],
+  ann_days_since_capital:   ["Days Since Capital",   "Days since last capital raise (placement / rights issue). Recent raises can dilute or signal confidence."],
+  ann_days_since_quarterly: ["Days Since Quarterly", "Days since last quarterly report. Quarterlies move small-cap miners significantly."],
+  ann_days_since_sensitive: ["Days Since Sensitive", "Days since last market-sensitive announcement (ASX flagged). These are the announcements that move price."],
+  ann_drilling_today:       ["Drilling Today",       "Binary: drilling result announced today or yesterday. Highest-impact category for junior miners."],
+  ann_capital_today:        ["Capital Raise Today",  "Binary: capital raise announced today/yesterday. Dilutive = often negative short-term."],
+  ann_quarterly_today:      ["Quarterly Today",      "Binary: quarterly report released today/yesterday. Beat/miss expectations = strong 1–2 day move."],
+  ann_sensitive_today:      ["Sensitive Ann Today",  "Binary: any market-sensitive announcement today/yesterday. Catches all ASX-flagged high-impact releases."],
+  ann_impact_pos_5d:        ["Positive Impact 5d",   "Max positive impact_score in last 5 bars. Recent strongly positive announcements in the window."],
+  ann_impact_neg_5d:        ["Negative Impact 5d",   "Max negative impact_score in last 5 bars. Recent negative/dilutive announcements in the window."],
+  ann_neg_kw_today:         ["Negative Keyword",     "Binary: headline contains words like defer / delay / withdraw / halt. Red-flag language in today's announcement."],
+};
+
+function _featTip(name) {
+  const g = _FEAT_GLOSSARY[name];
+  if (!g) return null;
+  return g[0] + '\n' + g[1];
+}
+
 function mlRenderFeatTable() {
   const annOnly = document.getElementById('ml-ann-only')?.checked;
   let feats = annOnly ? _mlCurrentFeatures.filter(f => f.category === 'announcement') : _mlCurrentFeatures;
@@ -2676,7 +2772,7 @@ function mlRenderFeatTable() {
     const spStr      = sp != null ? sp + '%' : '—';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
       <td style="padding:5px 10px;font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
-      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW}">${f.name}</td>
+      <td style="padding:5px 10px;font-size:11px;color:${nameColor};font-weight:${nameFW};cursor:${_featTip(f.name)?'help':'default'}"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
       <td style="padding:5px 10px;font-size:11px"><span style="color:${catColor};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px">${f.category}</span></td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
