@@ -1,0 +1,869 @@
+{
+  "ticker": "WAF.AX",
+  "generated_at": "2026-03-21T14:41:31Z",
+  "baseline_features": 89,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 89,
+      "metrics": {
+        "is_pf": 1.0599,
+        "is_sharpe": 0.3287,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_gold",
+          "prune_score": 10.6491,
+          "p_value": 0.9697,
+          "instability": 100.33,
+          "sign_pct": 56.2,
+          "reason": "p=0.97 insig, instability=100.33, sign=56%"
+        },
+        {
+          "name": "macro_copper_mom20d",
+          "prune_score": 9.2255,
+          "p_value": 0.9646,
+          "instability": 85.9324,
+          "sign_pct": 50.0,
+          "reason": "p=0.96 insig, instability=85.93, sign=50%"
+        }
+      ],
+      "excluded_total": [
+        "ix_curve_gold",
+        "macro_copper_mom20d"
+      ],
+      "features_remaining": 87,
+      "metrics": {
+        "is_pf": 1.1371,
+        "is_sharpe": 0.7266,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0772,
+        "is_sharpe": 0.3979,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "macro_copper_gold_mom5d",
+          "prune_score": 4.3843,
+          "p_value": 0.9196,
+          "instability": 37.745,
+          "sign_pct": 50.0,
+          "reason": "p=0.92 insig, instability=37.74, sign=50%"
+        },
+        {
+          "name": "macro_gold_mom5d",
+          "prune_score": 3.2324,
+          "p_value": 0.8829,
+          "instability": 25.8472,
+          "sign_pct": 31.2,
+          "reason": "p=0.88 insig, instability=25.85, sign=31%"
+        }
+      ],
+      "excluded_total": [
+        "ix_curve_gold",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_gold_mom5d"
+      ],
+      "features_remaining": 85,
+      "metrics": {
+        "is_pf": 1.0982,
+        "is_sharpe": 0.5299,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0389,
+        "is_sharpe": -0.1967,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "ann_drilling_today",
+          "prune_score": 3.6275,
+          "p_value": 0.9017,
+          "instability": 30.8292,
+          "sign_pct": 68.8,
+          "reason": "p=0.90 insig, instability=30.83, sign=69%"
+        },
+        {
+          "name": "macro_copper_mom5d",
+          "prune_score": 3.2385,
+          "p_value": 0.884,
+          "instability": 26.0901,
+          "sign_pct": 37.5,
+          "reason": "p=0.88 insig, instability=26.09, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ix_curve_gold",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_gold_mom5d"
+      ],
+      "features_remaining": 83,
+      "metrics": {
+        "is_pf": 1.0591,
+        "is_sharpe": 0.3252,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0391,
+        "is_sharpe": -0.2047,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "upper_wick_pct",
+          "prune_score": 2.4745,
+          "p_value": 0.84,
+          "instability": 18.8575,
+          "sign_pct": 43.8,
+          "reason": "p=0.84 insig, instability=18.86, sign=44%"
+        },
+        {
+          "name": "macro_oil_vol20d",
+          "prune_score": 2.4217,
+          "p_value": 0.8357,
+          "instability": 18.3508,
+          "sign_pct": 43.8,
+          "reason": "p=0.84 insig, instability=18.35, sign=44%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ix_curve_gold",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 81,
+      "metrics": {
+        "is_pf": 1.1036,
+        "is_sharpe": 0.5576,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0445,
+        "is_sharpe": 0.2324,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 5,
+      "pruned_this_round": [
+        {
+          "name": "ix_crisis_gold",
+          "prune_score": 4.0644,
+          "p_value": 0.9123,
+          "instability": 34.5828,
+          "sign_pct": 50.0,
+          "reason": "p=0.91 insig, instability=34.58, sign=50%"
+        },
+        {
+          "name": "ix_gold_aud",
+          "prune_score": 2.0189,
+          "p_value": 0.8006,
+          "instability": 15.061,
+          "sign_pct": 62.5,
+          "reason": "p=0.80 insig, instability=15.06, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 79,
+      "metrics": {
+        "is_pf": 1.0616,
+        "is_sharpe": 0.3377,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.042,
+        "is_sharpe": -0.2199,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 6,
+      "pruned_this_round": [
+        {
+          "name": "macro_dxy_mom5d",
+          "prune_score": 1.7491,
+          "p_value": 0.7555,
+          "instability": 12.2139,
+          "sign_pct": 50.0,
+          "reason": "p=0.76 insig, instability=12.21, sign=50%"
+        },
+        {
+          "name": "ret_1d",
+          "prune_score": 1.4208,
+          "p_value": 0.6828,
+          "instability": 9.2938,
+          "sign_pct": 50.0,
+          "reason": "p=0.68 insig, instability=9.29, sign=50%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct"
+      ],
+      "features_remaining": 77,
+      "metrics": {
+        "is_pf": 1.0814,
+        "is_sharpe": 0.4421,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0198,
+        "is_sharpe": 0.1044,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 7,
+      "pruned_this_round": [
+        {
+          "name": "vol_ratio",
+          "prune_score": 1.313,
+          "p_value": 0.6343,
+          "instability": 7.6955,
+          "sign_pct": 26.7,
+          "reason": "p=0.63 insig, instability=7.70, sign=27%"
+        },
+        {
+          "name": "ann_impact_neg_5d",
+          "prune_score": 1.2755,
+          "p_value": 0.6179,
+          "instability": 7.6034,
+          "sign_pct": 31.2,
+          "reason": "p=0.62 insig, instability=7.60, sign=31%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 75,
+      "metrics": {
+        "is_pf": 1.0416,
+        "is_sharpe": 0.2301,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0398,
+        "is_sharpe": -0.212,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 8,
+      "pruned_this_round": [
+        {
+          "name": "lower_wick_pct",
+          "prune_score": 1.2624,
+          "p_value": 0.6399,
+          "instability": 8.1122,
+          "sign_pct": 56.2,
+          "reason": "p=0.64 insig, instability=8.11, sign=56%"
+        },
+        {
+          "name": "macro_dxy_mom20d",
+          "prune_score": 1.1752,
+          "p_value": 0.6154,
+          "instability": 7.5502,
+          "sign_pct": 62.5,
+          "reason": "p=0.62 insig, instability=7.55, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "lower_wick_pct",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 73,
+      "metrics": {
+        "is_pf": 1.0653,
+        "is_sharpe": 0.3573,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0237,
+        "is_sharpe": 0.1272,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 9,
+      "pruned_this_round": [
+        {
+          "name": "macro_au2yr_mom5d",
+          "prune_score": 1.1906,
+          "p_value": 0.5996,
+          "instability": 7.2206,
+          "sign_pct": 43.8,
+          "reason": "p=0.60 insig, instability=7.22, sign=44%"
+        },
+        {
+          "name": "ix_gold_vix",
+          "prune_score": 1.0495,
+          "p_value": 0.5458,
+          "instability": 6.266,
+          "sign_pct": 50.0,
+          "reason": "p=0.55 insig, instability=6.27, sign=50%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 71,
+      "metrics": {
+        "is_pf": 1.0136,
+        "is_sharpe": 0.0763,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0517,
+        "is_sharpe": -0.281,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 10,
+      "pruned_this_round": [
+        {
+          "name": "macro_oil_mom5d",
+          "prune_score": 1.057,
+          "p_value": 0.5582,
+          "instability": 6.4665,
+          "sign_pct": 56.2,
+          "reason": "p=0.56 insig, instability=6.47, sign=56%"
+        },
+        {
+          "name": "ix_copper_gold_curve",
+          "prune_score": 0.9513,
+          "p_value": 0.5153,
+          "instability": 5.8117,
+          "sign_pct": 62.5,
+          "reason": "p=0.52 insig, instability=5.81, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 69,
+      "metrics": {
+        "is_pf": 1.0465,
+        "is_sharpe": 0.2568,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0329,
+        "is_sharpe": 0.1805,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 11,
+      "pruned_this_round": [
+        {
+          "name": "ann_quarterly_today",
+          "prune_score": 0.931,
+          "p_value": 0.4728,
+          "instability": 5.2584,
+          "sign_pct": 43.8,
+          "reason": "p=0.47 insig, instability=5.26, sign=44%"
+        },
+        {
+          "name": "ann_days_since_capital",
+          "prune_score": 0.9289,
+          "p_value": 0.5033,
+          "instability": 5.6476,
+          "sign_pct": 62.5,
+          "reason": "p=0.50 insig, instability=5.65, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_capital",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_quarterly_today",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 67,
+      "metrics": {
+        "is_pf": 1.029,
+        "is_sharpe": 0.1617,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0175,
+        "is_sharpe": -0.0951,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 12,
+      "pruned_this_round": [
+        {
+          "name": "close_position",
+          "prune_score": 1.0644,
+          "p_value": 0.5529,
+          "instability": 6.3793,
+          "sign_pct": 50.0,
+          "reason": "p=0.55 insig, instability=6.38, sign=50%"
+        },
+        {
+          "name": "up_vol_ratio_20d",
+          "prune_score": 0.8662,
+          "p_value": 0.4584,
+          "instability": 4.9071,
+          "sign_pct": 53.3,
+          "reason": "p=0.46 insig, instability=4.91, sign=53%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_capital",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_quarterly_today",
+        "close_position",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 65,
+      "metrics": {
+        "is_pf": 1.073,
+        "is_sharpe": 0.3985,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.044,
+        "is_sharpe": 0.2368,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 13,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_oil_mom5d",
+          "prune_score": 0.8503,
+          "p_value": 0.4582,
+          "instability": 5.0867,
+          "sign_pct": 62.5,
+          "reason": "p=0.46 insig, instability=5.09, sign=62%"
+        },
+        {
+          "name": "ix_yield_gold",
+          "prune_score": 0.7978,
+          "p_value": 0.4005,
+          "instability": 4.4755,
+          "sign_pct": 50.0,
+          "reason": "p=0.40 insig, instability=4.48, sign=50%"
+        }
+      ],
+      "excluded_total": [
+        "ann_days_since_capital",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_quarterly_today",
+        "close_position",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 63,
+      "metrics": {
+        "is_pf": 1.0293,
+        "is_sharpe": 0.1633,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0437,
+        "is_sharpe": -0.2352,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 14,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_vol20d",
+          "prune_score": 0.8943,
+          "p_value": 0.4508,
+          "instability": 5.0019,
+          "sign_pct": 43.8,
+          "reason": "p=0.45 insig, instability=5.00, sign=44%"
+        },
+        {
+          "name": "adx_14",
+          "prune_score": 0.7619,
+          "p_value": 0.3887,
+          "instability": 4.3631,
+          "sign_pct": 56.2,
+          "reason": "p=0.39 insig, instability=4.36, sign=56%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "ann_days_since_capital",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_quarterly_today",
+        "close_position",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au2yr_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_vol20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 61,
+      "metrics": {
+        "is_pf": 1.0965,
+        "is_sharpe": 0.5215,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": 0.0672,
+        "is_sharpe": 0.3582,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 15,
+      "pruned_this_round": [
+        {
+          "name": "macro_au10yr_mom5d",
+          "prune_score": 0.8903,
+          "p_value": 0.4709,
+          "instability": 5.2364,
+          "sign_pct": 56.2,
+          "reason": "p=0.47 insig, instability=5.24, sign=56%"
+        },
+        {
+          "name": "macro_aud_vol20d",
+          "prune_score": 0.7035,
+          "p_value": 0.3606,
+          "instability": 4.1068,
+          "sign_pct": 62.5,
+          "reason": "p=0.36 insig, instability=4.11, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "ann_days_since_capital",
+        "ann_drilling_today",
+        "ann_impact_neg_5d",
+        "ann_quarterly_today",
+        "close_position",
+        "ix_copper_gold_curve",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_gold_aud",
+        "ix_gold_vix",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_au10yr_mom5d",
+        "macro_au2yr_mom5d",
+        "macro_aud_vol20d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_vol20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "ret_1d",
+        "up_vol_ratio_20d",
+        "upper_wick_pct",
+        "vol_ratio"
+      ],
+      "features_remaining": 59,
+      "metrics": {
+        "is_pf": 1.0342,
+        "is_sharpe": 0.19,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 16
+      },
+      "delta": {
+        "is_pf": -0.0623,
+        "is_sharpe": -0.3315,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    }
+  ],
+  "final_excluded": [
+    "adx_14",
+    "ann_days_since_capital",
+    "ann_drilling_today",
+    "ann_impact_neg_5d",
+    "ann_quarterly_today",
+    "close_position",
+    "ix_copper_gold_curve",
+    "ix_crisis_gold",
+    "ix_curve_gold",
+    "ix_gold_aud",
+    "ix_gold_vix",
+    "ix_yield_gold",
+    "lower_wick_pct",
+    "macro_au10yr_mom5d",
+    "macro_au2yr_mom5d",
+    "macro_aud_vol20d",
+    "macro_copper_gold_mom5d",
+    "macro_copper_mom20d",
+    "macro_copper_mom5d",
+    "macro_dxy_mom20d",
+    "macro_dxy_mom5d",
+    "macro_gold_mom5d",
+    "macro_gold_oil_mom5d",
+    "macro_gold_vol20d",
+    "macro_oil_mom5d",
+    "macro_oil_vol20d",
+    "ret_1d",
+    "up_vol_ratio_20d",
+    "upper_wick_pct",
+    "vol_ratio"
+  ],
+  "stop_reason": "max_rounds",
+  "params": {
+    "max_rounds": 15,
+    "per_round": 2,
+    "min_pval": 0.1
+  }
+}
