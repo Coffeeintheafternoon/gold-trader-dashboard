@@ -3444,6 +3444,14 @@ async function renderPruningRoadmap(ticker) {
   const rounds = data.rounds || [];
   if (!rounds.length) { placeholder.style.display = ''; return; }
 
+  // Filter feature table/chart to only show features surviving the final pruned model
+  const finalExcluded = new Set(data.final_excluded || []);
+  if (finalExcluded.size > 0) {
+    _mlCurrentFeatures = _mlCurrentFeatures.filter(f => !finalExcluded.has(f.name));
+    mlRenderFeatTable();
+    mlFilterFeats(_mlFeatFilter || 'all');
+  }
+
   card.style.display = '';
 
   // ── A. Metrics line chart ─────────────────────────────────────────────────
