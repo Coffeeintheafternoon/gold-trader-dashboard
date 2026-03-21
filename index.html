@@ -414,7 +414,13 @@
 
     <!-- Price Chart with trade signals -->
     <div class="chart-card" style="margin-top:16px" id="ml-price-card">
-      <div class="chart-title">Price Chart — Signals &amp; Trades</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="chart-title" style="margin:0">Price Chart — Signals &amp; Trades</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:10px;color:#555">scroll/drag to zoom &amp; pan</span>
+          <button onclick="if(_mlPriceChart){_mlPriceChart.resetZoom();}" style="background:#1e1e1e;border:1px solid #333;color:#9ca3af;padding:3px 10px;border-radius:4px;font-size:11px;cursor:pointer">↺ Reset</button>
+        </div>
+      </div>
       <div class="chart-subtitle">
         <span style="color:#4fc3f7">■</span> IS price &nbsp;
         <span style="color:#f5a520">■</span> Holdout price &nbsp;
@@ -1922,6 +1928,8 @@ let _mlTickerCache = {};         // model_lab_*.json cache
 let _mlEquityChart = null;
 let _mlRollingChart = null;
 let _mlPriceChart  = null;
+let _mlPriceLabels = [];
+let _mlActiveTradeRow = null;
 let _mlFeatChart = null;
 let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
@@ -2295,6 +2303,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
   const isLabels = priceIS.map(p => p.date);
   const hoLabels = priceHO.map(p => p.date);
   const allLabels = [...isLabels, ...hoLabels];
+  _mlPriceLabels = allLabels;
   const hoStartDate = priceHO.length > 0 ? priceHO[0].date : null;
 
   // IS price dataset (index-aligned to allLabels)
@@ -2397,7 +2406,11 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS) {
           if (c.datasetIndex === 0) return ` IS: $${(c.parsed.y||0).toFixed(3)}`;
           if (c.datasetIndex === 1) return ` HO: $${(c.parsed.y||0).toFixed(3)}`;
           return ` ${c.dataset.label}: $${(c.parsed.y||0).toFixed(3)}`;
-        }}}
+        }}},
+        zoom: {
+          pan:  { enabled: true, mode: 'x' },
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
+        }
       },
       scales: {
         x: { ticks: {maxTicksLimit:12, color:'#555', font:{size:10}}, grid: {color:'#1a1a1a'} },
@@ -2427,7 +2440,11 @@ function buildMLTradeLog(tradesIS) {
     const dirIcon  = t.direction === 'long' ? '▲' : '▼';
     const retColor = t.win ? '#00ff41' : '#ff6b6b';
     const wl       = t.win ? '<span style="color:#00ff41">✓ W</span>' : '<span style="color:#ff2020">✗ L</span>';
-    return `<tr style="border-bottom:1px solid #1e1e1e;${i%2===0?'background:#0d0d0d':''}">
+    const bg       = i % 2 === 0 ? '#0d0d0d' : 'transparent';
+    return `<tr data-entry="${t.entry_date}" data-exit="${t.exit_date}"
+      onclick="mlZoomToTrade(this,'${t.entry_date}','${t.exit_date}')"
+      style="border-bottom:1px solid #1e1e1e;background:${bg};cursor:pointer"
+      onmouseover="this.style.background='#1a2030'" onmouseout="if(!this.classList.contains('ml-trade-active'))this.style.background='${bg}'">
       <td style="padding:5px 8px;color:var(--muted)">${i+1}</td>
       <td style="padding:5px 8px;font-family:monospace;font-size:11px">${t.entry_date}</td>
       <td style="padding:5px 8px;font-family:monospace;font-size:11px">${t.exit_date}</td>
@@ -2439,6 +2456,41 @@ function buildMLTradeLog(tradesIS) {
       <td style="padding:5px 8px;text-align:center">${wl}</td>
     </tr>`;
   }).join('');
+}
+
+// ── Trade zoom: click row → zoom price chart to that trade ────────────────────
+function mlZoomToTrade(row, entryDate, exitDate) {
+  // Deactivate previous row
+  if (_mlActiveTradeRow && _mlActiveTradeRow !== row) {
+    _mlActiveTradeRow.classList.remove('ml-trade-active');
+    _mlActiveTradeRow.style.background = _mlActiveTradeRow._origBg || '';
+  }
+  // Toggle active on clicked row
+  if (_mlActiveTradeRow === row) {
+    row.classList.remove('ml-trade-active');
+    row.style.background = row._origBg || '';
+    _mlActiveTradeRow = null;
+    if (_mlPriceChart) _mlPriceChart.resetZoom();
+    return;
+  }
+  row._origBg = row.style.background;
+  row.classList.add('ml-trade-active');
+  row.style.background = '#1e2d1e';
+  _mlActiveTradeRow = row;
+
+  // Scroll trade row into view
+  row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+  // Zoom chart
+  if (!_mlPriceChart || !_mlPriceLabels.length) return;
+  const ei = _mlPriceLabels.indexOf(entryDate);
+  const xi = _mlPriceLabels.indexOf(exitDate);
+  if (ei < 0) return;
+  const tradeLen = xi >= 0 ? xi - ei : 0;
+  const pad = Math.max(20, Math.round(tradeLen * 0.6) + 15);
+  const minIdx = Math.max(0, ei - pad);
+  const maxIdx = Math.min(_mlPriceLabels.length - 1, (xi >= 0 ? xi : ei) + pad);
+  _mlPriceChart.zoomScale('x', { min: minIdx, max: maxIdx }, 'none');
 }
 
 let _mlFeatFilter = 'all';
