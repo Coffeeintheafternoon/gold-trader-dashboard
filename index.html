@@ -282,8 +282,9 @@
 
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
-      <div class="chart-title">Weight Stability — Top 5 Features Across Windows</div>
+      <div class="chart-title">Weight Stability — Top 6 Features Across Windows</div>
       <div class="chart-subtitle">Each line = one feature's signed weight across the 16 rolling train windows. Flat line = the model consistently learns the same relationship. Wild swings = noise.</div>
+      <div id="ml-stability-toggles" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div class="chart-wrap" style="height:240px"><canvas id="ml-stability-chart"></canvas></div>
       <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;align-self:center">Instability guide:</div>
@@ -537,7 +538,7 @@
       <div class="chart-title">Price Chart — Buy &amp; Sell Signals</div>
       <button id="btn-reset-zoom" onclick="resetTradeChartZoom()" style="font-size:11px;padding:3px 10px;background:#222;border:1px solid #444;color:#9ca3af;border-radius:5px;cursor:pointer">Reset zoom</button>
     </div>
-    <div class="chart-subtitle">Full walk-forward history — every bar shown is out-of-sample · Ctrl+scroll to zoom · drag to pan</div>
+    <div class="chart-subtitle">Full walk-forward history — every bar shown is out-of-sample · Scroll to zoom · Shift+drag to pan · Click reset to fit</div>
     <div style="position:relative;height:340px"><canvas id="chart-trade-signals"></canvas></div>
   </div>
 
@@ -1624,7 +1625,7 @@ function buildTradeSignalChart(equityCurve, tradeLog, clusterPerf) {
           if(trade)return[` ${trade.direction.toUpperCase()} entry @ $${trade.entry_price}`,` Exit @ $${trade.exit_price}  (${trade.return_pct>0?'+':''}${trade.return_pct}%)`,` ${trade.bars} bars  ${trade.win?'✓ Win':'✗ Loss'}`];
           return` Exit @ $${c.parsed.y.toFixed(2)}`;
         }}},
-        zoom:{pan:{enabled:true,mode:'x'},zoom:{wheel:{enabled:true,modifierKey:'ctrl'},pinch:{enabled:true},mode:'x'}}
+        zoom:{pan:{enabled:true,mode:'x',modifierKey:'shift'},zoom:{wheel:{enabled:true},pinch:{enabled:true},drag:{enabled:true,backgroundColor:'rgba(245,165,32,0.08)',borderColor:GOLD,borderWidth:1},mode:'x'}}
       },
       scales:{x:{ticks:{color:'#6b7280',maxTicksLimit:12},grid:{color:'#ffffff08'}},y:{ticks:{color:'#6b7280',callback:v=>'$'+v.toLocaleString()},grid:{color:'#ffffff08'},position:'left'}}
     }
@@ -2342,29 +2343,35 @@ function buildAnnTable(features) {
 function buildMLStabilityChart(features, weightHistory) {
   const ctx = document.getElementById('ml-stability-chart').getContext('2d');
   if (_mlStabilityChart) _mlStabilityChart.destroy();
+
+  const toggleWrap = document.getElementById('ml-stability-toggles');
+  toggleWrap.innerHTML = '';
+
   if (!weightHistory.length || !features.length) {
     ctx.canvas.parentElement.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:20px">No weight history available.</div>';
     return;
   }
-  // Top 6 features by avg |weight| — each gets a distinct slot colour
-  // 2 greens, 2 ambers, 2 reds so lines are always distinguishable
+
+  // Top 6 features — 2 greens, 2 ambers, 2 reds so lines are always distinct
   const _STABILITY_COLORS = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b'];
-  const top5 = features.slice(0, 6);
+  const top6 = features.slice(0, 6);
   const labels = weightHistory.map((w,i) => w.window_end || `W${i+1}`);
-  const datasets = top5.map((f, slotIdx) => ({
+
+  const datasets = top6.map((f, slotIdx) => ({
     label: f.name.replace('ann_','★ '),
     data: weightHistory.map(w => {
       const v = w.weights ? (w.weights[f.name] ?? null) : null;
       return v != null ? +(v * 1000).toFixed(4) : null;
     }),
-    borderColor: _STABILITY_COLORS[slotIdx % _STABILITY_COLORS.length],
+    borderColor: _STABILITY_COLORS[slotIdx],
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     pointRadius: 2,
     tension: 0.3,
     spanGaps: true,
   }));
-  // Zero reference line — helps see which windows flip sign
+
+  // Zero reference line
   datasets.push({
     label: '── zero',
     data: labels.map(() => 0),
@@ -2376,14 +2383,14 @@ function buildMLStabilityChart(features, weightHistory) {
     spanGaps: true,
     order: 99,
   });
+
   _mlStabilityChart = new Chart(ctx, {
     type: 'line',
     data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color:'#aaa', font:{size:10}, boxWidth:12,
-          filter: item => item.text !== '── zero' } },
+        legend: { display: false },
         tooltip: { callbacks: { label: c => c.dataset.label === '── zero' ? null : ` ${c.dataset.label}: ${c.raw != null ? (c.raw >= 0 ? '+' : '') + c.raw.toFixed(3) : '—'} ×1k` } }
       },
       scales: {
@@ -2391,6 +2398,33 @@ function buildMLStabilityChart(features, weightHistory) {
         y: { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:10}}, title:{display:true, text:'Weight ×1000', color:'#555', font:{size:10}} }
       }
     }
+  });
+
+  // Build toggle buttons — one per feature (not the zero line)
+  top6.forEach((f, slotIdx) => {
+    const color = _STABILITY_COLORS[slotIdx];
+    const label = f.name.replace('ann_', '★ ');
+    const btn = document.createElement('button');
+    btn.dataset.slotIdx = slotIdx;
+    btn.dataset.active = 'true';
+    btn.style.cssText = `
+      display:inline-flex;align-items:center;gap:5px;
+      padding:3px 9px;border-radius:4px;border:1px solid ${color};
+      background:${color}22;color:${color};
+      font-size:10px;font-family:monospace;font-weight:600;
+      cursor:pointer;transition:opacity 0.15s,background 0.15s;
+    `;
+    btn.innerHTML = `<span style="display:inline-block;width:12px;height:2px;background:${color};border-radius:1px"></span>${label}`;
+    btn.onclick = () => {
+      const active = btn.dataset.active === 'true';
+      const nextActive = !active;
+      btn.dataset.active = String(nextActive);
+      btn.style.background = nextActive ? `${color}22` : 'transparent';
+      btn.style.opacity    = nextActive ? '1' : '0.35';
+      _mlStabilityChart.setDatasetVisibility(slotIdx, nextActive);
+      _mlStabilityChart.update();
+    };
+    toggleWrap.appendChild(btn);
   });
 }
 
