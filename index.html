@@ -69,6 +69,8 @@
     .metrics-value { font-weight: 600; font-size: 13px; color: var(--text); text-align: right; font-family: 'SF Mono','Fira Mono','Consolas',monospace; }
     footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px 0 10px; border-top: 1px solid #2a1f00; margin-top: 8px; }
     .tip { cursor: help; border-bottom: 1px dashed #4a3a20; display: inline-block; }
+    .ml-sort-th:hover { color: #e5e7eb; }
+    .ml-sort-icon { font-size:10px; opacity:0.5; margin-left:2px; }
     #_tip { position: fixed; background: #0a0800; border: 1px solid var(--gold); color: var(--text); font-size: 12px; font-weight: 400; line-height: 1.6; padding: 9px 13px; border-radius: 4px; white-space: pre-line; max-width: 300px; z-index: 99999; pointer-events: none; box-shadow: 0 4px 24px rgba(245,165,32,0.15); display: none; }
     @media (max-width: 800px) { .chart-row, .chart-row-bottom { grid-template-columns: 1fr; } }
     @media (max-width: 768px) { .tab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; } .tab-nav::-webkit-scrollbar { display: none; } .tab-btn { white-space: nowrap; padding: 7px 14px; font-size: 13px; } }
@@ -349,31 +351,19 @@
         </label>
       </div>
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
-          <colgroup>
-            <col style="width:70px">
-            <col style="width:190px">
-            <col style="width:105px">
-            <col style="width:90px">
-            <col style="width:90px">
-            <col style="width:65px">
-            <col style="width:75px">
-            <col style="width:65px">
-            <col style="width:75px">
-            <col style="width:85px">
-          </colgroup>
+        <table style="border-collapse:collapse;font-size:12px;width:max-content;min-width:100%">
           <thead>
             <tr style="color:var(--muted);border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:0.5px">
-              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Rank</th>
-              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Feature</th>
-              <th style="text-align:left;padding:6px 10px;white-space:nowrap">Category</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg |Weight|</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign%</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err</th>
-              <th style="text-align:right;padding:6px 10px;white-space:nowrap" class="tip tip-down" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability</th>
+              <th onclick="mlSortTable('rank')"       style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th" data-col="rank">Rank <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('name')"       style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:185px;cursor:pointer" class="ml-sort-th" data-col="name">Feature <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('category')"   style="text-align:left;padding:6px 10px;white-space:nowrap;min-width:105px;cursor:pointer" class="ml-sort-th" data-col="category">Category <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('avg_weight')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:90px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_weight" data-tip="Average absolute weight across all walk-forward windows.\nHigher = more influential overall.">Avg |Weight| <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('avg_signed')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:90px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="avg_signed" data-tip="Signed average weight. Positive = bullish predictor, negative = bearish.">Avg Signed <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('p_value')"    style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:60px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="p_value" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('active_pct')" style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="active_pct" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('sign_pct')"   style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:60px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="sign_pct" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign% <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('std_err')"    style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:70px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="std_err" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err <span class="ml-sort-icon">↕</span></th>
+              <th onclick="mlSortTable('stability')"  style="text-align:right;padding:6px 10px;white-space:nowrap;min-width:85px;cursor:pointer" class="ml-sort-th tip tip-down" data-col="stability" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability <span class="ml-sort-icon">↕</span></th>
             </tr>
           </thead>
           <tbody id="ml-feat-tbody"></tbody>
@@ -2800,9 +2790,45 @@ function _featTip(name) {
   return g[0] + '\n' + g[1];
 }
 
+let _mlSortCol = 'rank', _mlSortAsc = true;
+
+function mlSortTable(col) {
+  if (_mlSortCol === col) { _mlSortAsc = !_mlSortAsc; }
+  else { _mlSortCol = col; _mlSortAsc = col === 'name' || col === 'category'; }
+  // Update sort icons
+  document.querySelectorAll('.ml-sort-th').forEach(th => {
+    const icon = th.querySelector('.ml-sort-icon');
+    if (!icon) return;
+    if (th.dataset.col === col) icon.textContent = _mlSortAsc ? '↑' : '↓';
+    else icon.textContent = '↕';
+  });
+  mlRenderFeatTable();
+}
+
+function _mlSortValue(f, col) {
+  switch (col) {
+    case 'rank':       return f.rank;
+    case 'name':       return f.name;
+    case 'category':   return f.category;
+    case 'avg_weight': return f.avg_weight;
+    case 'avg_signed': return f.avg_signed;
+    case 'p_value':    return f.p_value != null ? f.p_value : 1;
+    case 'active_pct': return (f.n_windows_active ?? 0) / (f.n_windows_total ?? 1);
+    case 'sign_pct':   return f.sign_pct ?? 0;
+    case 'std_err':    return f.std_err ?? 0;
+    case 'stability':  return f.stability;
+    default:           return f.rank;
+  }
+}
+
 function mlRenderFeatTable() {
   const annOnly = document.getElementById('ml-ann-only')?.checked;
   let feats = annOnly ? _mlCurrentFeatures.filter(f => f.category === 'announcement') : _mlCurrentFeatures;
+  feats = [...feats].sort((a, b) => {
+    const av = _mlSortValue(a, _mlSortCol), bv = _mlSortValue(b, _mlSortCol);
+    const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
+    return _mlSortAsc ? cmp : -cmp;
+  });
   const tbody = document.getElementById('ml-feat-tbody');
   const totalFeats = _mlCurrentFeatures.length;
   tbody.innerHTML = feats.map((f, idx) => {
