@@ -244,7 +244,7 @@
   </div>
 
   <div class="chart-card" id="quant-features-panel" style="display:none">
-    <div class="chart-title">Feature Selection — What the Model Used</div>
+    <div class="chart-title"><span class="tip" data-tip="F-score (ANOVA): measures how well each feature separates the K clusters.&#10;High F-score = feature strongly distinguishes different market regimes.">Feature Selection — What the Model Used</span></div>
     <div class="chart-subtitle">K-means clustering used these features to separate market regimes. F-score = how strongly the feature separates clusters.</div>
     <div id="features-wrap"></div>
   </div>
@@ -256,10 +256,10 @@
       <div id="qs-direction-badge" style="font-size:32px;font-weight:900;padding:10px 28px;border-radius:10px;letter-spacing:1px">—</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <div class="hero-card" style="min-width:130px;padding:12px 16px">
-          <div class="hero-label">Cluster</div><div class="hero-value" id="qs-regime">—</div><div class="hero-sub">k-means assignment</div>
+          <div class="hero-label tip" data-tip="Which of the K market regimes the model currently identifies from price features.&#10;K-means groups bars into N clusters based on volatility, trend, momentum.">Cluster</div><div class="hero-value" id="qs-regime">—</div><div class="hero-sub">k-means assignment</div>
         </div>
         <div class="hero-card" style="min-width:150px;padding:12px 16px">
-          <div class="hero-label">Active Strategy</div><div class="hero-value color-gold" id="qs-strategy">—</div><div class="hero-sub">assigned by optimiser</div>
+          <div class="hero-label tip" data-tip="The trading strategy the walk-forward optimiser assigned to the current cluster.&#10;Chosen by maximising in-sample profit factor on that cluster's bars.">Active Strategy</div><div class="hero-value color-gold" id="qs-strategy">—</div><div class="hero-sub">assigned by optimiser</div>
         </div>
         <div class="hero-card" style="min-width:130px;padding:12px 16px">
           <div class="hero-label tip" data-tip="How many consecutive trading days gold has been in the current regime without interruption.">Bars in Regime</div>
@@ -288,19 +288,19 @@
   </div>
 
   <div class="chart-card" id="quant-dist-panel" style="display:none">
-    <div class="chart-title">Cluster Distribution — Last Training Window</div>
+    <div class="chart-title"><span class="tip" data-tip="K-means partitions price bars into K groups by similarity of features (volatility, trend, momentum).&#10;Each cluster represents a different market 'personality'.">Cluster Distribution — Last Training Window</span></div>
     <div class="chart-subtitle">How many bars fell into each k-means cluster</div>
     <div class="chart-wrap" style="height:220px"><canvas id="chart-cluster-dist"></canvas></div>
   </div>
 
   <div class="chart-card" id="quant-rolling-panel" style="display:none">
-    <div class="chart-title">Rolling Performance</div>
+    <div class="chart-title"><span class="tip" data-tip="Rolling window: performance calculated over a sliding 90-day window.&#10;Showcases how strategy quality evolves — avoids one good/bad period dominating the stats.">Rolling Performance</span></div>
     <div class="chart-subtitle">90-day rolling Sharpe ratio and drawdown from peak</div>
     <div class="chart-wrap" style="height:260px"><canvas id="chart-rolling"></canvas></div>
   </div>
 
   <div class="chart-card" id="quant-equity-panel" style="display:none">
-    <div class="chart-title">Walk-Forward Equity Curve — Squant vs Buy-and-Hold</div>
+    <div class="chart-title"><span class="tip" data-tip="Walk-forward: model is trained on a rolling window, then tested on the next unseen period (OOS).&#10;This prevents look-ahead bias — the strategy never sees future data.">Walk-Forward Equity Curve — Squant vs Buy-and-Hold</span></div>
     <div class="chart-subtitle">Cumulative log returns — best-assignment combined strategy (OOS only) vs passive gold holding</div>
     <div class="chart-wrap" style="height:280px">
       <canvas id="chart-equity"></canvas>
@@ -309,19 +309,19 @@
   </div>
 
   <div class="chart-card" id="quant-mcpt-hist-panel" style="display:none">
-    <div class="chart-title">MCPT Distribution — Donchian Breakout</div>
+    <div class="chart-title"><span class="tip" data-tip="Monte Carlo Permutation Test: strategy run 200× on shuffled returns to build a null distribution.&#10;If real PF sits in the far-right tail, the edge is unlikely to be luck.">MCPT Distribution — Donchian Breakout</span></div>
     <div class="chart-subtitle">Permuted profit factors vs real PF (gold line) — real PF should sit in the far right tail for a validated edge</div>
     <div class="chart-wrap" style="height:240px"><canvas id="chart-mcpt-hist"></canvas></div>
   </div>
 
   <div class="chart-card" id="quant-regime-timeline-panel" style="display:none">
-    <div class="chart-title">Cluster Timeline — OOS History</div>
+    <div class="chart-title"><span class="tip" data-tip="OOS = Out-of-Sample: bars the model had NOT seen during training.&#10;Cluster colours show which regime was active at each point in time.">Cluster Timeline — OOS History</span></div>
     <div class="chart-subtitle">Gold price coloured by k-means cluster assignment (OOS only)</div>
     <div class="chart-wrap" style="height:260px"><canvas id="chart-regime-timeline"></canvas></div>
   </div>
 
   <div class="chart-card" id="quant-param-heatmap-panel" style="display:none">
-    <div class="chart-title">Donchian Parameter Heatmap — Entry vs Exit Lookback</div>
+    <div class="chart-title"><span class="tip" data-tip="Donchian Breakout: enter LONG when price breaks the N-bar high, exit when it breaks the M-bar low.&#10;Heatmap shows profit factor across all tested N/M combinations.">Donchian Parameter Heatmap — Entry vs Exit Lookback</span></div>
     <div class="chart-subtitle">Profit factor across all tested parameter combinations</div>
     <div id="param-heatmap-wrap" style="overflow-x:auto;margin-top:8px"></div>
   </div>
@@ -334,13 +334,13 @@
         <thead>
           <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
             <th style="text-align:left;padding:8px 12px">Cluster</th>
-            <th style="text-align:left;padding:8px 12px">Character</th>
+            <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="Plain-English label describing the cluster's dominant market characteristics&#10;(e.g. HIGH-VOL | UPTREND | BULL-MOM).">Character</span></th>
             <th style="text-align:left;padding:8px 12px">Strategy / Entry-Exit</th>
-            <th style="text-align:right;padding:8px 12px">IS PF</th>
+            <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="In-Sample Profit Factor: PF measured on the training data (data the model SAW).&#10;High IS PF + low OOS PF = overfitting. Healthy gap is 20–40%.">IS PF</span></th>
             <th style="text-align:right;padding:8px 12px">Trades</th>
-            <th style="text-align:right;padding:8px 12px">Win %</th>
-            <th style="text-align:right;padding:8px 12px">N Bars</th>
-            <th style="text-align:left;padding:8px 12px">Top Features (z-score)</th>
+            <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Percentage of trades with positive return (Return% > 0).">Win %</span></th>
+            <th style="text-align:right;padding:8px 12px"><span class="tip tip-down" data-tip="Number of price bars in this cluster across the last training window.">N Bars</span></th>
+            <th style="text-align:left;padding:8px 12px"><span class="tip tip-down" data-tip="Features with highest F-score for this cluster, with their current standardised value.&#10;z-score = (value − mean) ÷ std. Positive z = above average.">Top Features (z-score)</span></th>
           </tr>
         </thead>
         <tbody id="cluster-perf-tbody"></tbody>
@@ -379,14 +379,14 @@
       <table id="trade-log-table" style="width:100%;border-collapse:collapse;font-size:12px">
         <thead style="position:sticky;top:0;background:#1a1a1a">
           <tr style="color:var(--muted);border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:6px 10px">Cluster</th>
+            <th style="text-align:left;padding:6px 10px"><span class="tip tip-down" data-tip="Which k-means market regime was active when this trade was entered.">Cluster</span></th>
             <th style="text-align:left;padding:6px 10px">Entry</th>
             <th style="text-align:left;padding:6px 10px">Exit</th>
-            <th style="text-align:left;padding:6px 10px">Dir</th>
-            <th style="text-align:right;padding:6px 10px">Bars</th>
-            <th style="text-align:right;padding:6px 10px">Return %</th>
-            <th style="text-align:left;padding:6px 10px">Regime</th>
-            <th style="text-align:center;padding:6px 10px">W/L</th>
+            <th style="text-align:left;padding:6px 10px"><span class="tip tip-down" data-tip="Trade direction: LONG = bought (expecting price rise), SHORT = sold (expecting price fall).">Dir</span></th>
+            <th style="text-align:right;padding:6px 10px"><span class="tip tip-down" data-tip="Number of price bars (hours or days depending on interval) the trade was held open.">Bars</span></th>
+            <th style="text-align:right;padding:6px 10px"><span class="tip tip-down" data-tip="Percentage return of the trade: (exit price − entry price) ÷ entry price × 100.&#10;Positive = profitable, negative = loss.">Return %</span></th>
+            <th style="text-align:left;padding:6px 10px"><span class="tip tip-down" data-tip="The cluster label at trade entry — provides context on which market conditions triggered this trade.">Regime</span></th>
+            <th style="text-align:center;padding:6px 10px"><span class="tip tip-down" data-tip="Win or Loss: W = trade closed with positive return, L = negative or zero.">W/L</span></th>
           </tr>
         </thead>
         <tbody id="trade-log-tbody"></tbody>
@@ -768,6 +768,9 @@ window.addEventListener('DOMContentLoaded', () => {
   switchTab(TABS.includes(hash) ? hash : 'signal');
 });
 
+// ── Cache version: changes every 10 min so browser caches between cycles ──────
+const _CV = Math.floor(Date.now() / 600000);
+
 // ── Cross-tab globals ─────────────────────────────────────────────────────────
 let _signalData = null;
 let _compData = null;
@@ -802,8 +805,8 @@ async function initSignalTab() {
   const spinner = document.getElementById('sig-spinner');
   try {
     const [r1,r2] = await Promise.all([
-      fetch('./data.json?t='+Date.now()),
-      fetch('./models_comparison.json?t='+Date.now())
+      fetch(`./data.json?v=${_CV}`),
+      fetch(`./models_comparison.json?v=${_CV}`)
     ]);
     _signalData = r1.ok ? await r1.json() : null;
     _compData   = r2.ok ? await r2.json() : null;
@@ -1419,15 +1422,15 @@ async function initUniverseTab() {
   await Promise.all([
     loadScreenerPanel(),
     loadFullScreenerPanel(),
-    loadComparisonPanel().then(() => loadFeaturePanel('waf_ax'))
+    loadComparisonPanel()
   ]);
 }
 
 async function initMetaTab() {
   const loads=[];
-  if(!_screenerData) loads.push(fetch('./screener_summary.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_screenerData=d;}).catch(()=>{}));
-  if(!_compData) loads.push(fetch('./models_comparison.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
-  if(!_fullScreenerData) loads.push(fetch('./screener_full.json?t='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{if(d)_fullScreenerData=d.tickers||[];}).catch(()=>{}));
+  if(!_screenerData) loads.push(fetch(`./screener_summary.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_screenerData=d;}).catch(()=>{}));
+  if(!_compData) loads.push(fetch(`./models_comparison.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
+  if(!_fullScreenerData) loads.push(fetch(`./screener_full.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_fullScreenerData=d.tickers||[];}).catch(()=>{}));
   await Promise.all(loads);
   buildMetaTab(_screenerData, _compData, _fullScreenerData);
 }
@@ -1510,32 +1513,37 @@ async function loadQuantPanels() {
   const urlIntvl=params.get('interval')||'1h';
   let allAssets=[];
   try {
-    const idxResp=await fetch('./quant_data_index.json?t='+Date.now());
+    const idxResp=await fetch(`./quant_data_index.json?v=${_CV}`);
     if(idxResp.ok){const idx=await idxResp.json();allAssets=idx.assets||[];_allAssets=allAssets;buildAssetDropdown(allAssets,urlAsset,urlIntvl);buildIntervalToggle(allAssets,urlAsset,urlIntvl);}
   } catch(_) {}
   const entry=allAssets.find(a=>a.id===urlAsset&&a.interval===urlIntvl);
   const filename=entry?entry.file:`quant_data_${urlAsset}_${urlIntvl}.json`;
   let qd;
-  try { const resp=await fetch(`./${filename}?t=`+Date.now()); if(!resp.ok)return; qd=await resp.json(); } catch(e) { return; }
+  try { const resp=await fetch(`./${filename}?v=${_CV}`); if(!resp.ok)return; qd=await resp.json(); } catch(e) { return; }
   ['quant-signal-panel','quant-regime-panel','quant-dist-panel','quant-rolling-panel','quant-mcpt-panel','quant-equity-panel','quant-features-panel'].forEach(id=>{document.getElementById(id).style.display='block';});
   if(qd.asset_label){const lbl=document.getElementById('quant-section-label');if(lbl)lbl.textContent=`Squant v1 — ${qd.asset_label} (${(qd.ticker||'').replace('=','/')} · ${qd.interval||'1h'})`;}
+  // Round 1 — render immediately (small data, fast)
   buildCurrentSignalPanel(qd.current_signal||{},qd.current_cluster||{});
   buildClusterPanel(qd.current_cluster||{},qd.cluster_history||[]);
-  buildClusterDistChart(qd.cluster_performance||[]);
-  buildRollingChart(qd.equity_curve||[]);
   buildMcptTable(qd);
-  buildEquityChart(qd.equity_curve||[],qd.cluster_history||[]);
-  buildMcptHistogram(qd.strategies||[]);
-  buildClusterTimeline(qd.equity_curve||[],qd.cluster_history||[]);
-  buildParamHeatmap(qd.param_heatmap||[]);
-  buildClusterPerfTable(qd.cluster_performance||[],qd.trade_log||[]);
-  buildMonthlyCalendar(qd.equity_curve||[]);
-  buildLongShortBreakdown(qd.long_short||{});
-  buildModelMetrics(qd.equity_curve||[],qd.strategies||[],qd.trade_log||[]);
-  buildTradeSignalChart(qd.price_series||[],qd.trade_log||[],qd.cluster_performance||[]);
-  buildClusterRulesPanel(qd.cluster_performance||[]);
   buildFeatureSelection(qd.strategies||[]);
-  buildTradeLog(qd.trade_log||[]);
+
+  // Round 2 — yield to browser paint, then render heavy charts
+  setTimeout(() => {
+    buildClusterDistChart(qd.cluster_performance||[]);
+    buildRollingChart(qd.equity_curve||[]);
+    buildEquityChart(qd.equity_curve||[],qd.cluster_history||[]);
+    buildMcptHistogram(qd.strategies||[]);
+    buildClusterTimeline(qd.equity_curve||[],qd.cluster_history||[]);
+    buildParamHeatmap(qd.param_heatmap||[]);
+    buildClusterPerfTable(qd.cluster_performance||[],qd.trade_log||[]);
+    buildMonthlyCalendar(qd.equity_curve||[]);
+    buildLongShortBreakdown(qd.long_short||{});
+    buildModelMetrics(qd.equity_curve||[],qd.strategies||[],qd.trade_log||[]);
+    buildTradeSignalChart(qd.price_series||[],qd.trade_log||[],qd.cluster_performance||[]);
+    buildClusterRulesPanel(qd.cluster_performance||[]);
+    buildTradeLog(qd.trade_log||[]);
+  }, 0);
 }
 
 // ── Open ticker in Model Lab ──────────────────────────────────────────────────
@@ -1583,7 +1591,7 @@ let _metaTop20=[];
 
 async function loadFullScreenerPanel() {
   let data;
-  try { const res=await fetch(`screener_full.json?t=${Date.now()}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  try { const res=await fetch(`screener_full.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   const tickers=data.tickers||[];if(!tickers.length)return;
   _fullScreenerData=tickers;
   document.getElementById('full-screener-section').style.display='';
@@ -1633,7 +1641,7 @@ let _screenerPvalChart=null,_screenerPfChart=null;
 
 async function loadScreenerPanel() {
   let data;
-  try { const res=await fetch(`screener_summary.json?t=${Date.now()}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  try { const res=await fetch(`screener_summary.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   const tickers=data.tickers||[];if(!tickers.length)return;
   _screenerData=data;
   document.getElementById('screener-section').style.display='';
@@ -1670,7 +1678,10 @@ let _activeTicker='waf_ax';
 
 async function loadComparisonPanel() {
   let data;
-  try { const res=await fetch(`models_comparison.json?t=${Date.now()}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  if (_compData) { data = _compData; } else {
+  try { const res=await fetch(`models_comparison.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  _compData = data;
+  }
   const tickers=data.tickers||[];if(!tickers.length)return;
   _compData=data;
   document.getElementById('model-comparison-section').style.display='';
@@ -1717,7 +1728,7 @@ let _featContribChart=null;
 async function loadFeaturePanel(ticker='waf_ax') {
   const safe=ticker.replace(/\./g,'_').toLowerCase();
   let data;
-  try { const res=await fetch(`feature_data_${safe}.json?t=${Date.now()}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
+  try { const res=await fetch(`feature_data_${safe}.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   document.getElementById('feature-model-section').style.display='';
   const signal=data.signal===1?'BUY':'SELL',sigColor=data.signal===1?'var(--green)':'var(--red)';
   const predColor=data.predicted_5bar_pct>=0?'var(--green)':'var(--red)',predSign=data.predicted_5bar_pct>=0?'+':'';
