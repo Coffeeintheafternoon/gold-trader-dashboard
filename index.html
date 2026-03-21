@@ -360,6 +360,7 @@
               <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="One-sample t-test: p-value for H₀ = mean weight is zero.\n&lt;0.05 = significant  0.05–0.20 = marginal  &gt;0.20 = prune candidate">p-val</th>
               <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Windows where feature had a non-zero weight, out of total walk-forward windows.\nLow coverage = feature rarely fires.">Active</th>
               <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="% of windows where weight had the same sign as the overall average.\n100% = always bullish or always bearish.  &lt;60% = sign-flipper, unreliable.">Sign%</th>
+              <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Standard Error of the mean weight: std / √n.\nSmaller = tighter estimate of the true average weight.\nUse alongside p-val: low SE + low p = reliable signal.">Std Err</th>
               <th style="text-align:right;padding:6px 10px" class="tip tip-down" data-tip="Weight stability: std / |mean|. Lower = more stable across windows. &gt;2 = unreliable.">Instability</th>
             </tr>
           </thead>
@@ -2822,6 +2823,7 @@ function mlRenderFeatTable() {
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${pvColor};font-weight:${pv < 0.05 ? '600' : '400'}">${pvStr}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${activeColor}">${nActive}/${nTotal}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${spColor}">${spStr}</td>
+      <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:#9ca3af">${f.std_err != null ? (f.std_err * 1000).toFixed(3) : '—'}</td>
       <td style="padding:5px 10px;text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
     </tr>`;
   }).join('');
