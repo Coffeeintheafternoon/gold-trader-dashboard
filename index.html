@@ -579,11 +579,20 @@
             <option value="oos_desc">OOS Bars ↓</option>
             <option value="ticker_asc">Ticker A-Z</option>
           </select>
+          <label style="font-size:12px;color:var(--muted)">Model:</label>
+          <select id="full-screener-model-filter" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
+            <option value="">All Models</option>
+            <option value="Ridge (1yr)">Ridge (1yr)</option>
+            <option value="Ridge (6mo)">Ridge (6mo)</option>
+            <option value="Donchian">Donchian</option>
+            <option value="Mean-Reversion">Mean-Reversion</option>
+          </select>
           <label style="font-size:12px;color:var(--muted)">Show:</label>
           <select id="full-screener-show" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
             <option value="all">All</option>
             <option value="edge">PF ≥ 1.10</option>
             <option value="valid">Valid only</option>
+            <option value="models">Has Models</option>
           </select>
         </div>
       </div>
@@ -598,7 +607,7 @@
               <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Mean annualised return estimated from walk-forward OOS performance.&#10;How much $ the strategy makes per year on average (%).">Ann Return</span></th>
               <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Lower bound of the 95% confidence interval on mean annual return.&#10;CI Low > 0% means we are 97.5% confident the true edge is positive.&#10;CI Low < 0% = edge could plausibly be zero or negative.">CI Low</span></th>
               <th style="text-align:right;padding:7px 10px"><span class="tip tip-down" data-tip="Out-of-sample bars: trading days used in walk-forward validation.&#10;More bars = more reliable statistic.&#10;250 bars ≈ 1 year · 1250 bars ≈ 5 years">OOS Bars</span></th>
-              <th style="text-align:left;padding:7px 10px">Notes</th>
+              <th style="text-align:left;padding:7px 10px"><span class="tip tip-down" data-tip="Available trained models for this ticker.&#10;Click a badge to open that specific model in Model Lab.&#10;Ridge (1yr) = 252-day rolling window · Ridge (6mo) = 126-day window">Models</span></th>
             </tr>
           </thead>
           <tbody id="full-screener-tbody"></tbody>
@@ -1746,8 +1755,9 @@ async function loadQuantPanels() {
 }
 
 // ── Open ticker in Model Lab ──────────────────────────────────────────────────
-async function openTickerInModelLab(ticker, data) {
-  const safe=ticker.toLowerCase().replace(/\./g,'_');
+async function openTickerInModelLab(ticker, data, safeName) {
+  // safeName: explicit safe_name override (e.g. 'mek_6monthroll'); null = derive from ticker
+  const safe=safeName||ticker.toLowerCase().replace(/\./g,'_');
   // ── Priority 1: new model_lab_*.json detail view ─────────────────────
   // Try to load the rich per-ticker model lab file first
   const mlRes=await fetch(`./model_lab_${safe}.json?_=${Date.now()}`).catch(()=>null);
@@ -1813,10 +1823,20 @@ let _fullScreenerData=null;
 let _filteredRows=[];
 let _metaTop20=[];
 
+let _modelIndex = null; // {ticker: [{safe_name, label, file, is_pf, ...}]}
+
 async function loadFullScreenerPanel() {
   let data;
   try { const res=await fetch(`screener_full.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   const tickers=data.tickers||[];if(!tickers.length)return;
+
+  // Load model index and attach models to each ticker row
+  try {
+    const mi=await fetch(`model_index.json?v=${_CV}`);
+    if(mi.ok){ const midx=await mi.json(); _modelIndex=midx.models||{}; }
+  } catch(_){}
+  tickers.forEach(t=>{ t._models=(_modelIndex&&_modelIndex[t.ticker])||[]; });
+
   _fullScreenerData=tickers;
   document.getElementById('full-screener-section').style.display='';
   const valid=tickers.filter(t=>!t.error);
@@ -1832,17 +1852,31 @@ async function loadFullScreenerPanel() {
   filterFullScreener();
 }
 
+function _modelBadges(models, activeTicker) {
+  if(!models||!models.length) return '<span style="color:#333;font-size:10px">—</span>';
+  return models.map(m=>{
+    const isDefault=m.label==='Ridge (1yr)';
+    const bg=isDefault?'rgba(245,165,32,0.12)':'rgba(0,255,65,0.08)';
+    const border=isDefault?'rgba(245,165,32,0.35)':'rgba(0,255,65,0.25)';
+    const color=isDefault?'var(--gold)':'var(--green)';
+    return `<span onclick="event.stopPropagation();openTickerInModelLab('${activeTicker}',{},'${m.safe_name}')" title="Open ${m.label}" style="display:inline-block;padding:2px 7px;margin:1px 2px;border-radius:3px;border:1px solid ${border};background:${bg};color:${color};font-size:10px;cursor:pointer;white-space:nowrap">${m.label}</span>`;
+  }).join('');
+}
+
 function filterFullScreener() {
   if(!_fullScreenerData)return;
   const tickerQ=(document.getElementById('full-screener-ticker-search').value||'').trim().toUpperCase();
   const sectorF=document.getElementById('full-screener-sector-filter').value;
+  const modelF=(document.getElementById('full-screener-model-filter')||{}).value||'';
   const showF=document.getElementById('full-screener-show').value;
   const sortF=document.getElementById('full-screener-sort').value;
   let rows=_fullScreenerData.slice();
   if(tickerQ)rows=rows.filter(t=>t.ticker&&t.ticker.toUpperCase().includes(tickerQ));
   if(sectorF)rows=rows.filter(t=>t.sector===sectorF);
+  if(modelF)rows=rows.filter(t=>t._models&&t._models.some(m=>m.label===modelF));
   if(showF==='edge')rows=rows.filter(t=>t.pf&&t.pf>=1.10);
   else if(showF==='valid')rows=rows.filter(t=>!t.error);
+  else if(showF==='models')rows=rows.filter(t=>t._models&&t._models.length>0);
   if(sortF==='pf_desc')rows.sort((a,b)=>(b.pf||0)-(a.pf||0));
   else if(sortF==='sharpe_desc')rows.sort((a,b)=>(b.sharpe||0)-(a.sharpe||0));
   else if(sortF==='mean_desc')rows.sort((a,b)=>(b.mean_ann_pct||0)-(a.mean_ann_pct||0));
@@ -1852,13 +1886,16 @@ function filterFullScreener() {
   document.getElementById('full-screener-count').textContent=`Showing ${rows.length} of ${_fullScreenerData.length} tickers`;
   document.getElementById('full-screener-tbody').innerHTML=rows.map((t,i)=>{
     const rowBg=i%2===0?'':'background:#111';
-    const clickable=`onclick="openTickerInModelLab('${t.ticker}',(_fullScreenerData||[]).find(r=>r.ticker==='${t.ticker}')||{})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
-    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+    // Default model to open on row click: first model if any, else derived safe
+    const defaultSafe=t._models&&t._models.length?t._models[0].safe_name:null;
+    const clickable=`onclick="openTickerInModelLab('${t.ticker}',{},${defaultSafe?`'${defaultSafe}'`:'null'})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
+    const badges=_modelBadges(t._models, t.ticker);
+    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td></tr>`;
     const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
     const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
-    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">—</td></tr>`;
+    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td></tr>`;
   }).join('');
 }
 
