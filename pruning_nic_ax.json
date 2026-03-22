@@ -1,0 +1,2360 @@
+{
+  "ticker": "NIC.AX",
+  "generated_at": "2026-03-22T20:00:59Z",
+  "baseline_features": 87,
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 87,
+      "metrics": {
+        "is_pf": 1.1568,
+        "is_sharpe": 0.8175,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 87,
+        "n_significant_p05": 34,
+        "n_marginal_p10": 6,
+        "pct_significant": 39.1,
+        "avg_pval": 0.2996,
+        "avg_std_err": 0.000759,
+        "avg_sign_pct": 68.9,
+        "avg_instability": 5.242
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "hurst_20",
+          "prune_score": 5.0199,
+          "p_value": 0.9387,
+          "instability": 44.1208,
+          "sign_pct": 53.8,
+          "reason": "p=0.94 insig, instability=44.12, sign=54%"
+        },
+        {
+          "name": "distribution_signal",
+          "prune_score": 3.5206,
+          "p_value": 0.9071,
+          "instability": 29.0555,
+          "sign_pct": 46.2,
+          "reason": "p=0.91 insig, instability=29.06, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "distribution_signal",
+        "hurst_20"
+      ],
+      "features_remaining": 85,
+      "metrics": {
+        "is_pf": 1.0866,
+        "is_sharpe": 0.4661,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 85,
+        "n_significant_p05": 35,
+        "n_marginal_p10": 6,
+        "pct_significant": 41.2,
+        "avg_pval": 0.2766,
+        "avg_std_err": 0.000755,
+        "avg_sign_pct": 70.4,
+        "avg_instability": 4.903
+      },
+      "delta": {
+        "is_pf": -0.0702,
+        "is_sharpe": -0.3514,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "macro_aud_mom5d",
+          "prune_score": 5.5209,
+          "p_value": 0.9447,
+          "instability": 48.8705,
+          "sign_pct": 46.2,
+          "reason": "p=0.94 insig, instability=48.87, sign=46%"
+        },
+        {
+          "name": "macro_audjpy_mom5d",
+          "prune_score": 4.4614,
+          "p_value": 0.9299,
+          "instability": 38.5803,
+          "sign_pct": 53.8,
+          "reason": "p=0.93 insig, instability=38.58, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "distribution_signal",
+        "hurst_20",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d"
+      ],
+      "features_remaining": 83,
+      "metrics": {
+        "is_pf": 1.0928,
+        "is_sharpe": 0.4984,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 83,
+        "n_significant_p05": 35,
+        "n_marginal_p10": 4,
+        "pct_significant": 42.2,
+        "avg_pval": 0.2728,
+        "avg_std_err": 0.000761,
+        "avg_sign_pct": 70.4,
+        "avg_instability": 4.946
+      },
+      "delta": {
+        "is_pf": 0.0062,
+        "is_sharpe": 0.0323,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "ix_gold_aud",
+          "prune_score": 10.6002,
+          "p_value": 0.9727,
+          "instability": 99.2921,
+          "sign_pct": 38.5,
+          "reason": "p=0.97 insig, instability=99.29, sign=38%"
+        },
+        {
+          "name": "macro_copper_gold_mom5d",
+          "prune_score": 2.8242,
+          "p_value": 0.88,
+          "instability": 22.457,
+          "sign_pct": 53.8,
+          "reason": "p=0.88 insig, instability=22.46, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "distribution_signal",
+        "hurst_20",
+        "ix_gold_aud",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d"
+      ],
+      "features_remaining": 81,
+      "metrics": {
+        "is_pf": 1.0807,
+        "is_sharpe": 0.436,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 81,
+        "n_significant_p05": 33,
+        "n_marginal_p10": 6,
+        "pct_significant": 40.7,
+        "avg_pval": 0.2598,
+        "avg_std_err": 0.000772,
+        "avg_sign_pct": 70.3,
+        "avg_instability": 3.745
+      },
+      "delta": {
+        "is_pf": -0.0121,
+        "is_sharpe": -0.0624,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_mom20d",
+          "prune_score": 3.8736,
+          "p_value": 0.9164,
+          "instability": 32.308,
+          "sign_pct": 38.5,
+          "reason": "p=0.92 insig, instability=32.31, sign=38%"
+        },
+        {
+          "name": "macro_gold_oil_ratio",
+          "prune_score": 2.5053,
+          "p_value": 0.8578,
+          "instability": 18.9175,
+          "sign_pct": 38.5,
+          "reason": "p=0.86 insig, instability=18.92, sign=38%"
+        }
+      ],
+      "excluded_total": [
+        "distribution_signal",
+        "hurst_20",
+        "ix_gold_aud",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio"
+      ],
+      "features_remaining": 79,
+      "metrics": {
+        "is_pf": 1.0766,
+        "is_sharpe": 0.4153,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 79,
+        "n_significant_p05": 33,
+        "n_marginal_p10": 7,
+        "pct_significant": 41.8,
+        "avg_pval": 0.2341,
+        "avg_std_err": 0.000774,
+        "avg_sign_pct": 71.4,
+        "avg_instability": 3.186
+      },
+      "delta": {
+        "is_pf": -0.0041,
+        "is_sharpe": -0.0207,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 5,
+      "pruned_this_round": [
+        {
+          "name": "macro_us10yr_mom20d",
+          "prune_score": 2.3326,
+          "p_value": 0.85,
+          "instability": 17.9223,
+          "sign_pct": 61.5,
+          "reason": "p=0.85 insig, instability=17.92, sign=62%"
+        },
+        {
+          "name": "ix_vix_vol_regime",
+          "prune_score": 1.9387,
+          "p_value": 0.8053,
+          "instability": 13.7453,
+          "sign_pct": 46.2,
+          "reason": "p=0.81 insig, instability=13.75, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "distribution_signal",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_vix_vol_regime",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d"
+      ],
+      "features_remaining": 77,
+      "metrics": {
+        "is_pf": 1.0765,
+        "is_sharpe": 0.4144,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 77,
+        "n_significant_p05": 33,
+        "n_marginal_p10": 7,
+        "pct_significant": 42.9,
+        "avg_pval": 0.2334,
+        "avg_std_err": 0.000779,
+        "avg_sign_pct": 70.7,
+        "avg_instability": 3.117
+      },
+      "delta": {
+        "is_pf": -0.0001,
+        "is_sharpe": -0.0009,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 6,
+      "pruned_this_round": [
+        {
+          "name": "donchian_pos_20",
+          "prune_score": 3.4472,
+          "p_value": 0.9047,
+          "instability": 28.3328,
+          "sign_pct": 46.2,
+          "reason": "p=0.90 insig, instability=28.33, sign=46%"
+        },
+        {
+          "name": "bb_zscore",
+          "prune_score": 2.3445,
+          "p_value": 0.8472,
+          "instability": 17.5934,
+          "sign_pct": 46.2,
+          "reason": "p=0.85 insig, instability=17.59, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_vix_vol_regime",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d"
+      ],
+      "features_remaining": 75,
+      "metrics": {
+        "is_pf": 1.0692,
+        "is_sharpe": 0.3764,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 75,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 9,
+        "pct_significant": 42.7,
+        "avg_pval": 0.2109,
+        "avg_std_err": 0.000782,
+        "avg_sign_pct": 71.2,
+        "avg_instability": 2.601
+      },
+      "delta": {
+        "is_pf": -0.0073,
+        "is_sharpe": -0.038,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 7,
+      "pruned_this_round": [
+        {
+          "name": "parkinson_20d",
+          "prune_score": 1.7238,
+          "p_value": 0.7772,
+          "instability": 11.9678,
+          "sign_pct": 53.8,
+          "reason": "p=0.78 insig, instability=11.97, sign=54%"
+        },
+        {
+          "name": "volume_ratio",
+          "prune_score": 1.5937,
+          "p_value": 0.7581,
+          "instability": 10.9924,
+          "sign_pct": 61.5,
+          "reason": "p=0.76 insig, instability=10.99, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_vix_vol_regime",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "parkinson_20d",
+        "volume_ratio"
+      ],
+      "features_remaining": 73,
+      "metrics": {
+        "is_pf": 1.0708,
+        "is_sharpe": 0.385,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 73,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 8,
+        "pct_significant": 43.8,
+        "avg_pval": 0.203,
+        "avg_std_err": 0.000794,
+        "avg_sign_pct": 71.6,
+        "avg_instability": 2.354
+      },
+      "delta": {
+        "is_pf": 0.0016,
+        "is_sharpe": 0.0086,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 8,
+      "pruned_this_round": [
+        {
+          "name": "trend_signed_adx",
+          "prune_score": 1.3739,
+          "p_value": 0.7084,
+          "instability": 9.0434,
+          "sign_pct": 61.5,
+          "reason": "p=0.71 insig, instability=9.04, sign=62%"
+        },
+        {
+          "name": "ix_trend_momentum",
+          "prune_score": 1.3439,
+          "p_value": 0.6869,
+          "instability": 8.389,
+          "sign_pct": 46.2,
+          "reason": "p=0.69 insig, instability=8.39, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 71,
+      "metrics": {
+        "is_pf": 1.0991,
+        "is_sharpe": 0.5292,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 71,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 7,
+        "pct_significant": 45.1,
+        "avg_pval": 0.1994,
+        "avg_std_err": 0.000796,
+        "avg_sign_pct": 71.4,
+        "avg_instability": 2.386
+      },
+      "delta": {
+        "is_pf": 0.0283,
+        "is_sharpe": 0.1442,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 9,
+      "pruned_this_round": [
+        {
+          "name": "lower_wick_pct",
+          "prune_score": 1.9552,
+          "p_value": 0.8103,
+          "instability": 14.1156,
+          "sign_pct": 53.8,
+          "reason": "p=0.81 insig, instability=14.12, sign=54%"
+        },
+        {
+          "name": "macro_dxy_mom20d",
+          "prune_score": 1.4513,
+          "p_value": 0.7277,
+          "instability": 9.7203,
+          "sign_pct": 61.5,
+          "reason": "p=0.73 insig, instability=9.72, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "lower_wick_pct",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_dxy_mom20d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 69,
+      "metrics": {
+        "is_pf": 1.0575,
+        "is_sharpe": 0.3138,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 69,
+        "n_significant_p05": 30,
+        "n_marginal_p10": 10,
+        "pct_significant": 43.5,
+        "avg_pval": 0.1888,
+        "avg_std_err": 0.000803,
+        "avg_sign_pct": 71.8,
+        "avg_instability": 2.196
+      },
+      "delta": {
+        "is_pf": -0.0416,
+        "is_sharpe": -0.2154,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 10,
+      "pruned_this_round": [
+        {
+          "name": "macro_dxy_mom5d",
+          "prune_score": 1.9004,
+          "p_value": 0.797,
+          "instability": 13.1732,
+          "sign_pct": 38.5,
+          "reason": "p=0.80 insig, instability=13.17, sign=38%"
+        },
+        {
+          "name": "ix_vix_volume",
+          "prune_score": 1.3164,
+          "p_value": 0.6856,
+          "instability": 8.3509,
+          "sign_pct": 53.8,
+          "reason": "p=0.69 insig, instability=8.35, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "lower_wick_pct",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 67,
+      "metrics": {
+        "is_pf": 1.0866,
+        "is_sharpe": 0.4664,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 67,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 7,
+        "pct_significant": 47.8,
+        "avg_pval": 0.1639,
+        "avg_std_err": 0.000808,
+        "avg_sign_pct": 72.8,
+        "avg_instability": 1.946
+      },
+      "delta": {
+        "is_pf": 0.0291,
+        "is_sharpe": 0.1526,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 11,
+      "pruned_this_round": [
+        {
+          "name": "macro_vix_regime_20",
+          "prune_score": 1.0499,
+          "p_value": 0.6063,
+          "instability": 6.5448,
+          "sign_pct": 69.2,
+          "reason": "p=0.61 insig, instability=6.54, sign=69%"
+        },
+        {
+          "name": "ix_yield_gold",
+          "prune_score": 0.9162,
+          "p_value": 0.5301,
+          "instability": 5.3577,
+          "sign_pct": 61.5,
+          "reason": "p=0.53 insig, instability=5.36, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "lower_wick_pct",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 65,
+      "metrics": {
+        "is_pf": 1.0832,
+        "is_sharpe": 0.4487,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 65,
+        "n_significant_p05": 31,
+        "n_marginal_p10": 7,
+        "pct_significant": 47.7,
+        "avg_pval": 0.1551,
+        "avg_std_err": 0.000813,
+        "avg_sign_pct": 72.2,
+        "avg_instability": 1.884
+      },
+      "delta": {
+        "is_pf": -0.0034,
+        "is_sharpe": -0.0177,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 12,
+      "pruned_this_round": [
+        {
+          "name": "ix_yield_oil",
+          "prune_score": 1.2793,
+          "p_value": 0.6741,
+          "instability": 8.0375,
+          "sign_pct": 53.8,
+          "reason": "p=0.67 insig, instability=8.04, sign=54%"
+        },
+        {
+          "name": "ix_yield_gold_au",
+          "prune_score": 0.968,
+          "p_value": 0.5332,
+          "instability": 5.3986,
+          "sign_pct": 46.2,
+          "reason": "p=0.53 insig, instability=5.40, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 63,
+      "metrics": {
+        "is_pf": 1.0943,
+        "is_sharpe": 0.5057,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 63,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 8,
+        "pct_significant": 50.8,
+        "avg_pval": 0.1441,
+        "avg_std_err": 0.000813,
+        "avg_sign_pct": 73.5,
+        "avg_instability": 1.785
+      },
+      "delta": {
+        "is_pf": 0.0111,
+        "is_sharpe": 0.057,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 13,
+      "pruned_this_round": [
+        {
+          "name": "eff_ratio_20",
+          "prune_score": 1.3272,
+          "p_value": 0.6955,
+          "instability": 8.6405,
+          "sign_pct": 61.5,
+          "reason": "p=0.70 insig, instability=8.64, sign=62%"
+        },
+        {
+          "name": "macro_copper_mom5d",
+          "prune_score": 1.0315,
+          "p_value": 0.566,
+          "instability": 5.8696,
+          "sign_pct": 46.2,
+          "reason": "p=0.57 insig, instability=5.87, sign=46%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 61,
+      "metrics": {
+        "is_pf": 1.0937,
+        "is_sharpe": 0.5025,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 61,
+        "n_significant_p05": 31,
+        "n_marginal_p10": 7,
+        "pct_significant": 50.8,
+        "avg_pval": 0.1364,
+        "avg_std_err": 0.000817,
+        "avg_sign_pct": 74.5,
+        "avg_instability": 1.619
+      },
+      "delta": {
+        "is_pf": -0.0006,
+        "is_sharpe": -0.0032,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 14,
+      "pruned_this_round": [
+        {
+          "name": "macro_au_us_spread",
+          "prune_score": 0.8103,
+          "p_value": 0.4817,
+          "instability": 4.7711,
+          "sign_pct": 69.2,
+          "reason": "p=0.48 insig, instability=4.77, sign=69%"
+        },
+        {
+          "name": "macro_oil_vol20d",
+          "prune_score": 0.7135,
+          "p_value": 0.3837,
+          "instability": 3.8314,
+          "sign_pct": 53.8,
+          "reason": "p=0.38 insig, instability=3.83, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au_us_spread",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 59,
+      "metrics": {
+        "is_pf": 1.1841,
+        "is_sharpe": 0.9481,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 59,
+        "n_significant_p05": 30,
+        "n_marginal_p10": 8,
+        "pct_significant": 50.8,
+        "avg_pval": 0.1192,
+        "avg_std_err": 0.000814,
+        "avg_sign_pct": 75.9,
+        "avg_instability": 1.556
+      },
+      "delta": {
+        "is_pf": 0.0904,
+        "is_sharpe": 0.4456,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 15,
+      "pruned_this_round": [
+        {
+          "name": "ix_gold_aud_20d",
+          "prune_score": 0.7296,
+          "p_value": 0.3957,
+          "instability": 3.9325,
+          "sign_pct": 53.8,
+          "reason": "p=0.40 insig, instability=3.93, sign=54%"
+        },
+        {
+          "name": "macro_aud_mom20d",
+          "prune_score": 0.6483,
+          "p_value": 0.3514,
+          "instability": 3.5725,
+          "sign_pct": 61.5,
+          "reason": "p=0.35 insig, instability=3.57, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 57,
+      "metrics": {
+        "is_pf": 1.1276,
+        "is_sharpe": 0.6743,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 57,
+        "n_significant_p05": 30,
+        "n_marginal_p10": 11,
+        "pct_significant": 52.6,
+        "avg_pval": 0.1017,
+        "avg_std_err": 0.000811,
+        "avg_sign_pct": 76.2,
+        "avg_instability": 1.442
+      },
+      "delta": {
+        "is_pf": -0.0565,
+        "is_sharpe": -0.2738,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 16,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_oil",
+          "prune_score": 0.6092,
+          "p_value": 0.3199,
+          "instability": 3.3385,
+          "sign_pct": 61.5,
+          "reason": "p=0.32 insig, instability=3.34, sign=62%"
+        },
+        {
+          "name": "parkinson_10d",
+          "prune_score": 0.5698,
+          "p_value": 0.3064,
+          "instability": 3.2429,
+          "sign_pct": 69.2,
+          "reason": "p=0.31 insig, instability=3.24, sign=69%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 55,
+      "metrics": {
+        "is_pf": 1.1389,
+        "is_sharpe": 0.7299,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 55,
+        "n_significant_p05": 30,
+        "n_marginal_p10": 10,
+        "pct_significant": 54.5,
+        "avg_pval": 0.1101,
+        "avg_std_err": 0.000822,
+        "avg_sign_pct": 75.9,
+        "avg_instability": 1.384
+      },
+      "delta": {
+        "is_pf": 0.0113,
+        "is_sharpe": 0.0556,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 17,
+      "pruned_this_round": [
+        {
+          "name": "ix_vix_vol",
+          "prune_score": 0.6155,
+          "p_value": 0.9079,
+          "instability": 0.0,
+          "sign_pct": 46.2,
+          "reason": "p=0.91 insig, instability=0.00, sign=46%"
+        },
+        {
+          "name": "macro_au10yr_mom20d",
+          "prune_score": 0.5525,
+          "p_value": 0.2722,
+          "instability": 3.0103,
+          "sign_pct": 61.5,
+          "reason": "p=0.27 insig, instability=3.01, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 53,
+      "metrics": {
+        "is_pf": 1.0717,
+        "is_sharpe": 0.3906,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 53,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 8,
+        "pct_significant": 60.4,
+        "avg_pval": 0.0936,
+        "avg_std_err": 0.000824,
+        "avg_sign_pct": 77.9,
+        "avg_instability": 1.386
+      },
+      "delta": {
+        "is_pf": -0.0672,
+        "is_sharpe": -0.3393,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 18,
+      "pruned_this_round": [
+        {
+          "name": "bar_range_pct",
+          "prune_score": 0.5904,
+          "p_value": 0.3044,
+          "instability": 3.2285,
+          "sign_pct": 61.5,
+          "reason": "p=0.30 insig, instability=3.23, sign=62%"
+        },
+        {
+          "name": "garman_klass_20d",
+          "prune_score": 0.5019,
+          "p_value": 0.2684,
+          "instability": 2.9847,
+          "sign_pct": 76.9,
+          "reason": "p=0.27 insig, instability=2.98, sign=77%"
+        }
+      ],
+      "excluded_total": [
+        "bar_range_pct",
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio"
+      ],
+      "features_remaining": 51,
+      "metrics": {
+        "is_pf": 1.1307,
+        "is_sharpe": 0.6928,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 51,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 5,
+        "pct_significant": 62.7,
+        "avg_pval": 0.0883,
+        "avg_std_err": 0.00083,
+        "avg_sign_pct": 78.3,
+        "avg_instability": 1.335
+      },
+      "delta": {
+        "is_pf": 0.059,
+        "is_sharpe": 0.3022,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 19,
+      "pruned_this_round": [
+        {
+          "name": "vov_20d",
+          "prune_score": 0.4877,
+          "p_value": 0.2152,
+          "instability": 2.6475,
+          "sign_pct": 61.5,
+          "reason": "p=0.22 insig, instability=2.65, sign=62%"
+        },
+        {
+          "name": "macro_oil_mom20d",
+          "prune_score": 0.4725,
+          "p_value": 0.1807,
+          "instability": 2.4371,
+          "sign_pct": 53.8,
+          "reason": "p=0.18 insig, instability=2.44, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "bar_range_pct",
+        "bb_zscore",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 49,
+      "metrics": {
+        "is_pf": 1.1561,
+        "is_sharpe": 0.8182,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 49,
+        "n_significant_p05": 32,
+        "n_marginal_p10": 5,
+        "pct_significant": 65.3,
+        "avg_pval": 0.0865,
+        "avg_std_err": 0.000826,
+        "avg_sign_pct": 78.9,
+        "avg_instability": 1.293
+      },
+      "delta": {
+        "is_pf": 0.0254,
+        "is_sharpe": 0.1254,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 20,
+      "pruned_this_round": [
+        {
+          "name": "body_pct",
+          "prune_score": 0.495,
+          "p_value": 0.2217,
+          "instability": 2.6877,
+          "sign_pct": 61.5,
+          "reason": "p=0.22 insig, instability=2.69, sign=62%"
+        },
+        {
+          "name": "atr_14_pct",
+          "prune_score": 0.4781,
+          "p_value": 0.2066,
+          "instability": 2.5946,
+          "sign_pct": 61.5,
+          "reason": "p=0.21 insig, instability=2.59, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "trend_signed_adx",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 47,
+      "metrics": {
+        "is_pf": 1.0984,
+        "is_sharpe": 0.5292,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 47,
+        "n_significant_p05": 31,
+        "n_marginal_p10": 6,
+        "pct_significant": 66.0,
+        "avg_pval": 0.0846,
+        "avg_std_err": 0.000842,
+        "avg_sign_pct": 79.0,
+        "avg_instability": 1.273
+      },
+      "delta": {
+        "is_pf": -0.0577,
+        "is_sharpe": -0.289,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 21,
+      "pruned_this_round": [
+        {
+          "name": "macro_aud_vol20d",
+          "prune_score": 0.4514,
+          "p_value": 0.1615,
+          "instability": 2.3216,
+          "sign_pct": 53.8,
+          "reason": "p=0.16 insig, instability=2.32, sign=54%"
+        },
+        {
+          "name": "ret_20d",
+          "prune_score": 0.4296,
+          "p_value": 0.1836,
+          "instability": 2.4547,
+          "sign_pct": 69.2,
+          "reason": "p=0.18 insig, instability=2.45, sign=69%"
+        }
+      ],
+      "excluded_total": [
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 45,
+      "metrics": {
+        "is_pf": 1.025,
+        "is_sharpe": 0.1391,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 45,
+        "n_significant_p05": 29,
+        "n_marginal_p10": 7,
+        "pct_significant": 64.4,
+        "avg_pval": 0.0843,
+        "avg_std_err": 0.000838,
+        "avg_sign_pct": 78.6,
+        "avg_instability": 1.249
+      },
+      "delta": {
+        "is_pf": -0.0734,
+        "is_sharpe": -0.3901,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 22,
+      "pruned_this_round": [
+        {
+          "name": "macro_gold_vol20d",
+          "prune_score": 0.5375,
+          "p_value": 0.2791,
+          "instability": 3.056,
+          "sign_pct": 69.2,
+          "reason": "p=0.28 insig, instability=3.06, sign=69%"
+        },
+        {
+          "name": "upper_wick_pct",
+          "prune_score": 0.4281,
+          "p_value": 0.1404,
+          "instability": 2.1941,
+          "sign_pct": 53.8,
+          "reason": "p=0.14 insig, instability=2.19, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 43,
+      "metrics": {
+        "is_pf": 1.1729,
+        "is_sharpe": 0.8994,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 43,
+        "n_significant_p05": 29,
+        "n_marginal_p10": 5,
+        "pct_significant": 67.4,
+        "avg_pval": 0.0804,
+        "avg_std_err": 0.000843,
+        "avg_sign_pct": 79.9,
+        "avg_instability": 1.197
+      },
+      "delta": {
+        "is_pf": 0.1479,
+        "is_sharpe": 0.7603,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 23,
+      "pruned_this_round": [
+        {
+          "name": "close_vs_ma50",
+          "prune_score": 0.4589,
+          "p_value": 0.1683,
+          "instability": 2.3624,
+          "sign_pct": 53.8,
+          "reason": "p=0.17 insig, instability=2.36, sign=54%"
+        },
+        {
+          "name": "macro_copper_mom20d",
+          "prune_score": 0.3904,
+          "p_value": 0.1272,
+          "instability": 2.1139,
+          "sign_pct": 61.5,
+          "reason": "p=0.13 insig, instability=2.11, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 41,
+      "metrics": {
+        "is_pf": 1.1529,
+        "is_sharpe": 0.8021,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 41,
+        "n_significant_p05": 26,
+        "n_marginal_p10": 9,
+        "pct_significant": 63.4,
+        "avg_pval": 0.083,
+        "avg_std_err": 0.000843,
+        "avg_sign_pct": 80.8,
+        "avg_instability": 1.186
+      },
+      "delta": {
+        "is_pf": -0.02,
+        "is_sharpe": -0.0973,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 24,
+      "pruned_this_round": [
+        {
+          "name": "vol_zscore_20",
+          "prune_score": 0.4073,
+          "p_value": 0.1634,
+          "instability": 2.3333,
+          "sign_pct": 69.2,
+          "reason": "p=0.16 insig, instability=2.33, sign=69%"
+        },
+        {
+          "name": "adx_14",
+          "prune_score": 0.389,
+          "p_value": 0.1468,
+          "instability": 2.2333,
+          "sign_pct": 69.2,
+          "reason": "p=0.15 insig, instability=2.23, sign=69%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 39,
+      "metrics": {
+        "is_pf": 1.1146,
+        "is_sharpe": 0.6118,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 39,
+        "n_significant_p05": 26,
+        "n_marginal_p10": 8,
+        "pct_significant": 66.7,
+        "avg_pval": 0.0815,
+        "avg_std_err": 0.000847,
+        "avg_sign_pct": 81.8,
+        "avg_instability": 1.135
+      },
+      "delta": {
+        "is_pf": -0.0383,
+        "is_sharpe": -0.1903,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 25,
+      "pruned_this_round": [
+        {
+          "name": "buy_sell_ratio_5d",
+          "prune_score": 0.4204,
+          "p_value": 0.1962,
+          "instability": 2.5311,
+          "sign_pct": 76.9,
+          "reason": "p=0.20 insig, instability=2.53, sign=77%"
+        },
+        {
+          "name": "macro_oil_mom5d",
+          "prune_score": 0.3873,
+          "p_value": 0.1245,
+          "instability": 2.097,
+          "sign_pct": 61.5,
+          "reason": "p=0.12 insig, instability=2.10, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 37,
+      "metrics": {
+        "is_pf": 1.1347,
+        "is_sharpe": 0.7125,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 37,
+        "n_significant_p05": 27,
+        "n_marginal_p10": 7,
+        "pct_significant": 73.0,
+        "avg_pval": 0.0805,
+        "avg_std_err": 0.000868,
+        "avg_sign_pct": 82.3,
+        "avg_instability": 1.092
+      },
+      "delta": {
+        "is_pf": 0.0201,
+        "is_sharpe": 0.1007,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 26,
+      "pruned_this_round": [
+        {
+          "name": "ix_curve_gold",
+          "prune_score": 0.4034,
+          "p_value": 0.1808,
+          "instability": 2.4378,
+          "sign_pct": 76.9,
+          "reason": "p=0.18 insig, instability=2.44, sign=77%"
+        },
+        {
+          "name": "ix_spread_aud",
+          "prune_score": 0.3432,
+          "p_value": 0.0857,
+          "instability": 1.85,
+          "sign_pct": 61.5,
+          "reason": "p=0.09 insig, instability=1.85, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 35,
+      "metrics": {
+        "is_pf": 1.1504,
+        "is_sharpe": 0.79,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 35,
+        "n_significant_p05": 28,
+        "n_marginal_p10": 4,
+        "pct_significant": 80.0,
+        "avg_pval": 0.0772,
+        "avg_std_err": 0.000865,
+        "avg_sign_pct": 82.6,
+        "avg_instability": 1.023
+      },
+      "delta": {
+        "is_pf": 0.0157,
+        "is_sharpe": 0.0775,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 27,
+      "pruned_this_round": [
+        {
+          "name": "bb_width_20",
+          "prune_score": 0.3559,
+          "p_value": 0.117,
+          "instability": 2.0509,
+          "sign_pct": 69.2,
+          "reason": "p=0.12 insig, instability=2.05, sign=69%"
+        },
+        {
+          "name": "macro_gold_mom5d",
+          "prune_score": 0.3555,
+          "p_value": 0.0963,
+          "instability": 1.9199,
+          "sign_pct": 61.5,
+          "reason": "p=0.10 insig, instability=1.92, sign=62%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_width_20",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 33,
+      "metrics": {
+        "is_pf": 1.2551,
+        "is_sharpe": 1.2806,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 33,
+        "n_significant_p05": 26,
+        "n_marginal_p10": 4,
+        "pct_significant": 78.8,
+        "avg_pval": 0.0808,
+        "avg_std_err": 0.000868,
+        "avg_sign_pct": 83.4,
+        "avg_instability": 1.002
+      },
+      "delta": {
+        "is_pf": 0.1047,
+        "is_sharpe": 0.4906,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 28,
+      "pruned_this_round": [
+        {
+          "name": "macro_us10yr_mom5d",
+          "prune_score": 0.4651,
+          "p_value": 0.1949,
+          "instability": 2.5231,
+          "sign_pct": 61.5,
+          "reason": "p=0.19 insig, instability=2.52, sign=62%"
+        },
+        {
+          "name": "ix_crisis_gold",
+          "prune_score": 0.3372,
+          "p_value": 0.0615,
+          "instability": 1.6794,
+          "sign_pct": 53.8,
+          "reason": "p=0.06 insig, instability=1.68, sign=54%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_width_20",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_us10yr_mom5d",
+        "macro_vix_regime_20",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 31,
+      "metrics": {
+        "is_pf": 1.2371,
+        "is_sharpe": 1.1968,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 31,
+        "n_significant_p05": 26,
+        "n_marginal_p10": 2,
+        "pct_significant": 83.9,
+        "avg_pval": 0.0791,
+        "avg_std_err": 0.000876,
+        "avg_sign_pct": 85.8,
+        "avg_instability": 0.935
+      },
+      "delta": {
+        "is_pf": -0.018,
+        "is_sharpe": -0.0838,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 29,
+      "pruned_this_round": [
+        {
+          "name": "macro_yield_curve_acc5",
+          "prune_score": 0.337,
+          "p_value": 0.1207,
+          "instability": 2.074,
+          "sign_pct": 76.9,
+          "reason": "p=0.12 insig, instability=2.07, sign=77%"
+        },
+        {
+          "name": "macro_gold_oil_mom5d",
+          "prune_score": 0.3025,
+          "p_value": 0.0709,
+          "instability": 1.7478,
+          "sign_pct": 69.2,
+          "reason": "p=0.07 insig, instability=1.75, sign=69%"
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "atr_14_pct",
+        "bar_range_pct",
+        "bb_width_20",
+        "bb_zscore",
+        "body_pct",
+        "buy_sell_ratio_5d",
+        "close_vs_ma50",
+        "distribution_signal",
+        "donchian_pos_20",
+        "eff_ratio_20",
+        "garman_klass_20d",
+        "hurst_20",
+        "ix_crisis_gold",
+        "ix_curve_gold",
+        "ix_curve_oil",
+        "ix_gold_aud",
+        "ix_gold_aud_20d",
+        "ix_spread_aud",
+        "ix_trend_momentum",
+        "ix_vix_vol",
+        "ix_vix_vol_regime",
+        "ix_vix_volume",
+        "ix_yield_gold",
+        "ix_yield_gold_au",
+        "ix_yield_oil",
+        "lower_wick_pct",
+        "macro_au10yr_mom20d",
+        "macro_au_us_spread",
+        "macro_aud_mom20d",
+        "macro_aud_mom5d",
+        "macro_aud_vol20d",
+        "macro_audjpy_mom5d",
+        "macro_copper_gold_mom5d",
+        "macro_copper_mom20d",
+        "macro_copper_mom5d",
+        "macro_dxy_mom20d",
+        "macro_dxy_mom5d",
+        "macro_gold_mom20d",
+        "macro_gold_mom5d",
+        "macro_gold_oil_mom5d",
+        "macro_gold_oil_ratio",
+        "macro_gold_vol20d",
+        "macro_oil_mom20d",
+        "macro_oil_mom5d",
+        "macro_oil_vol20d",
+        "macro_us10yr_mom20d",
+        "macro_us10yr_mom5d",
+        "macro_vix_regime_20",
+        "macro_yield_curve_acc5",
+        "parkinson_10d",
+        "parkinson_20d",
+        "ret_20d",
+        "trend_signed_adx",
+        "upper_wick_pct",
+        "vol_zscore_20",
+        "volume_ratio",
+        "vov_20d"
+      ],
+      "features_remaining": 29,
+      "metrics": {
+        "is_pf": 1.1998,
+        "is_sharpe": 1.0246,
+        "ho_pf": null,
+        "ho_sharpe": null,
+        "n_windows": 13
+      },
+      "feature_health": {
+        "n_features": 29,
+        "n_significant_p05": 27,
+        "n_marginal_p10": 0,
+        "pct_significant": 93.1,
+        "avg_pval": 0.0809,
+        "avg_std_err": 0.000882,
+        "avg_sign_pct": 85.1,
+        "avg_instability": 0.931
+      },
+      "delta": {
+        "is_pf": -0.0373,
+        "is_sharpe": -0.1722,
+        "ho_pf": null,
+        "ho_sharpe": null
+      },
+      "stopped": false
+    }
+  ],
+  "final_excluded": [
+    "adx_14",
+    "atr_14_pct",
+    "bar_range_pct",
+    "bb_width_20",
+    "bb_zscore",
+    "body_pct",
+    "buy_sell_ratio_5d",
+    "close_vs_ma50",
+    "distribution_signal",
+    "donchian_pos_20",
+    "eff_ratio_20",
+    "garman_klass_20d",
+    "hurst_20",
+    "ix_crisis_gold",
+    "ix_curve_gold",
+    "ix_curve_oil",
+    "ix_gold_aud",
+    "ix_gold_aud_20d",
+    "ix_spread_aud",
+    "ix_trend_momentum",
+    "ix_vix_vol",
+    "ix_vix_vol_regime",
+    "ix_vix_volume",
+    "ix_yield_gold",
+    "ix_yield_gold_au",
+    "ix_yield_oil",
+    "lower_wick_pct",
+    "macro_au10yr_mom20d",
+    "macro_au_us_spread",
+    "macro_aud_mom20d",
+    "macro_aud_mom5d",
+    "macro_aud_vol20d",
+    "macro_audjpy_mom5d",
+    "macro_copper_gold_mom5d",
+    "macro_copper_mom20d",
+    "macro_copper_mom5d",
+    "macro_dxy_mom20d",
+    "macro_dxy_mom5d",
+    "macro_gold_mom20d",
+    "macro_gold_mom5d",
+    "macro_gold_oil_mom5d",
+    "macro_gold_oil_ratio",
+    "macro_gold_vol20d",
+    "macro_oil_mom20d",
+    "macro_oil_mom5d",
+    "macro_oil_vol20d",
+    "macro_us10yr_mom20d",
+    "macro_us10yr_mom5d",
+    "macro_vix_regime_20",
+    "macro_yield_curve_acc5",
+    "parkinson_10d",
+    "parkinson_20d",
+    "ret_20d",
+    "trend_signed_adx",
+    "upper_wick_pct",
+    "vol_zscore_20",
+    "volume_ratio",
+    "vov_20d"
+  ],
+  "stop_reason": "no_candidates",
+  "params": {
+    "max_rounds": 60,
+    "per_round": 2,
+    "min_pval": 0.05
+  },
+  "train_days": 252
+}
