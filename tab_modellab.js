@@ -334,7 +334,7 @@ function renderTickerDetail(d) {
   mlRenderFeatTable();
 
   // Pruning roadmap (lazy-loaded from pruning_{safe}.json)
-  renderPruningRoadmap(d.ticker || '');
+  renderPruningRoadmap(d.ticker_raw || d.ticker || '');
 
   // Rolling performance chart
   buildMLRollingPerf(equityIS);
@@ -2757,7 +2757,7 @@ async function renderPruningRoadmap(ticker) {
   card.style.display        = 'none';
   placeholder.style.display = 'none';
 
-  const safe = ticker.toLowerCase().replace(/\./g, '_');
+  const safe = _mlCurrentSafe || ticker.toLowerCase().replace(/\./g, '_');
   if (cmd) cmd.textContent = `python scripts/run_pruning.py --tickers ${ticker}`;
 
   let data;
