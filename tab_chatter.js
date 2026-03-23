@@ -3,20 +3,35 @@
 let _chatterSortable  = null;
 let _scrapeJobId      = null;
 let _scrapePoller     = null;
+let _chatterLiveMode  = false;   // true = Flask server available, false = static Netlify
 
 async function initChatterTab() {
   const elLoading = document.getElementById('chatter-loading');
   const elOffline = document.getElementById('chatter-offline');
   const elContent = document.getElementById('chatter-content');
 
+  // ── Try Flask server first ─────────────────────────────────────────────────
   try {
-    const resp = await fetch('/api/channels');
+    const resp = await fetch('/api/channels', { signal: AbortSignal.timeout(1500) });
     if (!resp.ok) throw new Error('server error');
     const channels = await resp.json();
+    _chatterLiveMode = true;
     elLoading.style.display = 'none';
     elContent.style.display = '';
-    _renderChannelList(channels);
-    _renderScrapePanel();
+    _renderChannelList(channels, true);
+    _renderScrapePanel(true);
+    return;
+  } catch (_e) {}
+
+  // ── Fall back to static chatter_data.json (Netlify mode) ──────────────────
+  try {
+    const resp = await fetch(`./chatter_data.json?v=${_CV}`);
+    if (!resp.ok) throw new Error('no data');
+    const data = await resp.json();
+    elLoading.style.display = 'none';
+    elContent.style.display = '';
+    _renderChannelList(data.channels || [], false);
+    _renderScrapePanel(false);
   } catch (_e) {
     elLoading.style.display = 'none';
     elOffline.style.display = '';
@@ -25,25 +40,25 @@ async function initChatterTab() {
 
 // ── Channel list ───────────────────────────────────────────────────────────────
 
-function _renderChannelList(channels) {
+function _renderChannelList(channels, interactive) {
   const panel = document.getElementById('chatter-channels-panel');
+  const subtitle = interactive
+    ? 'Drag to reorder — top = scraped first when quota is limited'
+    : 'Read-only on Netlify — run locally to reorder';
+
   panel.innerHTML = `
     <div class="chart-card">
       <div class="chart-title" style="margin-bottom:4px">Channel Priority</div>
-      <div class="chart-subtitle" style="margin-bottom:14px">
-        Drag to reorder — top = scraped first when quota is limited
-      </div>
+      <div class="chart-subtitle" style="margin-bottom:14px">${subtitle}</div>
       <ul id="chatter-ch-list" style="list-style:none;padding:0;margin:0"></ul>
-      <p style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.5">
-        Order is saved automatically on drop. Toggle active/inactive to exclude a channel from scraping.
-      </p>
+      ${interactive ? `<p style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.5">Order is saved automatically on drop. Toggle active/inactive to exclude a channel.</p>` : ''}
     </div>
   `;
 
   const ul = document.getElementById('chatter-ch-list');
-  channels.forEach((ch, i) => {
-    ul.appendChild(_makeChannelRow(ch, i + 1));
-  });
+  channels.forEach((ch, i) => ul.appendChild(_makeChannelRow(ch, i + 1, interactive)));
+
+  if (!interactive) return;
 
   // Active-toggle listeners
   ul.querySelectorAll('.ch-toggle').forEach(cb => {
@@ -53,8 +68,7 @@ function _renderChannelList(channels) {
         headers: {'Content-Type': 'application/json'},
         body:    JSON.stringify({ channel_id: cb.dataset.cid, active: cb.checked }),
       });
-      const row = cb.closest('li');
-      row.style.opacity = cb.checked ? '1' : '0.45';
+      cb.closest('li').style.opacity = cb.checked ? '1' : '0.45';
     });
   });
 
@@ -66,12 +80,10 @@ function _renderChannelList(channels) {
       handle:     '.drag-handle',
       ghostClass: 'sortable-ghost',
       onEnd: async () => {
-        // Renumber visible priority labels
         ul.querySelectorAll('li').forEach((li, i) => {
           const badge = li.querySelector('.ch-priority');
           if (badge) badge.textContent = `#${i + 1}`;
         });
-        // Persist new order
         const order = [...ul.querySelectorAll('li')].map(li => li.dataset.cid);
         await fetch('/api/channels/reorder', {
           method:  'POST',
@@ -83,7 +95,7 @@ function _renderChannelList(channels) {
   }
 }
 
-function _makeChannelRow(ch, priority) {
+function _makeChannelRow(ch, priority, interactive) {
   const li = document.createElement('li');
   li.dataset.cid = ch.channel_id;
   li.style.cssText = [
@@ -94,9 +106,18 @@ function _makeChannelRow(ch, priority) {
   ].join(';');
 
   const lastFetched = ch.last_fetched ? toAWST(ch.last_fetched) : 'Never';
+  const handle = interactive
+    ? `<span class="drag-handle" style="color:var(--muted);font-size:18px;cursor:grab;line-height:1;user-select:none">⠿</span>`
+    : `<span style="color:#333;font-size:18px;line-height:1">⠿</span>`;
+  const toggle = interactive
+    ? `<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--muted);white-space:nowrap">
+         <input type="checkbox" class="ch-toggle" data-cid="${ch.channel_id}" ${ch.active ? 'checked' : ''}
+                style="cursor:pointer;accent-color:var(--gold)"> Active
+       </label>`
+    : `<span style="font-size:11px;color:var(--muted);white-space:nowrap">${ch.active ? 'Active' : 'Inactive'}</span>`;
 
   li.innerHTML = `
-    <span class="drag-handle" style="color:var(--muted);font-size:18px;cursor:grab;line-height:1;user-select:none">⠿</span>
+    ${handle}
     <span class="ch-priority" style="color:var(--gold);font-family:monospace;font-size:11px;min-width:22px">#${priority}</span>
     <div style="flex:1;min-width:0">
       <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ch.name}</div>
@@ -104,32 +125,48 @@ function _makeChannelRow(ch, priority) {
         ${ch.video_count} in DB &nbsp;·&nbsp; last: ${lastFetched}
       </div>
     </div>
-    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--muted);white-space:nowrap">
-      <input type="checkbox" class="ch-toggle" data-cid="${ch.channel_id}" ${ch.active ? 'checked' : ''}
-             style="cursor:pointer;accent-color:var(--gold)">
-      Active
-    </label>
+    ${toggle}
   `;
   return li;
 }
 
 // ── Scrape panel ───────────────────────────────────────────────────────────────
 
-function _renderScrapePanel() {
-  document.getElementById('chatter-scrape-panel').innerHTML = `
+function _renderScrapePanel(interactive) {
+  const panel = document.getElementById('chatter-scrape-panel');
+
+  if (!interactive) {
+    panel.innerHTML = `
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:4px">Manual Scrape</div>
+        <div class="chart-subtitle" style="margin-bottom:16px">
+          Scraping requires the bot running on your machine. Paste the command below into a terminal, or ask Claude to run it.
+        </div>
+        <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;padding:14px 16px;font-family:monospace;font-size:12px;color:var(--gold);line-height:1.8">
+          cd gold_geo_trader<br>
+          source .venv/bin/activate<br>
+          python scripts/fetch_transcripts.py --mode quarterly --days 14
+        </div>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.6">
+          This fetches the last 14 days of videos from all active channels and skips anything already in the database.
+          To ask Claude: <em style="color:var(--text)">"please scrape YouTube"</em> and paste your channel order from the list on the left.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
     <div class="chart-card" style="margin-bottom:16px">
       <div class="chart-title" style="margin-bottom:4px">Manual Scrape</div>
       <div class="chart-subtitle" style="margin-bottom:16px">
-        Scans the last 14 days of videos from all active channels.
-        Videos already in the database are skipped.
+        Scans the last 14 days of videos from all active channels. Skips videos already in the database.
       </div>
-
       <button id="chatter-scrape-btn" onclick="triggerScrape()"
         style="padding:10px 28px;background:var(--gold);color:#000;border:none;border-radius:3px;
                font-weight:800;font-size:13px;letter-spacing:0.6px;cursor:pointer;text-transform:uppercase">
         Scrape Now
       </button>
-
       <div id="chatter-progress" style="display:none;margin-top:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px">
           <span id="chatter-progress-label" style="font-size:12px;color:var(--muted)">Scanning channels…</span>
@@ -141,7 +178,6 @@ function _renderScrapePanel() {
         </div>
       </div>
     </div>
-
     <div id="chatter-results-card" class="chart-card" style="display:none">
       <div class="chart-title" style="margin-bottom:12px">Results</div>
       <div id="chatter-results-body"></div>
@@ -149,14 +185,14 @@ function _renderScrapePanel() {
   `;
 }
 
-// ── Scrape trigger + polling ───────────────────────────────────────────────────
+// ── Scrape trigger + polling (live mode only) ──────────────────────────────────
 
 async function triggerScrape() {
   const btn      = document.getElementById('chatter-scrape-btn');
   const progress = document.getElementById('chatter-progress');
   const bar      = document.getElementById('chatter-progress-bar');
 
-  btn.disabled   = true;
+  btn.disabled    = true;
   btn.textContent = 'Running…';
   btn.style.opacity = '0.5';
   progress.style.display = '';
@@ -199,24 +235,19 @@ async function _pollScrape(job_id) {
       bar.style.width   = `${pct}%`;
     }
 
-    // Live results as they come in
-    if (job.results && job.results.length) {
-      _renderResults(job.results);
-    }
+    if (job.results && job.results.length) _renderResults(job.results);
 
     if (job.status === 'done' || job.status === 'error') {
       clearInterval(_scrapePoller);
       _scrapePoller = null;
       _resetScrapeBtn();
-
       if (job.status === 'error') {
         label.textContent    = `Error: ${job.error}`;
         bar.style.background = 'var(--red)';
       } else {
         bar.style.background = 'var(--green)';
-        // Refresh channel stats
         const chResp = await fetch('/api/channels');
-        if (chResp.ok) _renderChannelList(await chResp.json());
+        if (chResp.ok) _renderChannelList(await chResp.json(), true);
       }
     }
   } catch (_e) {}
@@ -242,25 +273,19 @@ function _renderResults(results) {
         <span style="font-size:13px;font-weight:700;color:${impactColor};font-family:monospace;min-width:36px;padding-top:1px">${r.impact.toFixed(1)}</span>
         <div style="flex:1;min-width:0">
           <a href="${r.url}" target="_blank"
-             style="color:var(--text);text-decoration:none;font-size:13px;font-weight:600;display:block;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
-             onmouseover="this.style.color='var(--gold)'"
-             onmouseout="this.style.color='var(--text)'">${r.title}</a>
+             style="color:var(--text);text-decoration:none;font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+             onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text)'">${r.title}</a>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <span>${r.channel}</span><span>·</span>
-            <span>${toAWST(r.published_at)}</span><span>·</span>
-            ${badge}
+            <span>${toAWST(r.published_at)}</span><span>·</span>${badge}
           </div>
         </div>
       </div>`;
   }).join('');
 
   body.innerHTML = `
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
-      ${results.length} new video${results.length !== 1 ? 's' : ''} added to database
-    </div>
-    ${rows}
-  `;
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${results.length} new video${results.length !== 1 ? 's' : ''} added</div>
+    ${rows}`;
 }
 
 function _resetScrapeBtn() {
