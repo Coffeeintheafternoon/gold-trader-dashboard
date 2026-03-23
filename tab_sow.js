@@ -823,11 +823,26 @@ function _buildLegend() {
   }
 
   if (_sowLayers.airtraffic.enabled) {
-    el.appendChild(row('#60cfff', 'dot', '▲ Military callsign (large)'));
-    el.appendChild(row('#a0a0a0', 'dot', '▲ Conflict-zone aircraft'));
-    el.appendChild(row('#4a9af5', 'dot', '▲ US / UK / NATO'));
+    // Size
+    el.appendChild(row('#60cfff', 'dot', '▲ Large = military callsign'));
+    el.appendChild(row('#a0a0a0', 'dot', '▲ Small = conflict-zone aircraft'));
+    // Divider
+    const div = document.createElement('div');
+    div.style.cssText = 'border-top:1px solid #1a1a1a;margin:2px 0';
+    el.appendChild(div);
+    // Country colours
+    el.appendChild(row('#4a9af5', 'dot', '▲ US / UK / France / Germany'));
     el.appendChild(row('#e05252', 'dot', '▲ Russia / China'));
     el.appendChild(row('#52c4a0', 'dot', '▲ Israel'));
+    el.appendChild(row('#f5a520', 'dot', '▲ Turkey'));
+    el.appendChild(row('#e07a30', 'dot', '▲ Iran'));
+    el.appendChild(row('#f5c842', 'dot', '▲ Saudi Arabia'));
+    el.appendChild(row('#a0a0a0', 'dot', '▲ Other / unknown'));
+    // Note
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:10px;color:#3a3a3a;margin-top:2px';
+    note.textContent = 'Triangle points in direction of travel';
+    el.appendChild(note);
   }
 
   if (_sowLayers.mining.enabled) {
