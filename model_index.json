@@ -23,11 +23,11 @@
         "is_sharpe": -0.1159,
         "ho_pf": 1.1455,
         "ho_sharpe": 0.731,
-        "overfit": "REGIME_CHANGE",
         "n_windows": 37,
         "bars": 2780,
         "period_start": "2015-03-31",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "REGIME_CHANGE"
       }
     ],
     "AAJ.AX": [
@@ -50,11 +50,11 @@
         "is_sharpe": 1.1747,
         "ho_pf": 1.221,
         "ho_sharpe": 1.0345,
-        "overfit": "LOW",
         "n_windows": 54,
         "bars": 3868,
         "period_start": "2010-12-02",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "LOW"
       }
     ],
     "AGL.AX": [
@@ -66,6 +66,22 @@
         "is_sharpe": -0.1536,
         "ho_pf": 0.7668,
         "ho_sharpe": -1.2034
+      },
+      {
+        "safe_name": "agl_ax_regime_3m",
+        "label": "Regime-Weighted 3M",
+        "model_type": "regime_similarity",
+        "step_days": 63,
+        "sigma": 1.5,
+        "is_pf": 1.0602,
+        "is_sharpe": 0.3092,
+        "ho_pf": 1.0096,
+        "ho_sharpe": 0.0426,
+        "overfit": "MEDIUM",
+        "n_windows": 99,
+        "bars": 6670,
+        "period_start": "2000-01-04",
+        "period_end": "2026-03-23"
       }
     ],
     "AKE.AX": [
@@ -1477,11 +1493,11 @@
         "is_sharpe": 0.1349,
         "ho_pf": 1.2447,
         "ho_sharpe": 1.3242,
-        "overfit": "MEDIUM",
         "n_windows": 65,
         "bars": 4553,
         "period_start": "2008-03-25",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "MEDIUM"
       },
       {
         "safe_name": "wbc_regime_1y",
@@ -1493,11 +1509,11 @@
         "is_sharpe": 0.1195,
         "ho_pf": 1.2447,
         "ho_sharpe": 1.3242,
-        "overfit": "MEDIUM",
         "n_windows": 16,
         "bars": 4553,
         "period_start": "2008-03-25",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "MEDIUM"
       }
     ],
     "WDS.AX": [
@@ -1673,7 +1689,7 @@
         "is_sharpe": 0.036,
         "ho_pf": 0.6752,
         "ho_sharpe": -2.2828,
-        "overfit": "NO_EDGE"
+        "overfit_signal": "NO_EDGE"
       },
       {
         "safe_name": "prn_18y",
@@ -1683,7 +1699,7 @@
         "is_sharpe": -0.0602,
         "ho_pf": 1.0043,
         "ho_sharpe": 0.0255,
-        "overfit": "NO_EDGE"
+        "overfit_signal": "NO_EDGE"
       },
       {
         "safe_name": "prn_ax_regime_3m",
@@ -1695,11 +1711,11 @@
         "is_sharpe": -0.3668,
         "ho_pf": 0.7557,
         "ho_sharpe": -1.6232,
-        "overfit": "NO_EDGE",
         "n_windows": 65,
         "bars": 4553,
         "period_start": "2008-03-25",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "NO_EDGE"
       },
       {
         "safe_name": "prn_ax_regime_6m",
@@ -1711,11 +1727,11 @@
         "is_sharpe": 0.2695,
         "ho_pf": 0.72,
         "ho_sharpe": -1.9109,
-        "overfit": "NO_EDGE",
         "n_windows": 32,
         "bars": 4553,
         "period_start": "2008-03-25",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "NO_EDGE"
       },
       {
         "safe_name": "prn_ax_regime_1y",
@@ -1727,11 +1743,11 @@
         "is_sharpe": 0.4804,
         "ho_pf": 0.9896,
         "ho_sharpe": -0.0612,
-        "overfit": "HIGH",
         "n_windows": 16,
         "bars": 4553,
         "period_start": "2008-03-25",
-        "period_end": "2026-03-23"
+        "period_end": "2026-03-23",
+        "overfit_signal": "HIGH"
       }
     ]
   }
