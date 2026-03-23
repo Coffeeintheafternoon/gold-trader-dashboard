@@ -6,14 +6,16 @@ let _sowMap = null;
 let _sowData = null;
 
 // Layer groups — each toggle controls one group
+// live: true  = data fetched from a real external API at runtime
+// live: false = hardcoded / static JSON (shows 🤖 badge in the toggle)
 const _sowLayers = {
-  geopolitical: { label: 'Geopolitical Risks',   color: '#e05252', group: null, enabled: true  },
-  shipping:     { label: 'Shipping Lanes',        color: '#f5a520', group: null, enabled: true  },
-  conflict:     { label: 'Live Conflict Events',  color: '#ff6b6b', group: null, enabled: true  },
-  tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false },
-  heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false },
-  mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false },
-  australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false },
+  geopolitical: { label: 'Geopolitical Risks',   color: '#e05252', group: null, enabled: true,  live: false },
+  shipping:     { label: 'Shipping Lanes',        color: '#f5a520', group: null, enabled: true,  live: false },
+  conflict:     { label: 'Conflict Events',       color: '#ff6b6b', group: null, enabled: true,  live: false },
+  tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false, live: false },
+  heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false, live: false },
+  mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false, live: false },
+  australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false, live: true  },
 };
 
 // Australia type → colour + label
@@ -421,10 +423,15 @@ function _buildToggles() {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;cursor:pointer';
 
+    const badge = layer.live
+      ? `<span data-tip="Live API data" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#0d3a1a;border:1px solid #1a5a2a;color:#52c4a0;letter-spacing:0.5px;flex-shrink:0">LIVE</span>`
+      : `<span data-tip="Hardcoded / static data" style="font-size:10px;flex-shrink:0" title="Hardcoded data">🤖</span>`;
+
     const left = `
       <div style="display:flex;align-items:center;gap:8px">
         <div style="width:10px;height:10px;border-radius:50%;background:${layer.color};flex-shrink:0"></div>
         <span style="font-size:12px;color:${layer.enabled ? '#e8d5a0' : 'var(--muted)'}">${layer.label}</span>
+        ${badge}
       </div>`;
 
     const toggle = document.createElement('div');
