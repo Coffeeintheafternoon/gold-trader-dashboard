@@ -32,6 +32,7 @@ async function initChatterTab() {
     elContent.style.display = '';
     _renderChannelList(data.channels || [], false);
     _renderScrapePanel(false);
+    _renderGlossary(data.glossary || []);
   } catch (_e) {
     elLoading.style.display = 'none';
     elOffline.style.display = '';
@@ -294,4 +295,52 @@ function _resetScrapeBtn() {
   btn.disabled    = false;
   btn.textContent = 'Scrape Now';
   btn.style.opacity = '1';
+}
+
+// ── Glossary (LLM-reviewed transcripts) ────────────────────────────────────────
+
+function _renderGlossary(items) {
+  const panel = document.getElementById('chatter-glossary-panel');
+  if (!panel) return;
+
+  if (!items || !items.length) {
+    panel.innerHTML = `
+      <div class="chart-card">
+        <div class="chart-title" style="margin-bottom:6px">Transcript Glossary</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">
+          No reviewed transcripts yet.<br>
+          Scrape YouTube, then ask Claude: <em style="color:var(--text)">"please review unreviewed transcripts"</em>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const rows = items.map(item => {
+    const score = item.llm_score != null ? item.llm_score.toFixed(1) : '—';
+    const scoreColor = item.llm_score >= 7 ? 'var(--green)' : item.llm_score >= 4 ? 'var(--gold)' : 'var(--muted)';
+    const date = (item.published_at || '').slice(0, 10);
+    const summary = item.llm_summary || '';
+    return `
+      <div style="padding:12px 0;border-bottom:1px solid #141414">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:4px">
+          <span style="font-family:monospace;font-size:12px;font-weight:700;color:${scoreColor};min-width:30px;padding-top:1px">${score}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${item.channel_name} &nbsp;·&nbsp; ${date}</div>
+            <a href="${item.url}" target="_blank"
+               style="color:var(--text);text-decoration:none;font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+               onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text)'">${item.title}</a>
+            ${summary ? `<div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5">${summary}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-title" style="margin-bottom:4px">Transcript Glossary</div>
+      <div class="chart-subtitle" style="margin-bottom:16px">
+        ${items.length} video${items.length !== 1 ? 's' : ''} reviewed by Claude · Score 0–10 for gold relevance
+      </div>
+      ${rows}
+    </div>`;
 }
