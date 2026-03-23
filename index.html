@@ -1066,6 +1066,19 @@
         </div>
       </div>
 
+      <!-- ASX Ticker Search -->
+      <div style="padding:14px 16px;border-bottom:1px solid #1a1a1a">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Find ASX Ticker</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="sow-asx-input" type="text" placeholder="e.g. NST.AX" autocomplete="off" spellcheck="false"
+            style="flex:1;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;color:#e8d5a0;font-size:12px;padding:6px 10px;outline:none;font-family:inherit"
+            oninput="sowASXSearch(this.value)"
+          />
+          <button onclick="sowASXClear()" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;color:var(--muted);font-size:11px;padding:5px 9px;cursor:pointer">✕</button>
+        </div>
+        <div id="sow-asx-results" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
+      </div>
+
       <!-- Legend — conditional on active layers -->
       <div style="padding:14px 16px;border-bottom:1px solid #1a1a1a">
         <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Key</div>

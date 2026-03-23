@@ -307,6 +307,124 @@ function _buildLegend() {
   }
 }
 
+// ── ASX ticker search ─────────────────────────────────────────────────────────
+let _asxLayer = null;  // L.layerGroup for highlighted sites
+
+const _siteTypeColour = {
+  gold_mine:  '#f5c842',
+  gold_dev:   '#c4a030',
+  gold_copper:'#e0b452',
+  iron_ore:   '#e07a52',
+  lithium:    '#7ab4e0',
+  nickel:     '#52c4a0',
+  copper:     '#e0b452',
+  potash:     '#a78bfa',
+  critical:   '#a78bfa',
+  processing: '#a0a0a0',
+  services:   '#6a6a6a',
+  port:       '#7a9ae0',
+};
+
+function _siteColour(type) {
+  return _siteTypeColour[type] || '#e8d5a0';
+}
+
+// Called from inline oninput handler
+function sowASXSearch(query) {
+  if (!_sowData || !_sowData.asx_projects) return;
+  query = (query || '').trim().toUpperCase();
+
+  // Clear existing highlight layer
+  if (_asxLayer) { _sowMap.removeLayer(_asxLayer); _asxLayer = null; }
+
+  const resultsEl = document.getElementById('sow-asx-results');
+
+  if (!query || query.length < 2) {
+    if (resultsEl) resultsEl.innerHTML = '';
+    return;
+  }
+
+  // Find matching tickers (partial match on ticker or name)
+  const matches = _sowData.asx_projects.filter(p =>
+    p.ticker.toUpperCase().includes(query) ||
+    p.name.toUpperCase().includes(query)
+  );
+
+  if (!matches.length) {
+    if (resultsEl) resultsEl.innerHTML = '<span style="color:#5a4a3a">No match found</span>';
+    return;
+  }
+
+  // Build highlight layer
+  _asxLayer = L.layerGroup().addTo(_sowMap);
+  const allLatLngs = [];
+
+  matches.forEach(company => {
+    (company.sites || []).forEach(site => {
+      const colour = _siteColour(site.type);
+      // Pulsing outer ring + inner dot
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:20px;height:20px">
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid ${colour};opacity:0.5;animation:sow-pulse 1.5s ease-out infinite"></div>
+          <div style="position:absolute;inset:4px;border-radius:50%;background:${colour};box-shadow:0 0 8px ${colour}"></div>
+        </div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+
+      const marker = L.marker([site.lat, site.lng], { icon });
+      marker.bindTooltip(
+        `<b style="color:#e8d5a0">${company.ticker}</b><br>` +
+        `<span style="font-size:11px;color:${colour}">${site.name}</span>`,
+        { direction: 'top', offset: [0, -10], className: 'sow-tooltip' }
+      );
+      marker.on('click', () => {
+        const el = document.getElementById('sow-detail-content');
+        if (el) el.innerHTML = `
+          <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${company.ticker} — ${company.name}</div>
+          <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${company.summary || ''}</div>
+          <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Sites</div>
+            ${(company.sites || []).map(s => `
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <div style="width:8px;height:8px;border-radius:50%;background:${_siteColour(s.type)};flex-shrink:0"></div>
+                <span style="font-size:11px;color:#9a8a70">${s.name}</span>
+              </div>`).join('')}
+          </div>
+        `;
+        const status = document.getElementById('sow-status');
+        if (status) status.textContent = `${company.ticker} — ${site.name}`;
+      });
+
+      _asxLayer.addLayer(marker);
+      allLatLngs.push([site.lat, site.lng]);
+    });
+  });
+
+  // Zoom map to show all matched sites
+  if (allLatLngs.length === 1) {
+    _sowMap.setView(allLatLngs[0], 7);
+  } else if (allLatLngs.length > 1) {
+    _sowMap.fitBounds(L.latLngBounds(allLatLngs).pad(0.4));
+  }
+
+  // Show match summary
+  if (resultsEl) {
+    const names = matches.map(m => `<span style="color:#f5c842">${m.ticker}</span>`).join(', ');
+    const siteCount = matches.reduce((n, m) => n + (m.sites || []).length, 0);
+    resultsEl.innerHTML = `${names} &mdash; ${siteCount} site${siteCount !== 1 ? 's' : ''} mapped`;
+  }
+}
+
+function sowASXClear() {
+  const input = document.getElementById('sow-asx-input');
+  if (input) input.value = '';
+  if (_asxLayer) { _sowMap.removeLayer(_asxLayer); _asxLayer = null; }
+  const el = document.getElementById('sow-asx-results');
+  if (el) el.innerHTML = '';
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function initSOWTab() {
   // Tooltip style injection
@@ -320,6 +438,7 @@ function initSOWTab() {
       .leaflet-control-zoom a:hover { background: #1a1a1a !important; color: #f5a520 !important; }
       .leaflet-control-attribution { background: rgba(0,0,0,0.6) !important; color: #3a3a3a !important; font-size: 9px !important; }
       .leaflet-control-attribution a { color: #5a5040 !important; }
+      @keyframes sow-pulse { 0% { transform:scale(1);opacity:0.6 } 100% { transform:scale(2.4);opacity:0 } }
     `;
     document.head.appendChild(s);
   }
@@ -331,6 +450,9 @@ function initSOWTab() {
     minZoom: 2,
     maxZoom: 10,
     zoomControl: true,
+    maxBounds: [[-85, -180], [85, 180]],
+    maxBoundsViscosity: 1.0,
+    worldCopyJump: false,
   });
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
