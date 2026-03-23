@@ -7,10 +7,13 @@ let _sowData = null;
 
 // Layer groups — each toggle controls one group
 const _sowLayers = {
-  geopolitical: { label: 'Geopolitical Risks', color: '#e05252', group: null, enabled: true },
-  shipping:     { label: 'Shipping Lanes',      color: '#f5a520', group: null, enabled: true },
-  mining:       { label: 'Mining Regions',      color: '#52c4a0', group: null, enabled: false },
-  australia:    { label: 'Australia — Minerals', color: '#a78bfa', group: null, enabled: false },
+  geopolitical: { label: 'Geopolitical Risks',   color: '#e05252', group: null, enabled: true  },
+  shipping:     { label: 'Shipping Lanes',        color: '#f5a520', group: null, enabled: true  },
+  conflict:     { label: 'Live Conflict Events',  color: '#ff6b6b', group: null, enabled: true  },
+  tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false },
+  heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false },
+  mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false },
+  australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false },
 };
 
 // Australia type → colour + label
@@ -179,6 +182,232 @@ function _buildMiningRegions(data) {
       if (status) status.textContent = r.name;
     });
     mining.group.addLayer(marker);
+  });
+}
+
+// ── #6: Shipping chokepoints with disruption status ───────────────────────────
+const _chokepointStatus = {
+  critical: { color: '#e05252', label: 'CRITICAL', icon: '⬛' },
+  disrupted:{ color: '#e07a30', label: 'DISRUPTED', icon: '⬛' },
+  elevated: { color: '#f5a520', label: 'ELEVATED',  icon: '⬛' },
+  reduced:  { color: '#c4c440', label: 'REDUCED',   icon: '⬛' },
+  normal:   { color: '#52c4a0', label: 'NORMAL',    icon: '⬛' },
+};
+
+function _buildChokepoints(data) {
+  const ship = _sowLayers.shipping;
+  if (!ship.group) ship.group = L.layerGroup();
+
+  (data.chokepoints || []).forEach(cp => {
+    const st   = _chokepointStatus[cp.status] || _chokepointStatus.normal;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        display:flex;align-items:center;gap:4px;
+        background:rgba(0,0,0,0.82);border:1px solid ${st.color};
+        border-radius:3px;padding:2px 6px;white-space:nowrap;
+        font-size:10px;font-weight:700;color:${st.color};
+        letter-spacing:0.6px;box-shadow:0 0 8px ${st.color}55;
+        pointer-events:none;
+      ">
+        <div style="width:6px;height:6px;border-radius:50%;background:${st.color};flex-shrink:0"></div>
+        ${cp.name.toUpperCase()}
+      </div>`,
+      iconSize: null,
+      iconAnchor: [0, 8],
+    });
+
+    const marker = L.marker([cp.lat, cp.lng], { icon, zIndexOffset: 100 });
+    marker.bindTooltip(`
+      <b style="color:#e8d5a0">${cp.name}</b>
+      <br><span style="color:${st.color};font-weight:700;font-size:11px">${st.label}</span>
+      <br><span style="font-size:11px;color:#9a8a70;white-space:normal;max-width:220px;display:block">${cp.note}</span>
+    `, { direction: 'top', offset: [40, 0], className: 'sow-tooltip', maxWidth: 240 });
+
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:6px">${cp.name}</div>
+        <div style="margin-bottom:8px">
+          <span style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid ${st.color};color:${st.color};font-weight:700;letter-spacing:0.8px;text-transform:uppercase">${st.label}</span>
+        </div>
+        <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${cp.note}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Gold</div>
+            <div style="font-size:11px;font-weight:700;color:${_impactColour(cp.gold_impact)}">${_impactLabel(cp.gold_impact)}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Oil</div>
+            <div style="font-size:11px;font-weight:700;color:${_impactColour(cp.oil_impact)}">${_impactLabel(cp.oil_impact)}</div>
+          </div>
+        </div>`;
+      const status = document.getElementById('sow-status');
+      if (status) status.textContent = `${cp.name} — ${st.label}`;
+    });
+
+    ship.group.addLayer(marker);
+  });
+}
+
+// ── #4: Live conflict events ──────────────────────────────────────────────────
+const _conflictFatality = { high: '#e05252', medium: '#f5a520', low: '#f5c842', none: '#7a7060' };
+const _conflictType = {
+  armed_conflict:    '⚔',
+  maritime_attack:   '🚢',
+  military_exercise: '⚡',
+  protest:           '✊',
+  bombing:           '💥',
+};
+
+function _buildConflictEvents(data) {
+  _sowLayers.conflict.group = L.layerGroup();
+
+  (data.conflict_events || []).forEach(ev => {
+    const fatColor = _conflictFatality[ev.fatalities] || _conflictFatality.low;
+    const typeIcon = _conflictType[ev.event_type] || '●';
+    const sev      = ev.severity || 'medium';
+    const dotSize  = sev === 'high' ? 14 : sev === 'medium' ? 11 : 9;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:${dotSize}px;height:${dotSize}px;border-radius:50%;
+        background:${fatColor};border:2px solid rgba(255,255,255,0.2);
+        box-shadow:0 0 10px ${fatColor}88;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+        font-size:${dotSize - 4}px;line-height:1;
+      ">${dotSize >= 12 ? typeIcon : ''}</div>`,
+      iconSize: [dotSize, dotSize],
+      iconAnchor: [dotSize / 2, dotSize / 2],
+    });
+
+    const marker = L.marker([ev.lat, ev.lng], { icon });
+    marker.bindTooltip(`
+      <b style="color:#e8d5a0">${ev.name}</b>
+      <br><span style="font-size:11px;color:${fatColor}">${(ev.event_type || '').replace('_', ' ').toUpperCase()} · ${(sev).toUpperCase()}</span>
+      <br><span style="font-size:10px;color:#7a7060">${ev.actors || ''}</span>
+    `, { direction: 'top', offset: [0, -8], className: 'sow-tooltip' });
+
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:6px">${ev.name}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${fatColor};color:${fatColor};text-transform:uppercase;letter-spacing:0.8px">${sev}</span>
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #2a2a2a;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">${(ev.event_type || '').replace('_', ' ')}</span>
+          ${ev.gold_impact ? `<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#0d0d0d;color:${_impactColour(ev.gold_impact)}">Gold: ${_impactLabel(ev.gold_impact)}</span>` : ''}
+        </div>
+        ${ev.actors ? `<div style="font-size:11px;color:#7a9ae0;margin-bottom:8px">⚔ ${ev.actors}</div>` : ''}
+        <div style="font-size:12px;color:#b0a080;line-height:1.6">${ev.note || ''}</div>`;
+      const s = document.getElementById('sow-status');
+      if (s) s.textContent = ev.name;
+    });
+
+    _sowLayers.conflict.group.addLayer(marker);
+  });
+}
+
+// ── #5: Gold trade flow arrows ────────────────────────────────────────────────
+function _buildTradeFlows(data) {
+  _sowLayers.tradeflows.group = L.layerGroup();
+
+  (data.trade_flows || []).forEach(flow => {
+    const weight = flow.weight || 2;
+    const opacity = 0.55 + weight * 0.06;
+
+    // Animated flowing dashed line
+    const line = L.polyline(flow.coords, {
+      color: '#f5c842',
+      weight: weight * 0.9,
+      opacity,
+      dashArray: '10 6',
+      lineCap: 'round',
+    });
+
+    // Apply flow animation after adding to map
+    line.on('add', () => {
+      const el = line.getElement ? line.getElement() : (line._path || null);
+      if (el) {
+        el.classList.add('sow-trade-flow');
+        el.style.animationDuration = `${1.8 - weight * 0.15}s`;
+      }
+    });
+
+    // Arrowhead at destination
+    const dest = flow.coords[flow.coords.length - 1];
+    const arrowIcon = L.divIcon({
+      className: '',
+      html: `<div style="
+        width:0;height:0;
+        border-left:5px solid transparent;
+        border-right:5px solid transparent;
+        border-bottom:10px solid #f5c842;
+        opacity:0.8;
+        filter:drop-shadow(0 0 4px #f5c84288);
+      "></div>`,
+      iconSize: [10, 10],
+      iconAnchor: [5, 5],
+    });
+    const arrowMarker = L.marker(dest, { icon: arrowIcon, interactive: false, zIndexOffset: -50 });
+
+    const tooltip = `<b style="color:#f5c842">${flow.name}</b><br><span style="font-size:11px;color:#9a8a70">${flow.note || ''}</span>`;
+    line.bindTooltip(tooltip, { sticky: true, className: 'sow-tooltip', maxWidth: 260 });
+    line.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:13px;font-weight:700;color:#f5c842;margin-bottom:8px">⟶ ${flow.name}</div>
+        <div style="font-size:12px;color:#b0a080;line-height:1.6">${flow.note || ''}</div>`;
+      const s = document.getElementById('sow-status');
+      if (s) s.textContent = flow.name;
+    });
+
+    _sowLayers.tradeflows.group.addLayer(line);
+    _sowLayers.tradeflows.group.addLayer(arrowMarker);
+  });
+}
+
+// ── #8: News heat map ─────────────────────────────────────────────────────────
+function _buildNewsHeatmap(data) {
+  _sowLayers.heatmap.group = L.layerGroup();
+  const items = data.news_heatmap || [];
+  if (!items.length) return;
+
+  const maxCount = Math.max(...items.map(c => c.count));
+
+  items.forEach(country => {
+    const intensity = country.count / maxCount;
+    const radius    = 150000 + intensity * 650000;  // 150–800km radius
+    const alpha     = 0.1 + intensity * 0.35;
+    const hue       = Math.round(25 + (1 - intensity) * 40);  // orange→yellow scale
+    const color     = `hsl(${hue}, 85%, 55%)`;
+
+    const circle = L.circle([country.lat, country.lng], {
+      radius,
+      color:       color,
+      fillColor:   color,
+      weight:      1,
+      opacity:     0.4,
+      fillOpacity: alpha,
+    });
+
+    circle.bindTooltip(`
+      <b style="color:#e8d5a0">${country.name}</b>
+      <br><span style="font-size:11px;color:${color}">${country.count} recent articles</span>
+      ${country.keywords ? `<br><span style="font-size:10px;color:#7a7060">${country.keywords.slice(0, 3).join(' · ')}</span>` : ''}
+    `, { sticky: true, className: 'sow-tooltip' });
+
+    circle.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:6px">${country.name}</div>
+        <div style="font-size:11px;color:${color};margin-bottom:8px">${country.count} recent news articles</div>
+        <div style="font-size:11px;color:var(--muted)">News intensity heat map — circle size and colour intensity reflects recent article volume for this country/region. Updated by <code>sow_exporter.py</code>.</div>`;
+      const s = document.getElementById('sow-status');
+      if (s) s.textContent = country.name;
+    });
+
+    _sowLayers.heatmap.group.addLayer(circle);
   });
 }
 
@@ -376,6 +605,30 @@ function _buildLegend() {
     el.appendChild(row('#f5a520', 'line', '── Suez Canal route'));
     el.appendChild(dash('#e06c3a',          'Diversion via Cape'));
     el.appendChild(row('#7a7060', 'line', '── Panama route'));
+    const cpStatuses = [
+      ['#e05252', 'CRITICAL chokepoint'],
+      ['#e07a30', 'DISRUPTED chokepoint'],
+      ['#f5a520', 'ELEVATED chokepoint'],
+      ['#c4c440', 'REDUCED capacity'],
+      ['#52c4a0', 'NORMAL flow'],
+    ];
+    cpStatuses.forEach(([c, lbl]) => el.appendChild(row(c, 'dot', `● ${lbl}`)));
+  }
+
+  if (_sowLayers.conflict.enabled) {
+    el.appendChild(row('#e05252', 'dot', '● High fatalities'));
+    el.appendChild(row('#f5a520', 'dot', '● Medium fatalities'));
+    el.appendChild(row('#f5c842', 'dot', '● Low fatalities'));
+    el.appendChild(row('#7a7060', 'dot', '● No fatalities / exercise'));
+  }
+
+  if (_sowLayers.tradeflows.enabled) {
+    el.appendChild(row('#f5c842', 'line', '── → Gold trade flow'));
+  }
+
+  if (_sowLayers.heatmap.enabled) {
+    el.appendChild(row('#ff9f43', 'dot', '● High news volume'));
+    el.appendChild(row('#f5c842', 'dot', '● Low news volume'));
   }
 
   if (_sowLayers.mining.enabled) {
@@ -618,6 +871,8 @@ function initSOWTab() {
       .leaflet-control-attribution { background: rgba(0,0,0,0.6) !important; color: #3a3a3a !important; font-size: 9px !important; }
       .leaflet-control-attribution a { color: #5a5040 !important; }
       @keyframes sow-pulse { 0% { transform:scale(1);opacity:0.6 } 100% { transform:scale(2.4);opacity:0 } }
+      @keyframes sow-dash-flow { from { stroke-dashoffset: 32; } to { stroke-dashoffset: 0; } }
+      path.sow-trade-flow { animation: sow-dash-flow 1.8s linear infinite; }
     `;
     document.head.appendChild(s);
   }
@@ -648,6 +903,10 @@ function initSOWTab() {
 
       _buildHotspots(data);
       _buildShippingLanes(data);
+      _buildChokepoints(data);
+      _buildConflictEvents(data);
+      _buildTradeFlows(data);
+      _buildNewsHeatmap(data);
       _buildMiningRegions(data);
       _buildAustralia(data);
 
