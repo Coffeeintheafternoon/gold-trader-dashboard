@@ -446,43 +446,60 @@ function sowASXSearch(query) {
   matches.forEach(company => {
     (company.sites || []).forEach(site => {
       const colour = _siteColour(site.type);
-      // Pulsing outer ring + inner dot
+
+      // Build shared detail HTML and tooltip for this site
+      const detailHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${company.ticker} — ${company.name}</div>
+        <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${company.summary || ''}</div>
+        <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Sites</div>
+          ${(company.sites || []).map(s => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${_siteColour(s.type)};flex-shrink:0"></div>
+              <span style="font-size:11px;color:#9a8a70">${s.name}</span>
+            </div>`).join('')}
+        </div>
+      `;
+      const tooltipHTML = `<b style="color:#e8d5a0">${company.ticker}</b><br>`
+        + `<span style="font-size:11px;color:${colour}">${site.name}</span>`;
+
+      const bindASX = (layer) => {
+        layer.bindTooltip(tooltipHTML, { direction: 'top', offset: [0, -10], sticky: true, className: 'sow-tooltip' });
+        layer.on('click', () => {
+          const el = document.getElementById('sow-detail-content');
+          if (el) el.innerHTML = detailHTML;
+          const status = document.getElementById('sow-status');
+          if (status) status.textContent = `${company.ticker} — ${site.name}`;
+        });
+      };
+
+      // Immediate fallback: pulsing dot marker
       const icon = L.divIcon({
         className: '',
         html: `<div style="position:relative;width:20px;height:20px">
           <div style="position:absolute;inset:0;border-radius:50%;border:2px solid ${colour};opacity:0.5;animation:sow-pulse 1.5s ease-out infinite"></div>
           <div style="position:absolute;inset:4px;border-radius:50%;background:${colour};box-shadow:0 0 8px ${colour}"></div>
         </div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
+        iconSize: [20, 20], iconAnchor: [10, 10],
       });
-
-      const marker = L.marker([site.lat, site.lng], { icon });
-      marker.bindTooltip(
-        `<b style="color:#e8d5a0">${company.ticker}</b><br>` +
-        `<span style="font-size:11px;color:${colour}">${site.name}</span>`,
-        { direction: 'top', offset: [0, -10], className: 'sow-tooltip' }
-      );
-      marker.on('click', () => {
-        const el = document.getElementById('sow-detail-content');
-        if (el) el.innerHTML = `
-          <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${company.ticker} — ${company.name}</div>
-          <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${company.summary || ''}</div>
-          <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
-            <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Sites</div>
-            ${(company.sites || []).map(s => `
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-                <div style="width:8px;height:8px;border-radius:50%;background:${_siteColour(s.type)};flex-shrink:0"></div>
-                <span style="font-size:11px;color:#9a8a70">${s.name}</span>
-              </div>`).join('')}
-          </div>
-        `;
-        const status = document.getElementById('sow-status');
-        if (status) status.textContent = `${company.ticker} — ${site.name}`;
-      });
-
-      _asxLayer.addLayer(marker);
+      const fallback = L.marker([site.lat, site.lng], { icon });
+      bindASX(fallback);
+      _asxLayer.addLayer(fallback);
       allLatLngs.push([site.lat, site.lng]);
+
+      // Async: swap pulsing dot for real OSM polygon if available
+      _fetchOSMPolygons(site.lat, site.lng, 6000).then(polys => {
+        if (!polys || polys.length === 0 || !_asxLayer) return;
+        _asxLayer.removeLayer(fallback);
+        polys.slice(0, 3).forEach(p => {
+          const poly = L.polygon(p.coords, {
+            color: colour, fillColor: colour,
+            weight: 2.5, opacity: 1.0, fillOpacity: 0.30,
+          });
+          bindASX(poly);
+          _asxLayer.addLayer(poly);
+        });
+      });
     });
   });
 
