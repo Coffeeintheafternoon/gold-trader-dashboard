@@ -195,7 +195,7 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
         `<button onclick="_regimeZoomMulti('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`
       ).join('')}
     </div>
-    <div class="chart-wrap" style="height:200px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
+    <div class="chart-wrap" style="height:${cfg.fullWidth ? '480px' : '240px'};cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
   `;
   grid.appendChild(card);
 
@@ -414,7 +414,7 @@ function _regimeBuildMacroSection(container, macroData) {
         <button id="${resetId}" onclick="_regimeMacroCharts['${cfg.key}']?.resetZoom();_regimeUpdatePct('${cfg.key}',0,_regimeMacroRaw['${cfg.key}']?.values?.length||0)" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">All</button>
         <span style="font-size:10px;color:#444;margin-left:4px">scroll/drag · pct updates with view</span>
       </div>
-      <div class="chart-wrap" style="height:180px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
+      <div class="chart-wrap" style="height:216px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
     `;
     grid.appendChild(card);
 
