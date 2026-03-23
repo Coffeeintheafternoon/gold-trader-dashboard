@@ -138,6 +138,130 @@ function _regimeUpdatePct(key, minIdx, n) {
   }
 }
 
+// ── Multi-line chart card (shared date axis, multiple datasets) ───────────────
+
+function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  card.style.marginBottom = '0';
+  if (fullWidth) card.style.gridColumn = '1 / -1';
+
+  // Build unified sorted date axis and per-series value maps
+  const allDates = new Set();
+  const valueMaps = {};
+  for (const key of cfg.seriesKeys) {
+    const sd = series[key];
+    if (sd && sd.history) {
+      sd.history.forEach(h => allDates.add(h.date));
+      valueMaps[key] = Object.fromEntries(sd.history.map(h => [h.date, h.value]));
+    }
+  }
+  const labels = Array.from(allDates).sort();
+
+  // Current-values header row
+  const curRow = cfg.seriesKeys.map((key, i) => {
+    const sd = series[key];
+    const cur = sd ? sd.current : null;
+    const color = cfg.seriesColors[i];
+    const label = cfg.seriesLabels[key];
+    const curStr = cur != null ? (cfg.fmt ? cfg.fmt(cur) : cur.toFixed(2)) : '—';
+    return `<span style="color:${color};font-size:11px;margin-right:14px;white-space:nowrap">&#9679; ${label}: <b>${curStr}</b></span>`;
+  }).join('');
+
+  const canvasId = `regime-chart-${cfg.key}`;
+  card.innerHTML = `
+    <div style="margin-bottom:4px">
+      <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
+    </div>
+    <div style="margin-bottom:8px;flex-wrap:wrap;display:flex">${curRow}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+      ${[['1M',21],['3M',63],['6M',126],['1Y',252],['2Y',504],['5Y',1260],['All',99999]].map(([r,b]) =>
+        `<button onclick="_regimeZoomMulti('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`
+      ).join('')}
+    </div>
+    <div class="chart-wrap" style="height:200px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
+  `;
+  grid.appendChild(card);
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !labels.length) return;
+    if (_regimeMacroCharts[cfg.key]) _regimeMacroCharts[cfg.key].destroy();
+
+    const datasets = cfg.seriesKeys.map((key, i) => ({
+      label: cfg.seriesLabels[key],
+      data: labels.map(d => valueMaps[key]?.[d] ?? null),
+      borderColor: cfg.seriesColors[i],
+      borderWidth: 1.8,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.2,
+      spanGaps: true,
+    }));
+
+    const ctx = canvas.getContext('2d');
+    _regimeMacroCharts[cfg.key] = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, labels: { boxWidth: 10, font: { size: 10 }, color: '#888' } },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              title: items => {
+                const d = new Date(items[0].label);
+                return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+              },
+              label: item => {
+                const v = item.raw;
+                return `  ${item.dataset.label}: ${cfg.fmt ? cfg.fmt(v) : (v != null ? v.toFixed(2) : '—')}`;
+              },
+            },
+          },
+          zoom: {
+            pan:  { enabled: true, mode: 'x' },
+            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              maxTicksLimit: 6, maxRotation: 0, font: { size: 10 },
+              callback: function(val) {
+                const label = this.getLabelForValue(val);
+                if (!label) return '';
+                const d = new Date(label);
+                return isNaN(d) ? label : d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
+              },
+            },
+            grid: { color: '#1a1a1a' },
+          },
+          y: {
+            grid: { color: '#1a1a1a' },
+            ticks: { font: { size: 10 }, maxTicksLimit: 6, callback: v => cfg.fmt ? cfg.fmt(v) : v },
+          },
+        },
+      },
+    });
+  });
+}
+
+function _regimeZoomMulti(key, bars) {
+  const chart = _regimeMacroCharts[key];
+  if (!chart) return;
+  if (bars >= 99999) { chart.resetZoom(); }
+  else {
+    const n = chart.data.labels.length;
+    chart.zoomScale('x', { min: Math.max(0, n - bars), max: n - 1 }, 'none');
+  }
+  chart.update('none');
+}
+
 // ── Section 1: Macro Regime Tracker ──────────────────────────────────────────
 
 function _regimeBuildMacroSection(container, macroData) {
@@ -154,6 +278,28 @@ function _regimeBuildMacroSection(container, macroData) {
     { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2),  tip: 'Brent crude price (USD/barrel). Proxy for global economic growth and inflation expectations. High oil = inflationary pressures, potential rate hikes. The gold/oil ratio (below) strips out oil moves to show gold\'s relative safe-haven premium.' },
     { key: 'gold_oil',         title: 'Gold / Oil Ratio',              fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
     { key: 'commodity_regime', title: 'Commodity Regime Score',        fmt: v => v.toFixed(2),        tip: 'Composite score (−3 to +3) combining 7-day direction of DXY (inverted), AUD/USD, and copper. Each leg contributes ±1: +3 = all three tailwinds for ASX resource stocks (weak USD, strong AUD, rising copper); −3 = all three headwinds. Smoothed with a 5-day rolling average.' },
+    { key: 'commodity_basket', title: 'Australian Export Basket (weighted)',  fmt: v => v.toFixed(1),  tip: 'Export-weighted commodity basket rebased to 100 at earliest common date. Weights: Iron Ore 40%, Coal 26%, Nat Gas 20%, Gold 10%, Copper 4% — proportional to Australia\'s 2023-24 resource export values. A rising basket means Australia\'s export revenues are growing, which supports AUD and ASX resource stocks broadly.' },
+    {
+      key: 'commodity_components',
+      title: 'Export Commodities — Individual (rebased to 100)',
+      multiLine: true,
+      seriesKeys:   ['iron_ore_idx', 'coal_idx', 'nat_gas_idx', 'gold_idx', 'copper_idx'],
+      seriesLabels: { iron_ore_idx: 'Iron Ore (40%)', coal_idx: 'Coal (26%)', nat_gas_idx: 'Nat Gas (20%)', gold_idx: 'Gold (10%)', copper_idx: 'Copper (4%)' },
+      seriesColors: ['#e05c5c', '#9e9e9e', '#f5a53a', '#f5c842', '#b87333'],
+      fmt: v => v.toFixed(1),
+      tip: 'All five major export commodities rebased to 100 at their earliest common date. When lines move together the commodity cycle is broad-based. Divergence reveals different demand drivers — e.g. gold surging while iron ore falls signals safe-haven demand without Chinese growth, which benefits gold miners but not the iron ore majors (BHP, RIO, FMG).',
+      fullWidth: true,
+    },
+    {
+      key: 'aud_vs_basket',
+      title: 'AUD/USD vs Commodity Basket (rebased to 100)',
+      multiLine: true,
+      seriesKeys:   ['audusd_idx', 'commodity_basket'],
+      seriesLabels: { audusd_idx: 'AUD/USD', commodity_basket: 'Commodity Basket' },
+      seriesColors: ['#5b8af5', '#f5c842'],
+      fmt: v => v.toFixed(1),
+      tip: 'AUD/USD and the export-weighted commodity basket, both rebased to 100 at the same start date. AUD is a commodity currency and should broadly track the basket. When the basket rises faster than AUD it signals the market isn\'t rewarding Australia\'s export strength — possible domestic risk, RBA policy drag, or broader EM risk-off. When AUD falls while basket holds, that\'s a currency-specific warning.',
+    },
   ];
 
   // Section header
@@ -180,6 +326,10 @@ function _regimeBuildMacroSection(container, macroData) {
   mq.addEventListener('change', applyMQ);
 
   chartConfigs.forEach(cfg => {
+    if (cfg.multiLine) {
+      _regimeBuildMultiLineCard(grid, cfg, series, cfg.fullWidth);
+      return;
+    }
     const sd = series[cfg.key];
     const card = document.createElement('div');
     card.className = 'chart-card';
