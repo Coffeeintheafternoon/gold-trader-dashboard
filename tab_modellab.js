@@ -824,6 +824,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
 
 // ── Trade Analytics ────────────────────────────────────────────────────────────
 let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null, _mlDirectionChart = null;
+let _mlMonthlyChartHO = null, _mlRetDistChartHO = null, _mlDurRetChartHO = null;
 let _mlRegimeChart = null; // owned by buildMLRegimePanel, not trade analytics
 let _mlTradesIS = [], _mlTradesHO = [];
 
@@ -847,9 +848,12 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   card.style.display = '';
 
   // Destroy previous instances
-  if (_mlMonthlyChart)   { _mlMonthlyChart.destroy();   _mlMonthlyChart   = null; }
-  if (_mlRetDistChart)   { _mlRetDistChart.destroy();   _mlRetDistChart   = null; }
-  if (_mlDurRetChart)    { _mlDurRetChart.destroy();    _mlDurRetChart    = null; }
+  if (_mlMonthlyChart)    { _mlMonthlyChart.destroy();    _mlMonthlyChart    = null; }
+  if (_mlMonthlyChartHO)  { _mlMonthlyChartHO.destroy();  _mlMonthlyChartHO  = null; }
+  if (_mlRetDistChart)    { _mlRetDistChart.destroy();    _mlRetDistChart    = null; }
+  if (_mlRetDistChartHO)  { _mlRetDistChartHO.destroy();  _mlRetDistChartHO  = null; }
+  if (_mlDurRetChart)     { _mlDurRetChart.destroy();     _mlDurRetChart     = null; }
+  if (_mlDurRetChartHO)   { _mlDurRetChartHO.destroy();   _mlDurRetChartHO   = null; }
   if (_mlConcChart)      { _mlConcChart.destroy();      _mlConcChart      = null; }
   if (_mlLsChart)        { _mlLsChart.destroy();        _mlLsChart        = null; }
   if (_mlLsScatter)      { _mlLsScatter.destroy();      _mlLsScatter      = null; }
@@ -859,138 +863,189 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
 
-  // ── 1. Monthly P&L — IS (green/red) + HO (cyan/orange) on one chart ──────────
-  const monthlyMap = {};
+  // ── 1. Monthly P&L — IS chart + HO chart (separate) ─────────────────────────
+  const mthLabelFn = k => { const [y,m]=k.split('-'); return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y.slice(2)}`; };
+  const mMonthlyOpts = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+      y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border: { display: false } }
+    }
+  };
+
+  // IS monthly map
+  const isMonthlyMap = {};
   tradesIS.forEach(t => {
     const key = (t.exit_date || t.entry_date || '').slice(0,7);
     if (!key) return;
-    if (!monthlyMap[key]) monthlyMap[key] = { pnl: 0, period: 'is' };
-    monthlyMap[key].pnl += (t.return_pct || 0);
+    isMonthlyMap[key] = (isMonthlyMap[key] || 0) + (t.return_pct || 0);
   });
-  (tradesHO || []).forEach(t => {
-    const key = (t.exit_date || t.entry_date || '').slice(0,7);
-    if (!key) return;
-    if (!monthlyMap[key]) monthlyMap[key] = { pnl: 0, period: 'ho' };
-    else monthlyMap[key].period = 'ho';
-    monthlyMap[key].pnl += (t.return_pct || 0);
-  });
-  const mKeys   = Object.keys(monthlyMap).sort();
-  const mVals   = mKeys.map(k => +monthlyMap[k].pnl.toFixed(2));
-  const mPeriod = mKeys.map(k => monthlyMap[k].period);
-  const mColors = mVals.map((v,i) => mPeriod[i]==='ho'
-    ? (v >= 0 ? 'rgba(34,211,238,0.80)' : 'rgba(249,115,22,0.80)')
-    : (v >= 0 ? 'rgba(0,255,65,0.75)'   : 'rgba(255,80,80,0.75)'));
-  const mBorder = mVals.map((v,i) => mPeriod[i]==='ho'
-    ? (v >= 0 ? '#22d3ee' : '#f97316')
-    : (v >= 0 ? '#00ff41' : '#ff5050'));
-
-  // IS/HO boundary annotation
-  const hoBoundaryIdx = mKeys.findIndex(k => mPeriod[k] === 'ho' || (hoStart && k >= hoStart.slice(0,7)));
-  const mAnnotations = {};
-  if (hoBoundaryIdx > 0) {
-    mAnnotations.hoLine = { type:'line', xMin: hoBoundaryIdx-0.5, xMax: hoBoundaryIdx-0.5,
-      borderColor:'#f5a520', borderWidth:1.5, borderDash:[5,3],
-      label:{ content:'HO', display:true, color:'#f5a520', font:{size:9}, position:'start', backgroundColor:'transparent' } };
-  }
-
+  const isMKeys = Object.keys(isMonthlyMap).sort();
+  const isMVals = isMKeys.map(k => +isMonthlyMap[k].toFixed(2));
   _mlMonthlyChart = new Chart(document.getElementById('ml-monthly-pnl-chart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: mKeys.map(k => { const [y,m]=k.split('-'); return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y.slice(2)}`; }),
-      datasets: [{ data: mVals, backgroundColor: mColors, borderColor: mBorder, borderWidth: 1, borderRadius: 3 }]
+      labels: isMKeys.map(mthLabelFn),
+      datasets: [{ data: isMVals,
+        backgroundColor: isMVals.map(v => v >= 0 ? 'rgba(0,255,65,0.75)' : 'rgba(255,80,80,0.75)'),
+        borderColor:     isMVals.map(v => v >= 0 ? '#00ff41' : '#ff5050'),
+        borderWidth: 1, borderRadius: 3 }]
+    },
+    options: { ...mMonthlyOpts, plugins: { ...mMonthlyOpts.plugins,
+      tooltip: { callbacks: { label: ctx => `IS ${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }}
+    }}
+  });
+
+  // HO monthly map
+  const hoMonthlyMap = {};
+  (tradesHO || []).forEach(t => {
+    const key = (t.exit_date || t.entry_date || '').slice(0,7);
+    if (!key) return;
+    hoMonthlyMap[key] = (hoMonthlyMap[key] || 0) + (t.return_pct || 0);
+  });
+  const hoMKeys = Object.keys(hoMonthlyMap).sort();
+  const hoMVals = hoMKeys.map(k => +hoMonthlyMap[k].toFixed(2));
+  const hoMCanvas = document.getElementById('ml-monthly-pnl-chart-ho');
+  if (hoMCanvas && hoMKeys.length) {
+    _mlMonthlyChartHO = new Chart(hoMCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: hoMKeys.map(mthLabelFn),
+        datasets: [{ data: hoMVals,
+          backgroundColor: hoMVals.map(v => v >= 0 ? 'rgba(34,211,238,0.80)' : 'rgba(249,115,22,0.80)'),
+          borderColor:     hoMVals.map(v => v >= 0 ? '#22d3ee' : '#f97316'),
+          borderWidth: 1, borderRadius: 3 }]
+      },
+      options: { ...mMonthlyOpts, plugins: { ...mMonthlyOpts.plugins,
+        tooltip: { callbacks: { label: ctx => `HO ${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }}
+      }}
+    });
+  } else if (hoMCanvas) {
+    hoMCanvas.style.display = 'none';
+  }
+
+  // ── 2. Return Distribution — IS chart + HO chart (separate) ─────────────────
+  const retsIS  = tradesIS.map(t => t.return_pct || 0);
+  const retsHO  = (tradesHO || []).map(t => t.return_pct || 0);
+  // Build bins from IS range (so IS and HO share same x-axis scale)
+  const rMin = retsIS.length ? Math.min(...retsIS) : -5;
+  const rMax = retsIS.length ? Math.max(...retsIS) :  5;
+  const nBins = Math.min(12, Math.max(6, Math.round(Math.sqrt(retsIS.length))));
+  const binW  = (rMax - rMin) / nBins || 1;
+  const isBins = Array.from({length: nBins}, (_,i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, cnt: 0, wins: 0 }));
+  retsIS.forEach((r, ri) => {
+    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    isBins[bi].cnt++; if (tradesIS[ri].win) isBins[bi].wins++;
+  });
+  const hoBins = Array.from({length: nBins}, (_,i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, cnt: 0, wins: 0 }));
+  retsHO.forEach((r, ri) => {
+    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    hoBins[bi].cnt++; if ((tradesHO||[])[ri]?.win) hoBins[bi].wins++;
+  });
+  const binLabels = isBins.map(b => `${b.lo.toFixed(1)}%`);
+  const retDistScales = {
+    x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+    y: { ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false },
+         title: { display: true, text: 'Count', color: '#6b7280', font: { size: 10 } } }
+  };
+
+  _mlRetDistChart = new Chart(document.getElementById('ml-ret-dist-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: binLabels,
+      datasets: [{ label: 'IS', data: isBins.map(b => b.cnt),
+        backgroundColor: isBins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
+        borderColor:     isBins.map(b => b.lo >= 0 ? '#00ff41' : '#ff5050'),
+        borderWidth: 1, borderRadius: 2 }]
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: ctx => `${mPeriod[ctx.dataIndex]==='ho'?'HO ':'IS '}${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }},
-        annotation: Object.keys(mAnnotations).length ? { annotations: mAnnotations } : undefined
-      },
-      scales: {
-        x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
-        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle,
-             border: { display: false } }
-      }
-    }
-  });
-
-  // ── 2. Return Distribution — IS (green/red) + HO (cyan/orange) grouped ────────
-  const retsIS  = tradesIS.map(t => t.return_pct || 0);
-  const retsHO  = (tradesHO || []).map(t => t.return_pct || 0);
-  const allRets = [...retsIS, ...retsHO];
-  const rMin = allRets.length ? Math.min(...allRets) : -5;
-  const rMax = allRets.length ? Math.max(...allRets) :  5;
-  const nBins = Math.min(12, Math.max(6, Math.round(Math.sqrt(retsIS.length))));
-  const binW  = (rMax - rMin) / nBins || 1;
-  const bins  = Array.from({length: nBins}, (_,i) => ({
-    lo: rMin + i*binW, hi: rMin + (i+1)*binW,
-    is: 0, isW: 0, ho: 0, hoW: 0
-  }));
-  retsIS.forEach((r, ri) => {
-    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
-    bins[bi].is++;
-    if (tradesIS[ri].win) bins[bi].isW++;
-  });
-  retsHO.forEach((r, ri) => {
-    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
-    bins[bi].ho++;
-    if ((tradesHO||[])[ri]?.win) bins[bi].hoW++;
-  });
-  const isHistColors = bins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)'   : 'rgba(255,80,80,0.7)');
-  const hoHistColors = bins.map(b => b.lo >= 0 ? 'rgba(34,211,238,0.7)' : 'rgba(249,115,22,0.7)');
-
-  _mlRetDistChart = new Chart(document.getElementById('ml-ret-dist-chart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: bins.map(b => `${b.lo.toFixed(1)}%`),
-      datasets: [
-        { label: 'IS', data: bins.map(b => b.is), backgroundColor: isHistColors, borderColor: isHistColors.map(c=>c.replace('0.7','1')), borderWidth: 1, borderRadius: 2 },
-        { label: 'HO', data: bins.map(b => b.ho), backgroundColor: hoHistColors, borderColor: hoHistColors.map(c=>c.replace('0.7','1')), borderWidth: 1, borderRadius: 2 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: {
-        legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:6 } },
         tooltip: { callbacks: {
-          title: ctx => { const b = bins[ctx[0].dataIndex]; return `${b.lo.toFixed(2)}% to ${b.hi.toFixed(2)}%`; },
-          label: ctx => { const b = bins[ctx.dataIndex]; const isIs = ctx.dataset.label==='IS'; return `${ctx.dataset.label}: ${isIs?b.is:b.ho} trade${(isIs?b.is:b.ho)!==1?'s':''} (${isIs?b.isW:b.hoW} W)`; }
+          title: ctx => { const b = isBins[ctx[0].dataIndex]; return `${b.lo.toFixed(2)}% to ${b.hi.toFixed(2)}%`; },
+          label: ctx => { const b = isBins[ctx.dataIndex]; return `IS: ${b.cnt} trade${b.cnt!==1?'s':''} (${b.wins} W)`; }
         }}
       },
-      scales: {
-        x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
-        y: { ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false }, title: { display: true, text: 'Count', color: '#6b7280', font: { size: 10 } } }
-      }
+      scales: retDistScales
     }
   });
 
-  // ── 3. Duration vs Return — 4 series: IS-Win, IS-Loss, HO-Win, HO-Loss ────────
+  const rdHOCanvas = document.getElementById('ml-ret-dist-chart-ho');
+  if (rdHOCanvas && retsHO.length) {
+    _mlRetDistChartHO = new Chart(rdHOCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: binLabels,
+        datasets: [{ label: 'HO', data: hoBins.map(b => b.cnt),
+          backgroundColor: hoBins.map(b => b.lo >= 0 ? 'rgba(34,211,238,0.7)' : 'rgba(249,115,22,0.7)'),
+          borderColor:     hoBins.map(b => b.lo >= 0 ? '#22d3ee' : '#f97316'),
+          borderWidth: 1, borderRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            title: ctx => { const b = hoBins[ctx[0].dataIndex]; return `${b.lo.toFixed(2)}% to ${b.hi.toFixed(2)}%`; },
+            label: ctx => { const b = hoBins[ctx.dataIndex]; return `HO: ${b.cnt} trade${b.cnt!==1?'s':''} (${b.wins} W)`; }
+          }}
+        },
+        scales: retDistScales
+      }
+    });
+  } else if (rdHOCanvas) {
+    rdHOCanvas.style.display = 'none';
+  }
+
+  // ── 3. Duration vs Return — IS chart + HO chart (separate) ──────────────────
   const isWins3  = tradesIS.filter(t =>  t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
   const isLoss3  = tradesIS.filter(t => !t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
   const hoWins3  = (tradesHO||[]).filter(t =>  t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
   const hoLoss3  = (tradesHO||[]).filter(t => !t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
+  const durRetScales = {
+    x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color:'#6b7280', font:{size:10} } },
+    y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border:{display:false},
+         title: { display: true, text: 'Return %', color:'#6b7280', font:{size:10} } }
+  };
 
   _mlDurRetChart = new Chart(document.getElementById('ml-dur-ret-chart').getContext('2d'), {
     type: 'scatter',
     data: { datasets: [
-      { label: 'IS Win',  data: isWins3, backgroundColor: 'rgba(0,255,65,0.55)',    borderColor: '#00ff41', pointRadius: 4, pointHoverRadius: 6 },
-      { label: 'IS Loss', data: isLoss3, backgroundColor: 'rgba(255,80,80,0.55)',   borderColor: '#ff5050', pointRadius: 4, pointHoverRadius: 6 },
-      { label: 'HO Win',  data: hoWins3, backgroundColor: 'rgba(34,211,238,0.65)',  borderColor: '#22d3ee', pointRadius: 4, pointHoverRadius: 6, pointStyle: 'triangle' },
-      { label: 'HO Loss', data: hoLoss3, backgroundColor: 'rgba(249,115,22,0.65)', borderColor: '#f97316', pointRadius: 4, pointHoverRadius: 6, pointStyle: 'triangle' }
+      { label: 'Win',  data: isWins3, backgroundColor: 'rgba(0,255,65,0.55)',  borderColor: '#00ff41', pointRadius: 4, pointHoverRadius: 6 },
+      { label: 'Loss', data: isLoss3, backgroundColor: 'rgba(255,80,80,0.55)', borderColor: '#ff5050', pointRadius: 4, pointHoverRadius: 6 }
     ]},
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
         legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:5 } },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
+        tooltip: { callbacks: { label: ctx => `IS ${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
       },
-      scales: {
-        x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color:'#6b7280', font:{size:10} } },
-        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border:{display:false},
-             title: { display: true, text: 'Return %', color:'#6b7280', font:{size:10} } }
-      }
+      scales: durRetScales
     }
   });
+
+  const drHOCanvas = document.getElementById('ml-dur-ret-chart-ho');
+  if (drHOCanvas && (hoWins3.length || hoLoss3.length)) {
+    _mlDurRetChartHO = new Chart(drHOCanvas.getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label: 'Win',  data: hoWins3, backgroundColor: 'rgba(34,211,238,0.65)', borderColor: '#22d3ee', pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Loss', data: hoLoss3, backgroundColor: 'rgba(249,115,22,0.65)', borderColor: '#f97316', pointRadius: 4, pointHoverRadius: 6 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:5 } },
+          tooltip: { callbacks: { label: ctx => `HO ${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
+        },
+        scales: durRetScales
+      }
+    });
+  } else if (drHOCanvas) {
+    drHOCanvas.style.display = 'none';
+  }
 
   // ── 4. P&L Concentration — IS period only ────────────────────────────────────
   const sorted = [...tradesIS].sort((a,b) => Math.abs(b.return_pct) - Math.abs(a.return_pct));

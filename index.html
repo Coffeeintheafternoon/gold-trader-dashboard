@@ -445,21 +445,42 @@
     <!-- Trade Analytics -->
     <div class="chart-card" style="margin-top:16px;display:none" id="ml-trade-analytics-card">
       <div class="chart-title" style="margin:0 0 14px">Trade Analytics</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
-        <!-- Monthly P&L -->
-        <div style="position:relative;height:160px">
+      <!-- Column headers -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:2px">
+        <div style="font-size:11px;color:#00ff41;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;padding-left:2px">▌ In-Sample (IS)</div>
+        <div style="font-size:11px;color:#22d3ee;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;padding-left:2px">▌ Hold-Out (HO)</div>
+      </div>
+      <!-- Monthly P&L — IS | HO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly P&L</div>
           <div style="position:relative;height:140px"><canvas id="ml-monthly-pnl-chart"></canvas></div>
         </div>
-        <!-- Return Distribution -->
-        <div style="position:relative;height:160px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly P&L</div>
+          <div style="position:relative;height:140px"><canvas id="ml-monthly-pnl-chart-ho"></canvas></div>
+        </div>
+      </div>
+      <!-- Return Distribution — IS | HO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+        <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution</div>
           <div style="position:relative;height:140px"><canvas id="ml-ret-dist-chart"></canvas></div>
         </div>
-        <!-- Duration vs Return -->
-        <div style="position:relative;height:160px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution</div>
+          <div style="position:relative;height:140px"><canvas id="ml-ret-dist-chart-ho"></canvas></div>
+        </div>
+      </div>
+      <!-- Duration vs Return — IS | HO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+        <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Duration vs Return</div>
           <div style="position:relative;height:140px"><canvas id="ml-dur-ret-chart"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Duration vs Return</div>
+          <div style="position:relative;height:140px"><canvas id="ml-dur-ret-chart-ho"></canvas></div>
         </div>
       </div>
       <!-- Trade Concentration (full width) -->
