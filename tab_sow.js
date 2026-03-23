@@ -11,7 +11,7 @@ let _sowData = null;
 const _sowLayers = {
   geopolitical: { label: 'Geopolitical Risks',   color: '#e05252', group: null, enabled: true,  live: false },
   shipping:     { label: 'Shipping Lanes',        color: '#f5a520', group: null, enabled: true,  live: false },
-  conflict:     { label: 'Conflict Events',       color: '#ff6b6b', group: null, enabled: true,  live: false },
+  conflict:     { label: 'Conflict Events',       color: '#ff6b6b', group: null, enabled: true,  live: true  },
   tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false, live: false },
   heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false, live: false },
   mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false, live: false },
