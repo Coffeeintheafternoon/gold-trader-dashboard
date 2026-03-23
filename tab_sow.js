@@ -452,17 +452,18 @@ function sowASXSearch(query) {
         <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${company.summary || ''}</div>
         <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
           <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Tenement data</div>
-          <div style="font-size:11px;color:#9a8a70">Source: WA DMIRS • Mining leases = <span style="color:#f5a520">gold</span> • Exploration = <span style="color:#a0c4f0">blue</span></div>
+          <div style="font-size:11px;color:#9a8a70">AU state registries • Mining leases = <span style="color:#f5a520">gold</span> • Exploration = <span style="color:#a0c4f0">blue</span></div>
         </div>`;
 
       // Add fallback centroid dot while loading
       const fallbackLL = company.sites && company.sites[0]
         ? [company.sites[0].lat, company.sites[0].lng] : null;
 
-      fetch(`${company.tenement_file}?v=${Date.now()}`)
-        .then(r => r.json())
-        .then(gj => {
+      const allFiles = [company.tenement_file].concat(company.extra_tenement_files || []);
+      Promise.all(allFiles.map(f => fetch(`${f}?v=${Date.now()}`).then(r => r.json())))
+        .then(gjs => {
           if (!_asxLayer) return;
+          const gj = { features: gjs.flatMap(g => g.features || []) };
           const bounds = [];
           (gj.features || []).forEach(feat => {
             const colour = feat.properties._colour || '#f5a520';
