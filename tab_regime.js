@@ -65,14 +65,21 @@ function _regimeZone(key, value) {
     if (value > 98)  return { label: 'NEUTRAL',    color: '#f5c842' };
     return                  { label: 'WEAK USD',   color: 'var(--green)' };
   }
+  if (key === 'commodity_regime') {
+    if (value >= 2)  return { label: 'TAILWIND',   color: 'var(--green)' };
+    if (value >= 0)  return { label: 'MIXED',      color: '#f5c842' };
+    if (value >= -2) return { label: 'HEADWIND',   color: '#f5a53a' };
+    return                  { label: 'FULL DRAG',  color: 'var(--red)' };
+  }
   // fallback: colour by percentile rank
   return null;   // caller will render pct bar instead
 }
 
 function _regimeZoneTip(key) {
-  if (key === 'vix')         return 'VIX zone: CALM (<15) = low volatility, equity-bullish environment. ELEVATED (15–25) = caution, markets pricing increased risk. STRESS (>25) = crisis conditions — historically a strong gold safe-haven signal.';
-  if (key === 'yield_curve') return 'Yield curve zone: NORMAL (>0.5%) = healthy growth expectations. FLAT (−0.5 to 0.5%) = mixed outlook, uncertainty. INVERTED (<−0.5%) = classic recession warning signal — historically precedes gold safe-haven rallies.';
-  if (key === 'dxy')         return 'USD zone: STRONG (>106) = dollar headwind — gold faces resistance as it becomes expensive for foreign buyers. NEUTRAL (98–106) = balanced. WEAK (<98) = dollar tailwind — gold typically benefits from USD weakness.';
+  if (key === 'vix')               return 'VIX zone: CALM (<15) = low volatility, equity-bullish environment. ELEVATED (15–25) = caution, markets pricing increased risk. STRESS (>25) = crisis conditions — historically a strong gold safe-haven signal.';
+  if (key === 'yield_curve')       return 'Yield curve zone: NORMAL (>0.5%) = healthy growth expectations. FLAT (−0.5 to 0.5%) = mixed outlook, uncertainty. INVERTED (<−0.5%) = classic recession warning signal — historically precedes gold safe-haven rallies.';
+  if (key === 'dxy')               return 'USD zone: STRONG (>106) = dollar headwind — gold faces resistance as it becomes expensive for foreign buyers. NEUTRAL (98–106) = balanced. WEAK (<98) = dollar tailwind — gold typically benefits from USD weakness.';
+  if (key === 'commodity_regime')  return 'Commodity Regime zone: TAILWIND (≥+2) = weak USD + strong AUD + rising copper — ideal environment for ASX resource stocks. MIXED (0 to +2) = partial alignment. HEADWIND (−2 to 0) = mostly adverse conditions. FULL DRAG (<−2) = all three legs working against resource stocks.';
   return 'Zone classification based on historical thresholds for this indicator.';
 }
 
@@ -98,7 +105,8 @@ function _regimeThresholdDatasets(key, n) {
   });
   if (key === 'vix')         return [make(20, 'Elevated (20)'), make(30, 'Crisis (30)')];
   if (key === 'yield_curve') return [make(0, 'Inversion (0)'), make(-0.5, 'Deep inversion (-0.5)')];
-  if (key === 'us10yr')      return [make(4.5, 'High rates (4.5)'), make(2.0, 'Low rates (2.0)')];
+  if (key === 'us10yr')           return [make(4.5, 'High rates (4.5)'), make(2.0, 'Low rates (2.0)')];
+  if (key === 'commodity_regime') return [make(2, 'Tailwind (≥+2)'), make(0, 'Neutral (0)'), make(-2, 'Full drag (≤−2)')];
   return [];
 }
 
@@ -144,7 +152,8 @@ function _regimeBuildMacroSection(container, macroData) {
     { key: 'audusd',      title: 'AUD / USD',                fmt: v => v.toFixed(5),        tip: 'Australian Dollar vs USD. AUD is a commodity-linked, risk-on currency — strengthens when global growth is expected and commodity demand is high. Weak AUD can signal domestic risk-off conditions and amplify AUD-denominated gold returns.' },
     { key: 'gold',        title: 'Gold (USD/oz)',             fmt: v => '$' + v.toFixed(0),  tip: 'Spot gold price (USD/oz, front-month futures). Primary driver for gold miners. Moves are driven by: USD strength, real interest rates, central bank buying, and safe-haven demand during crises.' },
     { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2),  tip: 'Brent crude price (USD/barrel). Proxy for global economic growth and inflation expectations. High oil = inflationary pressures, potential rate hikes. The gold/oil ratio (below) strips out oil moves to show gold\'s relative safe-haven premium.' },
-    { key: 'gold_oil',    title: 'Gold / Oil Ratio',          fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
+    { key: 'gold_oil',         title: 'Gold / Oil Ratio',              fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
+    { key: 'commodity_regime', title: 'Commodity Regime Score',        fmt: v => v.toFixed(2),        tip: 'Composite score (−3 to +3) combining 7-day direction of DXY (inverted), AUD/USD, and copper. Each leg contributes ±1: +3 = all three tailwinds for ASX resource stocks (weak USD, strong AUD, rising copper); −3 = all three headwinds. Smoothed with a 5-day rolling average.' },
   ];
 
   // Section header
