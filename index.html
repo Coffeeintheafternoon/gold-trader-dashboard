@@ -249,6 +249,18 @@
     <!-- Overfit explanation -->
     <div id="ml-overfit-explain" style="display:none;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:16px;border-left:3px solid var(--red)"></div>
 
+    <!-- Model Info Header -->
+    <div class="chart-card" style="margin-bottom:16px;padding:14px 18px" id="ml-info-card">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Model Configuration</div>
+      <div id="ml-info-grid" style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:12px"></div>
+    </div>
+
+    <!-- Health Check Panel -->
+    <div class="chart-card" style="margin-bottom:16px;padding:14px 18px" id="ml-health-card">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Automated Health Checks</div>
+      <div id="ml-health-flags" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+
     <!-- IS vs Holdout equity chart -->
     <div class="chart-card" style="margin-bottom:16px">
       <div class="chart-title">IS Walk-Forward vs Holdout — Equity Curves</div>
@@ -458,6 +470,14 @@
         </div>
       </div>
       <div id="ml-ls-wrap" style="margin-top:10px"></div>
+      <!-- Trade Direction Timeline -->
+      <div style="margin-top:18px">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Trade Direction Timeline</div>
+          <div style="font-size:11px;color:#6b7280">▲ long  ▼ short  — flat  |  dashed line = IS/HO boundary</div>
+        </div>
+        <div style="position:relative;height:110px"><canvas id="ml-direction-chart"></canvas></div>
+      </div>
     </div>
 
     <!-- Trade Log -->
@@ -2283,10 +2303,14 @@ function renderTickerDetail(d) {
   // Price chart with trade signals (IS + HO trades)
   buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || [], d.trades_ho || []);
 
+  // Model info header + health checks
+  buildMLInfoHeader(d);
+  buildMLHealthChecks(d);
+
   // Trade analytics + log table
   _mlTradesIS = d.trades_is || [];
   _mlTradesHO = d.trades_ho || [];
-  buildMLTradeAnalytics(_mlTradesIS, _mlTradesHO);
+  buildMLTradeAnalytics(_mlTradesIS, _mlTradesHO, (d.holdout || {}).period_start);
   buildMLTradeLog(_mlTradesIS, 'is');
 }
 
@@ -2755,7 +2779,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
 }
 
 // ── Trade Analytics ────────────────────────────────────────────────────────────
-let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null;
+let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null, _mlDirectionChart = null;
 let _mlTradesIS = [], _mlTradesHO = [];
 
 function mlSwitchTradeTab(tab) {
@@ -2772,18 +2796,19 @@ function mlSwitchTradeTab(tab) {
   }
 }
 
-function buildMLTradeAnalytics(tradesIS, tradesHO) {
+function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const card = document.getElementById('ml-trade-analytics-card');
   if (!card || !tradesIS || tradesIS.length < 3) return;
   card.style.display = '';
 
   // Destroy previous instances
-  if (_mlMonthlyChart) { _mlMonthlyChart.destroy(); _mlMonthlyChart = null; }
-  if (_mlRetDistChart) { _mlRetDistChart.destroy(); _mlRetDistChart = null; }
-  if (_mlDurRetChart)  { _mlDurRetChart.destroy();  _mlDurRetChart  = null; }
-  if (_mlConcChart)    { _mlConcChart.destroy();    _mlConcChart    = null; }
-  if (_mlLsChart)      { _mlLsChart.destroy();      _mlLsChart      = null; }
-  if (_mlLsScatter)    { _mlLsScatter.destroy();    _mlLsScatter    = null; }
+  if (_mlMonthlyChart)   { _mlMonthlyChart.destroy();   _mlMonthlyChart   = null; }
+  if (_mlRetDistChart)   { _mlRetDistChart.destroy();   _mlRetDistChart   = null; }
+  if (_mlDurRetChart)    { _mlDurRetChart.destroy();    _mlDurRetChart    = null; }
+  if (_mlConcChart)      { _mlConcChart.destroy();      _mlConcChart      = null; }
+  if (_mlLsChart)        { _mlLsChart.destroy();        _mlLsChart        = null; }
+  if (_mlLsScatter)      { _mlLsScatter.destroy();      _mlLsScatter      = null; }
+  if (_mlDirectionChart) { _mlDirectionChart.destroy(); _mlDirectionChart = null; }
 
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
@@ -3038,6 +3063,192 @@ function buildMLTradeAnalytics(tradesIS, tradesHO) {
       </div>`;
     lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px">${tile(lstats,'▲ Long','#4fc3f7')}${tile(sstats,'▼ Short','#f472b6')}</div>`;
   }
+
+  // ── 6. Trade Direction Timeline ──────────────────────────────────────────────
+  const dirChartEl = document.getElementById('ml-direction-chart');
+  if (dirChartEl && (tradesIS.length || (tradesHO && tradesHO.length))) {
+    if (_mlDirectionChart) { _mlDirectionChart.destroy(); _mlDirectionChart = null; }
+
+    // Build a continuous bar-by-bar position series from IS + HO trades
+    const allTrades6 = [
+      ...(tradesIS  || []).map(t => ({...t, _seg: 'is'})),
+      ...(tradesHO  || []).map(t => ({...t, _seg: 'ho'})),
+    ].sort((a,b) => a.entry_date.localeCompare(b.entry_date));
+
+    // Collect all dates
+    const allDatesSet = new Set();
+    allTrades6.forEach(t => { allDatesSet.add(t.entry_date); if (t.exit_date) allDatesSet.add(t.exit_date); });
+    const allDates6 = [...allDatesSet].sort();
+
+    // Build position value per date: 1 = long, -1 = short, 0 = flat
+    const posMap = {};
+    allDates6.forEach(d => { posMap[d] = 0; });
+    allTrades6.forEach(t => {
+      if (!t.entry_date || !t.exit_date) return;
+      const val = t.direction === 'long' ? 1 : -1;
+      // Mark dates from entry to exit (exclusive of exit since that's when we close)
+      let active = false;
+      for (const d of allDates6) {
+        if (d === t.entry_date) active = true;
+        if (active) posMap[d] = val;
+        if (d === t.exit_date) { active = false; break; }
+      }
+    });
+
+    const posVals = allDates6.map(d => posMap[d]);
+    const barColors = posVals.map(v => v > 0 ? 'rgba(79,195,247,0.75)' : v < 0 ? 'rgba(244,114,182,0.75)' : 'rgba(80,80,80,0.35)');
+
+    // IS/HO boundary annotation
+    const annotations6 = {};
+    if (hoStart) {
+      const hoIdx = allDates6.findIndex(d => d >= hoStart);
+      if (hoIdx > 0) {
+        annotations6.hoLine = {
+          type: 'line', xMin: hoIdx - 0.5, xMax: hoIdx - 0.5,
+          borderColor: '#f5a520', borderWidth: 1.5, borderDash: [6, 3],
+          label: { content: 'HO', display: true, color: '#f5a520', font: { size: 9 }, position: 'start', backgroundColor: 'transparent' }
+        };
+      }
+    }
+
+    _mlDirectionChart = new Chart(dirChartEl.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: allDates6,
+        datasets: [{ data: posVals, backgroundColor: barColors, borderColor: 'transparent', barPercentage: 1.0, categoryPercentage: 1.0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => {
+            const v = ctx.raw; const d = allDates6[ctx.dataIndex];
+            return `${d}: ${v > 0 ? '▲ Long' : v < 0 ? '▼ Short' : '— Flat'}`;
+          }}},
+          annotation: Object.keys(annotations6).length ? { annotations: annotations6 } : undefined
+        },
+        scales: {
+          x: { ticks: { color: '#555', maxTicksLimit: 10, font: { size: 9 } }, grid: { display: false } },
+          y: {
+            min: -1.2, max: 1.2,
+            ticks: { color: '#555', font: { size: 9 }, callback: v => v === 1 ? '▲' : v === -1 ? '▼' : '—', stepSize: 1 },
+            grid: { color: '#1e1e1e' }, border: { display: false }
+          }
+        }
+      }
+    });
+  }
+}
+
+// ── Model Info Header ──────────────────────────────────────────────────────────
+function buildMLInfoHeader(d) {
+  const el = document.getElementById('ml-info-grid');
+  if (!el) return;
+  const hoM = d.holdout || {};
+  const isM = d.is_model || {};
+  const totalBars = d.bars || 0;
+  const hoBars    = hoM.bars || 180;
+  const isBars    = totalBars - hoBars;
+
+  // Approximate years from bar count (assume ~252 trading days/year)
+  const totalYrs = (totalBars / 252).toFixed(1);
+  const isYrs    = (isBars   / 252).toFixed(1);
+  const hoYrs    = (hoBars   / 252).toFixed(1);
+
+  const featTotal   = (d.features || []).length;
+  const featPruned  = d.pruned_feature_count || 0;
+  const featKept    = featTotal;
+
+  function stat(label, value, muted) {
+    const col = muted ? 'var(--muted)' : 'var(--text)';
+    return `<div style="display:flex;flex-direction:column;gap:2px;min-width:110px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">${label}</div>
+      <div style="font-size:13px;font-weight:600;color:${col};font-family:'SF Mono','Fira Mono',monospace">${value}</div>
+    </div>`;
+  }
+
+  el.innerHTML = [
+    stat('Data Period',   `${d.period_start} → ${d.period_end}`),
+    stat('Total Bars',    `${totalBars} (${totalYrs}yr)`),
+    stat('IS Period',     `${d.period_start} → ${hoM.period_start || '—'}`),
+    stat('IS Bars',       `${isBars} (${isYrs}yr)`),
+    stat('HO Period',     `${hoM.period_start || '—'} → ${hoM.period_end || '—'}`),
+    stat('HO Bars',       `${hoBars} (${hoYrs}yr)`),
+    stat('IS Windows',    `${isM.n_windows || '—'}`),
+    stat('Features Kept', `${featKept}`),
+    stat('Features Pruned', `${featPruned}`),
+  ].join('');
+}
+
+// ── Health Check Flags ─────────────────────────────────────────────────────────
+function buildMLHealthChecks(d) {
+  const el = document.getElementById('ml-health-flags');
+  if (!el) return;
+  const tradesHO = d.trades_ho || [];
+  const tradesIS = d.trades_is || [];
+  const allTrades = [...tradesIS, ...tradesHO];
+  const hoM = d.holdout || {};
+  const isM = d.is_model || {};
+  const flags = [];
+
+  function flag(label, value, status, tip) {
+    // status: 'ok' | 'warn' | 'fail' | 'info'
+    const colors = { ok: '#16a34a', warn: '#b45309', fail: '#991b1b', info: '#1d4ed8' };
+    const icons  = { ok: '✓', warn: '~', fail: '✕', info: 'ℹ' };
+    const bgs    = { ok: 'rgba(22,163,74,0.1)', warn: 'rgba(180,83,9,0.1)', fail: 'rgba(153,27,27,0.1)', info: 'rgba(29,78,216,0.1)' };
+    const col = colors[status] || colors.info;
+    const bg  = bgs[status]   || bgs.info;
+    return `<div data-tip="${tip}" style="display:inline-flex;align-items:center;gap:5px;background:${bg};border:1px solid ${col}33;border-radius:4px;padding:4px 10px;font-size:11px;cursor:default">
+      <span style="color:${col};font-weight:700">${icons[status]}</span>
+      <span style="color:var(--muted)">${label}:</span>
+      <span style="color:${col};font-weight:600;font-family:'SF Mono','Fira Mono',monospace">${value}</span>
+    </div>`;
+  }
+
+  // 1. Data sufficiency — need at least 3yr for meaningful IS
+  const totalYrs = (d.bars || 0) / 252;
+  if      (totalYrs >= 5)  flags.push(flag('Data', `${totalYrs.toFixed(1)}yr`, 'ok',  'At least 5yr of data — good for walk-forward.'));
+  else if (totalYrs >= 3)  flags.push(flag('Data', `${totalYrs.toFixed(1)}yr`, 'warn','3–5yr data: IS windows may be thin.'));
+  else                      flags.push(flag('Data', `${totalYrs.toFixed(1)}yr`, 'fail','Less than 3yr — insufficient for reliable walk-forward.'));
+
+  // 2. Liquidity — % non-zero return trades in HO
+  if (tradesHO.length >= 3) {
+    const nonZero = tradesHO.filter(t => Math.abs(t.return_pct || 0) > 0.001).length;
+    const pct = nonZero / tradesHO.length * 100;
+    if      (pct >= 90) flags.push(flag('Liquidity', `${pct.toFixed(0)}%`, 'ok',   'Proportion of HO trades with non-zero returns. >90% = liquid.'));
+    else if (pct >= 70) flags.push(flag('Liquidity', `${pct.toFixed(0)}%`, 'warn', 'Some zero-return trades — check stock liquidity.'));
+    else                 flags.push(flag('Liquidity', `${pct.toFixed(0)}%`, 'fail', 'Many zero-return trades — stock may be illiquid. Results unreliable.'));
+  }
+
+  // 3. Thrashing — avg hold bars in HO (short = churning)
+  if (tradesHO.length >= 3) {
+    const avgHold = tradesHO.reduce((a,t) => a + (t.bars || 0), 0) / tradesHO.length;
+    if      (avgHold >= 8)  flags.push(flag('Avg Hold (HO)', `${avgHold.toFixed(1)} bars`, 'ok',   'Average bars held per HO trade. <4 = thrashing.'));
+    else if (avgHold >= 4)  flags.push(flag('Avg Hold (HO)', `${avgHold.toFixed(1)} bars`, 'warn', 'Short average hold — marginal thrashing risk.'));
+    else                     flags.push(flag('Avg Hold (HO)', `${avgHold.toFixed(1)} bars`, 'fail', 'Very short hold — model is thrashing. Signals likely noise.'));
+  }
+
+  // 4. IS windows — need ≥10 for statistical confidence
+  const nWin = isM.n_windows || 0;
+  if      (nWin >= 10) flags.push(flag('IS Windows', `${nWin}`, 'ok',   '≥10 walk-forward windows — statistically robust.'));
+  else if (nWin >= 6)  flags.push(flag('IS Windows', `${nWin}`, 'warn', '6–9 windows — moderate confidence.'));
+  else                  flags.push(flag('IS Windows', `${nWin}`, 'fail', '<6 windows — very few samples, low confidence.'));
+
+  // 5. Overfit gap — IS vs HO Sharpe delta
+  const isShr = isM.sharpe || 0;
+  const hoShr = hoM.sharpe || 0;
+  const shrDelta = isShr - hoShr;
+  if      (shrDelta < 0.3) flags.push(flag('IS→HO Gap', `${shrDelta.toFixed(2)} Sharpe`, 'ok',   'Small IS→HO Sharpe drop — low overfit risk.'));
+  else if (shrDelta < 0.8) flags.push(flag('IS→HO Gap', `${shrDelta.toFixed(2)} Sharpe`, 'warn', 'Moderate performance degradation from IS to holdout.'));
+  else                      flags.push(flag('IS→HO Gap', `${shrDelta.toFixed(2)} Sharpe`, 'fail', 'Large IS→HO gap — likely overfit. Do not trade.'));
+
+  // 6. HO trade count — need enough trades for meaningful stats
+  const nHO = tradesHO.length;
+  if      (nHO >= 15) flags.push(flag('HO Trades', `${nHO}`, 'ok',   '≥15 HO trades — enough for meaningful stats.'));
+  else if (nHO >= 8)  flags.push(flag('HO Trades', `${nHO}`, 'warn', '8–14 HO trades — borderline sample size.'));
+  else                 flags.push(flag('HO Trades', `${nHO}`, 'fail', '<8 HO trades — too few to measure edge reliably.'));
+
+  el.innerHTML = flags.join('');
 }
 
 // ── Trade Log Table ────────────────────────────────────────────────────────────
