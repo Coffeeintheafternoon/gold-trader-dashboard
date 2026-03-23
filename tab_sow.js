@@ -10,6 +10,16 @@ const _sowLayers = {
   geopolitical: { label: 'Geopolitical Risks', color: '#e05252', group: null, enabled: true },
   shipping:     { label: 'Shipping Lanes',      color: '#f5a520', group: null, enabled: true },
   mining:       { label: 'Mining Regions',      color: '#52c4a0', group: null, enabled: false },
+  australia:    { label: 'Australia — Minerals', color: '#a78bfa', group: null, enabled: false },
+};
+
+// Australia type → colour + label
+const _auTypes = {
+  au_gold:     { color: '#f5a520', label: 'Gold' },
+  au_iron:     { color: '#e07a52', label: 'Iron Ore' },
+  au_port:     { color: '#7a9ae0', label: 'Port' },
+  au_critical: { color: '#a78bfa', label: 'Critical Mineral' },
+  au_copper:   { color: '#e0b452', label: 'Copper/Base Metal' },
 };
 
 // Severity → border colour
@@ -204,12 +214,97 @@ function _buildToggles() {
       // Update toggle visual
       toggle.style.background = layer.enabled ? layer.color : '#2a2a2a';
       toggle.querySelector('div').style.cssText = `position:absolute;top:2px;${layer.enabled ? 'right:2px' : 'left:2px'};width:12px;height:12px;border-radius:50%;background:#fff;transition:left 0.2s,right 0.2s`;
-      // Update label colour
+      // Update label colour + refresh legend
       row.querySelector('span').style.color = layer.enabled ? '#e8d5a0' : 'var(--muted)';
+      _buildLegend();
     });
 
     wrap.appendChild(row);
   });
+}
+
+// ── Australia layer ────────────────────────────────────────────────────────────
+function _buildAustralia(data) {
+  const layer = _sowLayers.australia;
+  layer.group = L.layerGroup();
+
+  (data.australia || []).forEach(r => {
+    const cfg    = _auTypes[r.type] || { color: '#a78bfa', label: r.type };
+    const marker = L.marker([r.lat, r.lng], { icon: _makeIcon(cfg.color, 13) });
+
+    marker.bindTooltip(
+      `<b style="color:#e8d5a0">${r.name}</b><br>` +
+      `<span style="font-size:11px;color:${cfg.color}">${cfg.label}</span>`,
+      { direction: 'top', offset: [0, -8], className: 'sow-tooltip' }
+    );
+
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${r.name}</div>
+        <div style="margin-bottom:8px">
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${cfg.color};color:${cfg.color};text-transform:uppercase;letter-spacing:0.8px">${cfg.label}</span>
+        </div>
+        <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${r.summary || ''}</div>
+        ${r.aud_link ? `
+        <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;margin-bottom:8px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AUD Link</div>
+          <div style="font-size:11px;color:#9a8a70;line-height:1.5">${r.aud_link}</div>
+        </div>` : ''}
+        ${r.key_names ? `<div style="font-size:11px;color:var(--muted)">Key names: <span style="color:#e8d5a0">${r.key_names}</span></div>` : ''}
+      `;
+      const status = document.getElementById('sow-status');
+      if (status) status.textContent = r.name;
+    });
+
+    layer.group.addLayer(marker);
+  });
+}
+
+// ── Legend — conditional on active layers ─────────────────────────────────────
+function _buildLegend() {
+  const el = document.getElementById('sow-legend');
+  if (!el) return;
+  el.innerHTML = '';
+
+  const row = (colour, shape, label) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:8px';
+    d.innerHTML = shape === 'line'
+      ? `<div style="width:20px;height:2px;background:${colour};border-radius:1px;flex-shrink:0"></div><span>${label}</span>`
+      : `<div style="width:10px;height:10px;border-radius:50%;background:${colour};flex-shrink:0"></div><span>${label}</span>`;
+    return d;
+  };
+  const dash = (colour, label) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:8px';
+    d.innerHTML = `<div style="width:20px;height:2px;background:repeating-linear-gradient(90deg,${colour} 0,${colour} 4px,transparent 4px,transparent 8px);flex-shrink:0"></div><span>${label}</span>`;
+    return d;
+  };
+
+  if (_sowLayers.geopolitical.enabled) {
+    el.appendChild(row('#e05252', 'dot', '● High severity'));
+    el.appendChild(row('#f5a520', 'dot', '● Medium severity'));
+    el.appendChild(row('#7a7060', 'dot', '● Low severity'));
+  }
+
+  if (_sowLayers.shipping.enabled) {
+    el.appendChild(row('#f5a520', 'line', '── Suez Canal route'));
+    el.appendChild(dash('#e06c3a',          'Diversion via Cape'));
+    el.appendChild(row('#7a7060', 'line', '── Panama route'));
+  }
+
+  if (_sowLayers.mining.enabled) {
+    el.appendChild(row('#52c4a0', 'dot', '● Gold mining region'));
+  }
+
+  if (_sowLayers.australia.enabled) {
+    Object.values(_auTypes).forEach(t => el.appendChild(row(t.color, 'dot', `● ${t.label}`)));
+  }
+
+  if (el.children.length === 0) {
+    el.innerHTML = '<span style="color:#3a3a3a;font-size:11px">Enable a layer to see key</span>';
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -253,6 +348,7 @@ function initSOWTab() {
       _buildHotspots(data);
       _buildShippingLanes(data);
       _buildMiningRegions(data);
+      _buildAustralia(data);
 
       // Add enabled layers to map
       Object.values(_sowLayers).forEach(layer => {
@@ -260,6 +356,7 @@ function initSOWTab() {
       });
 
       _buildToggles();
+      _buildLegend();
 
       const updated = document.getElementById('sow-updated');
       if (updated && data.generated_at) {
