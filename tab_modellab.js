@@ -859,16 +859,39 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
 
-  // ── 1. Monthly P&L ─────────────────────────────────────────────────────────
-  const monthly = {};
+  // ── 1. Monthly P&L — IS (green/red) + HO (cyan/orange) on one chart ──────────
+  const monthlyMap = {};
   tradesIS.forEach(t => {
-    const key = t.exit_date ? t.exit_date.slice(0,7) : t.entry_date.slice(0,7);
-    monthly[key] = (monthly[key] || 0) + (t.return_pct || 0);
+    const key = (t.exit_date || t.entry_date || '').slice(0,7);
+    if (!key) return;
+    if (!monthlyMap[key]) monthlyMap[key] = { pnl: 0, period: 'is' };
+    monthlyMap[key].pnl += (t.return_pct || 0);
   });
-  const mKeys   = Object.keys(monthly).sort();
-  const mVals   = mKeys.map(k => +monthly[k].toFixed(2));
-  const mColors = mVals.map(v => v >= 0 ? 'rgba(0,255,65,0.75)' : 'rgba(255,80,80,0.75)');
-  const mBorder = mVals.map(v => v >= 0 ? '#00ff41' : '#ff5050');
+  (tradesHO || []).forEach(t => {
+    const key = (t.exit_date || t.entry_date || '').slice(0,7);
+    if (!key) return;
+    if (!monthlyMap[key]) monthlyMap[key] = { pnl: 0, period: 'ho' };
+    else monthlyMap[key].period = 'ho';
+    monthlyMap[key].pnl += (t.return_pct || 0);
+  });
+  const mKeys   = Object.keys(monthlyMap).sort();
+  const mVals   = mKeys.map(k => +monthlyMap[k].pnl.toFixed(2));
+  const mPeriod = mKeys.map(k => monthlyMap[k].period);
+  const mColors = mVals.map((v,i) => mPeriod[i]==='ho'
+    ? (v >= 0 ? 'rgba(34,211,238,0.80)' : 'rgba(249,115,22,0.80)')
+    : (v >= 0 ? 'rgba(0,255,65,0.75)'   : 'rgba(255,80,80,0.75)'));
+  const mBorder = mVals.map((v,i) => mPeriod[i]==='ho'
+    ? (v >= 0 ? '#22d3ee' : '#f97316')
+    : (v >= 0 ? '#00ff41' : '#ff5050'));
+
+  // IS/HO boundary annotation
+  const hoBoundaryIdx = mKeys.findIndex(k => mPeriod[k] === 'ho' || (hoStart && k >= hoStart.slice(0,7)));
+  const mAnnotations = {};
+  if (hoBoundaryIdx > 0) {
+    mAnnotations.hoLine = { type:'line', xMin: hoBoundaryIdx-0.5, xMax: hoBoundaryIdx-0.5,
+      borderColor:'#f5a520', borderWidth:1.5, borderDash:[5,3],
+      label:{ content:'HO', display:true, color:'#f5a520', font:{size:9}, position:'start', backgroundColor:'transparent' } };
+  }
 
   _mlMonthlyChart = new Chart(document.getElementById('ml-monthly-pnl-chart').getContext('2d'), {
     type: 'bar',
@@ -878,9 +901,11 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => `${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }
-      }},
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${mPeriod[ctx.dataIndex]==='ho'?'HO ':'IS '}${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(2)}%` }},
+        annotation: Object.keys(mAnnotations).length ? { annotations: mAnnotations } : undefined
+      },
       scales: {
         x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
         y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle,
@@ -889,34 +914,49 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     }
   });
 
-  // ── 2. Return Distribution Histogram ───────────────────────────────────────
-  const rets = tradesIS.map(t => t.return_pct || 0);
-  const rMin = Math.min(...rets), rMax = Math.max(...rets);
-  const nBins = Math.min(12, Math.max(6, Math.round(Math.sqrt(rets.length))));
-  const binW = (rMax - rMin) / nBins || 1;
-  const bins = Array.from({length: nBins}, (_, i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, count: 0, wins: 0 }));
-  rets.forEach((r, ri) => {
+  // ── 2. Return Distribution — IS (green/red) + HO (cyan/orange) grouped ────────
+  const retsIS  = tradesIS.map(t => t.return_pct || 0);
+  const retsHO  = (tradesHO || []).map(t => t.return_pct || 0);
+  const allRets = [...retsIS, ...retsHO];
+  const rMin = allRets.length ? Math.min(...allRets) : -5;
+  const rMax = allRets.length ? Math.max(...allRets) :  5;
+  const nBins = Math.min(12, Math.max(6, Math.round(Math.sqrt(retsIS.length))));
+  const binW  = (rMax - rMin) / nBins || 1;
+  const bins  = Array.from({length: nBins}, (_,i) => ({
+    lo: rMin + i*binW, hi: rMin + (i+1)*binW,
+    is: 0, isW: 0, ho: 0, hoW: 0
+  }));
+  retsIS.forEach((r, ri) => {
     const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
-    bins[bi].count++;
-    if (tradesIS[ri].win) bins[bi].wins++;
+    bins[bi].is++;
+    if (tradesIS[ri].win) bins[bi].isW++;
   });
-  const histColors = bins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)');
-  const histBorder = bins.map(b => b.lo >= 0 ? '#00ff41' : '#ff5050');
+  retsHO.forEach((r, ri) => {
+    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    bins[bi].ho++;
+    if ((tradesHO||[])[ri]?.win) bins[bi].hoW++;
+  });
+  const isHistColors = bins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)'   : 'rgba(255,80,80,0.7)');
+  const hoHistColors = bins.map(b => b.lo >= 0 ? 'rgba(34,211,238,0.7)' : 'rgba(249,115,22,0.7)');
 
   _mlRetDistChart = new Chart(document.getElementById('ml-ret-dist-chart').getContext('2d'), {
     type: 'bar',
     data: {
       labels: bins.map(b => `${b.lo.toFixed(1)}%`),
-      datasets: [{ data: bins.map(b => b.count), backgroundColor: histColors, borderColor: histBorder, borderWidth: 1, borderRadius: 2, barPercentage: 0.95, categoryPercentage: 1 }]
+      datasets: [
+        { label: 'IS', data: bins.map(b => b.is), backgroundColor: isHistColors, borderColor: isHistColors.map(c=>c.replace('0.7','1')), borderWidth: 1, borderRadius: 2 },
+        { label: 'HO', data: bins.map(b => b.ho), backgroundColor: hoHistColors, borderColor: hoHistColors.map(c=>c.replace('0.7','1')), borderWidth: 1, borderRadius: 2 }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: {
+      plugins: {
+        legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:6 } },
+        tooltip: { callbacks: {
           title: ctx => { const b = bins[ctx[0].dataIndex]; return `${b.lo.toFixed(2)}% to ${b.hi.toFixed(2)}%`; },
-          label: ctx => { const b = bins[ctx.dataIndex]; return `${b.count} trade${b.count!==1?'s':''} (${b.wins} W)`; }
-        }
-      }},
+          label: ctx => { const b = bins[ctx.dataIndex]; const isIs = ctx.dataset.label==='IS'; return `${ctx.dataset.label}: ${isIs?b.is:b.ho} trade${(isIs?b.is:b.ho)!==1?'s':''} (${isIs?b.isW:b.hoW} W)`; }
+        }}
+      },
       scales: {
         x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
         y: { ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false }, title: { display: true, text: 'Count', color: '#6b7280', font: { size: 10 } } }
@@ -924,33 +964,35 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     }
   });
 
-  // ── 3. Duration vs Return scatter ──────────────────────────────────────────
-  const wins3  = tradesIS.filter(t => t.win).map(t => ({ x: t.bars || 0, y: +(t.return_pct||0).toFixed(2) }));
-  const losses3= tradesIS.filter(t => !t.win).map(t => ({ x: t.bars || 0, y: +(t.return_pct||0).toFixed(2) }));
+  // ── 3. Duration vs Return — 4 series: IS-Win, IS-Loss, HO-Win, HO-Loss ────────
+  const isWins3  = tradesIS.filter(t =>  t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
+  const isLoss3  = tradesIS.filter(t => !t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
+  const hoWins3  = (tradesHO||[]).filter(t =>  t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
+  const hoLoss3  = (tradesHO||[]).filter(t => !t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
 
   _mlDurRetChart = new Chart(document.getElementById('ml-dur-ret-chart').getContext('2d'), {
     type: 'scatter',
-    data: {
-      datasets: [
-        { label: 'Win', data: wins3,   backgroundColor: 'rgba(0,255,65,0.55)',   borderColor: '#00ff41', pointRadius: 5, pointHoverRadius: 7 },
-        { label: 'Loss', data: losses3, backgroundColor: 'rgba(255,80,80,0.55)', borderColor: '#ff5050', pointRadius: 5, pointHoverRadius: 7 }
-      ]
-    },
+    data: { datasets: [
+      { label: 'IS Win',  data: isWins3, backgroundColor: 'rgba(0,255,65,0.55)',    borderColor: '#00ff41', pointRadius: 4, pointHoverRadius: 6 },
+      { label: 'IS Loss', data: isLoss3, backgroundColor: 'rgba(255,80,80,0.55)',   borderColor: '#ff5050', pointRadius: 4, pointHoverRadius: 6 },
+      { label: 'HO Win',  data: hoWins3, backgroundColor: 'rgba(34,211,238,0.65)',  borderColor: '#22d3ee', pointRadius: 4, pointHoverRadius: 6, pointStyle: 'triangle' },
+      { label: 'HO Loss', data: hoLoss3, backgroundColor: 'rgba(249,115,22,0.65)', borderColor: '#f97316', pointRadius: 4, pointHoverRadius: 6, pointStyle: 'triangle' }
+    ]},
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
-        legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y >= 0 ? '+' : ''}${ctx.raw.y.toFixed(2)}%` }}
+        legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:5 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
       },
       scales: {
-        x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color: '#6b7280', font: { size: 10 } } },
-        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border: { display: false },
-             title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
+        x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color:'#6b7280', font:{size:10} } },
+        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border:{display:false},
+             title: { display: true, text: 'Return %', color:'#6b7280', font:{size:10} } }
       }
     }
   });
 
-  // ── 4. P&L Concentration — composition bar + bubble chart ───────────────────
+  // ── 4. P&L Concentration — IS period only ────────────────────────────────────
   const sorted = [...tradesIS].sort((a,b) => Math.abs(b.return_pct) - Math.abs(a.return_pct));
   const totalGross = sorted.reduce((a,t) => a + Math.abs(t.return_pct), 0);
 
@@ -1013,9 +1055,14 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   });
 
   // ── 5. Long vs Short comparison ──────────────────────────────────────────────
+  // Chart uses combined IS+HO; stats tile shows IS and HO breakdown
   const allTrades = [...tradesIS, ...(tradesHO || [])];
   const longs  = allTrades.filter(t => t.direction === 'long');
   const shorts = allTrades.filter(t => t.direction === 'short');
+  const isLongsD  = tradesIS.filter(t => t.direction === 'long');
+  const isShortsD = tradesIS.filter(t => t.direction === 'short');
+  const hoLongsD  = (tradesHO||[]).filter(t => t.direction === 'long');
+  const hoShortsD = (tradesHO||[]).filter(t => t.direction === 'short');
 
   function tradeStats(arr) {
     if (!arr.length) return null;
@@ -1097,17 +1144,25 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
 
   // ── Stats tile summary ──────────────────────────────────────────────────────
   const lsWrap = document.getElementById('ml-ls-wrap');
-  if (lsWrap && (lstats || sstats)) {
-    const tile = (s, label, col) => !s ? '' : `
-      <div style="flex:1;background:#111;border-radius:5px;padding:8px 12px;border:1px solid #1e1e1e;font-size:12px">
-        <span style="color:${col};font-weight:700">${label}</span>
-        <span style="color:#6b7280;margin-left:8px">${s.n} trades</span>
-        <span style="color:${+s.wr>=50?'#00ff41':'#ff6b6b'};margin-left:10px">${s.wr.toFixed(0)}% WR</span>
-        <span style="color:${s.avg>=0?'#00ff41':'#ff6b6b'};margin-left:10px">${s.avg>=0?'+':''}${s.avg.toFixed(2)}% avg</span>
-        <span style="color:${s.pf>=1.2?'#00ff41':s.pf>=1?'#f5a520':'#ff6b6b'};margin-left:10px">PF ${s.pf!=null?s.pf.toFixed(2):'—'}</span>
-        <span style="color:#6b7280;margin-left:10px">${s.avgBars.toFixed(1)} bars avg</span>
-      </div>`;
-    lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px">${tile(lstats,'▲ Long','#4fc3f7')}${tile(sstats,'▼ Short','#f472b6')}</div>`;
+  if (lsWrap) {
+    const isLstats = tradeStats(isLongsD), isSstats = tradeStats(isShortsD);
+    const hoLstats = tradeStats(hoLongsD), hoSstats = tradeStats(hoShortsD);
+    const tile = (s, label, col, period) => !s ? '' : `
+      <span style="color:${col};font-weight:700">${label}</span>
+      <span style="color:var(--muted);font-size:10px;margin-left:4px">${period}</span>
+      <span style="color:#6b7280;margin-left:8px">${s.n} trades</span>
+      <span style="color:${+s.wr>=50?'#00ff41':'#ff6b6b'};margin-left:10px">${s.wr.toFixed(0)}% WR</span>
+      <span style="color:${s.avg>=0?'#00ff41':'#ff6b6b'};margin-left:10px">${s.avg>=0?'+':''}${s.avg.toFixed(2)}% avg</span>
+      <span style="color:${s.pf>=1.2?'#00ff41':s.pf>=1?'#f5a520':'#ff6b6b'};margin-left:10px">PF ${s.pf!=null?s.pf.toFixed(2):'—'}</span>`;
+    const row = (s1, s2, label, col) => (s1||s2) ? `
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px;background:#0c0c0c;border-radius:5px;padding:6px 10px;border:1px solid #1a1a1a;font-size:11px">${tile(s1,label,col,'IS')}</div>
+        <div style="flex:1;min-width:200px;background:#0c0c0c;border-radius:5px;padding:6px 10px;border:1px solid #1a1a1a;font-size:11px">${tile(s2,label,col,'HO')}</div>
+      </div>` : '';
+    lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+      ${row(isLstats, hoLstats, '▲ Long',  '#4fc3f7')}
+      ${row(isSstats, hoSstats, '▼ Short', '#f472b6')}
+    </div>`;
   }
 
   // ── 6. Trade Direction Timeline ──────────────────────────────────────────────

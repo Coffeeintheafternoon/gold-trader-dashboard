@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-03-22T22:37:01.161338+00:00",
-  "n_tickers": 135,
-  "n_models": 145,
+  "n_tickers": 136,
+  "n_models": 152,
   "models": {
     "A2M.AX": [
       {
@@ -1608,6 +1608,74 @@
         "is_sharpe": 0.4464,
         "ho_pf": 1.1926,
         "ho_sharpe": 0.8945
+      }
+    ],
+    "PRN.AX": [
+      {
+        "safe_name": "prn_ax",
+        "label": "Ridge (5yr)",
+        "file": "model_lab_prn_ax.json",
+        "is_pf": 1.0979,
+        "is_sharpe": 0.5233,
+        "ho_pf": 0.7921,
+        "ho_sharpe": -1.3674
+      },
+      {
+        "safe_name": "prn_18y",
+        "label": "18yr \u00b7 1yr window",
+        "file": "model_lab_prn_18y.json",
+        "is_pf": 1.0227,
+        "is_sharpe": 0.1194,
+        "ho_pf": 0.8955,
+        "ho_sharpe": -0.6427
+      },
+      {
+        "safe_name": "prn_ax_regime_3m",
+        "label": "Regime-Weighted 3M",
+        "model_type": "regime_similarity",
+        "step_days": 63,
+        "sigma": 1.5,
+        "is_pf": 0.933,
+        "is_sharpe": -0.3668,
+        "ho_pf": 0.7557,
+        "ho_sharpe": -1.6232,
+        "overfit": "NO_EDGE",
+        "n_windows": 65,
+        "bars": 4553,
+        "period_start": "2008-03-25",
+        "period_end": "2026-03-23"
+      },
+      {
+        "safe_name": "prn_ax_regime_6m",
+        "label": "Regime-Weighted 6M",
+        "model_type": "regime_similarity",
+        "step_days": 126,
+        "sigma": 1.5,
+        "is_pf": 0.9086,
+        "is_sharpe": -0.5071,
+        "ho_pf": 0.7821,
+        "ho_sharpe": -1.4246,
+        "overfit": "NO_EDGE",
+        "n_windows": 32,
+        "bars": 4553,
+        "period_start": "2008-03-25",
+        "period_end": "2026-03-23"
+      },
+      {
+        "safe_name": "prn_ax_regime_1y",
+        "label": "Regime-Weighted 1Y",
+        "model_type": "regime_similarity",
+        "step_days": 252,
+        "sigma": 1.5,
+        "is_pf": 0.9821,
+        "is_sharpe": -0.0958,
+        "ho_pf": 0.7557,
+        "ho_sharpe": -1.6232,
+        "overfit": "NO_EDGE",
+        "n_windows": 16,
+        "bars": 4553,
+        "period_start": "2008-03-25",
+        "period_end": "2026-03-23"
       }
     ]
   }
