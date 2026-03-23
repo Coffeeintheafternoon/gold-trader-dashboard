@@ -208,8 +208,20 @@ function renderTickerDetail(d) {
   _mlStabAdded = [];
   _mlStabShow  = { weight: true, cum_avg: true, cum_pval: true };
   _mlStabSyncButtons();
-  const ticker = d.ticker || '—';
-  document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
+  // d.ticker may be a full label like "WBC.AX (Regime-Weighted 1Y)" for regime models.
+  // Resolve the canonical ticker key used in _modelIndex by scanning for the safe_name match.
+  const tickerRaw = d.ticker || '—';
+  let ticker = tickerRaw;
+  if (_modelIndex && _mlCurrentSafe) {
+    const found = Object.keys(_modelIndex).find(k =>
+      _modelIndex[k].some(m => m.safe_name === _mlCurrentSafe)
+    );
+    if (found) ticker = found;
+  }
+  // Derive display title: use model_type for regime models
+  const isRegimeModelEarly = d.model_type === 'regime_similarity';
+  const modelLabel = isRegimeModelEarly ? 'Regime Similarity Model' : 'Linear Regression Model';
+  document.getElementById('ml-detail-title').textContent = ticker + ' — ' + modelLabel;
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
 
   // Model switcher — show all available models for this ticker
