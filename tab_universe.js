@@ -5,6 +5,7 @@ async function initUniverseTab() {
     loadFullScreenerPanel(),
     loadComparisonPanel()
   ]);
+  _renderModelGlossary();
 }
 
 // ── Full ASX Universe Screener (300 tickers) ──────────────────────────────────
@@ -172,4 +173,92 @@ function selectTicker(safe) {
   document.getElementById('feature-model-section').scrollIntoView({behavior:'smooth',block:'start'});
   const divLabel=document.querySelector('#feature-model-section .section-divider-label');
   if(divLabel)divLabel.textContent=safe.replace('_ax','').toUpperCase()+'.AX — Ridge Regression Feature Model';
+}
+
+// ── Model Glossary ─────────────────────────────────────────────────────────────
+function _renderModelGlossary() {
+  const el = document.getElementById('universe-glossary');
+  if (!el) return;
+
+  const models = [
+    {
+      name: 'Ridge Regression',
+      badge: 'Ridge (1yr)',
+      badgeColor: 'var(--gold)',
+      icon: '📈',
+      desc: 'The primary walk-forward linear model. Trained on 18 months of daily price and macro data using ridge-regularised linear regression. At each step the model learns feature weights on the in-sample period, then makes predictions on the next 3-month out-of-sample window.',
+      params: [
+        { label: 'IS window',       value: '18 months (rolling)' },
+        { label: 'OOS step',        value: '3 months' },
+        { label: 'Regularisation',  value: 'Ridge (L2), alpha auto-tuned' },
+        { label: 'Feature count',   value: '33 base features + macro' },
+        { label: 'Validation',      value: 'MCPT (Monte Carlo Permutation Test)' },
+        { label: 'Data history',    value: '~5 years minimum (~1,260 bars)' },
+      ],
+      tip: 'Best for: stable-regime stocks where features maintain consistent direction over 18+ months. Not suitable for tickers with structural breaks or sharp macro regime changes — use Regime Similarity model instead.',
+    },
+    {
+      name: 'Regime Similarity (3M)',
+      badge: 'Regime (3M)',
+      badgeColor: 'var(--green)',
+      icon: '🔀',
+      desc: 'Walk-forward model using Gaussian kernel weighting to up-weight IS training windows where macro conditions were similar to the most recent 3 months. Trains on ~18 years of daily data but gives far more weight to historically similar macro environments.',
+      params: [
+        { label: 'IS period',       value: '18 years (full history ~4,500 bars)' },
+        { label: 'OOS step',        value: '63 days (≈ 3 months)' },
+        { label: 'Reference window', value: '3-month rolling macro average' },
+        { label: 'Kernel sigma',    value: '1.5 (z-score units)' },
+        { label: 'Regime variables', value: 'VIX, DXY, US10yr, AUD/USD, Gold' },
+        { label: 'Validation',      value: 'Weighted t-test per feature' },
+      ],
+      tip: 'Best for: identifying which features have edge specifically in today\'s macro environment. The 3M reference window is more responsive to recent shifts but can be noisy in fast-changing regimes.',
+    },
+    {
+      name: 'Regime Similarity (1Y)',
+      badge: 'Regime (1Y)',
+      badgeColor: 'var(--green)',
+      icon: '🔀',
+      desc: 'Same as the 3M Regime model but uses a 12-month rolling average as the macro reference point. Produces a more stable, lower-noise regime classification at the cost of slower response to new regime transitions.',
+      params: [
+        { label: 'IS period',       value: '18 years (full history ~4,500 bars)' },
+        { label: 'OOS step',        value: '63 days (≈ 3 months)' },
+        { label: 'Reference window', value: '12-month rolling macro average' },
+        { label: 'Kernel sigma',    value: '1.5 (z-score units)' },
+        { label: 'Regime variables', value: 'VIX, DXY, US10yr, AUD/USD, Gold' },
+        { label: 'Validation',      value: 'Weighted t-test per feature' },
+      ],
+      tip: 'Best for: confirming regime signals from the 3M model. If 3M and 1Y agree on a feature\'s significance, treat it as high-confidence. Disagreement may indicate a regime transition in progress.',
+    },
+  ];
+
+  el.innerHTML = `
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-label tip" data-tip="Descriptions of each model type used in this system, including their architecture, key parameters, and best-use cases.">Model Glossary</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;margin-bottom:40px">
+      ${models.map(m => `
+        <div class="chart-card" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:20px">${m.icon}</span>
+            <span style="font-size:14px;font-weight:700;color:#e5e7eb">${m.name}</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid ${m.badgeColor};color:${m.badgeColor};background:rgba(0,0,0,0.4)">${m.badge}</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">${m.desc}</p>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            ${m.params.map(p => `
+              <tr style="border-bottom:1px solid #1a1a1a">
+                <td style="padding:5px 0;color:var(--muted);width:45%">${p.label}</td>
+                <td style="padding:5px 0;font-family:monospace;color:#d1d5db">${p.value}</td>
+              </tr>
+            `).join('')}
+          </table>
+          <div class="tip" style="font-size:11px;color:#60a5fa;line-height:1.5;cursor:help;border-left:2px solid #1e40af;padding-left:8px" data-tip="${m.tip}">
+            💡 ${m.tip}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }

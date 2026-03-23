@@ -100,6 +100,16 @@ function _regimeThresholdDatasets(key, n) {
   return [];
 }
 
+// ── Zoom helper: snap chart to last N bars ─────────────────────────────────────
+function _regimeZoom(key, bars) {
+  const chart = _regimeMacroCharts[key];
+  if (!chart) return;
+  const n = chart.data.labels.length;
+  const minIdx = Math.max(0, n - bars);
+  chart.zoomScale('x', { min: minIdx, max: n - 1 }, 'none');
+  chart.update('none');
+}
+
 // ── Section 1: Macro Regime Tracker ──────────────────────────────────────────
 
 function _regimeBuildMacroSection(container, macroData) {
@@ -172,6 +182,7 @@ function _regimeBuildMacroSection(container, macroData) {
       : '';
 
     const canvasId = `regime-chart-${cfg.key}`;
+    const resetId  = `regime-reset-${cfg.key}`;
     const pctTip = 'Percentile rank vs last 2 years of daily data. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th). Extremes often precede regime shifts.';
     const rangeTip = 'Min and max reading over the last 2 years of daily data. Shows where current levels sit in historical context.';
     card.innerHTML = `
@@ -182,7 +193,12 @@ function _regimeBuildMacroSection(container, macroData) {
         ${zoneHtml && zone ? `<span class="tip" data-tip="${_regimeZoneTip(cfg.key)}">${zoneHtml}</span>` : ''}
       </div>
       ${!zone && zoneHtml ? zoneHtml : ''}
-      ${rangeHtml ? `<div class="tip" style="margin-bottom:10px" data-tip="${rangeTip}">${rangeHtml}</div>` : '<div style="margin-bottom:10px"></div>'}
+      ${rangeHtml ? `<div class="tip" style="margin-bottom:6px" data-tip="${rangeTip}">${rangeHtml}</div>` : '<div style="margin-bottom:6px"></div>'}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+        ${['1M','3M','6M','1Y','2Y'].map(r => `<button onclick="_regimeZoom('${cfg.key}',${r==='1M'?21:r==='3M'?63:r==='6M'?126:r==='1Y'?252:504})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`).join('')}
+        <button id="${resetId}" onclick="_regimeMacroCharts['${cfg.key}']?.resetZoom()" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">Reset</button>
+        <span style="font-size:10px;color:#333;margin-left:4px">scroll to zoom · drag to pan</span>
+      </div>
       <div class="chart-wrap" style="height:180px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
     `;
     grid.appendChild(card);
@@ -242,6 +258,10 @@ function _regimeBuildMacroSection(container, macroData) {
                 filter: item => item.datasetIndex === 0,
               },
             },
+            zoom: {
+              pan:  { enabled: true,  mode: 'x' },
+              zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+            },
           },
           scales: {
             x: {
@@ -252,7 +272,6 @@ function _regimeBuildMacroSection(container, macroData) {
                 callback: function(val, idx) {
                   const label = this.getLabelForValue(val);
                   if (!label) return '';
-                  // Format "2024-03-15" → "Mar '24"
                   const d = new Date(label);
                   if (isNaN(d)) return label;
                   return d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
