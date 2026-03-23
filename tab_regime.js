@@ -178,13 +178,13 @@ function _regimeBuildMacroSection(container, macroData) {
     }
 
     const rangeHtml = (lo != null && hi != null)
-      ? `<span style="font-size:10px;color:var(--muted)">2yr: ${cfg.fmt ? cfg.fmt(lo) : lo} – ${cfg.fmt ? cfg.fmt(hi) : hi}</span>`
+      ? `<span style="font-size:10px;color:var(--muted)">5yr: ${cfg.fmt ? cfg.fmt(lo) : lo} – ${cfg.fmt ? cfg.fmt(hi) : hi}</span>`
       : '';
 
     const canvasId = `regime-chart-${cfg.key}`;
     const resetId  = `regime-reset-${cfg.key}`;
-    const pctTip = 'Percentile rank vs last 2 years of daily data. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th). Extremes often precede regime shifts.';
-    const rangeTip = 'Min and max reading over the last 2 years of daily data. Shows where current levels sit in historical context.';
+    const pctTip = 'Percentile rank vs last 5 years of daily data. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th). Extremes often precede regime shifts.';
+    const rangeTip = 'Min and max reading over the last 5 years of daily data. Shows where current levels sit in historical context.';
     card.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;flex-wrap:wrap">
         <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
@@ -195,7 +195,7 @@ function _regimeBuildMacroSection(container, macroData) {
       ${!zone && zoneHtml ? zoneHtml : ''}
       ${rangeHtml ? `<div class="tip" style="margin-bottom:6px" data-tip="${rangeTip}">${rangeHtml}</div>` : '<div style="margin-bottom:6px"></div>'}
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-        ${['1M','3M','6M','1Y','2Y'].map(r => `<button onclick="_regimeZoom('${cfg.key}',${r==='1M'?21:r==='3M'?63:r==='6M'?126:r==='1Y'?252:504})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`).join('')}
+        ${[['1M',21],['3M',63],['6M',126],['1Y',252],['2Y',504],['5Y',1260]].map(([r,b]) => `<button onclick="_regimeZoom('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`).join('')}
         <button id="${resetId}" onclick="_regimeMacroCharts['${cfg.key}']?.resetZoom()" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">Reset</button>
         <span style="font-size:10px;color:#333;margin-left:4px">scroll to zoom · drag to pan</span>
       </div>
