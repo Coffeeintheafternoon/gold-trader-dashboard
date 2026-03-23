@@ -285,11 +285,19 @@ function _buildConflictEvents(data) {
     });
 
     const marker = L.marker([ev.lat, ev.lng], { icon });
+    const impactCol = _impactColour(ev.gold_impact);
     marker.bindTooltip(`
-      <b style="color:#e8d5a0">${ev.name}</b>
-      <br><span style="font-size:11px;color:${fatColor}">${(ev.event_type || '').replace('_', ' ').toUpperCase()} · ${(sev).toUpperCase()}</span>
-      <br><span style="font-size:10px;color:#7a7060">${ev.actors || ''}</span>
-    `, { direction: 'top', offset: [0, -8], className: 'sow-tooltip' });
+      <div style="max-width:260px">
+        <div style="font-size:13px;font-weight:700;color:#e8d5a0;margin-bottom:5px">${ev.name}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+          <span style="font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid ${fatColor};color:${fatColor};text-transform:uppercase;letter-spacing:0.7px">${sev}</span>
+          <span style="font-size:10px;padding:1px 6px;border-radius:3px;border:1px solid #2a2a2a;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px">${(ev.event_type || '').replace(/_/g,' ')}</span>
+          ${ev.gold_impact ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:#0d0d0d;color:${impactCol}">Gold: ${_impactLabel(ev.gold_impact)}</span>` : ''}
+        </div>
+        ${ev.actors ? `<div style="font-size:11px;color:#7a9ae0;margin-bottom:5px">⚔ ${ev.actors}</div>` : ''}
+        ${ev.note ? `<div style="font-size:11px;color:#9a8a70;line-height:1.55">${ev.note}</div>` : ''}
+      </div>
+    `, { direction: 'top', offset: [0, -8], className: 'sow-tooltip', maxWidth: 280 });
 
     marker.on('click', () => {
       const el = document.getElementById('sow-detail-content');
