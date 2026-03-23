@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Squant Bot</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -103,6 +105,7 @@
     <button class="tab-btn" id="tabnav-papertrade" onclick="switchTab('papertrade')">Paper Trading</button>
     <button class="tab-btn" id="tabnav-regime" onclick="switchTab('regime')">Regime</button>
     <button class="tab-btn" id="tabnav-chatter" onclick="switchTab('chatter')">Chatter</button>
+    <button class="tab-btn" id="tabnav-sow" onclick="switchTab('sow')">S.O.W</button>
   </nav>
   <div class="header-right">
     <div id="interval-toggle-wrap" style="display:none;gap:4px">
@@ -1029,6 +1032,48 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 8: STATE OF THE WORLD                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="tab-sow" class="tab-pane">
+  <div style="display:grid;grid-template-columns:75% 25%;height:calc(100vh - 56px);overflow:hidden">
+
+    <!-- ── Left: Map ── -->
+    <div style="position:relative">
+      <div id="sow-map" style="width:100%;height:100%"></div>
+      <!-- Bottom-left status bar -->
+      <div id="sow-status" style="position:absolute;bottom:12px;left:12px;z-index:1000;background:rgba(0,0,0,0.75);border:1px solid #2a2a2a;border-radius:4px;padding:6px 12px;font-size:11px;color:var(--muted);pointer-events:none">
+        Click a marker to explore
+      </div>
+    </div>
+
+    <!-- ── Right: Controls + Info panel ── -->
+    <div style="display:flex;flex-direction:column;border-left:1px solid #1a1a1a;overflow-y:auto;background:#0a0a0a">
+
+      <!-- Header -->
+      <div style="padding:16px 16px 10px;border-bottom:1px solid #1a1a1a">
+        <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase">State of the World</div>
+        <div id="sow-updated" style="font-size:10px;color:var(--muted);margin-top:3px">—</div>
+      </div>
+
+      <!-- Layer toggles -->
+      <div style="padding:14px 16px;border-bottom:1px solid #1a1a1a">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Layers</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="sow-layer-toggles">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Selected hotspot detail -->
+      <div id="sow-detail" style="padding:14px 16px;flex:1">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Event Detail</div>
+        <div id="sow-detail-content" style="font-size:12px;color:var(--muted)">Select a marker on the map to view details.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <footer>Squant Bot — Paper trading only. Not financial advice.</footer>
 
 <script>
@@ -1062,7 +1107,7 @@ const GREEN_08=hexA(GREEN,0.08),GREEN_1=hexA(GREEN,0.1),GREEN_12=hexA(GREEN,0.12
 const RED_08=hexA(RED,0.08),RED_1=hexA(RED,0.1),RED_3=hexA(RED,0.3),RED_55=hexA(RED,0.55),RED_6=hexA(RED,0.6),RED_65=hexA(RED,0.65),RED_75=hexA(RED,0.75);
 
 // ── Tab management ────────────────────────────────────────────────────────────
-const TABS = ['signal','modellab','universe','meta','papertrade','regime','chatter'];
+const TABS = ['signal','modellab','universe','meta','papertrade','regime','chatter','sow'];
 const _tabInit = new Set();
 
 function switchTab(id) {
@@ -1084,6 +1129,7 @@ function switchTab(id) {
     else if (id === 'papertrade') initPaperTradeTab();
     else if (id === 'regime') initRegimeTab();
     else if (id === 'chatter') initChatterTab();
+    else if (id === 'sow') initSOWTab();
   }
 }
 
@@ -1133,5 +1179,6 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_regime.js"></script>
 <script src="tab_papertrade.js"></script>
 <script src="tab_chatter.js"></script>
+<script src="tab_sow.js"></script>
 </body>
 </html>
