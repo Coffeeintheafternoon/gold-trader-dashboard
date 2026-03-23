@@ -14,6 +14,7 @@ const _sowLayers = {
   conflict:     { label: 'Conflict Events',       color: '#ff6b6b', group: null, enabled: true,  live: true  },
   tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false, live: false },
   heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false, live: false },
+  airtraffic:   { label: 'Air Traffic',            color: '#60cfff', group: null, enabled: false, live: true  },
   mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false, live: false },
   australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false, live: true  },
 };
@@ -421,6 +422,88 @@ function _buildNewsHeatmap(data) {
   });
 }
 
+// ── Air traffic (OpenSky) ─────────────────────────────────────────────────────
+function _makeAircraftIcon(heading, colour, size) {
+  // Triangle pointing in direction of travel
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width:0;height:0;
+      border-left:${size/2}px solid transparent;
+      border-right:${size/2}px solid transparent;
+      border-bottom:${size}px solid ${colour};
+      transform:rotate(${heading}deg);
+      filter:drop-shadow(0 0 3px ${colour}99);
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function _buildAirTraffic(data) {
+  _sowLayers.airtraffic.group = L.layerGroup();
+  const sky = data.opensky;
+  if (!sky) return;
+
+  const fetchedAt = sky.fetched_at ? sky.fetched_at.replace('T', ' ').slice(0, 16) + ' UTC' : '?';
+
+  function _addAircraft(ac, isMilitary) {
+    if (!ac.lat || !ac.lng) return;
+    const colour  = ac.colour || '#a0a0a0';
+    const size    = isMilitary ? 14 : 9;
+    const heading = ac.heading || 0;
+    const icon    = _makeAircraftIcon(heading, colour, size);
+    const marker  = L.marker([ac.lat, ac.lng], { icon, zIndexOffset: isMilitary ? 200 : 0 });
+
+    const altFt   = ac.altitude ? Math.round(ac.altitude * 3.281) : '?';
+    const spdKt   = ac.speed    ? Math.round(ac.speed * 1.944)    : '?';
+    const callTag = ac.callsign || ac.icao || '(unknown)';
+    const milBadge = isMilitary
+      ? `<span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#1a1a2a;border:1px solid ${colour};color:${colour};font-weight:700;margin-left:4px">MIL</span>`
+      : '';
+
+    marker.bindTooltip(`
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#e8d5a0;margin-bottom:3px">${callTag}${milBadge}</div>
+        <div style="font-size:11px;color:#9a8a70">${ac.country}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">
+          Alt: ${altFt} ft &nbsp;·&nbsp; Spd: ${spdKt} kt &nbsp;·&nbsp; Hdg: ${heading}°
+        </div>
+        <div style="font-size:10px;color:#3a3a3a;margin-top:3px">ICAO: ${ac.icao} &nbsp;·&nbsp; ${fetchedAt}</div>
+      </div>
+    `, { direction: 'top', offset: [0, -6], className: 'sow-tooltip', maxWidth: 240 });
+
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${callTag}</div>
+        <div style="margin-bottom:8px">
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${colour};color:${colour}">${ac.country}</span>
+          ${isMilitary ? `<span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #2a4a6a;color:#60cfff;margin-left:4px">MILITARY CALLSIGN</span>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;margin-bottom:8px">
+          <div><div style="font-size:10px;color:var(--muted)">Altitude</div><div style="font-size:12px;color:#e8d5a0">${altFt} ft</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Speed</div><div style="font-size:12px;color:#e8d5a0">${spdKt} kt</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Heading</div><div style="font-size:12px;color:#e8d5a0">${heading}°</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Squawk</div><div style="font-size:12px;color:#e8d5a0">${ac.squawk || '—'}</div></div>
+        </div>
+        <div style="font-size:10px;color:#3a3a3a">ICAO24: ${ac.icao} &nbsp;·&nbsp; Snapshot: ${fetchedAt}</div>`;
+      const s = document.getElementById('sow-status');
+      if (s) s.textContent = `${callTag} — ${ac.country}`;
+    });
+
+    _sowLayers.airtraffic.group.addLayer(marker);
+  }
+
+  // Military callsigns (global)
+  (sky.military || []).forEach(ac => _addAircraft(ac, true));
+
+  // Conflict-zone aircraft (all)
+  Object.values(sky.conflict_zones || {}).forEach(zone => {
+    (zone.aircraft || []).forEach(ac => _addAircraft(ac, false));
+  });
+}
+
 // ── Regional tone timelines ───────────────────────────────────────────────────
 const _toneCharts = {};
 
@@ -739,6 +822,14 @@ function _buildLegend() {
     el.appendChild(row('#f5c842', 'dot', '● Low news volume'));
   }
 
+  if (_sowLayers.airtraffic.enabled) {
+    el.appendChild(row('#60cfff', 'dot', '▲ Military callsign (large)'));
+    el.appendChild(row('#a0a0a0', 'dot', '▲ Conflict-zone aircraft'));
+    el.appendChild(row('#4a9af5', 'dot', '▲ US / UK / NATO'));
+    el.appendChild(row('#e05252', 'dot', '▲ Russia / China'));
+    el.appendChild(row('#52c4a0', 'dot', '▲ Israel'));
+  }
+
   if (_sowLayers.mining.enabled) {
     el.appendChild(row('#52c4a0', 'dot', '● Gold mining region'));
   }
@@ -1015,6 +1106,7 @@ function initSOWTab() {
       _buildConflictEvents(data);
       _buildTradeFlows(data);
       _buildNewsHeatmap(data);
+      _buildAirTraffic(data);
       _buildMiningRegions(data);
       _buildAustralia(data);
       _buildToneTimelines(data);
