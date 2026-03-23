@@ -823,7 +823,8 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
 }
 
 // ── Trade Analytics ────────────────────────────────────────────────────────────
-let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null, _mlDirectionChart = null, _mlRegimeChart = null;
+let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlConcChart = null, _mlLsChart = null, _mlLsScatter = null, _mlDirectionChart = null;
+let _mlRegimeChart = null; // owned by buildMLRegimePanel, not trade analytics
 let _mlTradesIS = [], _mlTradesHO = [];
 
 function mlSwitchTradeTab(tab) {
@@ -853,7 +854,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   if (_mlLsChart)        { _mlLsChart.destroy();        _mlLsChart        = null; }
   if (_mlLsScatter)      { _mlLsScatter.destroy();      _mlLsScatter      = null; }
   if (_mlDirectionChart) { _mlDirectionChart.destroy(); _mlDirectionChart = null; }
-  if (_mlRegimeChart)    { _mlRegimeChart.destroy();    _mlRegimeChart    = null; }
+  // _mlRegimeChart is owned by buildMLRegimePanel — do not destroy it here
 
   const axStyle = { color: '#6b7280', font: { size: 10 } };
   const gridStyle = { color: '#1e1e1e' };
