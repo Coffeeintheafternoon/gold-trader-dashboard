@@ -6,6 +6,7 @@ let _scrapePoller     = null;
 let _chatterLiveMode  = false;   // true = Flask server available, false = static Netlify
 
 let _glossaryItems    = [];      // full YouTube glossary dataset
+let _hcItems          = [];      // HotCopper thread dataset
 let _glFiltered       = [];      // current filtered view (used by modal)
 let _tickerFilter     = '';      // ticker search string (e.g. "WAF")
 
@@ -22,7 +23,7 @@ async function initChatterTab() {
     _chatterLiveMode = true;
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage([], [], channels, true);
+    _buildChatterPage([], [], channels, [], true);
     return;
   } catch (_e) {}
 
@@ -33,7 +34,7 @@ async function initChatterTab() {
     const data = await resp.json();
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], false);
+    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], data.hotcopper || [], false);
   } catch (_e) {
     elLoading.style.display = 'none';
     elOffline.style.display = '';
@@ -42,13 +43,14 @@ async function initChatterTab() {
 
 // ── Main layout builder ────────────────────────────────────────────────────────
 
-function _buildChatterPage(glossary, broken, channels, interactive) {
+function _buildChatterPage(glossary, broken, channels, hotcopper, interactive) {
   const body = document.getElementById('chatter-body');
   _glossaryItems = glossary;
+  _hcItems       = hotcopper;
 
   body.innerHTML = `
     ${_buildTickerBar()}
-    ${_buildSourceBar(glossary.length)}
+    ${_buildSourceBar(glossary.length, hotcopper.length)}
     ${_buildFilterBar(glossary)}
     <div id="chatter-feed" style="margin-bottom:32px"></div>
     ${_buildManageSection(interactive)}
@@ -125,14 +127,15 @@ function _buildTickerBar() {
 
 // ── Source status bar ──────────────────────────────────────────────────────────
 
-function _buildSourceBar(ytCount) {
+function _buildSourceBar(ytCount, hcCount) {
+  const hcActive = hcCount > 0;
   const sources = [
-    { key: 'youtube',       label: 'YouTube',          active: true,  count: ytCount, color: 'var(--green)' },
-    { key: 'twitter',       label: 'Twitter / X',      active: false, count: null,    color: 'var(--muted)' },
-    { key: 'news',          label: 'News',              active: false, count: null,    color: 'var(--muted)' },
-    { key: 'hotcopper',     label: 'HotCopper',         active: false, count: null,    color: 'var(--muted)' },
-    { key: 'broker',        label: 'Broker Reports',    active: false, count: null,    color: 'var(--muted)' },
-    { key: 'asx_announce',  label: 'ASX Announcements', active: false, count: null,    color: 'var(--muted)' },
+    { key: 'youtube',       label: 'YouTube',          active: true,     count: ytCount, color: 'var(--green)' },
+    { key: 'hotcopper',     label: 'HotCopper',         active: hcActive, count: hcActive ? hcCount : null, color: 'var(--green)' },
+    { key: 'twitter',       label: 'Twitter / X',      active: false,    count: null,    color: 'var(--muted)' },
+    { key: 'news',          label: 'News',              active: false,    count: null,    color: 'var(--muted)' },
+    { key: 'broker',        label: 'Broker Reports',    active: false,    count: null,    color: 'var(--muted)' },
+    { key: 'asx_announce',  label: 'ASX Announcements', active: false,    count: null,    color: 'var(--muted)' },
   ];
 
   const cards = sources.map(s => {
@@ -180,9 +183,9 @@ function _buildFilterBar(items) {
       <select id="chatter-filter-source" style="${selectStyle}">
         <option value="">All sources</option>
         <option value="youtube">YouTube</option>
+        <option value="hotcopper">HotCopper</option>
         <option value="twitter" disabled>Twitter (soon)</option>
         <option value="news" disabled>News (soon)</option>
-        <option value="hotcopper" disabled>HotCopper (soon)</option>
         <option value="broker" disabled>Broker Reports (soon)</option>
         <option value="asx_announce" disabled>ASX Announcements (soon)</option>
       </select>
@@ -211,35 +214,74 @@ function _applyFeedFilter() {
   const sort    = document.getElementById('chatter-filter-sort')?.value || 'date';
   const ticker  = _tickerFilter;  // already upper-case
 
-  let filtered = _glossaryItems.filter(item => {
-    if (source && source !== 'youtube') return false;  // only YouTube has data
-    if (item.llm_score != null && item.llm_score < minSc) return false;
-    if (search) {
-      const haystack = `${item.title} ${item.llm_summary || ''}`.toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
-    if (ticker) {
-      const haystack = `${item.title} ${item.llm_summary || ''} ${item.transcript_text || ''}`.toUpperCase();
-      if (!haystack.includes(ticker)) return false;
-    }
-    return true;
-  });
-
-  if (sort === 'score')   filtered.sort((a, b) => (b.llm_score || 0) - (a.llm_score || 0));
-  else if (sort === 'channel') filtered.sort((a, b) => a.channel_name.localeCompare(b.channel_name));
-
-  _glFiltered = filtered;
-  window._glFiltered = filtered;  // modal compatibility
-
-  const countEl = document.getElementById('chatter-feed-count');
-  if (countEl) {
-    const total = _glossaryItems.length;
-    countEl.textContent = ticker
-      ? `${filtered.length} of ${total} match "${ticker}"`
-      : `${filtered.length} of ${total}`;
+  // ── YouTube items ──────────────────────────────────────────────────────────
+  let ytItems = [];
+  if (!source || source === 'youtube') {
+    ytItems = _glossaryItems.filter(item => {
+      if (item.llm_score != null && item.llm_score < minSc) return false;
+      if (search) {
+        const h = `${item.title} ${item.llm_summary || ''}`.toLowerCase();
+        if (!h.includes(search)) return false;
+      }
+      if (ticker) {
+        const h = `${item.title} ${item.llm_summary || ''} ${item.transcript_text || ''}`.toUpperCase();
+        if (!h.includes(ticker)) return false;
+      }
+      return true;
+    }).map(i => ({ ...i, _source: 'youtube', _date: i.published_at }));
   }
 
-  _renderFeed(filtered);
+  // ── HotCopper items ────────────────────────────────────────────────────────
+  let hcFiltered = [];
+  if (!source || source === 'hotcopper') {
+    hcFiltered = _hcItems.filter(item => {
+      // Score filter doesn't apply to HC (no LLM score)
+      if (search) {
+        const h = `${item.title} ${item.ticker}`.toLowerCase();
+        if (!h.includes(search)) return false;
+      }
+      if (ticker) {
+        // HC: match exact ticker OR ticker mention in title
+        const exactMatch = item.ticker.toUpperCase() === ticker;
+        const titleMatch = item.title.toUpperCase().includes(ticker);
+        if (!exactMatch && !titleMatch) return false;
+      }
+      return true;
+    }).map(i => ({ ...i, _source: 'hotcopper', _date: i.posted_at }));
+  }
+
+  // ── Merge + sort ───────────────────────────────────────────────────────────
+  let merged = [...ytItems, ...hcFiltered];
+
+  if (sort === 'score') {
+    // HC items go after YouTube (no score); YT sorted by score desc
+    const yt = merged.filter(i => i._source === 'youtube').sort((a, b) => (b.llm_score || 0) - (a.llm_score || 0));
+    const hc = merged.filter(i => i._source === 'hotcopper');
+    merged = [...yt, ...hc];
+  } else if (sort === 'channel') {
+    merged.sort((a, b) => {
+      const aName = a._source === 'youtube' ? (a.channel_name || '') : `HC:${a.ticker}`;
+      const bName = b._source === 'youtube' ? (b.channel_name || '') : `HC:${b.ticker}`;
+      return aName.localeCompare(bName);
+    });
+  } else {
+    // Default: newest first
+    merged.sort((a, b) => (b._date || '').localeCompare(a._date || ''));
+  }
+
+  // YouTube-only items stored for modal (by index into merged yt-only slice)
+  _glFiltered = merged.filter(i => i._source === 'youtube');
+  window._glFiltered = _glFiltered;
+
+  const total = _glossaryItems.length + _hcItems.length;
+  const countEl = document.getElementById('chatter-feed-count');
+  if (countEl) {
+    countEl.textContent = ticker
+      ? `${merged.length} of ${total} mention "${ticker}"`
+      : `${merged.length} of ${total}`;
+  }
+
+  _renderFeed(merged);
 }
 
 function _renderFeed(items) {
@@ -261,54 +303,104 @@ function _renderFeed(items) {
     return;
   }
 
-  const rows = items.map((item, idx) => {
-    const score      = item.llm_score != null ? item.llm_score.toFixed(1) : '—';
-    const scoreColor = item.llm_score >= 7 ? 'var(--green)' : item.llm_score >= 4 ? 'var(--gold)' : 'var(--muted)';
-    const date       = (item.published_at || '').slice(0, 10);
-    const summary    = item.llm_summary || '';
+  // Track per-source modal indices
+  let ytIdx = 0;
 
-    // Highlight ticker mentions in summary
-    let summaryHtml = summary;
-    if (_tickerFilter && summary) {
-      const re = new RegExp(`(${_tickerFilter})`, 'gi');
-      summaryHtml = summary.replace(re, `<mark style="background:rgba(245,165,32,0.25);color:var(--gold);border-radius:2px;padding:0 2px">$1</mark>`);
+  const rows = items.map((item) => {
+    if (item._source === 'hotcopper') {
+      return _renderHCRow(item);
+    } else {
+      return _renderYTRow(item, ytIdx++);
     }
+  }).join('');
 
-    return `
-      <div onclick="_openGlModal(${idx})"
-           style="padding:14px 16px;border-bottom:1px solid #141414;cursor:pointer;
+  container.innerHTML = `<div class="chart-card" style="padding:0;overflow:hidden">${rows}</div>`;
+}
+
+function _renderYTRow(item, modalIdx) {
+  const score      = item.llm_score != null ? item.llm_score.toFixed(1) : '—';
+  const scoreColor = item.llm_score >= 7 ? 'var(--green)' : item.llm_score >= 4 ? 'var(--gold)' : 'var(--muted)';
+  const date       = (item.published_at || '').slice(0, 10);
+  const summary    = item.llm_summary || '';
+
+  let summaryHtml = summary;
+  if (_tickerFilter && summary) {
+    const re = new RegExp(`(${_tickerFilter})`, 'gi');
+    summaryHtml = summary.replace(re, `<mark style="background:rgba(245,165,32,0.25);color:var(--gold);border-radius:2px;padding:0 2px">$1</mark>`);
+  }
+
+  return `
+    <div onclick="_openGlModal(${modalIdx})"
+         style="padding:14px 16px;border-bottom:1px solid #141414;cursor:pointer;
+                display:flex;gap:14px;align-items:flex-start;transition:background 0.1s"
+         onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+         onmouseout="this.style.background='none'">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:40px">
+        <span style="font-family:monospace;font-size:14px;font-weight:700;color:${scoreColor}">${score}</span>
+        <span style="font-size:9px;padding:2px 5px;border-radius:2px;
+                     background:rgba(0,255,65,0.08);color:var(--green);
+                     border:1px solid rgba(0,255,65,0.15);white-space:nowrap;letter-spacing:0.3px">YT</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">
+          ${item.channel_name} &nbsp;·&nbsp; ${date}
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
+          ${item.title}
+        </div>
+        ${summaryHtml ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${summaryHtml}</div>` : ''}
+      </div>
+      <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px;align-self:center">read ›</span>
+    </div>`;
+}
+
+function _renderHCRow(item) {
+  const date = (item.posted_at || '').slice(0, 10);
+  const stats = [
+    item.reply_count ? `${item.reply_count} replies` : null,
+    item.like_count  ? `${item.like_count} likes`   : null,
+    item.view_count && item.view_count !== '0' ? `${item.view_count} views` : null,
+  ].filter(Boolean).join(' &nbsp;·&nbsp; ');
+
+  let titleHtml = item.title;
+  if (_tickerFilter) {
+    const re = new RegExp(`(${_tickerFilter})`, 'gi');
+    titleHtml = titleHtml.replace(re, `<mark style="background:rgba(245,165,32,0.25);color:var(--gold);border-radius:2px;padding:0 2px">$1</mark>`);
+  }
+
+  return `
+    <a href="${item.url}" target="_blank" style="text-decoration:none;color:inherit">
+      <div style="padding:14px 16px;border-bottom:1px solid #141414;
                   display:flex;gap:14px;align-items:flex-start;transition:background 0.1s"
            onmouseover="this.style.background='rgba(255,255,255,0.02)'"
            onmouseout="this.style.background='none'">
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:40px">
-          <span style="font-family:monospace;font-size:14px;font-weight:700;color:${scoreColor}">${score}</span>
+          <span style="font-family:monospace;font-size:11px;font-weight:700;color:var(--gold)">${item.ticker}</span>
           <span style="font-size:9px;padding:2px 5px;border-radius:2px;
-                       background:rgba(0,255,65,0.08);color:var(--green);
-                       border:1px solid rgba(0,255,65,0.15);white-space:nowrap;letter-spacing:0.3px">YT</span>
+                       background:rgba(245,165,32,0.08);color:var(--gold);
+                       border:1px solid rgba(245,165,32,0.2);white-space:nowrap;letter-spacing:0.3px">HC</span>
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--muted);margin-bottom:3px">
-            ${item.channel_name} &nbsp;·&nbsp; ${date}
+            ${item.author} &nbsp;·&nbsp; ${date}
           </div>
           <div style="font-size:13px;font-weight:600;color:var(--text);
                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
-            ${item.title}
+            ${titleHtml}
           </div>
-          ${summaryHtml ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;
-            display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${summaryHtml}</div>` : ''}
+          ${stats ? `<div style="font-size:11px;color:#555">${stats}</div>` : ''}
         </div>
-        <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px;align-self:center">read ›</span>
-      </div>`;
-  }).join('');
-
-  container.innerHTML = `<div class="chart-card" style="padding:0;overflow:hidden">${rows}</div>`;
+        <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px;align-self:center">open ›</span>
+      </div>
+    </a>`;
 }
 
 function _buildComingSoonPlaceholders() {
   const placeholders = [
     { key: 'twitter',      label: 'Twitter / X',       desc: 'High-signal finance accounts — @KitcoNews, @ZeroHedge, @MacroAlf and more' },
     { key: 'news',         label: 'News',               desc: 'Reuters, BBC, Al Jazeera, MarketWatch RSS feeds — geopolitical + macro events' },
-    { key: 'hotcopper',    label: 'HotCopper',          desc: 'Retail sentiment on ASX gold & copper stocks — WAF, EVN, LYC, NST, OGC' },
     { key: 'broker',       label: 'Broker Reports',     desc: 'Research notes from Macquarie, Bell Potter, Ord Minnett on gold sector' },
     { key: 'asx_announce', label: 'ASX Announcements',  desc: 'Real-time company announcements filtered for gold & resources tickers' },
   ];
