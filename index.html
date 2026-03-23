@@ -2305,8 +2305,20 @@ function renderTickerDetail(d) {
     explEl.style.display = 'none';
   }
 
+  // For regime_similarity models, use regime-filtered IS data where available
+  const isRegimeModel = d.model_type === 'regime_similarity';
+  const equityIS  = (isRegimeModel && d.equity_is_regime  && d.equity_is_regime.length)  ? d.equity_is_regime  : (d.equity_is  || []);
+  const tradesIS  = (isRegimeModel && d.trades_is_regime  && d.trades_is_regime.length)  ? d.trades_is_regime  : (d.trades_is  || []);
+  const isWtd     = (isRegimeModel && d.is_model_weighted) ? d.is_model_weighted : isM;
+
+  // Override displayed IS PF / Sharpe with weighted versions for regime models
+  if (isRegimeModel && d.is_model_weighted) {
+    document.getElementById('ml-is-pf').innerHTML    = `<span style="color:${pfColor(isWtd.pf||0)}">${(isWtd.pf||0).toFixed(3)}</span><span style="font-size:10px;color:#7c3aed;margin-left:4px">regime-wtd</span>`;
+    document.getElementById('ml-is-sharpe').innerHTML = `<span style="color:${shrColor(isWtd.sharpe||0)}">${fmt(isWtd.sharpe)}</span><span style="font-size:10px;color:#7c3aed;margin-left:4px">regime-wtd</span>`;
+  }
+
   // Equity curves
-  buildMLEquityChart(d.equity_is || [], d.equity_holdout || [], hoM.period_start);
+  buildMLEquityChart(equityIS, d.equity_holdout || [], hoM.period_start);
 
   // Feature chart
   mlFilterFeats('all');
@@ -2337,15 +2349,15 @@ function renderTickerDetail(d) {
   // Pruning roadmap (lazy-loaded from pruning_{safe}.json)
   renderPruningRoadmap(d.ticker || '');
 
-  // Rolling performance chart from equity_is
-  buildMLRollingPerf(d.equity_is || []);
+  // Rolling performance chart
+  buildMLRollingPerf(equityIS);
 
   // Key metrics summary
-  buildMLMetrics(d.equity_is || [], d.trades_is || [], d.equity_holdout || [], d.trades_ho || [],
-                 (d.is_model || {}).pf, (d.holdout || {}).pf);
+  buildMLMetrics(equityIS, tradesIS, d.equity_holdout || [], d.trades_ho || [],
+                 isWtd.pf || (d.is_model || {}).pf, (d.holdout || {}).pf);
 
   // Price chart with trade signals (IS + HO trades)
-  buildMLPriceChart(d.price_is || [], d.price_holdout || [], d.trades_is || [], d.trades_ho || []);
+  buildMLPriceChart(d.price_is || [], d.price_holdout || [], tradesIS, d.trades_ho || []);
 
   // Model info header + health checks
   buildMLInfoHeader(d);
@@ -2353,7 +2365,7 @@ function renderTickerDetail(d) {
   buildMLRegimePanel(d);
 
   // Trade analytics + log table
-  _mlTradesIS = d.trades_is || [];
+  _mlTradesIS = tradesIS;
   _mlTradesHO = d.trades_ho || [];
   buildMLTradeAnalytics(_mlTradesIS, _mlTradesHO, (d.holdout || {}).period_start);
   buildMLTradeLog(_mlTradesIS, 'is');
@@ -3353,11 +3365,12 @@ function buildMLInfoHeader(d) {
 function buildMLHealthChecks(d) {
   const el = document.getElementById('ml-health-flags');
   if (!el) return;
-  const tradesHO = d.trades_ho || [];
-  const tradesIS = d.trades_is || [];
+  const tradesHO  = d.trades_ho || [];
+  const isRegime  = d.model_type === 'regime_similarity';
+  const tradesIS  = (isRegime && d.trades_is_regime && d.trades_is_regime.length) ? d.trades_is_regime : (d.trades_is || []);
   const allTrades = [...tradesIS, ...tradesHO];
   const hoM = d.holdout || {};
-  const isM = d.is_model || {};
+  const isM = (isRegime && d.is_model_weighted) ? d.is_model_weighted : (d.is_model || {});
   const flags = [];
 
   function flag(label, value, status, tip) {
