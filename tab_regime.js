@@ -67,6 +67,13 @@ function _regimeZone(key, value) {
   return null;   // caller will render pct bar instead
 }
 
+function _regimeZoneTip(key) {
+  if (key === 'vix')         return 'VIX zone: CALM (<15) = low volatility, equity-bullish environment. ELEVATED (15–25) = caution, markets pricing increased risk. STRESS (>25) = crisis conditions — historically a strong gold safe-haven signal.';
+  if (key === 'yield_curve') return 'Yield curve zone: NORMAL (>0.5%) = healthy growth expectations. FLAT (−0.5 to 0.5%) = mixed outlook, uncertainty. INVERTED (<−0.5%) = classic recession warning signal — historically precedes gold safe-haven rallies.';
+  if (key === 'dxy')         return 'USD zone: STRONG (>106) = dollar headwind — gold faces resistance as it becomes expensive for foreign buyers. NEUTRAL (98–106) = balanced. WEAK (<98) = dollar tailwind — gold typically benefits from USD weakness.';
+  return 'Zone classification based on historical thresholds for this indicator.';
+}
+
 function _regimePctPill(pct) {
   if (pct == null) return '';
   const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
@@ -100,14 +107,14 @@ function _regimeBuildMacroSection(container, macroData) {
   const genAt  = macroData.generated_at ? macroData.generated_at.slice(0, 16).replace('T', ' ') + ' UTC' : '';
 
   const chartConfigs = [
-    { key: 'vix',         title: 'VIX — Fear Index',        fmt: v => v.toFixed(2) },
-    { key: 'us10yr',      title: 'US 10yr Yield (%)',        fmt: v => v.toFixed(3) + '%' },
-    { key: 'yield_curve', title: 'Yield Curve (10yr − 3m)',  fmt: v => v.toFixed(3) + '%' },
-    { key: 'dxy',         title: 'DXY — US Dollar Index',    fmt: v => v.toFixed(2) },
-    { key: 'audusd',      title: 'AUD / USD',                fmt: v => v.toFixed(5) },
-    { key: 'gold',        title: 'Gold (USD/oz)',             fmt: v => '$' + v.toFixed(0) },
-    { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2) },
-    { key: 'gold_oil',    title: 'Gold / Oil Ratio',          fmt: v => v.toFixed(2) },
+    { key: 'vix',         title: 'VIX — Fear Index',        fmt: v => v.toFixed(2),        tip: 'CBOE Volatility Index — measures expected 30-day equity market volatility. Below 20 = calm, 20–30 = elevated risk, above 30 = crisis/stress. Gold tends to rally when VIX spikes as investors seek safe havens.' },
+    { key: 'us10yr',      title: 'US 10yr Yield (%)',        fmt: v => v.toFixed(3) + '%',  tip: 'US 10-year Treasury yield — the global risk-free rate. Rising yields strengthen USD and pressure gold (opportunity cost of holding a non-yielding asset). Watch for reversals at multi-year extremes.' },
+    { key: 'yield_curve', title: 'Yield Curve (10yr − 3m)',  fmt: v => v.toFixed(3) + '%',  tip: '10yr minus 3-month Treasury yield spread. Positive = normal (growth expected); near zero = flat (uncertainty); negative = inverted (classic recession warning). Inversions often precede risk-off conditions and gold safe-haven rallies.' },
+    { key: 'dxy',         title: 'DXY — US Dollar Index',    fmt: v => v.toFixed(2),        tip: 'Trade-weighted USD vs major currencies. Gold priced in USD — weak dollar makes gold cheaper for foreign buyers, boosting demand. Above 106 = historically strong USD headwind for gold.' },
+    { key: 'audusd',      title: 'AUD / USD',                fmt: v => v.toFixed(5),        tip: 'Australian Dollar vs USD. AUD is a commodity-linked, risk-on currency — strengthens when global growth is expected and commodity demand is high. Weak AUD can signal domestic risk-off conditions and amplify AUD-denominated gold returns.' },
+    { key: 'gold',        title: 'Gold (USD/oz)',             fmt: v => '$' + v.toFixed(0),  tip: 'Spot gold price (USD/oz, front-month futures). Primary driver for gold miners. Moves are driven by: USD strength, real interest rates, central bank buying, and safe-haven demand during crises.' },
+    { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2),  tip: 'Brent crude price (USD/barrel). Proxy for global economic growth and inflation expectations. High oil = inflationary pressures, potential rate hikes. The gold/oil ratio (below) strips out oil moves to show gold\'s relative safe-haven premium.' },
+    { key: 'gold_oil',    title: 'Gold / Oil Ratio',          fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
   ];
 
   // Section header
@@ -115,7 +122,7 @@ function _regimeBuildMacroSection(container, macroData) {
   header.innerHTML = `
     <div class="section-divider" style="margin-top:8px">
       <div class="section-divider-line"></div>
-      <span class="section-divider-label">Macro Regime Tracker</span>
+      <span class="section-divider-label tip" data-tip="Daily macro snapshots from live market data. Use these signals to assess the current macro environment before interpreting model signals. Each chart shows 2 years of daily history with the current reading, percentile rank, and key threshold levels.">Macro Regime Tracker</span>
       <div class="section-divider-line"></div>
     </div>
     ${genAt ? `<div style="font-size:11px;color:var(--muted);margin-bottom:16px">Data as at ${genAt}</div>` : ''}
@@ -165,16 +172,18 @@ function _regimeBuildMacroSection(container, macroData) {
       : '';
 
     const canvasId = `regime-chart-${cfg.key}`;
+    const pctTip = 'Percentile rank vs last 2 years of daily data. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th). Extremes often precede regime shifts.';
+    const rangeTip = 'Min and max reading over the last 2 years of daily data. Shows where current levels sit in historical context.';
     card.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;flex-wrap:wrap">
-        <span class="chart-title" style="margin-bottom:0">${cfg.title}</span>
+        <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
         <span style="font-size:16px;font-weight:700;color:var(--gold);font-family:monospace">${curStr}</span>
-        ${_regimePctPill(pct)}
-        ${zoneHtml && zone ? zoneHtml : ''}
+        <span class="tip" data-tip="${pctTip}">${_regimePctPill(pct)}</span>
+        ${zoneHtml && zone ? `<span class="tip" data-tip="${_regimeZoneTip(cfg.key)}">${zoneHtml}</span>` : ''}
       </div>
       ${!zone && zoneHtml ? zoneHtml : ''}
-      ${rangeHtml ? `<div style="margin-bottom:10px">${rangeHtml}</div>` : '<div style="margin-bottom:10px"></div>'}
-      <div class="chart-wrap" style="height:180px"><canvas id="${canvasId}"></canvas></div>
+      ${rangeHtml ? `<div class="tip" style="margin-bottom:10px" data-tip="${rangeTip}">${rangeHtml}</div>` : '<div style="margin-bottom:10px"></div>'}
+      <div class="chart-wrap" style="height:180px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
     `;
     grid.appendChild(card);
 
@@ -217,12 +226,18 @@ function _regimeBuildMacroSection(container, macroData) {
           plugins: {
             legend: { display: thresholds.length > 0, labels: { boxWidth: 10, font: { size: 10 }, filter: item => item.datasetIndex > 0 } },
             tooltip: {
+              mode: 'index',
+              intersect: false,
               callbacks: {
-                title: items => items[0].label,
+                title: items => {
+                  const raw = items[0].label;
+                  const d = new Date(raw);
+                  return isNaN(d) ? raw : d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+                },
                 label: item => {
                   if (item.datasetIndex !== 0) return null;
                   const v = item.raw;
-                  return cfg.fmt ? cfg.fmt(v) : (v != null ? v.toFixed(4) : '—');
+                  return `  ${cfg.title}: ${cfg.fmt ? cfg.fmt(v) : (v != null ? v.toFixed(4) : '—')}`;
                 },
                 filter: item => item.datasetIndex === 0,
               },
@@ -230,12 +245,24 @@ function _regimeBuildMacroSection(container, macroData) {
           },
           scales: {
             x: {
-              ticks: { maxTicksLimit: 8, font: { size: 10 }, maxRotation: 0 },
+              ticks: {
+                maxTicksLimit: 5,
+                maxRotation: 0,
+                font: { size: 10 },
+                callback: function(val, idx) {
+                  const label = this.getLabelForValue(val);
+                  if (!label) return '';
+                  // Format "2024-03-15" → "Mar '24"
+                  const d = new Date(label);
+                  if (isNaN(d)) return label;
+                  return d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
+                },
+              },
               grid: { color: '#1a1a1a' },
             },
             y: {
               grid: { color: '#1a1a1a' },
-              ticks: { font: { size: 10 }, callback: v => cfg.fmt ? cfg.fmt(v) : v },
+              ticks: { font: { size: 10 }, maxTicksLimit: 6, callback: v => cfg.fmt ? cfg.fmt(v) : v },
             },
           },
         },
@@ -251,7 +278,7 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   header.innerHTML = `
     <div class="section-divider" style="margin-top:8px">
       <div class="section-divider-line"></div>
-      <span class="section-divider-label">Regime Model Intelligence — WBC.AX</span>
+      <span class="section-divider-label tip" data-tip="Regime-weighted feature analysis from WBC.AX regime models. These models use a Gaussian kernel to assign higher weight to IS training windows where macro conditions closely matched the current environment — isolating features that work specifically in today's regime.">Regime Model Intelligence — WBC.AX</span>
       <div class="section-divider-line"></div>
     </div>
   `;
@@ -287,20 +314,20 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   // ── 1. Feature significance table ─────────────────────────────────────────
   const tableWrap = document.createElement('div');
   tableWrap.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px" data-tip="Features ranked by weighted t-test p-value. Regime weighting amplifies time periods where macro conditions matched today — so a low p-value here means the feature has statistically significant edge in regimes similar to now. Green = p < 0.05 (significant), yellow = marginal (0.05–0.20), grey = no evidence of edge.">
       Top Features by Significance (3M Regime Model)
     </div>
     <div style="overflow-x:auto;margin-bottom:28px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a">
-            <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Feature</th>
-            <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Category</th>
-            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">3M p-val</th>
-            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">3M Δ</th>
-            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">1Y p-val</th>
-            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">1Y Δ</th>
-            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Sign%</th>
+            <th class="tip" style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Feature name — prefix indicates type: macro_ = macroeconomic variable, mom_ = price momentum, vol_ = volatility, ann_ = earnings announcement, ix_ = interaction term.">Feature</th>
+            <th class="tip" style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Feature category. Macro = driven by external economic conditions. Momentum = price trend signals. Announcement = earnings/guidance events (valuable — hard to overfit). Interaction = product of two features.">Category</th>
+            <th class="tip" style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Weighted p-value from 3-month lookback regime model. Measures how likely the observed edge is due to chance. p < 0.05 = 95% confidence the feature has real edge in similar regimes. p < 0.01 = very strong signal.">3M p-val</th>
+            <th class="tip" style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Regime gain (p_delta): unweighted p-value minus regime-weighted p-value. Positive = feature became MORE significant when training was restricted to similar macro regimes. Large positive delta = this feature's edge is regime-specific, not universal.">3M Δ</th>
+            <th class="tip" style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Same p-value metric from the 1-year lookback regime model. Comparing 3M vs 1Y shows whether the signal is robust across different reference windows. Agreement between both = higher confidence.">1Y p-val</th>
+            <th class="tip" style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Regime gain from the 1-year model. Larger delta in 1Y vs 3M suggests the feature's regime-sensitivity is visible even on a longer lookback.">1Y Δ</th>
+            <th class="tip" style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Sign consistency: percentage of IS windows where this feature predicted the same direction. >70% = reliable directional signal. ~50% = sign-flipper (noisy, may be capturing non-linear effects). <30% = contrarian signal.">Sign%</th>
           </tr>
         </thead>
         <tbody id="regime-feat-tbody"></tbody>
@@ -335,11 +362,11 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   // ── 2. Regime gain chart ───────────────────────────────────────────────────
   const gainWrap = document.createElement('div');
   gainWrap.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px" data-tip="p_delta = unweighted p-value minus regime-weighted p-value. A large positive bar means the feature's statistical significance dramatically improved when we filtered to macro environments similar to today. These are the features most 'activated' by the current regime — prioritise them in your trading thesis.">
       Top Features by Regime Gain (3M p_delta — how much regime weighting helped)
     </div>
     <div class="chart-card" style="margin-bottom:28px">
-      <div style="height:280px"><canvas id="regime-gain-chart"></canvas></div>
+      <div style="height:280px;cursor:crosshair"><canvas id="regime-gain-chart"></canvas></div>
     </div>
   `;
   container.appendChild(gainWrap);
@@ -386,7 +413,7 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   // ── 3. 3M vs 1Y agreement table ───────────────────────────────────────────
   const agreeWrap = document.createElement('div');
   agreeWrap.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px" data-tip="Features that reached statistical significance (p < 0.05) in at least one regime model. AGREE = validated by both 3M and 1Y lookback windows — these are the most robust signals. '3M only' or '1Y only' means the feature may be more sensitive to recent vs longer-term regime cycles.">
       3M vs 1Y Model Agreement (p &lt; 0.05)
     </div>
     <div style="overflow-x:auto;margin-bottom:32px">
@@ -394,9 +421,9 @@ function _regimeBuildModelSection(container, model3m, model1y) {
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a">
             <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Feature</th>
-            <th style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">3M sig</th>
-            <th style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">1Y sig</th>
-            <th style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Agreement</th>
+            <th class="tip" style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Statistically significant (p < 0.05) in the 3-month lookback regime model — i.e., this feature has edge when macro conditions similar to the last 3 months are used as the reference.">3M sig</th>
+            <th class="tip" style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="Statistically significant (p < 0.05) in the 1-year lookback regime model — uses a broader 12-month macro reference window, giving a more stable but less responsive regime signal.">1Y sig</th>
+            <th class="tip" style="text-align:center;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace" data-tip="AGREE = both models find this feature significant — highest confidence, trade with conviction. '3M only' = recent regime-specific signal, may be noise or a new regime shift. '1Y only' = longer-term regime signal, may lag current conditions.">Agreement</th>
           </tr>
         </thead>
         <tbody id="regime-agree-tbody"></tbody>
