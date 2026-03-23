@@ -444,6 +444,83 @@ function sowASXSearch(query) {
   const allLatLngs = [];
 
   matches.forEach(company => {
+
+    // ── Tenement GeoJSON path (DMIRS-sourced data) ─────────────────────────
+    if (company.tenement_file) {
+      const detailHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${company.ticker} — ${company.name}</div>
+        <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${company.summary || ''}</div>
+        <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Tenement data</div>
+          <div style="font-size:11px;color:#9a8a70">Source: WA DMIRS • Mining leases = <span style="color:#f5a520">gold</span> • Exploration = <span style="color:#a0c4f0">blue</span></div>
+        </div>`;
+
+      // Add fallback centroid dot while loading
+      const fallbackLL = company.sites && company.sites[0]
+        ? [company.sites[0].lat, company.sites[0].lng] : null;
+
+      fetch(`${company.tenement_file}?v=${Date.now()}`)
+        .then(r => r.json())
+        .then(gj => {
+          if (!_asxLayer) return;
+          const bounds = [];
+          (gj.features || []).forEach(feat => {
+            const colour = feat.properties._colour || '#f5a520';
+            const label  = feat.properties._label  || '';
+            const tenid  = feat.properties.fmt_tenid || '';
+            const area   = feat.properties.legal_area || '';
+            const units  = feat.properties.unit_of_me || '';
+
+            const poly = L.geoJSON(feat, {
+              style: { color: colour, fillColor: colour, weight: 1.5, opacity: 0.9, fillOpacity: 0.2 },
+            });
+            poly.bindTooltip(
+              `<b style="color:#e8d5a0">${company.ticker} — ${tenid}</b><br>`
+              + `<span style="font-size:11px;color:${colour}">${label}</span>`
+              + (area ? `<br><span style="font-size:11px;color:#7a7060">${area} ${units}</span>` : ''),
+              { sticky: true, className: 'sow-tooltip' }
+            );
+            poly.on('click', () => {
+              const el = document.getElementById('sow-detail-content');
+              if (el) el.innerHTML = detailHTML;
+              const status = document.getElementById('sow-status');
+              if (status) status.textContent = `${company.ticker} — ${tenid}`;
+            });
+            poly.addTo(_asxLayer);
+
+            // Collect bounds
+            poly.eachLayer(l => { if (l.getBounds) bounds.push(l.getBounds()); });
+          });
+
+          // Zoom to fit all tenements
+          if (bounds.length) {
+            let b = bounds[0];
+            bounds.forEach(bb => { b = b.extend(bb); });
+            _sowMap.fitBounds(b.pad(0.1));
+          }
+        })
+        .catch(err => console.warn('Tenement GeoJSON load failed:', err));
+
+      // Centroid dot as immediate placeholder
+      if (fallbackLL) {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="position:relative;width:20px;height:20px">
+            <div style="position:absolute;inset:0;border-radius:50%;border:2px solid #f5a520;opacity:0.5;animation:sow-pulse 1.5s ease-out infinite"></div>
+            <div style="position:absolute;inset:4px;border-radius:50%;background:#f5a520;box-shadow:0 0 8px #f5a520"></div>
+          </div>`,
+          iconSize: [20, 20], iconAnchor: [10, 10],
+        });
+        const dot = L.marker(fallbackLL, { icon });
+        dot.bindTooltip(`<b style="color:#e8d5a0">${company.ticker}</b><br><span style="font-size:11px;color:#f5a520">Loading tenements…</span>`, { className: 'sow-tooltip' });
+        _asxLayer.addLayer(dot);
+        allLatLngs.push(fallbackLL);
+        _sowMap.setView(fallbackLL, 9);
+      }
+      return;  // skip the normal site loop for this company
+    }
+
+    // ── Standard site loop (Overpass + fallback dot) ────────────────────────
     (company.sites || []).forEach(site => {
       const colour = _siteColour(site.type);
 
