@@ -140,6 +140,16 @@ function _regimeUpdatePct(key, minIdx, n) {
 
 // ── Multi-line chart card (shared date axis, multiple datasets) ───────────────
 
+function _regimeToggleDataset(chartKey, datasetIndex) {
+  const chart = _regimeMacroCharts[chartKey];
+  if (!chart) return;
+  const meta = chart.getDatasetMeta(datasetIndex);
+  meta.hidden = !meta.hidden;
+  chart.update();
+  const box = document.getElementById(`regime-lgbox-${chartKey}-${datasetIndex}`);
+  if (box) box.style.opacity = meta.hidden ? '0.2' : '1';
+}
+
 function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
   const card = document.createElement('div');
   card.className = 'chart-card';
@@ -158,28 +168,33 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
   }
   const labels = Array.from(allDates).sort();
 
-  // Current-values header row
-  const curRow = cfg.seriesKeys.map((key, i) => {
+  // Custom legend: clickable coloured boxes only, text beside
+  const legendHtml = cfg.seriesKeys.map((key, i) => {
     const sd = series[key];
     const cur = sd ? sd.current : null;
     const color = cfg.seriesColors[i];
     const label = cfg.seriesLabels[key];
     const curStr = cur != null ? (cfg.fmt ? cfg.fmt(cur) : cur.toFixed(2)) : '—';
-    return `<span style="color:${color};font-size:11px;margin-right:14px;white-space:nowrap">&#9679; ${label}: <b>${curStr}</b></span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;margin-bottom:3px">
+      <span id="regime-lgbox-${cfg.key}-${i}"
+        onclick="_regimeToggleDataset('${cfg.key}',${i})"
+        style="width:22px;height:10px;background:${color};border-radius:2px;cursor:pointer;display:inline-block;flex-shrink:0;transition:opacity 0.15s"
+        title="Toggle ${label}"></span>
+      <span style="font-size:10px;color:#9ca3af;white-space:nowrap">${label}: <b style="color:#d1d5db">${curStr}</b></span>
+    </span>`;
   }).join('');
 
   const canvasId = `regime-chart-${cfg.key}`;
   card.innerHTML = `
-    <div style="margin-bottom:4px">
+    <div style="margin-bottom:6px">
       <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
     </div>
-    <div style="margin-bottom:8px;flex-wrap:wrap;display:flex">${curRow}</div>
+    <div style="margin-bottom:8px;flex-wrap:wrap;display:flex">${legendHtml}</div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
       ${[['1M',21],['3M',63],['6M',126],['1Y',252],['2Y',504],['5Y',1260],['All',99999]].map(([r,b]) =>
         `<button onclick="_regimeZoomMulti('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`
       ).join('')}
     </div>
-    <div style="font-size:10px;color:#444;margin-bottom:4px">click legend to toggle series</div>
     <div class="chart-wrap" style="height:200px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
   `;
   grid.appendChild(card);
@@ -209,7 +224,7 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: true, labels: { boxWidth: 10, font: { size: 10 }, color: '#888' } },
+          legend: { display: false },
           tooltip: {
             mode: 'index',
             intersect: false,
@@ -275,16 +290,26 @@ function _regimeBuildMacroSection(container, macroData) {
     { key: 'yield_curve', title: 'Yield Curve (10yr − 3m)',  fmt: v => v.toFixed(3) + '%',  tip: '10yr minus 3-month Treasury yield spread. Positive = normal (growth expected); near zero = flat (uncertainty); negative = inverted (classic recession warning). Inversions often precede risk-off conditions and gold safe-haven rallies.' },
     { key: 'dxy',         title: 'DXY — US Dollar Index',    fmt: v => v.toFixed(2),        tip: 'Trade-weighted USD vs major currencies. Gold priced in USD — weak dollar makes gold cheaper for foreign buyers, boosting demand. Above 106 = historically strong USD headwind for gold.' },
     { key: 'audusd',      title: 'AUD / USD',                fmt: v => v.toFixed(5),        tip: 'Australian Dollar vs USD. AUD is a commodity-linked, risk-on currency — strengthens when global growth is expected and commodity demand is high. Weak AUD can signal domestic risk-off conditions and amplify AUD-denominated gold returns.' },
+    {
+      key: 'aud_usd_basket_ratio',
+      title: 'AUD/Basket vs USD/Basket (rebased to 100)',
+      multiLine: true,
+      seriesKeys:   ['aud_per_basket', 'usd_per_basket'],
+      seriesLabels: { aud_per_basket: 'AUD / Basket', usd_per_basket: 'USD (DXY) / Basket' },
+      seriesColors: ['#42B72A', '#FA3E3E'],
+      fmt: v => v.toFixed(1),
+      tip: 'Purchasing power of each currency relative to Australia\'s export commodity basket, both rebased to 100 at start. Falling AUD/basket = AUD losing ground vs commodity prices (export boom not captured by the currency — domestic drag). Falling USD/basket = commodities getting more expensive in USD terms (commodity inflation signal). When both fall together, commodities are outpacing all currencies.',
+    },
     { key: 'gold',        title: 'Gold (USD/oz)',             fmt: v => '$' + v.toFixed(0),  tip: 'Spot gold price (USD/oz, front-month futures). Primary driver for gold miners. Moves are driven by: USD strength, real interest rates, central bank buying, and safe-haven demand during crises.' },
     { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2),  tip: 'Brent crude price (USD/barrel). Proxy for global economic growth and inflation expectations. High oil = inflationary pressures, potential rate hikes. The gold/oil ratio (below) strips out oil moves to show gold\'s relative safe-haven premium.' },
-    { key: 'gold_oil',         title: 'Gold / Oil Ratio',              fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
+    { key: 'gold_oil',    title: 'Gold / Oil Ratio',          fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
     {
       key: 'basket_with_currencies',
       title: 'Export Basket + AUD/USD + DXY (rebased to 100)',
       multiLine: true,
       seriesKeys:   ['commodity_basket', 'audusd_idx', 'dxy_idx'],
       seriesLabels: { commodity_basket: 'Commodity Basket', audusd_idx: 'AUD/USD', dxy_idx: 'DXY (USD Index)' },
-      seriesColors: ['#f5c842', '#5b8af5', '#e05c5c'],
+      seriesColors: ['#E8B84B', '#2D88FF', '#FA3E3E'],
       fmt: v => v.toFixed(1),
       tip: 'Export-weighted commodity basket alongside AUD/USD and DXY — all rebased to 100 at the same start date. Shows whether currencies are tracking commodity strength. Ideally AUD rises with the basket (commodity currency). When basket rises but AUD lags, domestic factors or RBA policy are offsetting export strength. When DXY rises with the basket, USD is also benefiting from commodity inflation.',
     },
@@ -294,20 +319,10 @@ function _regimeBuildMacroSection(container, macroData) {
       multiLine: true,
       seriesKeys:   ['iron_ore_idx', 'coal_idx', 'nat_gas_idx', 'gold_idx', 'copper_idx'],
       seriesLabels: { iron_ore_idx: 'Iron Ore (40%)', coal_idx: 'Coal (26%)', nat_gas_idx: 'Nat Gas (20%)', gold_idx: 'Gold (10%)', copper_idx: 'Copper (4%)' },
-      seriesColors: ['#e05c5c', '#9e9e9e', '#f5a53a', '#f5c842', '#b87333'],
+      seriesColors: ['#2D88FF', '#9CA3AF', '#F7B928', '#E8B84B', '#FF7043'],
       fmt: v => v.toFixed(1),
       tip: 'All five major export commodities rebased to 100 at their earliest common date. When lines move together the commodity cycle is broad-based. Divergence reveals different demand drivers — e.g. gold surging while iron ore falls signals safe-haven demand without Chinese growth, which benefits gold miners but not the iron ore majors (BHP, RIO, FMG).',
       fullWidth: true,
-    },
-    {
-      key: 'aud_usd_basket_ratio',
-      title: 'AUD/Basket vs USD/Basket (rebased to 100)',
-      multiLine: true,
-      seriesKeys:   ['aud_per_basket', 'usd_per_basket'],
-      seriesLabels: { aud_per_basket: 'AUD / Basket', usd_per_basket: 'USD (DXY) / Basket' },
-      seriesColors: ['#5b8af5', '#e05c5c'],
-      fmt: v => v.toFixed(1),
-      tip: 'Ratio of each currency to the commodity basket, both rebased to 100 at start. Shows purchasing power of each currency relative to Australia\'s export commodities. Falling AUD/basket = AUD is losing ground vs commodity prices (export boom not being captured by the currency). Falling USD/basket = commodities are getting more expensive in USD terms (commodity-driven inflation signal). When both fall, commodities are outpacing all currencies.',
     },
   ];
 
