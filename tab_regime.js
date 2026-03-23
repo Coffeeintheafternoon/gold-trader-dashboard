@@ -179,6 +179,7 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
         `<button onclick="_regimeZoomMulti('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`
       ).join('')}
     </div>
+    <div style="font-size:10px;color:#444;margin-bottom:4px">click legend to toggle series</div>
     <div class="chart-wrap" style="height:200px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
   `;
   grid.appendChild(card);
@@ -277,8 +278,16 @@ function _regimeBuildMacroSection(container, macroData) {
     { key: 'gold',        title: 'Gold (USD/oz)',             fmt: v => '$' + v.toFixed(0),  tip: 'Spot gold price (USD/oz, front-month futures). Primary driver for gold miners. Moves are driven by: USD strength, real interest rates, central bank buying, and safe-haven demand during crises.' },
     { key: 'oil',         title: 'Oil — Brent Crude (USD)',   fmt: v => '$' + v.toFixed(2),  tip: 'Brent crude price (USD/barrel). Proxy for global economic growth and inflation expectations. High oil = inflationary pressures, potential rate hikes. The gold/oil ratio (below) strips out oil moves to show gold\'s relative safe-haven premium.' },
     { key: 'gold_oil',         title: 'Gold / Oil Ratio',              fmt: v => v.toFixed(2),        tip: 'Gold price divided by Brent crude — how many barrels of oil one ounce of gold can buy. Rising ratio = gold outperforming energy = risk-off, safe-haven regime. Falling ratio = growth/inflation regime favouring commodities.' },
-    { key: 'commodity_regime', title: 'Commodity Regime Score',        fmt: v => v.toFixed(2),        tip: 'Composite score (−3 to +3) combining 7-day direction of DXY (inverted), AUD/USD, and copper. Each leg contributes ±1: +3 = all three tailwinds for ASX resource stocks (weak USD, strong AUD, rising copper); −3 = all three headwinds. Smoothed with a 5-day rolling average.' },
-    { key: 'commodity_basket', title: 'Australian Export Basket (weighted)',  fmt: v => v.toFixed(1),  tip: 'Export-weighted commodity basket rebased to 100 at earliest common date. Weights: Iron Ore 40%, Coal 26%, Nat Gas 20%, Gold 10%, Copper 4% — proportional to Australia\'s 2023-24 resource export values. A rising basket means Australia\'s export revenues are growing, which supports AUD and ASX resource stocks broadly.' },
+    {
+      key: 'basket_with_currencies',
+      title: 'Export Basket + AUD/USD + DXY (rebased to 100)',
+      multiLine: true,
+      seriesKeys:   ['commodity_basket', 'audusd_idx', 'dxy_idx'],
+      seriesLabels: { commodity_basket: 'Commodity Basket', audusd_idx: 'AUD/USD', dxy_idx: 'DXY (USD Index)' },
+      seriesColors: ['#f5c842', '#5b8af5', '#e05c5c'],
+      fmt: v => v.toFixed(1),
+      tip: 'Export-weighted commodity basket alongside AUD/USD and DXY — all rebased to 100 at the same start date. Shows whether currencies are tracking commodity strength. Ideally AUD rises with the basket (commodity currency). When basket rises but AUD lags, domestic factors or RBA policy are offsetting export strength. When DXY rises with the basket, USD is also benefiting from commodity inflation.',
+    },
     {
       key: 'commodity_components',
       title: 'Export Commodities — Individual (rebased to 100)',
@@ -291,14 +300,14 @@ function _regimeBuildMacroSection(container, macroData) {
       fullWidth: true,
     },
     {
-      key: 'aud_vs_basket',
-      title: 'AUD/USD vs Commodity Basket (rebased to 100)',
+      key: 'aud_usd_basket_ratio',
+      title: 'AUD/Basket vs USD/Basket (rebased to 100)',
       multiLine: true,
-      seriesKeys:   ['audusd_idx', 'commodity_basket'],
-      seriesLabels: { audusd_idx: 'AUD/USD', commodity_basket: 'Commodity Basket' },
-      seriesColors: ['#5b8af5', '#f5c842'],
+      seriesKeys:   ['aud_per_basket', 'usd_per_basket'],
+      seriesLabels: { aud_per_basket: 'AUD / Basket', usd_per_basket: 'USD (DXY) / Basket' },
+      seriesColors: ['#5b8af5', '#e05c5c'],
       fmt: v => v.toFixed(1),
-      tip: 'AUD/USD and the export-weighted commodity basket, both rebased to 100 at the same start date. AUD is a commodity currency and should broadly track the basket. When the basket rises faster than AUD it signals the market isn\'t rewarding Australia\'s export strength — possible domestic risk, RBA policy drag, or broader EM risk-off. When AUD falls while basket holds, that\'s a currency-specific warning.',
+      tip: 'Ratio of each currency to the commodity basket, both rebased to 100 at start. Shows purchasing power of each currency relative to Australia\'s export commodities. Falling AUD/basket = AUD is losing ground vs commodity prices (export boom not being captured by the currency). Falling USD/basket = commodities are getting more expensive in USD terms (commodity-driven inflation signal). When both fall, commodities are outpacing all currencies.',
     },
   ];
 
