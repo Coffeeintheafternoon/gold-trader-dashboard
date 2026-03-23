@@ -299,13 +299,15 @@ function _resetScrapeBtn() {
 
 // ── Glossary (LLM-reviewed transcripts) ────────────────────────────────────────
 
+let _glossaryItems = [];   // full dataset for filtering
+
 function _renderGlossary(items) {
   const panel = document.getElementById('chatter-glossary-panel');
   if (!panel) return;
 
   if (!items || !items.length) {
     panel.innerHTML = `
-      <div class="chart-card">
+      <div class="chart-card" style="margin-top:16px">
         <div class="chart-title" style="margin-bottom:6px">Transcript Glossary</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.7">
           No reviewed transcripts yet.<br>
@@ -315,32 +317,157 @@ function _renderGlossary(items) {
     return;
   }
 
-  const rows = items.map(item => {
+  _glossaryItems = items;
+
+  // Unique channels for filter dropdown
+  const channels = [...new Set(items.map(i => i.channel_name))].sort();
+  const channelOpts = channels.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  panel.innerHTML = `
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-title" style="margin-bottom:4px">Transcript Glossary</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">
+        ${items.length} video${items.length !== 1 ? 's' : ''} reviewed by Claude · Score 0–10 for gold relevance · Click any row to read full transcript
+      </div>
+
+      <!-- Filter bar -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <select id="gl-filter-channel" onchange="_applyGlossaryFilter()"
+          style="background:#111;border:1px solid #2a2a2a;color:var(--text);padding:5px 10px;border-radius:3px;font-size:12px;cursor:pointer">
+          <option value="">All channels</option>
+          ${channelOpts}
+        </select>
+        <select id="gl-filter-min-score" onchange="_applyGlossaryFilter()"
+          style="background:#111;border:1px solid #2a2a2a;color:var(--text);padding:5px 10px;border-radius:3px;font-size:12px;cursor:pointer">
+          <option value="0">Min score: any</option>
+          <option value="5">Min score: 5+</option>
+          <option value="7">Min score: 7+</option>
+          <option value="9">Min score: 9+</option>
+        </select>
+        <select id="gl-sort" onchange="_applyGlossaryFilter()"
+          style="background:#111;border:1px solid #2a2a2a;color:var(--text);padding:5px 10px;border-radius:3px;font-size:12px;cursor:pointer">
+          <option value="date">Sort: newest first</option>
+          <option value="score">Sort: highest score</option>
+          <option value="channel">Sort: channel A–Z</option>
+        </select>
+        <span id="gl-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+      </div>
+
+      <div id="gl-rows"></div>
+    </div>`;
+
+  // Transcript modal (appended once to body)
+  if (!document.getElementById('gl-modal')) {
+    const m = document.createElement('div');
+    m.id = 'gl-modal';
+    m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;overflow-y:auto;padding:32px 16px';
+    m.innerHTML = `
+      <div style="max-width:760px;margin:0 auto;background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:28px 32px;position:relative">
+        <button onclick="_closeGlModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+        <div id="gl-modal-body"></div>
+      </div>`;
+    m.addEventListener('click', e => { if (e.target === m) _closeGlModal(); });
+    document.body.appendChild(m);
+  }
+
+  _applyGlossaryFilter();
+}
+
+function _applyGlossaryFilter() {
+  const ch    = document.getElementById('gl-filter-channel')?.value || '';
+  const minSc = parseFloat(document.getElementById('gl-filter-min-score')?.value || '0');
+  const sort  = document.getElementById('gl-sort')?.value || 'date';
+
+  let filtered = _glossaryItems.filter(i =>
+    (!ch || i.channel_name === ch) &&
+    (i.llm_score == null || i.llm_score >= minSc)
+  );
+
+  if (sort === 'score')   filtered.sort((a, b) => (b.llm_score || 0) - (a.llm_score || 0));
+  else if (sort === 'channel') filtered.sort((a, b) => a.channel_name.localeCompare(b.channel_name));
+  // default: date (already ordered newest-first from server)
+
+  const countEl = document.getElementById('gl-count');
+  if (countEl) countEl.textContent = `${filtered.length} of ${_glossaryItems.length}`;
+
+  const container = document.getElementById('gl-rows');
+  if (!container) return;
+
+  if (!filtered.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">No videos match the selected filters.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map((item, idx) => {
     const score = item.llm_score != null ? item.llm_score.toFixed(1) : '—';
     const scoreColor = item.llm_score >= 7 ? 'var(--green)' : item.llm_score >= 4 ? 'var(--gold)' : 'var(--muted)';
     const date = (item.published_at || '').slice(0, 10);
     const summary = item.llm_summary || '';
     return `
-      <div style="padding:12px 0;border-bottom:1px solid #141414">
-        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:4px">
-          <span style="font-family:monospace;font-size:12px;font-weight:700;color:${scoreColor};min-width:30px;padding-top:1px">${score}</span>
+      <div onclick="_openGlModal(${idx})" style="padding:12px 0;border-bottom:1px solid #141414;cursor:pointer;transition:background 0.15s"
+           onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='none'">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-family:monospace;font-size:13px;font-weight:700;color:${scoreColor};min-width:32px;padding-top:1px">${score}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${item.channel_name} &nbsp;·&nbsp; ${date}</div>
-            <a href="${item.url}" target="_blank"
-               style="color:var(--text);text-decoration:none;font-size:13px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
-               onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text)'">${item.title}</a>
-            ${summary ? `<div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5">${summary}</div>` : ''}
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${item.title}</div>
+            ${summary ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${summary}</div>` : ''}
           </div>
+          <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px">read ›</span>
         </div>
       </div>`;
   }).join('');
 
-  panel.innerHTML = `
-    <div class="chart-card" style="margin-top:16px">
-      <div class="chart-title" style="margin-bottom:4px">Transcript Glossary</div>
-      <div class="chart-subtitle" style="margin-bottom:16px">
-        ${items.length} video${items.length !== 1 ? 's' : ''} reviewed by Claude · Score 0–10 for gold relevance
+  // Store filtered list on window so modal can index into it
+  window._glFiltered = filtered;
+}
+
+function _openGlModal(idx) {
+  const item = window._glFiltered ? window._glFiltered[idx] : _glossaryItems[idx];
+  if (!item) return;
+
+  const score = item.llm_score != null ? item.llm_score.toFixed(1) : '—';
+  const scoreColor = item.llm_score >= 7 ? 'var(--green)' : item.llm_score >= 4 ? 'var(--gold)' : 'var(--muted)';
+  const date = (item.published_at || '').slice(0, 10);
+  const summary = item.llm_summary || '';
+  const transcript = item.transcript_text || '';
+
+  // Format transcript into readable paragraphs (split on double spaces / long runs)
+  const txFormatted = transcript
+    ? transcript.split(/\s{2,}|\n/).filter(Boolean).map(p =>
+        `<p style="margin:0 0 12px;line-height:1.7;font-size:13px;color:#bbb">${p.trim()}</p>`
+      ).join('')
+    : '<p style="color:var(--muted);font-size:13px">Full transcript not available.</p>';
+
+  document.getElementById('gl-modal-body').innerHTML = `
+    <div style="margin-bottom:4px;font-size:11px;color:var(--muted)">${item.channel_name} &nbsp;·&nbsp; ${date}</div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:14px;line-height:1.4">${item.title}</div>
+    <div style="display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap">
+      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;padding:10px 16px;text-align:center;min-width:70px">
+        <div style="font-size:22px;font-weight:800;font-family:monospace;color:${scoreColor}">${score}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">Gold Score</div>
       </div>
-      ${rows}
-    </div>`;
+      <a href="${item.url}" target="_blank"
+         style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:4px;
+                color:var(--gold);text-decoration:none;font-size:12px;font-weight:600"
+         onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#2a2a2a'">
+        ▶ Watch on YouTube
+      </a>
+    </div>
+    ${summary ? `
+    <div style="background:#0d0d0d;border-left:3px solid var(--gold);padding:12px 16px;margin-bottom:20px;border-radius:0 4px 4px 0">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px">Claude's Summary</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text)">${summary}</div>
+    </div>` : ''}
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Full Transcript</div>
+    <div style="max-height:420px;overflow-y:auto;padding-right:8px">${txFormatted}</div>
+  `;
+
+  document.getElementById('gl-modal').style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function _closeGlModal() {
+  document.getElementById('gl-modal').style.display = 'none';
+  document.body.style.overflow = '';
 }
