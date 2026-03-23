@@ -4,6 +4,7 @@
 
 let _regimeInited = false;
 let _regimeMacroCharts = {};   // key → Chart instance (for destroy-on-reinit)
+let _regimeMacroRaw   = {};    // key → { values: float[], current: float }
 
 async function initRegimeTab() {
   if (_regimeInited) return;
@@ -100,7 +101,7 @@ function _regimeThresholdDatasets(key, n) {
   return [];
 }
 
-// ── Zoom helper: snap chart to last N bars ─────────────────────────────────────
+// ── Zoom helper: snap chart to last N bars + update pct pill ──────────────────
 function _regimeZoom(key, bars) {
   const chart = _regimeMacroCharts[key];
   if (!chart) return;
@@ -108,6 +109,24 @@ function _regimeZoom(key, bars) {
   const minIdx = Math.max(0, n - bars);
   chart.zoomScale('x', { min: minIdx, max: n - 1 }, 'none');
   chart.update('none');
+  _regimeUpdatePct(key, minIdx, n);
+}
+
+function _regimeUpdatePct(key, minIdx, n) {
+  const raw = _regimeMacroRaw[key];
+  if (!raw) return;
+  const windowVals = raw.values.slice(minIdx, n);
+  if (!windowVals.length) return;
+  const cur = raw.current;
+  const below = windowVals.filter(v => v <= cur).length;
+  const pct = Math.round(below / windowVals.length * 100);
+  const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
+  const el = document.getElementById(`regime-pct-${key}`);
+  if (el) {
+    el.style.borderColor = color;
+    el.style.color = color;
+    el.textContent = `${pct}th pct`;
+  }
 }
 
 // ── Section 1: Macro Regime Tracker ──────────────────────────────────────────
@@ -178,26 +197,29 @@ function _regimeBuildMacroSection(container, macroData) {
     }
 
     const rangeHtml = (lo != null && hi != null)
-      ? `<span style="font-size:10px;color:var(--muted)">5yr: ${cfg.fmt ? cfg.fmt(lo) : lo} – ${cfg.fmt ? cfg.fmt(hi) : hi}</span>`
+      ? `<span style="font-size:10px;color:var(--muted)">10yr: ${cfg.fmt ? cfg.fmt(lo) : lo} – ${cfg.fmt ? cfg.fmt(hi) : hi}</span>`
       : '';
 
     const canvasId = `regime-chart-${cfg.key}`;
     const resetId  = `regime-reset-${cfg.key}`;
-    const pctTip = 'Percentile rank vs last 5 years of daily data. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th). Extremes often precede regime shifts.';
-    const rangeTip = 'Min and max reading over the last 5 years of daily data. Shows where current levels sit in historical context.';
+    const pctTip = 'Percentile rank dynamically updates to reflect the currently selected time window. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th) — all relative to the visible period.';
+    const rangeTip = 'Min and max reading over the full 10-year history. Fixed reference regardless of zoom level.';
+    const pctColor = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
     card.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;flex-wrap:wrap">
         <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
         <span style="font-size:16px;font-weight:700;color:var(--gold);font-family:monospace">${curStr}</span>
-        <span class="tip" data-tip="${pctTip}">${_regimePctPill(pct)}</span>
+        <span class="tip" data-tip="${pctTip}">
+          <span id="regime-pct-${cfg.key}" style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(0,0,0,0.4);border:1px solid ${pctColor};color:${pctColor};margin-left:8px">${pct != null ? Math.round(pct)+'th pct' : '—'}</span>
+        </span>
         ${zoneHtml && zone ? `<span class="tip" data-tip="${_regimeZoneTip(cfg.key)}">${zoneHtml}</span>` : ''}
       </div>
       ${!zone && zoneHtml ? zoneHtml : ''}
       ${rangeHtml ? `<div class="tip" style="margin-bottom:6px" data-tip="${rangeTip}">${rangeHtml}</div>` : '<div style="margin-bottom:6px"></div>'}
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-        ${[['1M',21],['3M',63],['6M',126],['1Y',252],['2Y',504],['5Y',1260]].map(([r,b]) => `<button onclick="_regimeZoom('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`).join('')}
-        <button id="${resetId}" onclick="_regimeMacroCharts['${cfg.key}']?.resetZoom()" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">Reset</button>
-        <span style="font-size:10px;color:#333;margin-left:4px">scroll to zoom · drag to pan</span>
+        ${[['1M',21],['3M',63],['6M',126],['1Y',252],['2Y',504],['5Y',1260],['10Y',2520]].map(([r,b]) => `<button onclick="_regimeZoom('${cfg.key}',${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`).join('')}
+        <button id="${resetId}" onclick="_regimeMacroCharts['${cfg.key}']?.resetZoom();_regimeUpdatePct('${cfg.key}',0,_regimeMacroRaw['${cfg.key}']?.values?.length||0)" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='#555'" onmouseout="this.style.borderColor='#333'">All</button>
+        <span style="font-size:10px;color:#444;margin-left:4px">scroll/drag · pct updates with view</span>
       </div>
       <div class="chart-wrap" style="height:180px;cursor:crosshair"><canvas id="${canvasId}"></canvas></div>
     `;
@@ -218,6 +240,9 @@ function _regimeBuildMacroSection(container, macroData) {
       }
 
       const ctx = canvas.getContext('2d');
+      // Store raw data for dynamic pct recalculation on zoom
+      _regimeMacroRaw[cfg.key] = { values, current: cur };
+
       _regimeMacroCharts[cfg.key] = new Chart(ctx, {
         type: 'line',
         data: {
