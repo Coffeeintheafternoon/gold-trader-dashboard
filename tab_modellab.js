@@ -218,7 +218,15 @@ function renderTickerDetail(d) {
     );
     if (found) ticker = found;
   }
-  // Derive display title: use model_type for regime models
+  // Enrich d.model_type from _modelIndex before we use it for title/display
+  const currentSafeEarly = _mlCurrentSafe || ticker.toLowerCase().replace(/\./g,'_');
+  const tickerModels = (_modelIndex && _modelIndex[ticker]) || [];
+  if (!d.model_type && tickerModels.length) {
+    const idxEntry = tickerModels.find(m => m.safe_name === currentSafeEarly);
+    if (idxEntry) d.model_type = idxEntry.model_type || '';
+  }
+
+  // Derive display title
   const isRegimeModelEarly = d.model_type === 'regime_similarity';
   const modelLabel = isRegimeModelEarly ? 'Regime Similarity Model' : 'Linear Regression Model';
   document.getElementById('ml-detail-title').textContent = ticker + ' — ' + modelLabel;
@@ -226,15 +234,9 @@ function renderTickerDetail(d) {
 
   // Model switcher — show all available models for this ticker
   const switcherEl = document.getElementById('ml-model-switcher');
-  const tickerModels = (_modelIndex && _modelIndex[ticker]) || [];
   if (tickerModels.length > 1) {
     switcherEl.style.display = 'flex';
-    const currentSafe = _mlCurrentSafe || ticker.toLowerCase().replace(/\./g,'_');
-    // Also enrich d with model_type from index if missing
-    if (!d.model_type) {
-      const idxEntry = tickerModels.find(m => m.safe_name === currentSafe);
-      if (idxEntry) d.model_type = idxEntry.model_type || '';
-    }
+    const currentSafe = currentSafeEarly;
     switcherEl.innerHTML = '<span style="font-size:11px;color:var(--muted);letter-spacing:0.5px">MODELS:</span>' +
       tickerModels.map(m => {
         const active = m.safe_name === currentSafe;
