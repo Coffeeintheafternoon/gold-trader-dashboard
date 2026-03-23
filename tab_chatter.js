@@ -6,10 +6,11 @@ let _scrapePoller     = null;
 let _chatterLiveMode  = false;   // true = Flask server available, false = static Netlify
 
 let _glossaryItems    = [];      // full YouTube glossary dataset
-let _hcItems          = [];      // HotCopper thread dataset
+let _hcItems          = [];      // HotCopper forum thread dataset
+let _annItems         = [];      // ASX announcements dataset
 let _glFiltered       = [];      // current filtered view (used by modal)
 let _tickerFilter     = '';      // ticker search string (e.g. "WAF")
-let _enabledSources   = new Set(['youtube', 'hotcopper']);  // toggled by source bar
+let _enabledSources   = new Set(['youtube', 'hotcopper', 'asx_announce']);  // toggled by source bar
 
 async function initChatterTab() {
   const elLoading = document.getElementById('chatter-loading');
@@ -24,7 +25,7 @@ async function initChatterTab() {
     _chatterLiveMode = true;
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage([], [], channels, [], true);
+    _buildChatterPage([], [], channels, [], [], true);
     return;
   } catch (_e) {}
 
@@ -35,7 +36,7 @@ async function initChatterTab() {
     const data = await resp.json();
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], data.hotcopper || [], false);
+    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], data.hotcopper || [], data.asx_announcements || [], false);
   } catch (_e) {
     elLoading.style.display = 'none';
     elOffline.style.display = '';
@@ -44,14 +45,15 @@ async function initChatterTab() {
 
 // ── Main layout builder ────────────────────────────────────────────────────────
 
-function _buildChatterPage(glossary, broken, channels, hotcopper, interactive) {
+function _buildChatterPage(glossary, broken, channels, hotcopper, announcements, interactive) {
   const body = document.getElementById('chatter-body');
   _glossaryItems = glossary;
   _hcItems       = hotcopper;
+  _annItems      = announcements;
 
   body.innerHTML = `
     ${_buildTickerBar()}
-    ${_buildSourceBar(glossary.length, hotcopper.length)}
+    ${_buildSourceBar(glossary.length, hotcopper.length, announcements.length)}
     ${_buildFilterBar(glossary)}
     <div id="chatter-feed" style="margin-bottom:32px"></div>
     ${_buildManageSection(interactive)}
@@ -128,15 +130,16 @@ function _buildTickerBar() {
 
 // ── Source status bar ──────────────────────────────────────────────────────────
 
-function _buildSourceBar(ytCount, hcCount) {
-  const hcActive = hcCount > 0;
+function _buildSourceBar(ytCount, hcCount, annCount) {
+  const hcActive  = hcCount  > 0;
+  const annActive = annCount > 0;
   const sources = [
-    { key: 'youtube',      label: 'YouTube',           live: true,     count: ytCount },
-    { key: 'hotcopper',    label: 'HotCopper',          live: hcActive, count: hcActive ? hcCount : null },
-    { key: 'twitter',      label: 'Twitter / X',       live: false,    count: null },
-    { key: 'news',         label: 'News',               live: false,    count: null },
-    { key: 'broker',       label: 'Broker Reports',     live: false,    count: null },
-    { key: 'asx_announce', label: 'ASX Announcements',  live: false,    count: null },
+    { key: 'youtube',      label: 'YouTube',           live: true,      count: ytCount },
+    { key: 'hotcopper',    label: 'HC Forum',           live: hcActive,  count: hcActive  ? hcCount  : null },
+    { key: 'asx_announce', label: 'ASX Announcements',  live: annActive, count: annActive ? annCount : null },
+    { key: 'twitter',      label: 'Twitter / X',       live: false,     count: null },
+    { key: 'news',         label: 'News',               live: false,     count: null },
+    { key: 'broker',       label: 'Broker Reports',     live: false,     count: null },
   ];
 
   const cards = sources.map(s => {
@@ -226,11 +229,11 @@ function _buildFilterBar(items) {
       <select id="chatter-filter-source" style="${selectStyle}">
         <option value="">All sources</option>
         <option value="youtube">YouTube</option>
-        <option value="hotcopper">HotCopper</option>
+        <option value="hotcopper">HC Forum</option>
+        <option value="asx_announce">ASX Announcements</option>
         <option value="twitter" disabled>Twitter (soon)</option>
         <option value="news" disabled>News (soon)</option>
         <option value="broker" disabled>Broker Reports (soon)</option>
-        <option value="asx_announce" disabled>ASX Announcements (soon)</option>
       </select>
       <select id="chatter-filter-score" style="${selectStyle}">
         <option value="0">Min score: any</option>
@@ -293,8 +296,25 @@ function _applyFeedFilter() {
     }).map(i => ({ ...i, _source: 'hotcopper', _date: i.posted_at }));
   }
 
+  // ── ASX Announcements ─────────────────────────────────────────────────────
+  let annFiltered = [];
+  if (_enabledSources.has('asx_announce') && (!source || source === 'asx_announce')) {
+    annFiltered = _annItems.filter(item => {
+      if (search) {
+        const h = `${item.headline} ${item.ticker}`.toLowerCase();
+        if (!h.includes(search)) return false;
+      }
+      if (ticker) {
+        const exactMatch = item.ticker.toUpperCase() === ticker;
+        const titleMatch = (item.headline || '').toUpperCase().includes(ticker);
+        if (!exactMatch && !titleMatch) return false;
+      }
+      return true;
+    }).map(i => ({ ...i, _source: 'asx_announce', _date: i.announced_at }));
+  }
+
   // ── Merge + sort ───────────────────────────────────────────────────────────
-  let merged = [...ytItems, ...hcFiltered];
+  let merged = [...ytItems, ...hcFiltered, ...annFiltered];
 
   if (sort === 'score') {
     // HC items go after YouTube (no score); YT sorted by score desc
@@ -316,7 +336,7 @@ function _applyFeedFilter() {
   _glFiltered = merged.filter(i => i._source === 'youtube');
   window._glFiltered = _glFiltered;
 
-  const total = _glossaryItems.length + _hcItems.length;
+  const total = _glossaryItems.length + _hcItems.length + _annItems.length;
   const countEl = document.getElementById('chatter-feed-count');
   if (countEl) {
     countEl.textContent = ticker
@@ -352,6 +372,8 @@ function _renderFeed(items) {
   const rows = items.map((item) => {
     if (item._source === 'hotcopper') {
       return _renderHCRow(item);
+    } else if (item._source === 'asx_announce') {
+      return _renderAnnRow(item);
     } else {
       return _renderYTRow(item, ytIdx++);
     }
@@ -440,12 +462,54 @@ function _renderHCRow(item) {
     </a>`;
 }
 
+function _renderAnnRow(item) {
+  const date  = (item.announced_at || '').slice(0, 10);
+  const ms    = item.market_sensitive;
+  const hasDoc = item.document_url;
+
+  let titleHtml = item.headline || '';
+  if (_tickerFilter) {
+    const re = new RegExp(`(${_tickerFilter})`, 'gi');
+    titleHtml = titleHtml.replace(re, `<mark style="background:rgba(0,212,255,0.2);color:#00d4ff;border-radius:2px;padding:0 2px">$1</mark>`);
+  }
+
+  const msBadge = ms
+    ? `<span style="font-size:9px;padding:2px 5px;border-radius:2px;
+                   background:rgba(255,32,32,0.1);color:var(--red);
+                   border:1px solid rgba(255,32,32,0.25);white-space:nowrap;letter-spacing:0.3px;margin-left:6px">PRICE SENSITIVE</span>`
+    : '';
+
+  const inner = `
+    <div style="padding:14px 16px;border-bottom:1px solid #141414;
+                display:flex;gap:14px;align-items:flex-start;transition:background 0.1s"
+         onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+         onmouseout="this.style.background='none'">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:40px">
+        <span style="font-family:monospace;font-size:11px;font-weight:700;color:#00d4ff">${item.ticker}</span>
+        <span style="font-size:9px;padding:2px 5px;border-radius:2px;
+                     background:rgba(0,212,255,0.08);color:#00d4ff;
+                     border:1px solid rgba(0,212,255,0.2);white-space:nowrap;letter-spacing:0.3px">ANN</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">ASX Announcement &nbsp;·&nbsp; ${date}</div>
+        <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:2px;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${titleHtml}</span>
+          ${msBadge}
+        </div>
+      </div>
+      <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px;align-self:center">${hasDoc ? 'PDF ›' : 'open ›'}</span>
+    </div>`;
+
+  return hasDoc
+    ? `<a href="${item.document_url}" target="_blank" style="text-decoration:none;color:inherit">${inner}</a>`
+    : inner;
+}
+
 function _buildComingSoonPlaceholders() {
   const placeholders = [
-    { key: 'twitter',      label: 'Twitter / X',       desc: 'High-signal finance accounts — @KitcoNews, @ZeroHedge, @MacroAlf and more' },
-    { key: 'news',         label: 'News',               desc: 'Reuters, BBC, Al Jazeera, MarketWatch RSS feeds — geopolitical + macro events' },
-    { key: 'broker',       label: 'Broker Reports',     desc: 'Research notes from Macquarie, Bell Potter, Ord Minnett on gold sector' },
-    { key: 'asx_announce', label: 'ASX Announcements',  desc: 'Real-time company announcements filtered for gold & resources tickers' },
+    { key: 'twitter', label: 'Twitter / X',    desc: 'High-signal finance accounts — @KitcoNews, @ZeroHedge, @MacroAlf and more' },
+    { key: 'news',    label: 'News',            desc: 'Reuters, BBC, Al Jazeera, MarketWatch RSS feeds — geopolitical + macro events' },
+    { key: 'broker',  label: 'Broker Reports',  desc: 'Research notes from Macquarie, Bell Potter, Ord Minnett on gold sector' },
   ];
 
   const cards = placeholders.map(p => `
