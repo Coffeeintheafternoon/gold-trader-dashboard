@@ -9,6 +9,7 @@ let _glossaryItems    = [];      // full YouTube glossary dataset
 let _hcItems          = [];      // HotCopper thread dataset
 let _glFiltered       = [];      // current filtered view (used by modal)
 let _tickerFilter     = '';      // ticker search string (e.g. "WAF")
+let _enabledSources   = new Set(['youtube', 'hotcopper']);  // toggled by source bar
 
 async function initChatterTab() {
   const elLoading = document.getElementById('chatter-loading');
@@ -130,33 +131,49 @@ function _buildTickerBar() {
 function _buildSourceBar(ytCount, hcCount) {
   const hcActive = hcCount > 0;
   const sources = [
-    { key: 'youtube',       label: 'YouTube',          active: true,     count: ytCount, color: 'var(--green)' },
-    { key: 'hotcopper',     label: 'HotCopper',         active: hcActive, count: hcActive ? hcCount : null, color: 'var(--green)' },
-    { key: 'twitter',       label: 'Twitter / X',      active: false,    count: null,    color: 'var(--muted)' },
-    { key: 'news',          label: 'News',              active: false,    count: null,    color: 'var(--muted)' },
-    { key: 'broker',        label: 'Broker Reports',    active: false,    count: null,    color: 'var(--muted)' },
-    { key: 'asx_announce',  label: 'ASX Announcements', active: false,    count: null,    color: 'var(--muted)' },
+    { key: 'youtube',      label: 'YouTube',           live: true,     count: ytCount },
+    { key: 'hotcopper',    label: 'HotCopper',          live: hcActive, count: hcActive ? hcCount : null },
+    { key: 'twitter',      label: 'Twitter / X',       live: false,    count: null },
+    { key: 'news',         label: 'News',               live: false,    count: null },
+    { key: 'broker',       label: 'Broker Reports',     live: false,    count: null },
+    { key: 'asx_announce', label: 'ASX Announcements',  live: false,    count: null },
   ];
 
   const cards = sources.map(s => {
-    const statusDot = s.active
-      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);margin-right:5px"></span>`
+    const isOn      = s.live && _enabledSources.has(s.key);
+    const clickable = s.live;
+
+    const border  = isOn  ? '1px solid rgba(0,255,65,0.35)' : (s.live ? '1px solid #2a2a2a' : '1px solid #1a1a1a');
+    const opacity = s.live && !isOn ? '0.4' : '1';
+    const cursor  = clickable ? 'cursor:pointer' : '';
+    const bg      = isOn ? 'background:rgba(0,255,65,0.04)' : 'background:var(--card)';
+
+    const dot  = s.live
+      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);${isOn ? 'box-shadow:0 0 6px var(--green)' : 'opacity:0.4'};margin-right:5px"></span>`
       : `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#333;margin-right:5px"></span>`;
-    const statusText = s.active
-      ? `<span style="font-size:10px;color:var(--green);letter-spacing:0.5px">LIVE</span>`
+    const pill = s.live
+      ? `<span style="font-size:10px;color:${isOn ? 'var(--green)' : '#555'};letter-spacing:0.5px">LIVE</span>`
       : `<span style="font-size:10px;color:#444;letter-spacing:0.5px">SOON</span>`;
-    const countBadge = s.active && s.count != null
-      ? `<span style="font-size:18px;font-weight:700;font-family:monospace;color:${s.color};margin-top:2px">${s.count}</span>`
-      : `<span style="font-size:18px;font-weight:700;font-family:monospace;color:#333;margin-top:2px">—</span>`;
+    const countEl = s.live && s.count != null
+      ? `<span style="font-size:18px;font-weight:700;font-family:monospace;color:${isOn ? 'var(--green)' : '#555'}">${s.count}</span>`
+      : `<span style="font-size:18px;font-weight:700;font-family:monospace;color:#333">—</span>`;
+    const sub = s.live
+      ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${isOn ? 'showing' : 'hidden'}</div>`
+      : `<div style="font-size:10px;color:#333;margin-top:2px">not connected</div>`;
+
+    const onclick = clickable ? `onclick="_toggleSource('${s.key}')"` : '';
+
     return `
-      <div style="background:var(--card);border:1px solid ${s.active ? 'rgba(0,255,65,0.2)' : '#1a1a1a'};
-                  border-radius:4px;padding:12px 16px;min-width:0">
+      <div id="src-card-${s.key}" ${onclick}
+           style="${bg};border:${border};border-radius:4px;padding:12px 16px;min-width:0;
+                  opacity:${opacity};${cursor};transition:opacity 0.15s,border-color 0.15s,background 0.15s;
+                  user-select:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:11px;font-weight:700;color:${s.active ? 'var(--text)' : '#555'};text-transform:uppercase;letter-spacing:0.5px">${s.label}</span>
-          <div style="display:flex;align-items:center">${statusDot}${statusText}</div>
+          <span style="font-size:11px;font-weight:700;color:${s.live ? 'var(--text)' : '#555'};text-transform:uppercase;letter-spacing:0.5px">${s.label}</span>
+          <div style="display:flex;align-items:center">${dot}${pill}</div>
         </div>
-        ${countBadge}
-        ${s.active ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">items reviewed</div>` : `<div style="font-size:10px;color:#333;margin-top:2px">not connected</div>`}
+        ${countEl}
+        ${sub}
       </div>`;
   }).join('');
 
@@ -165,6 +182,32 @@ function _buildSourceBar(ytCount, hcCount) {
       ${cards}
     </div>
   `;
+}
+
+function _toggleSource(key) {
+  if (_enabledSources.has(key)) {
+    _enabledSources.delete(key);
+  } else {
+    _enabledSources.add(key);
+  }
+  // Update card appearance
+  const card = document.getElementById(`src-card-${key}`);
+  if (card) {
+    const isOn = _enabledSources.has(key);
+    card.style.opacity     = isOn ? '1' : '0.4';
+    card.style.background  = isOn ? 'rgba(0,255,65,0.04)' : 'var(--card)';
+    card.style.borderColor = isOn ? 'rgba(0,255,65,0.35)' : '#2a2a2a';
+    const dot  = card.querySelector('span[style*="border-radius:50%"]');
+    const pill = card.querySelectorAll('span')[1];
+    const cnt  = card.querySelectorAll('span')[2];
+    const sub  = card.querySelector('div > div:last-child');
+    if (dot)  dot.style.boxShadow  = isOn ? '0 0 6px var(--green)' : 'none';
+    if (dot)  dot.style.opacity    = isOn ? '1' : '0.4';
+    if (pill) pill.style.color     = isOn ? 'var(--green)' : '#555';
+    if (cnt)  cnt.style.color      = isOn ? 'var(--green)' : '#555';
+    if (sub)  sub.textContent      = isOn ? 'showing' : 'hidden';
+  }
+  _applyFeedFilter();
 }
 
 // ── Filter bar ─────────────────────────────────────────────────────────────────
@@ -216,7 +259,7 @@ function _applyFeedFilter() {
 
   // ── YouTube items ──────────────────────────────────────────────────────────
   let ytItems = [];
-  if (!source || source === 'youtube') {
+  if (_enabledSources.has('youtube') && (!source || source === 'youtube')) {
     ytItems = _glossaryItems.filter(item => {
       if (item.llm_score != null && item.llm_score < minSc) return false;
       if (search) {
@@ -233,7 +276,7 @@ function _applyFeedFilter() {
 
   // ── HotCopper items ────────────────────────────────────────────────────────
   let hcFiltered = [];
-  if (!source || source === 'hotcopper') {
+  if (_enabledSources.has('hotcopper') && (!source || source === 'hotcopper')) {
     hcFiltered = _hcItems.filter(item => {
       // Score filter doesn't apply to HC (no LLM score)
       if (search) {
