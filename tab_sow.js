@@ -413,6 +413,99 @@ function _buildNewsHeatmap(data) {
   });
 }
 
+// ── Regional tone timelines ───────────────────────────────────────────────────
+const _toneCharts = {};
+
+function _buildToneTimelines(data) {
+  const panel = document.getElementById('sow-tone-panel');
+  if (!panel) return;
+  const timelines = data.tone_timelines;
+  if (!timelines || !Object.keys(timelines).length) {
+    panel.innerHTML = '<span style="font-size:11px;color:#3a3a3a">No timeline data — run sow_exporter.py</span>';
+    return;
+  }
+
+  panel.innerHTML = '';
+
+  // Destroy any old charts first
+  Object.values(_toneCharts).forEach(c => { try { c.destroy(); } catch(e) {} });
+
+  Object.entries(timelines).forEach(([regionId, region]) => {
+    const points   = region.data || [];
+    const labels   = points.map(p => p.date.slice(5));  // MM-DD
+    const values   = points.map(p => p.tone);
+    const latest   = values.filter(v => v !== null).at(-1) ?? 0;
+    const prev     = values.filter(v => v !== null).at(-2) ?? latest;
+    const trend    = latest < prev ? '▼' : latest > prev ? '▲' : '●';
+    const toneCol  = latest < -5 ? '#e05252' : latest < -3 ? '#f5a520' : latest < -1 ? '#c4c440' : '#52c4a0';
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#0d0d0d;border:1px solid #1a1a1a;border-radius:4px;padding:7px 9px';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:5px';
+    header.innerHTML = `
+      <span style="font-size:11px;color:#b0a080">${region.label}</span>
+      <span style="font-size:11px;font-weight:700;color:${toneCol}">${trend} ${latest !== null ? latest.toFixed(1) : '—'}</span>
+    `;
+
+    const canvasWrap = document.createElement('div');
+    canvasWrap.style.cssText = 'height:36px;position:relative';
+    const canvas = document.createElement('canvas');
+    canvas.id = `sow-tone-${regionId}`;
+
+    canvasWrap.appendChild(canvas);
+    wrap.appendChild(header);
+    wrap.appendChild(canvasWrap);
+    panel.appendChild(wrap);
+
+    // Render Chart.js sparkline
+    _toneCharts[regionId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: toneCol,
+          backgroundColor: toneCol + '18',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          pointHoverRadius: 3,
+          fill: true,
+          tension: 0.3,
+          spanGaps: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `Tone: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) : '—'}`,
+            },
+            titleColor: '#e8d5a0',
+            bodyColor: toneCol,
+            backgroundColor: '#0d0d0d',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+          },
+        },
+        scales: {
+          x: { display: false },
+          y: {
+            display: false,
+            suggestedMin: -10,
+            suggestedMax: 2,
+          },
+        },
+      },
+    });
+  });
+}
+
 // ── Toggle controls ───────────────────────────────────────────────────────────
 function _buildToggles() {
   const wrap = document.getElementById('sow-layer-toggles');
@@ -916,6 +1009,7 @@ function initSOWTab() {
       _buildNewsHeatmap(data);
       _buildMiningRegions(data);
       _buildAustralia(data);
+      _buildToneTimelines(data);
 
       // Add enabled layers to map
       Object.values(_sowLayers).forEach(layer => {
