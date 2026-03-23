@@ -206,6 +206,9 @@
       <div style="font-size:16px;font-weight:800;color:var(--gold)" id="ml-detail-title">—</div>
       <div style="font-size:12px;color:var(--muted)" id="ml-detail-period">—</div>
     </div>
+    <div id="ml-model-switcher" style="display:none;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);letter-spacing:0.5px">MODELS:</span>
+    </div>
 
     <!-- IS vs Holdout hero row -->
     <div style="display:grid;grid-template-columns:1fr 1px 1fr;gap:0;margin-bottom:16px" class="chart-card" id="ml-is-ho-card">
@@ -1887,6 +1890,7 @@ async function openTickerInModelLab(ticker, data, safeName) {
     let mlData;
     try { mlData=await mlRes.json(); } catch(e) { alert('JSON parse error for '+ticker+': '+e.message); return; }
     _mlTickerCache[safe]=mlData;
+    _mlCurrentSafe=safe;
     try { renderTickerDetail(mlData); } catch(e) { console.error('renderTickerDetail error:',e); document.getElementById('ml-detail-title').textContent=ticker+' — render error: '+e.message; }
     document.getElementById('ml-ticker-detail').scrollIntoView({behavior:'smooth',block:'start'});
     return;
@@ -2115,6 +2119,7 @@ let _mlFeatChart = null;
 let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
 let _mlCurrentWH = [];          // weight_history for current ticker
+let _mlCurrentSafe = null;      // safe_name of currently displayed model
 let _mlStabShow     = { weight: true, cum_avg: true, cum_pval: true }; // which metrics visible
 let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
@@ -2233,6 +2238,32 @@ function renderTickerDetail(d) {
   const ticker = d.ticker || '—';
   document.getElementById('ml-detail-title').textContent = ticker + ' — Linear Regression Model';
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
+
+  // Model switcher — show all available models for this ticker
+  const switcherEl = document.getElementById('ml-model-switcher');
+  const tickerModels = (_modelIndex && _modelIndex[ticker]) || [];
+  if (tickerModels.length > 1) {
+    switcherEl.style.display = 'flex';
+    const currentSafe = _mlCurrentSafe || ticker.toLowerCase().replace(/\./g,'_');
+    // Also enrich d with model_type from index if missing
+    if (!d.model_type) {
+      const idxEntry = tickerModels.find(m => m.safe_name === currentSafe);
+      if (idxEntry) d.model_type = idxEntry.model_type || '';
+    }
+    switcherEl.innerHTML = '<span style="font-size:11px;color:var(--muted);letter-spacing:0.5px">MODELS:</span>' +
+      tickerModels.map(m => {
+        const active = m.safe_name === currentSafe;
+        const isRegime = m.model_type === 'regime_similarity';
+        const bg     = active ? (isRegime ? 'rgba(124,58,237,0.25)' : 'rgba(245,165,32,0.2)') : '#111';
+        const border = active ? (isRegime ? '#7c3aed' : 'var(--gold)') : '#333';
+        const color  = active ? (isRegime ? '#c4b5fd' : 'var(--gold)') : 'var(--muted)';
+        return `<button onclick="openTickerInModelLab('${ticker}',{},'${m.safe_name}')"
+          style="background:${bg};border:1px solid ${border};color:${color};border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap"
+          ${active ? 'disabled' : ''}>${m.label}</button>`;
+      }).join('');
+  } else {
+    switcherEl.style.display = 'none';
+  }
 
   // IS metrics
   const isM = d.is_model || {};
