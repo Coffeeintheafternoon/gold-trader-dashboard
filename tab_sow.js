@@ -223,41 +223,125 @@ function _buildToggles() {
   });
 }
 
+// ── OSM polygon fetching via Overpass API ─────────────────────────────────────
+const _osmCache = {};  // "lat,lng" → array of polygon objects (or null if pending)
+
+function _polyAreaDeg(coords) {
+  // Shoelace formula — returns area in degrees² (for noise filtering only)
+  if (!coords || coords.length < 3) return 0;
+  let a = 0;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    a += (coords[j][1] + coords[i][1]) * (coords[j][0] - coords[i][0]);
+  }
+  return Math.abs(a) / 2;
+}
+
+async function _fetchOSMPolygons(lat, lng, radius) {
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)},${radius}`;
+  if (key in _osmCache) return _osmCache[key];
+  _osmCache[key] = [];  // mark as requested to prevent duplicate fetches
+
+  const q = `[out:json][timeout:20];`
+    + `(way["landuse"="quarry"](around:${radius},${lat},${lng});`
+    + `way["landuse"="industrial"](around:${radius},${lat},${lng});`
+    + `way["man_made"="mine"](around:${radius},${lat},${lng});`
+    + `);out body;>;out skel qt;`;
+
+  try {
+    const resp = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(q),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    const json = await resp.json();
+
+    // Build node coordinate lookup
+    const nodes = {};
+    json.elements.filter(e => e.type === 'node').forEach(n => { nodes[n.id] = [n.lat, n.lon]; });
+
+    // Extract closed ways with enough area to be a real mine (filter out roads, buildings)
+    const polys = json.elements
+      .filter(e => e.type === 'way' && Array.isArray(e.nodes) && e.nodes.length >= 4)
+      .map(w => {
+        const coords = w.nodes.map(id => nodes[id]).filter(Boolean);
+        return { coords, tags: w.tags || {}, area: _polyAreaDeg(coords) };
+      })
+      .filter(p => p.coords.length >= 4 && p.area > 0.000002)  // ~0.5ha+ at AU latitudes
+      .sort((a, b) => b.area - a.area);                         // largest first
+
+    _osmCache[key] = polys;
+    return polys;
+  } catch (err) {
+    console.warn('Overpass fetch failed:', err);
+    return [];
+  }
+}
+
+// Attach tooltip + click detail to any Leaflet layer (marker or polygon)
+function _bindSiteInteraction(leafletLayer, name, colour, detailHTML) {
+  leafletLayer.bindTooltip(
+    `<b style="color:#e8d5a0">${name}</b><br>`
+    + `<span style="font-size:11px;color:${colour}">Click for details</span>`,
+    { direction: 'top', offset: [0, -8], sticky: true, className: 'sow-tooltip' }
+  );
+  leafletLayer.on('click', () => {
+    const el = document.getElementById('sow-detail-content');
+    if (el) el.innerHTML = detailHTML;
+    const status = document.getElementById('sow-status');
+    if (status) status.textContent = name;
+  });
+}
+
+// Add a site to a layer group: circle immediately, replaced by OSM polygon when loaded
+function _addSiteWithOSM(r, colour, group) {
+  // Build detail HTML once
+  const cfg = _auTypes[r.type] || { color: colour, label: r.type };
+  const detail = `
+    <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${r.name}</div>
+    <div style="margin-bottom:8px">
+      <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${colour};color:${colour};text-transform:uppercase;letter-spacing:0.8px">${cfg.label}</span>
+    </div>
+    <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${r.summary || ''}</div>
+    ${r.aud_link ? `
+    <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AUD Link</div>
+      <div style="font-size:11px;color:#9a8a70;line-height:1.5">${r.aud_link}</div>
+    </div>` : ''}
+    ${r.key_names ? `<div style="font-size:11px;color:var(--muted)">Key names: <span style="color:#e8d5a0">${r.key_names}</span></div>` : ''}
+  `;
+
+  // Immediate fallback: circle marker
+  const fallback = L.circleMarker([r.lat, r.lng], {
+    radius: 7, fillColor: colour, color: colour, weight: 1.5,
+    fillOpacity: 0.55, opacity: 0.8,
+  });
+  _bindSiteInteraction(fallback, r.name, colour, detail);
+  group.addLayer(fallback);
+
+  // Async: fetch OSM polygon, swap in if found
+  const radius = r.osm_radius || 4000;
+  _fetchOSMPolygons(r.lat, r.lng, radius).then(polys => {
+    if (!polys || polys.length === 0) return;  // keep circle
+    group.removeLayer(fallback);
+    polys.slice(0, 5).forEach(p => {
+      const poly = L.polygon(p.coords, {
+        color: colour, fillColor: colour,
+        weight: 1.5, opacity: 0.85, fillOpacity: 0.2,
+      });
+      _bindSiteInteraction(poly, r.name, colour, detail);
+      group.addLayer(poly);
+    });
+  });
+}
+
 // ── Australia layer ────────────────────────────────────────────────────────────
 function _buildAustralia(data) {
   const layer = _sowLayers.australia;
   layer.group = L.layerGroup();
 
   (data.australia || []).forEach(r => {
-    const cfg    = _auTypes[r.type] || { color: '#a78bfa', label: r.type };
-    const marker = L.marker([r.lat, r.lng], { icon: _makeIcon(cfg.color, 13) });
-
-    marker.bindTooltip(
-      `<b style="color:#e8d5a0">${r.name}</b><br>` +
-      `<span style="font-size:11px;color:${cfg.color}">${cfg.label}</span>`,
-      { direction: 'top', offset: [0, -8], className: 'sow-tooltip' }
-    );
-
-    marker.on('click', () => {
-      const el = document.getElementById('sow-detail-content');
-      if (el) el.innerHTML = `
-        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${r.name}</div>
-        <div style="margin-bottom:8px">
-          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${cfg.color};color:${cfg.color};text-transform:uppercase;letter-spacing:0.8px">${cfg.label}</span>
-        </div>
-        <div style="font-size:12px;color:#b0a080;line-height:1.6;margin-bottom:10px">${r.summary || ''}</div>
-        ${r.aud_link ? `
-        <div style="padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;margin-bottom:8px">
-          <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AUD Link</div>
-          <div style="font-size:11px;color:#9a8a70;line-height:1.5">${r.aud_link}</div>
-        </div>` : ''}
-        ${r.key_names ? `<div style="font-size:11px;color:var(--muted)">Key names: <span style="color:#e8d5a0">${r.key_names}</span></div>` : ''}
-      `;
-      const status = document.getElementById('sow-status');
-      if (status) status.textContent = r.name;
-    });
-
-    layer.group.addLayer(marker);
+    const cfg = _auTypes[r.type] || { color: '#a78bfa', label: r.type };
+    _addSiteWithOSM(r, cfg.color, layer.group);
   });
 }
 
