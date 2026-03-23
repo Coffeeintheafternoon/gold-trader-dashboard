@@ -1449,6 +1449,14 @@ function buildMLInfoHeader(d) {
     </div>`;
   }
 
+  // Format market cap: A$X.XB or A$XXXm, with as-at date
+  let mktCapStr = '—';
+  if (d.market_cap) {
+    const cap = d.market_cap;
+    const fmt = cap >= 1e9 ? `A$${(cap/1e9).toFixed(2)}B` : `A$${(cap/1e6).toFixed(0)}m`;
+    mktCapStr = d.market_cap_date ? `${fmt} (${d.market_cap_date})` : fmt;
+  }
+
   el.innerHTML = [
     stat('Data Period',   `${d.period_start} → ${d.period_end}`),
     stat('Total Bars',    `${totalBars} (${totalYrs}yr)`),
@@ -1459,6 +1467,7 @@ function buildMLInfoHeader(d) {
     stat('IS Windows',    `${isM.n_windows || '—'}`),
     stat('Features Kept', `${featKept}`),
     stat('Features Pruned', `${featPruned}`),
+    stat('Market Cap',    mktCapStr),
   ].join('');
 }
 
