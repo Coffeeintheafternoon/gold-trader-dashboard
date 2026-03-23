@@ -327,7 +327,7 @@ function _renderGlossary(items) {
     <div class="chart-card" style="margin-top:16px">
       <div class="chart-title" style="margin-bottom:4px">Transcript Glossary</div>
       <div class="chart-subtitle" style="margin-bottom:14px">
-        ${items.length} video${items.length !== 1 ? 's' : ''} reviewed by Claude · Score 0–10 for gold relevance · Click any row to read full transcript
+        ${items.length} video${items.length !== 1 ? 's' : ''} reviewed by Claude · Score 0–10 for ASX market impact · Click any row to read full transcript
       </div>
 
       <!-- Filter bar -->
