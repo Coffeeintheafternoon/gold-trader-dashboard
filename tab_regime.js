@@ -43,6 +43,7 @@ async function initRegimeTab() {
 
   _regimeBuildMacroSection(body, macroData);
   _regimeBuildModelSection(body, model3m, model1y);
+  _regimeBuildSimilaritySection(body, model1y);
 }
 
 // ── Regime zone helpers ────────────────────────────────────────────────────────
@@ -500,3 +501,213 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   }).join('');
 }
 
+
+// ── Section 3: Historical Regime Similarity ────────────────────────────────────
+// Uses regime_weights from 1Y model (objects with macro_state, z-scores, weight).
+// Visuals: top-3 summary cards, similarity timeline, radar fingerprint, weight-vs-macro scatters.
+
+function _regimeBuildSimilaritySection(container, model1y) {
+  if (!model1y) return;
+  const rw = Array.isArray(model1y.regime_weights) ? model1y.regime_weights : [];
+  const windows = rw.filter(w => w && w.macro_state_z && w.weight != null);
+  if (!windows.length) return;
+
+  const sorted    = [...windows].sort((a, b) => b.weight - a.weight);
+  const COLS      = ['macro_vix', 'macro_dxy', 'macro_us10yr', 'macro_audusd', 'macro_gold'];
+  const COL_LABEL = { macro_vix: 'VIX', macro_dxy: 'DXY', macro_us10yr: 'US10yr', macro_audusd: 'AUD/USD', macro_gold: 'Gold' };
+  const COL_FMT   = {
+    macro_vix:    v => v.toFixed(1),
+    macro_dxy:    v => v.toFixed(1),
+    macro_us10yr: v => v.toFixed(2) + '%',
+    macro_audusd: v => v.toFixed(4),
+    macro_gold:   v => '$' + Math.round(v),
+  };
+  const WIN_COLORS = ['#f5a520', '#c08030', '#888888', '#555555', '#333333'];
+
+  // Section header
+  const hdr = document.createElement('div');
+  hdr.innerHTML = `
+    <div class="section-divider" style="margin-top:8px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-label tip" data-tip="Visualises which historical macro periods most closely resembled today. Based on the 1Y Regime Similarity model — Gaussian kernel on 5 macro variables (VIX, DXY, US10yr, AUD/USD, Gold). Higher weight = that year was training data most relevant to current conditions.">Historical Regime Similarity — 1Y Model</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+      Which years in history looked most like today's macro environment?
+      Gaussian kernel on VIX · DXY · US 10yr · AUD/USD · Gold · &sigma; = ${model1y.sigma != null ? model1y.sigma : 1.5}
+    </div>
+  `;
+  container.appendChild(hdr);
+
+  // Top 3 similar periods summary cards
+  const top3 = sorted.slice(0, 3);
+  const cardsWrap = document.createElement('div');
+  cardsWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px';
+  cardsWrap.innerHTML = top3.map((w, i) => {
+    const year  = (w.window_end || '').slice(0, 4);
+    const pct   = (w.weight * 100).toFixed(1);
+    const dist  = w.sq_distance != null ? w.sq_distance.toFixed(1) : '—';
+    const state = w.macro_state || {};
+    const bc    = i === 0 ? 'rgba(245,165,32,0.10)' : i === 1 ? 'rgba(192,128,48,0.06)' : 'rgba(80,80,80,0.06)';
+    const tc    = WIN_COLORS[i];
+    const rows  = COLS.map(c => {
+      const raw = state[c];
+      const z   = w.macro_state_z ? w.macro_state_z[c] : null;
+      const zStr = z != null ? ' <span style="color:#444;font-size:10px">(z=' + (z >= 0 ? '+' : '') + z.toFixed(2) + ')</span>' : '';
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:11px">'
+        + '<span style="color:var(--muted)">' + COL_LABEL[c] + '</span>'
+        + '<span style="font-family:monospace;color:#ccc">' + (raw != null ? COL_FMT[c](raw) : '—') + zStr + '</span>'
+        + '</div>';
+    }).join('');
+    const rank = ['#1 Most Similar', '#2 Most Similar', '#3 Most Similar'][i];
+    return '<div class="chart-card" style="padding:16px;border-color:' + tc + '44;background:' + bc + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+      + '<div>'
+      + '<div style="font-size:22px;font-weight:700;color:' + tc + ';font-family:monospace">' + year + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);letter-spacing:0.5px">' + rank + '</div>'
+      + '</div>'
+      + '<div style="text-align:right">'
+      + '<div class="tip" style="font-size:24px;font-weight:800;color:' + tc + '" data-tip="' + pct + '% of total regime weight assigned to this window. Higher = more macro-similar to today.">' + pct + '%</div>'
+      + '<div class="tip" style="font-size:10px;color:var(--muted)" data-tip="Squared distance in z-score space. Lower = more similar to today. 0 = identical macro environment.">dist&sup2; = ' + dist + '</div>'
+      + '</div></div>'
+      + rows + '</div>';
+  }).join('');
+  container.appendChild(cardsWrap);
+
+  // Timeline + Radar side by side
+  const chartGrid = document.createElement('div');
+  chartGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px';
+  container.appendChild(chartGrid);
+
+  const timelineCard = document.createElement('div');
+  timelineCard.className = 'chart-card';
+  timelineCard.innerHTML = '<div class="chart-title tip" style="margin-bottom:4px" data-tip="How much regime similarity weight each historical training window receives. Taller bars = that year\'s macro environment closely matched today\'s. The model trusts features that worked in those years more heavily.">Similarity Timeline</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">% of total weight per annual training window</div>'
+    + '<div style="height:230px"><canvas id="regime-sim-timeline"></canvas></div>';
+  chartGrid.appendChild(timelineCard);
+
+  const radarCard = document.createElement('div');
+  radarCard.className = 'chart-card';
+  const radarSubtitle = top3.map((w, i) => '<span style="color:' + WIN_COLORS[i] + '">' + (w.window_end || '').slice(0, 4) + '</span>').join(' · ');
+  radarCard.innerHTML = '<div class="chart-title tip" style="margin-bottom:4px" data-tip="The macro z-score profile of the top 3 most similar historical windows. Each axis = one regime variable in standard deviations from the 18yr IS mean. Outward = above average; inward = below. Overlapping shapes = similar macro conditions.">Macro Fingerprint — Top 3 Periods</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">z-score vs 18yr IS mean · ' + radarSubtitle + '</div>'
+    + '<div style="height:230px"><canvas id="regime-radar"></canvas></div>';
+  chartGrid.appendChild(radarCard);
+
+  // Weight vs Macro scatter grid
+  const scatterHdr = document.createElement('div');
+  scatterHdr.innerHTML = '<div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px" data-tip="For each regime variable, shows how the macro value at each historical window relates to the similarity weight that window received. Bigger brighter dots = higher weight. Reveals which macro value ranges the model considers similar to today.">'
+    + 'Regime Weight vs Macro Value</div>';
+  container.appendChild(scatterHdr);
+
+  const scatterGrid = document.createElement('div');
+  scatterGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-bottom:40px';
+  container.appendChild(scatterGrid);
+
+  COLS.forEach((col, ci) => {
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.style.cssText = 'padding:14px;margin-bottom:0';
+    card.innerHTML = '<div class="tip" style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px" data-tip="X = ' + COL_LABEL[col] + ' value at that window\'s end date. Y = % similarity weight. Larger brighter dots = higher-weight windows.">'
+      + COL_LABEL[col] + ' vs Weight</div>'
+      + '<div style="height:155px"><canvas id="regime-scatter-' + ci + '"></canvas></div>';
+    scatterGrid.appendChild(card);
+  });
+
+  // Build all charts after DOM insertion
+  requestAnimationFrame(() => {
+
+    // 1. Timeline bar chart
+    const tlCtx = document.getElementById('regime-sim-timeline');
+    if (tlCtx) {
+      const labels   = windows.map(w => (w.window_end || '').slice(0, 4));
+      const wts      = windows.map(w => parseFloat((w.weight * 100).toFixed(2)));
+      const maxW     = Math.max.apply(null, wts.concat([0.01]));
+      const bgC = wts.map(w => { const t = w/maxW; return 'rgba('+Math.round(40+t*205)+','+Math.round(40+t*125)+','+Math.round(Math.max(0,40-t*8))+','+(0.4+t*0.6)+')'; });
+      const bdC = wts.map(w => (w/maxW) > 0.2 ? '#f5a520' : '#2a2a2a');
+      new Chart(tlCtx.getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [{ data: wts, backgroundColor: bgC, borderColor: bdC, borderWidth: 1, borderRadius: 3 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx) {
+              const w = windows[ctx.dataIndex]; const s = w.macro_state || {};
+              return ['Weight: '+ctx.raw.toFixed(1)+'%  (dist\u00B2='+(w.sq_distance!=null?w.sq_distance.toFixed(1):'—')+')',
+                'VIX: '+(s.macro_vix!=null?s.macro_vix.toFixed(1):'—'),
+                'DXY: '+(s.macro_dxy!=null?s.macro_dxy.toFixed(1):'—'),
+                'US10yr: '+(s.macro_us10yr!=null?s.macro_us10yr.toFixed(2):'—')+'%',
+                'AUD/USD: '+(s.macro_audusd!=null?s.macro_audusd.toFixed(4):'—'),
+                'Gold: $'+(s.macro_gold!=null?Math.round(s.macro_gold):'—')];
+            }}}
+          },
+          scales: {
+            x: { ticks: { font: { size: 9 }, color: '#666', maxRotation: 45 }, grid: { display: false } },
+            y: { ticks: { font: { size: 9 }, color: '#666', callback: function(v) { return v.toFixed(0)+'%'; } }, grid: { color: '#1a1a1a' } }
+          }
+        }
+      });
+    }
+
+    // 2. Radar chart
+    const radarCtx = document.getElementById('regime-radar');
+    if (radarCtx) {
+      const radarLabels = COLS.map(c => COL_LABEL[c]);
+      const datasets = top3.map((w, i) => ({
+        label: (w.window_end||'').slice(0,4)+'  '+(w.weight*100).toFixed(1)+'%',
+        data: COLS.map(c => parseFloat(((w.macro_state_z&&w.macro_state_z[c]!=null?w.macro_state_z[c]:0)).toFixed(2))),
+        borderColor: WIN_COLORS[i],
+        backgroundColor: ['rgba(245,165,32,0.12)','rgba(192,128,48,0.07)','rgba(120,120,120,0.04)'][i],
+        borderWidth: i === 0 ? 2.5 : 1.5,
+        pointRadius: 3,
+        pointBackgroundColor: WIN_COLORS[i],
+        pointBorderColor: WIN_COLORS[i],
+      }));
+      new Chart(radarCtx.getContext('2d'), {
+        type: 'radar',
+        data: { labels: radarLabels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: { legend: { display: true, labels: { font: { size: 10 }, color: '#888', boxWidth: 10, padding: 8 } } },
+          scales: {
+            r: {
+              min: -3, max: 3,
+              ticks: { stepSize: 1, font: { size: 8 }, color: '#555', backdropColor: 'transparent' },
+              grid: { color: '#1e1e1e' },
+              angleLines: { color: '#2a2a2a' },
+              pointLabels: { font: { size: 10 }, color: '#888' },
+            }
+          }
+        }
+      });
+    }
+
+    // 3. Scatter plots
+    COLS.forEach(function(col, ci) {
+      const ctx = document.getElementById('regime-scatter-'+ci);
+      if (!ctx) return;
+      const pts = windows.map(w => ({ x: parseFloat((w.macro_state&&w.macro_state[col]!=null?w.macro_state[col]:0).toFixed(4)), y: parseFloat((w.weight*100).toFixed(2)), _year: (w.window_end||'').slice(0,4) }));
+      const maxW = Math.max.apply(null, pts.map(p=>p.y).concat([0.01]));
+      const bgC = pts.map(p => { const t=p.y/maxW; return 'rgba('+Math.round(40+t*205)+','+Math.round(40+t*125)+','+Math.round(Math.max(0,40-t*8))+','+(0.5+t*0.5)+')'; });
+      const bdC = pts.map(p => (p.y/maxW)>0.2?'#f5a520':'#2a2a2a');
+      const radii = pts.map(p => Math.round(3+(p.y/maxW)*7));
+      new Chart(ctx.getContext('2d'), {
+        type: 'scatter',
+        data: { datasets: [{ data: pts, backgroundColor: bgC, borderColor: bdC, borderWidth: 1, pointRadius: radii, pointHoverRadius: radii.map(r=>r+3) }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(ctx2) { return [ctx2.raw._year+': '+ctx2.raw.y.toFixed(1)+'% ('+COL_FMT[col](ctx2.raw.x)+')']; } } }
+          },
+          scales: {
+            x: { ticks: { font: { size: 9 }, color: '#555', maxTicksLimit: 4 }, grid: { color: '#111' } },
+            y: { ticks: { font: { size: 9 }, color: '#555', maxTicksLimit: 4, callback: function(v) { return v.toFixed(0)+'%'; } }, grid: { color: '#111' } }
+          }
+        }
+      });
+    });
+
+  }); // end requestAnimationFrame
+}

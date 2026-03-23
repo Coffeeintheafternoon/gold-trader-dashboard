@@ -1186,7 +1186,10 @@ function buildMLRegimePanel(d) {
   const sigma         = d.sigma          || 1.5;
   const stepDays      = d.step_days      || 63;
 
-  if (!regimeWeights.length) return;
+  if (!regimeWeights.length || !regimeWeights[0].weight) {
+    card.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:12px;text-align:center">Regime similarity data not available for this model variant.<br><span style="font-size:11px">Re-export via <code>export_regime_model.py</code> to populate.</span></div>';
+    return;
+  }
 
   // ── Bar chart: window weights ────────────────────────────────────────────
   const el = document.getElementById('ml-regime-chart');
