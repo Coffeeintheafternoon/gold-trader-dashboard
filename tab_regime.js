@@ -39,7 +39,7 @@ async function initRegimeTab() {
 
   document.getElementById('regime-loading').style.display = 'none';
   const body = document.getElementById('regime-body');
-  body.style.display = 'block';
+  body.style.cssText = 'display:block; padding: 0 16px';
 
   _regimeBuildMacroSection(body, macroData);
   _regimeBuildModelSection(body, model3m, model1y);
@@ -213,6 +213,7 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
       fill: false,
       tension: 0.2,
       spanGaps: true,
+      ...(cfg.dualAxis ? { yAxisID: cfg.dualAxis.right.includes(key) ? 'y1' : 'y' } : {}),
     }));
 
     const ctx = canvas.getContext('2d');
@@ -261,6 +262,13 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
             grid: { color: '#1a1a1a' },
             ticks: { font: { size: 10 }, maxTicksLimit: 6, callback: v => cfg.fmt ? cfg.fmt(v) : v },
           },
+          ...(cfg.dualAxis ? {
+            y1: {
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { font: { size: 10 }, maxTicksLimit: 6, color: '#666', callback: v => v.toFixed(0) },
+            }
+          } : {}),
         },
       },
     });
@@ -296,7 +304,7 @@ function _regimeBuildMacroSection(container, macroData) {
       multiLine: true,
       seriesKeys:   ['aud_per_basket', 'usd_per_basket'],
       seriesLabels: { aud_per_basket: 'AUD / Basket', usd_per_basket: 'USD (DXY) / Basket' },
-      seriesColors: ['#42B72A', '#FA3E3E'],
+      seriesColors: [GREEN, RED],
       fmt: v => v.toFixed(1),
       tip: 'Purchasing power of each currency relative to Australia\'s export commodity basket, both rebased to 100 at start. Falling AUD/basket = AUD losing ground vs commodity prices (export boom not captured by the currency — domestic drag). Falling USD/basket = commodities getting more expensive in USD terms (commodity inflation signal). When both fall together, commodities are outpacing all currencies.',
     },
@@ -308,10 +316,11 @@ function _regimeBuildMacroSection(container, macroData) {
       title: 'Export Basket + AUD/USD + DXY (rebased to 100)',
       multiLine: true,
       seriesKeys:   ['commodity_basket', 'audusd_idx', 'dxy_idx'],
-      seriesLabels: { commodity_basket: 'Commodity Basket', audusd_idx: 'AUD/USD', dxy_idx: 'DXY (USD Index)' },
-      seriesColors: ['#E8B84B', '#2D88FF', '#FA3E3E'],
+      seriesLabels: { commodity_basket: 'Commodity Basket (L)', audusd_idx: 'AUD/USD (R)', dxy_idx: 'DXY (R)' },
+      seriesColors: [GOLD, GREEN, RED],
       fmt: v => v.toFixed(1),
-      tip: 'Export-weighted commodity basket alongside AUD/USD and DXY — all rebased to 100 at the same start date. Shows whether currencies are tracking commodity strength. Ideally AUD rises with the basket (commodity currency). When basket rises but AUD lags, domestic factors or RBA policy are offsetting export strength. When DXY rises with the basket, USD is also benefiting from commodity inflation.',
+      tip: 'Export-weighted commodity basket (left axis) alongside AUD/USD and DXY (right axis) — all rebased to 100. The basket and currencies start at the same level so divergence is immediately visible. When basket rises while AUD stays flat, Australia\'s export strength isn\'t being captured by the currency — domestic drag or RBA policy at work.',
+      dualAxis: { right: ['audusd_idx', 'dxy_idx'] },
     },
     {
       key: 'commodity_components',
@@ -319,7 +328,7 @@ function _regimeBuildMacroSection(container, macroData) {
       multiLine: true,
       seriesKeys:   ['iron_ore_idx', 'coal_idx', 'nat_gas_idx', 'gold_idx', 'copper_idx'],
       seriesLabels: { iron_ore_idx: 'Iron Ore (40%)', coal_idx: 'Coal (26%)', nat_gas_idx: 'Nat Gas (20%)', gold_idx: 'Gold (10%)', copper_idx: 'Copper (4%)' },
-      seriesColors: ['#2D88FF', '#9CA3AF', '#F7B928', '#E8B84B', '#FF7043'],
+      seriesColors: [GOLD, '#666', '#00d4ff', GREEN, RED],
       fmt: v => v.toFixed(1),
       tip: 'All five major export commodities rebased to 100 at their earliest common date. When lines move together the commodity cycle is broad-based. Divergence reveals different demand drivers — e.g. gold surging while iron ore falls signals safe-haven demand without Chinese growth, which benefits gold miners but not the iron ore majors (BHP, RIO, FMG).',
       fullWidth: true,
