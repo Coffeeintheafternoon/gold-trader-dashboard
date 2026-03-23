@@ -333,6 +333,17 @@ function _regimeBuildMacroSection(container, macroData) {
       tip: 'All five major export commodities rebased to 100 at their earliest common date. When lines move together the commodity cycle is broad-based. Divergence reveals different demand drivers — e.g. gold surging while iron ore falls signals safe-haven demand without Chinese growth, which benefits gold miners but not the iron ore majors (BHP, RIO, FMG).',
       fullWidth: true,
     },
+    {
+      key: 'asx_sectors',
+      title: 'ASX Sector Rotation (rebased to 100)',
+      multiLine: true,
+      seriesKeys:   ['asx200_idx','asx_mat_idx','asx_egy_idx','asx_fin_idx','asx_hc_idx','asx_ind_idx','asx_disc_idx','asx_stap_idx','asx_tech_idx','asx_util_idx','asx_prop_idx','asx_gold_idx'],
+      seriesLabels: { asx200_idx:'ASX 200', asx_mat_idx:'Materials', asx_egy_idx:'Energy', asx_fin_idx:'Financials', asx_hc_idx:'Health Care', asx_ind_idx:'Industrials', asx_disc_idx:'Cons. Discretionary', asx_stap_idx:'Cons. Staples', asx_tech_idx:'Technology', asx_util_idx:'Utilities', asx_prop_idx:'Property', asx_gold_idx:'Gold Index' },
+      seriesColors: ['#ffffff','#f5a520','#fa3e3e','#2D88FF','#00ff41','#9b59b6','#f7b928','#00d4ff','#e056cf','#aaaaaa','#ff7043','#ffd700'],
+      fmt: v => v.toFixed(1),
+      tip: 'All ASX sector indices rebased to 100 at their earliest common date (~4 years). Shows which sectors are leading or lagging the broad market. Toggle individual sectors to compare. Materials and Energy reflect commodity exposure directly; Financials track RBA rate cycle; Gold Index is the pure gold miner benchmark.',
+      fullWidth: true,
+    },
   ];
 
   // Section header
