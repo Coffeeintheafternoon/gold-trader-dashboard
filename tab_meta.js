@@ -308,7 +308,24 @@ function _buildMetaTab(){
   }
 
   // ── Feature Intelligence charts ───────────────────────────────────────────
-  if(_metaFeatData) _buildFeatureCharts(filtered);
+  const _dbgEl=document.getElementById('meta-debug-status');
+  if(_dbgEl){
+    const _mi=_modelIndexFlat.length;
+    const _mf=_metaFeatData?_metaFeatData.models.length:0;
+    const _sf=_screenerFull.length;
+    _dbgEl.innerHTML=`<span style="font-size:10px;color:#4b5563">data: model_index=${_mi} · meta_features=${_mf} · screener=${_sf}</span>`;
+    _dbgEl.style.display='';
+  }
+  if(_metaFeatData){
+    try{
+      _buildFeatureCharts(filtered);
+    }catch(err){
+      console.error('_buildFeatureCharts error:',err);
+      if(_dbgEl){_dbgEl.innerHTML+=`<br><span style="color:#f87171;font-size:11px">ERROR: ${err.message}</span>`;_dbgEl.style.display='';}
+    }
+  }else{
+    if(_dbgEl){_dbgEl.innerHTML+=`<br><span style="color:#fbbf24;font-size:11px">meta_features.json not loaded — feature charts unavailable</span>`;_dbgEl.style.display='';}
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -472,20 +489,22 @@ function _buildFeatureCharts(filtered){
   _metaCatMcChart=_buildCatChart('meta-cat-mc-chart');
   _fillCatChart(_metaCatMcChart,mcGroups,mcTierOrder);
 
+  const _safe=(fn,name)=>{try{fn();}catch(e){console.error(name+' failed:',e);}};
+
   // ── Advanced Analytics (10 charts) ───────────────────────────────────────
-  _buildAdvancedCharts(filtered, joined, topFeats, abbr);
+  _safe(()=>_buildAdvancedCharts(filtered, joined, topFeats, abbr),'advCharts');
 
   // ── Edge Intelligence (4 charts) ─────────────────────────────────────────
-  _buildEdgeIntelCharts(joined);
+  _safe(()=>_buildEdgeIntelCharts(joined),'edgeIntel');
 
   // ── Feature Interaction Analysis ─────────────────────────────────────────
-  _buildFeatureInteractionCharts(joined, topFeats);
+  _safe(()=>_buildFeatureInteractionCharts(joined, topFeats),'featInteraction');
 
   // ── Trade Mechanics Assessment ────────────────────────────────────────────
-  _buildTradeMechanicsCharts(joined);
+  _safe(()=>_buildTradeMechanicsCharts(joined),'tradeMechanics');
 
   // ── Trade & Model Analytics (20 charts) ──────────────────────────────────
-  _buildTradeCharts(filtered, joined);
+  _safe(()=>_buildTradeCharts(filtered, joined),'tradeCharts');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
