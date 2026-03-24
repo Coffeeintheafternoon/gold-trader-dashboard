@@ -801,7 +801,26 @@
     <div id="meta-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;margin-top:4px"></div>
 
     <!-- Hero row -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;margin-top:4px" id="meta-hero-row"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;margin-top:4px" id="meta-hero-row"></div>
+
+    <!-- IS vs HO Scatter + Model Type Comparison -->
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">IS vs HO Profit Factor — Overfitting View</div>
+        <div class="chart-subtitle">Each dot = one model · diagonal = IS=HO (no decay) · below line = IS overfitting · color = model type (All) or sector (filtered)</div>
+        <div class="chart-wrap" style="height:320px;margin-top:12px"><canvas id="meta-scatter-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Model Type Comparison</div>
+        <div class="chart-subtitle">Avg HO PF, IS→HO decay, Sharpe — across all models (unaffected by filter)</div>
+        <div style="overflow-x:auto;margin-top:12px">
+          <table class="meta-table">
+            <thead><tr><th>Type</th><th style="text-align:center">N</th><th style="text-align:right">Avg IS</th><th style="text-align:right">Avg HO</th><th style="text-align:right">Decay</th><th style="text-align:right">HO Shr</th></tr></thead>
+            <tbody id="meta-model-type-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- Sector performance chart + PF distribution side by side -->
     <div class="section-divider" style="margin-top:8px">
@@ -812,14 +831,21 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Avg Profit Factor by Sector</div>
-        <div class="chart-subtitle">Mean holdout PF across valid models per sector</div>
-        <div class="chart-wrap" style="height:380px;margin-top:14px"><canvas id="meta-sector-pf-chart"></canvas></div>
+        <div class="chart-title">Avg HO Profit Factor by Sector</div>
+        <div class="chart-subtitle">Mean holdout PF per sector · green ≥ 1.10 · yellow ≥ 1.05</div>
+        <div class="chart-wrap" style="height:400px;margin-top:14px"><canvas id="meta-sector-pf-chart"></canvas></div>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title" id="meta-hist-label">HO PF Distribution</div>
-        <div class="chart-subtitle">Holdout profit factor histogram · PF 1.0 = break-even</div>
-        <div class="chart-wrap" style="height:380px;margin-top:14px"><canvas id="meta-pf-hist-chart"></canvas></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="chart-card" style="padding:18px;margin-bottom:0;flex:1">
+          <div class="chart-title" id="meta-hist-label">HO PF Distribution</div>
+          <div class="chart-subtitle">Holdout profit factor histogram</div>
+          <div class="chart-wrap" style="height:160px;margin-top:10px"><canvas id="meta-pf-hist-chart"></canvas></div>
+        </div>
+        <div class="chart-card" style="padding:18px;margin-bottom:0;flex:1">
+          <div class="chart-title">HO Sharpe Distribution</div>
+          <div class="chart-subtitle">Holdout Sharpe ratio histogram · green ≥ 0.5</div>
+          <div class="chart-wrap" style="height:160px;margin-top:10px"><canvas id="meta-sharpe-hist-chart"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -841,6 +867,18 @@
       </div>
     </div>
 
+    <!-- Sector × Model Type Heatmap -->
+    <div class="section-divider" style="margin-top:8px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🔥</span>
+      <span class="section-divider-label">Sector × Model Type — Avg HO PF</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div class="chart-card" style="padding:16px;margin-bottom:16px">
+      <div class="chart-subtitle" style="margin-bottom:10px">Green ≥ 1.10 · Yellow 1.00–1.10 · Red &lt; 1.00 · n = models per cell · filtered by active model type</div>
+      <div id="meta-heatmap-wrap"></div>
+    </div>
+
     <!-- Top 20 tickers -->
     <div class="section-divider">
       <div class="section-divider-line"></div>
@@ -857,6 +895,7 @@
               <th>#</th><th>Ticker</th><th>Sector</th><th>Model</th>
               <th style="text-align:right"><span class="tip tip-down" data-tip="Holdout Profit Factor: gross profit ÷ gross loss on OOS hold-out data.&#10;> 1.10 = meaningful edge · > 1.20 = strong">HO PF</span></th>
               <th style="text-align:right"><span class="tip tip-down" data-tip="Holdout Sharpe Ratio: annualised return ÷ volatility on hold-out data.&#10;> 0.5 = decent · > 1.0 = strong">HO Sharpe</span></th>
+              <th style="text-align:right"><span class="tip tip-down" data-tip="Overfit rating from screener: HIGH = IS much better than OOS · LOW = OOS held up well">Overfit</span></th>
             </tr>
           </thead>
           <tbody id="meta-top20-tbody"></tbody>
