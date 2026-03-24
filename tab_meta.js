@@ -574,7 +574,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
   if(c1) _advCharts[0]=new Chart(c1,{type:'bar',
     data:{labels:decayE.map(e=>e.s),datasets:[{data:decayE.map(e=>+e.avg.toFixed(1)),backgroundColor:decayE.map(e=>e.avg>25?RED_55:e.avg>15?'rgba(251,191,36,0.65)':GREEN_7),borderWidth:0,borderRadius:3}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`IS→HO decay: ${c.raw.toFixed(1)}%`}},zoom:_zoom('xy')},
-      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
   _addResetZoom(_advCharts[0].canvas,_advCharts[0]);
 
   // ── 2. Cumulative Pass Rate by PF threshold ────────────────────────────────
@@ -586,7 +586,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
   if(c2) _advCharts[1]=new Chart(c2,{type:'line',
     data:{labels:thresholds.map(t=>t.toFixed(2)),datasets:[{label:'% models ≥ threshold',data:cumPass,borderColor:'rgba(245,165,32,0.85)',backgroundColor:'rgba(245,165,32,0.07)',borderWidth:2,fill:true,tension:0.3,pointRadius:5,pointHoverRadius:8,pointBackgroundColor:thresholds.map(t=>t>=1.10?GREEN_7:'rgba(245,165,32,0.85)')}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}% of models pass HO PF ≥ ${thresholds[c.dataIndex].toFixed(2)}`}},zoom:_zoom('xy')},
-      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}},title:{display:true,text:'HO PF Threshold',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:'#6b7280',font:{size:11}}}}}}});
+      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}},title:{display:true,text:'HO PF Threshold',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:'#6b7280',font:{size:11}}}}}});
   _addResetZoom(_advCharts[1].canvas,_advCharts[1]);
 
   // ── 3. HO Sharpe vs HO PF scatter ─────────────────────────────────────────
@@ -661,7 +661,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
       {label:'HIGH',data:ofSecs.map(s=>ofPct(s,'HIGH')),backgroundColor:RED_55,borderWidth:0},
     ]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models`}},zoom:_zoom('xy')},
-      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
   _addResetZoom(_advCharts[6].canvas,_advCharts[6]);
 
   // ── 8. Feature category directional bias — boxplots ───────────────────────
@@ -739,7 +739,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
       backgroundColor:col,borderWidth:0,
     }))},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models using this feature`}},zoom:_zoom('xy')},
-      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
   _addResetZoom(_advCharts[9].canvas,_advCharts[9]);
 }
 
@@ -817,7 +817,7 @@ function _buildTradeCharts(filtered,joined){
       data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(2)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Payoff: ${c.raw?.toFixed(2)}x`,`avg win ÷ avg |loss| · n=${entries[c.dataIndex].n} models`]}},zoom:_zoom('xy')},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'},title:{display:true,text:'Payoff ratio (avg win ÷ avg |loss|)  ·  >1.0 = wins bigger than losses',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'},title:{display:true,text:'Payoff ratio (avg win ÷ avg |loss|)  ·  >1.0 = wins bigger than losses',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_pb.canvas,_pb);
     return _pb;
   }
@@ -839,7 +839,7 @@ function _buildTradeCharts(filtered,joined){
       data:{labels:order,datasets:[{label:'Long',data:lp,backgroundColor:'rgba(16,185,129,0.65)',borderWidth:0},{label:'Short',data:lp.map(v=>+(100-v).toFixed(1)),backgroundColor:'rgba(239,68,68,0.55)',borderWidth:0}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}%`}},zoom:_zoom('xy')},
-        scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of HO trades by direction',color:'#6b7280',font:{size:10}}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of HO trades by direction',color:'#6b7280',font:{size:10}}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_db.canvas,_db);
     return _db;
   }
@@ -862,7 +862,7 @@ function _buildTradeCharts(filtered,joined){
       data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(3)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Avg trade: ${c.raw.toFixed(3)}%`,`n=${entries[c.dataIndex].n} models`]}},zoom:_zoom('xy')},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg return per HO trade  ·  positive = net profitable per trade',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg return per HO trade  ·  positive = net profitable per trade',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_ar.canvas,_ar);
     return _ar;
   }
@@ -960,7 +960,7 @@ function _buildTradeCharts(filtered,joined){
     datasets.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:60,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
     const _hc=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Avg hold: ${p.x?.toFixed(1)} bars · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:'Avg holding period (bars per trade)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}}});
+      scales:{x:{title:{display:true,text:'Avg holding period (bars per trade)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
     _addResetZoom(_hc.canvas,_hc);
     return _hc;
   }
@@ -982,7 +982,7 @@ function _buildTradeCharts(filtered,joined){
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw?.toFixed(2)}%`,`n=${entries[c.dataIndex].n} models`]}},zoom:_zoom('xy')},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:`Avg ${mode==='ho'?'HO (holdout)':'IS (in-sample)'} trade extremes by group`,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:`Avg ${mode==='ho'?'HO (holdout)':'IS (in-sample)'} trade extremes by group`,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_rb.canvas,_rb);
     return _rb;
   }
@@ -1017,7 +1017,7 @@ function _buildTradeCharts(filtered,joined){
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw.toFixed(1)}`,`HO/IS ratio: ${ratio[c.dataIndex]!=null?ratio[c.dataIndex].toFixed(2)+'×':'n/a'}`]}},zoom:_zoom('xy')},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg trade count  ·  tooltip shows HO÷IS ratio',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg trade count  ·  tooltip shows HO÷IS ratio',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_tf.canvas,_tf);
     return _tf;
   }
@@ -1051,7 +1051,7 @@ function _buildTradeCharts(filtered,joined){
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(mode==='wr'?1:3)+'%':'n/a'}`}},zoom:_zoom('xy')},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:xl,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:xl,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
     _addResetZoom(_ls.canvas,_ls);
     return _ls;
   }
@@ -1159,7 +1159,7 @@ function _buildEdgeIntelCharts(joined){
           tooltip:{callbacks:{label:c=>{const e=show[c.dataIndex];return c.datasetIndex===0?[`Included (n=${e.n}): ${c.raw?.toFixed(4)}`,`Δ vs excluded: ${e.diff>=0?'+':''}${e.diff.toFixed(4)}`]:[`Excluded: ${c.raw?.toFixed(4)}`];}}}},
           zoom:_zoom('xy'),
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO Profit Factor  ·  gap = alpha contribution of this feature',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO Profit Factor  ·  gap = alpha contribution of this feature',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}});
     _addResetZoom(_eiB.canvas,_eiB);
   })();
 
@@ -1175,7 +1175,7 @@ function _buildEdgeIntelCharts(joined){
     const _eiC=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker}`,mode==='wr'?`Win rate: ${p.x.toFixed(1)}%`:`Payoff: ${p.x.toFixed(2)}x`,`HO PF: ${p.y.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:mode==='wr'?'Win Rate % (HO)':'Payoff Ratio (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>mode==='wr'?v+'%':v+'x'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}}});
+      scales:{x:{title:{display:true,text:mode==='wr'?'Win Rate % (HO)':'Payoff Ratio (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>mode==='wr'?v+'%':v+'x'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
     _addResetZoom(_eiC.canvas,_eiC);
   });
 
@@ -1201,7 +1201,7 @@ function _buildEdgeIntelCharts(joined){
           tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0){const e=entries[c.dataIndex];return[`${e.ticker} · ${e.n} variants`,`Range: ${e.min.toFixed(3)} → ${e.max.toFixed(3)}`,`Avg: ${e.avg.toFixed(3)} · ${e.allGood?'✓ all pass':e.someGood?'~ mixed':'✗ none pass'}`];}const p=c.raw;return[`Avg HO PF: ${p.y?.toFixed(3)}`];}}}},
           zoom:_zoom('xy'),
         },
-        scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9},maxRotation:45}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}}}}}}});
+        scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9},maxRotation:45}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}}}}});
     _addResetZoom(_eiD.canvas,_eiD);
   })();
 }
@@ -1294,7 +1294,7 @@ function _buildFeatureInteractionCharts(joined,topFeats){
           tooltip:{callbacks:{label:c=>{const p=top20[c.dataIndex];return c.datasetIndex===0?[`n=${p.n} models · avg HO PF: ${p.avg.toFixed(4)}`,`Δ vs without pair: ${p.diff>=0?'+':''}${p.diff.toFixed(4)}`]:[`Without this pair: ${c.raw?.toFixed(4)}`];}}}},
           zoom:_zoom('xy'),
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when both features appear in the same model',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when both features appear in the same model',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}});
     _addResetZoom(_fi2.canvas,_fi2);
   })();
 
@@ -1327,7 +1327,7 @@ function _buildFeatureInteractionCharts(joined,topFeats){
           tooltip:{callbacks:{label:c=>{const p=pairs[c.dataIndex];return[`${p.a} + ${p.b}`,`Avg HO PF: ${p.avg.toFixed(4)} · n=${p.n} models`,`Pass rate: ${(p.passRate*100).toFixed(0)}% above 1.10`];}}}},
           zoom:_zoom('xy'),
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when model has features from both categories',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}});
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when model has features from both categories',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}});
     _addResetZoom(_fi3.canvas,_fi3);
   })();
 }
@@ -1377,7 +1377,7 @@ function _buildTradeMechanicsCharts(joined){
         scales:{
           x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'EV = (win_rate × payoff) − (1 − win_rate)  ·  >0 = profitable · <0 = guaranteed losing',color:'#6b7280',font:{size:10}}},
           y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
-        }}});
+        }});
     _addResetZoom(_ev.canvas,_ev);
   }
   const secGrp={},mcGrp={};
@@ -1459,7 +1459,7 @@ function _buildTradeMechanicsCharts(joined){
         scales:{
           x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of models by trade direction dominance  ·  green = long-heavy = directional risk in bear markets',color:'#6b7280',font:{size:10}}},
           y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
-        }}});
+        }});
     _addResetZoom(_tm4.canvas,_tm4);
   })();
 }
