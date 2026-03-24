@@ -198,6 +198,7 @@ function mlBackToGrid() {
 }
 
 function renderTickerDetail(d) {
+  _mlCurrentData = d;
   _mlCurrentFeatures = d.features || [];
   _mlCurrentWH = d.weight_history || [];
   _mlCorrData = d.correlations || null;
@@ -827,6 +828,10 @@ let _mlMonthlyChart = null, _mlRetDistChart = null, _mlDurRetChart = null, _mlCo
 let _mlMonthlyChartHO = null, _mlRetDistChartHO = null, _mlDurRetChartHO = null;
 let _mlRegimeChart = null; // owned by buildMLRegimePanel, not trade analytics
 let _mlTradesIS = [], _mlTradesHO = [];
+let _mlScoreBucketsChart = null;
+let _mlScoreDistChart    = null;
+let _mlWindowSharpeChart = null;
+let _mlCurrentData = null;
 
 function mlSwitchTradeTab(tab) {
   const btnIS = document.getElementById('ml-tl-btn-is');
@@ -858,6 +863,9 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   if (_mlLsChart)        { _mlLsChart.destroy();        _mlLsChart        = null; }
   if (_mlLsScatter)      { _mlLsScatter.destroy();      _mlLsScatter      = null; }
   if (_mlDirectionChart) { _mlDirectionChart.destroy(); _mlDirectionChart = null; }
+  if (_mlScoreBucketsChart) { _mlScoreBucketsChart.destroy(); _mlScoreBucketsChart = null; }
+  if (_mlScoreDistChart)    { _mlScoreDistChart.destroy();    _mlScoreDistChart    = null; }
+  if (_mlWindowSharpeChart) { _mlWindowSharpeChart.destroy(); _mlWindowSharpeChart = null; }
   // _mlRegimeChart is owned by buildMLRegimePanel — do not destroy it here
 
   const axStyle = { color: '#6b7280', font: { size: 10 } };
@@ -1290,6 +1298,115 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
             ticks: { color: '#555', font: { size: 9 }, callback: v => v === 1 ? '▲' : v === -1 ? '▼' : '—', stepSize: 1 },
             grid: { color: '#1e1e1e' }, border: { display: false }
           }
+        }
+      }
+    });
+  }
+
+  // ── v4: Score magnitude vs win rate ──────────────────────────────────────────
+  const mqIS = (_mlCurrentData || {}).model_quality || {};
+  const buckets = mqIS.score_buckets || [];
+  const bucketsCanvas = document.getElementById('ml-score-buckets-chart');
+  if (bucketsCanvas && buckets.length) {
+    const bLabels = buckets.map(b => b.label);
+    const bWR     = buckets.map(b => +(b.win_rate * 100).toFixed(1));
+    const bN      = buckets.map(b => b.n);
+    _mlScoreBucketsChart = new Chart(bucketsCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: bLabels,
+        datasets: [{
+          label: 'Win Rate %',
+          data: bWR,
+          backgroundColor: bWR.map(v => v >= 50 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
+          borderColor:     bWR.map(v => v >= 50 ? '#00ff41' : '#ff5050'),
+          borderWidth: 1, borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `Win: ${ctx.raw}%  (n=${bN[ctx.dataIndex]})` } }
+        },
+        scales: {
+          x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+          y: { min: 0, max: 100, ticks: { ...axStyle, callback: v => v + '%' }, grid: gridStyle, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  // Score distribution histogram (entry_score values, colored by win/loss)
+  const scoresIS = tradesIS.filter(t => t.entry_score != null);
+  const scDistCanvas = document.getElementById('ml-score-dist-chart');
+  if (scDistCanvas && scoresIS.length >= 3) {
+    const allScores = scoresIS.map(t => t.entry_score);
+    const sMin = Math.min(...allScores), sMax = Math.max(...allScores);
+    const nB   = Math.min(12, Math.max(5, Math.round(Math.sqrt(allScores.length))));
+    const bW   = (sMax - sMin) / nB || 0.01;
+    const bins = Array.from({length: nB}, (_, i) => ({
+      lo: sMin + i * bW, hi: sMin + (i + 1) * bW, wins: 0, losses: 0
+    }));
+    scoresIS.forEach(t => {
+      const bi = Math.min(nB - 1, Math.floor((t.entry_score - sMin) / bW));
+      if (t.win) bins[bi].wins++; else bins[bi].losses++;
+    });
+    const bLabels2 = bins.map(b => b.lo.toFixed(3));
+    _mlScoreDistChart = new Chart(scDistCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: bLabels2,
+        datasets: [
+          { label: 'Win',  data: bins.map(b => b.wins),   backgroundColor: 'rgba(0,255,65,0.65)',  stack: 'a' },
+          { label: 'Loss', data: bins.map(b => b.losses), backgroundColor: 'rgba(255,80,80,0.65)', stack: 'a' },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: true, labels: { color: '#6b7280', font: { size: 9 } } } },
+        scales: {
+          x: { stacked: true, ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+          y: { stacked: true, ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── v4: Per-window OOS Sharpe degradation ────────────────────────────────────
+  const wh = (_mlCurrentData || {}).weight_history || [];
+  const whWithSharpe = wh.filter(w => w.oos_sharpe != null);
+  const wSharpeCanvas = document.getElementById('ml-window-sharpe-chart');
+  if (wSharpeCanvas && whWithSharpe.length >= 2) {
+    const wLabels = whWithSharpe.map(w => (w.window_end || '').slice(0, 7));
+    const wVals   = whWithSharpe.map(w => w.oos_sharpe);
+    _mlWindowSharpeChart = new Chart(wSharpeCanvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: wLabels,
+        datasets: [{
+          data: wVals,
+          borderColor: hexA(GOLD, 0.8),
+          backgroundColor: hexA(GOLD, 0.06),
+          fill: true, tension: 0.3,
+          pointRadius: wVals.length > 20 ? 0 : 3,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `OOS Sharpe: ${ctx.raw}` } },
+          annotation: {
+            annotations: {
+              zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1 }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
+          y: { ticks: { ...axStyle }, grid: gridStyle, border: { display: false } }
         }
       }
     });

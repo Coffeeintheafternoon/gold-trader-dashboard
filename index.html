@@ -529,6 +529,28 @@
         </div>
         <div style="position:relative;height:110px"><canvas id="ml-direction-chart"></canvas></div>
       </div>
+      <!-- v4: Score magnitude vs win rate -->
+      <div style="margin-top:24px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.5px;margin-bottom:8px">SCORE MAGNITUDE vs WIN RATE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px">IS — Score Buckets</div>
+            <div style="height:140px"><canvas id="ml-score-buckets-chart"></canvas></div>
+          </div>
+          <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px">IS — Score Distribution</div>
+            <div style="height:140px"><canvas id="ml-score-dist-chart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <!-- v4: Per-window OOS degradation -->
+      <div style="margin-top:24px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.5px;margin-bottom:8px">WALK-FORWARD WINDOW DEGRADATION</div>
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">OOS Sharpe per window</div>
+          <div style="height:140px"><canvas id="ml-window-sharpe-chart"></canvas></div>
+        </div>
+      </div>
     </div>
 
     <!-- Trade Log -->
