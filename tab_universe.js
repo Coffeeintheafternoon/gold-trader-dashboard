@@ -13,24 +13,13 @@ let _fullScreenerData=null;
 let _filteredRows=[];
 let _metaTop20=[];
 
-let _modelIndex = null; // {ticker: [{safe_name, label, file, is_pf, ...}]}
-let _tickerNotes = {}; // {ticker: {label, note}}
-
 async function loadFullScreenerPanel() {
   let data;
   try { const res=await fetch(`screener_full.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   const tickers=data.tickers||[];if(!tickers.length)return;
 
-  // Load model index and ticker notes, attach to each ticker row
-  try {
-    const mi=await fetch(`model_index.json?v=${_CV}`);
-    if(mi.ok){ const midx=await mi.json(); _modelIndex=midx.models||{}; }
-  } catch(_){}
-  try {
-    const nr=await fetch(`ticker_notes.json?v=${_CV}`);
-    if(nr.ok){ const nd=await nr.json(); _tickerNotes=nd||{}; }
-  } catch(_){}
-  tickers.forEach(t=>{ t._models=(_modelIndex&&_modelIndex[t.ticker])||[]; t._note=_tickerNotes[t.ticker]||null; });
+  // models and notes are now embedded in each ticker row
+  tickers.forEach(t=>{ t._models=t.models||[]; t._note=t.note||null; });
 
   _fullScreenerData=tickers;
   document.getElementById('full-screener-section').style.display='';
@@ -196,90 +185,321 @@ function selectTicker(safe) {
   if(divLabel)divLabel.textContent=safe.replace('_ax','').toUpperCase()+'.AX — Ridge Regression Feature Model';
 }
 
-// ── Model Glossary ─────────────────────────────────────────────────────────────
+// ── Model & Tools Registry ─────────────────────────────────────────────────────
 function _renderModelGlossary() {
   const el = document.getElementById('universe-glossary');
   if (!el) return;
 
-  const models = [
+  // ── Model registry ────────────────────────────────────────────────────────
+  // Each row: name, badge, type, family, codeFile, pruning, tools[], validation, status, notes
+  const MODELS = [
+    // ── Ridge family ──────────────────────────────────────────────────────
     {
-      name: 'Ridge Regression',
-      badge: 'Ridge (1yr)',
-      badgeColor: 'var(--gold)',
-      icon: '📈',
-      desc: 'The primary walk-forward linear model. Trained on 18 months of daily price and macro data using ridge-regularised linear regression. At each step the model learns feature weights on the in-sample period, then makes predictions on the next 3-month out-of-sample window.',
-      params: [
-        { label: 'IS window',       value: '18 months (rolling)' },
-        { label: 'OOS step',        value: '3 months' },
-        { label: 'Regularisation',  value: 'Ridge (L2), alpha auto-tuned' },
-        { label: 'Feature count',   value: '33 base features + macro' },
-        { label: 'Validation',      value: 'MCPT (Monte Carlo Permutation Test)' },
-        { label: 'Data history',    value: '~5 years minimum (~1,260 bars)' },
-      ],
-      tip: 'Best for: stable-regime stocks where features maintain consistent direction over 18+ months. Not suitable for tickers with structural breaks or sharp macro regime changes — use Regime Similarity model instead.',
+      name: 'Ridge (1yr)',        badge: 'Ridge (1yr)',     badgeColor: 'var(--gold)',
+      type: 'ML · Regression',   family: 'Ridge',
+      codeFile: 'quant/strategies/linear_regression.py',
+      pruning: 'v1 — p-value + instability + active_pct (built into model)',
+      tools: ['fetcher', 'macro_fetcher', 'feature_builder', 'asic_short_fetcher', 'announcement_store'],
+      validation: 'MCPT p < 0.05',
+      status: 'ACTIVE',
+      statusColor: 'var(--green)',
+      notes: 'Gold standard. 5yr IS window, 252-day train, 63-day step, 180-day holdout. Pruning logic lives inside the model.',
     },
     {
-      name: 'Regime Similarity (3M)',
-      badge: 'Regime (3M)',
-      badgeColor: 'var(--green)',
-      icon: '🔀',
-      desc: 'Walk-forward model using Gaussian kernel weighting to up-weight IS training windows where macro conditions were similar to the most recent 3 months. Trains on ~18 years of daily data but gives far more weight to historically similar macro environments.',
-      params: [
-        { label: 'IS period',       value: '18 years (full history ~4,500 bars)' },
-        { label: 'OOS step',        value: '63 days (≈ 3 months)' },
-        { label: 'Reference window', value: '3-month rolling macro average' },
-        { label: 'Kernel sigma',    value: '1.5 (z-score units)' },
-        { label: 'Regime variables', value: 'VIX, DXY, US10yr, AUD/USD, Gold' },
-        { label: 'Validation',      value: 'Weighted t-test per feature' },
-      ],
-      tip: 'Best for: identifying which features have edge specifically in today\'s macro environment. The 3M reference window is more responsive to recent shifts but can be noisy in fast-changing regimes.',
+      name: 'Ridge v2',           badge: 'Ridge v2',        badgeColor: '#a78bfa',
+      type: 'ML · Regression',   family: 'Ridge',
+      codeFile: 'scripts/export_ridge_v2.py',
+      pruning: 'v2 — removes sign_pct, adds correlation tiebreaker. score = p × (1+0.5×instab) × (1+0.3×corr)',
+      tools: ['fetcher', 'macro_fetcher', 'feature_builder', 'asic_short_fetcher', 'announcement_store'],
+      validation: 'MCPT p < 0.05',
+      status: 'EXPERIMENTAL',
+      statusColor: '#fbbf24',
+      notes: 'Improved prune formula. sign_pct removed — a feature predicting UP in bull and DOWN in bear is valid, not a sign-flipper.',
     },
     {
-      name: 'Regime Similarity (1Y)',
-      badge: 'Regime (1Y)',
-      badgeColor: 'var(--green)',
-      icon: '🔀',
-      desc: 'Same as the 3M Regime model but uses a 12-month rolling average as the macro reference point. Produces a more stable, lower-noise regime classification at the cost of slower response to new regime transitions.',
-      params: [
-        { label: 'IS period',       value: '18 years (full history ~4,500 bars)' },
-        { label: 'OOS step',        value: '63 days (≈ 3 months)' },
-        { label: 'Reference window', value: '12-month rolling macro average' },
-        { label: 'Kernel sigma',    value: '1.5 (z-score units)' },
-        { label: 'Regime variables', value: 'VIX, DXY, US10yr, AUD/USD, Gold' },
-        { label: 'Validation',      value: 'Weighted t-test per feature' },
-      ],
-      tip: 'Best for: confirming regime signals from the 3M model. If 3M and 1Y agree on a feature\'s significance, treat it as high-confidence. Disagreement may indicate a regime transition in progress.',
+      name: 'Ridge v3',           badge: 'Ridge v3',        badgeColor: '#a78bfa',
+      type: 'ML · Regression',   family: 'Ridge',
+      codeFile: 'scripts/export_ridge_v3.py',
+      pruning: 'v3 — v2 formula + OOS patience rollback. Stops pruning when holdout Sharpe fails to improve for N rounds.',
+      tools: ['fetcher', 'macro_fetcher', 'feature_builder', 'asic_short_fetcher', 'announcement_store'],
+      validation: 'MCPT p < 0.05',
+      status: 'EXPERIMENTAL',
+      statusColor: '#fbbf24',
+      notes: 'Best pruning strategy. Run via: python scripts/run_ridge_v3.py --tickers TICKER.AX',
+    },
+    // ── Regime-weighted ───────────────────────────────────────────────────
+    {
+      name: 'Regime Similarity (3M)', badge: 'Regime (3M)', badgeColor: 'var(--green)',
+      type: 'ML · Weighted Regression', family: 'Regime',
+      codeFile: 'scripts/export_regime_model.py + quant/regime_similarity.py',
+      pruning: 'Regime-weighted p-values (weighted t-test). Standard pruning applied first, then regime-refine pass.',
+      tools: ['fetcher', 'macro_fetcher', 'feature_builder'],
+      validation: 'Weighted t-test per feature',
+      status: 'ACTIVE',
+      statusColor: 'var(--green)',
+      notes: '18yr history. Gaussian kernel weights windows by similarity to today\'s VIX/DXY/US10yr/AUDUSD/Gold-mom. σ=1.5, 3-month reference.',
+    },
+    {
+      name: 'Regime Similarity (1Y)', badge: 'Regime (1Y)', badgeColor: 'var(--green)',
+      type: 'ML · Weighted Regression', family: 'Regime',
+      codeFile: 'scripts/export_regime_model.py + quant/regime_similarity.py',
+      pruning: 'Same as Regime (3M)',
+      tools: ['fetcher', 'macro_fetcher', 'feature_builder'],
+      validation: 'Weighted t-test per feature',
+      status: 'ACTIVE',
+      statusColor: 'var(--green)',
+      notes: 'Smoother 12-month reference window. Use with Regime (3M) — agreement = high confidence, disagreement = regime transition.',
+    },
+    // ── Regression interpretable ──────────────────────────────────────────
+    {
+      name: 'OLS Regression',     badge: 'OLS',             badgeColor: '#60a5fa',
+      type: 'Statistical',        family: 'Interpretable',
+      codeFile: 'quant/strategies/ols_regression.py',
+      pruning: 'None',
+      tools: ['feature_builder'],
+      validation: 'Coefficient p-values',
+      status: 'DIAGNOSTIC',
+      statusColor: '#60a5fa',
+      notes: 'No regularisation. Readable coefficient + p-value per feature. Used for factor analysis, not live signals.',
+    },
+    {
+      name: 'Bayesian Regression', badge: 'Bayesian',       badgeColor: '#60a5fa',
+      type: 'Statistical',         family: 'Interpretable',
+      codeFile: 'quant/strategies/bayesian_regression.py',
+      pruning: 'None',
+      tools: ['feature_builder'],
+      validation: 'Credible intervals',
+      status: 'DIAGNOSTIC',
+      statusColor: '#60a5fa',
+      notes: 'Coefficient distributions with 95% credible intervals. Shows uncertainty, not just point estimates.',
+    },
+    {
+      name: 'VAR + Granger Causality', badge: 'Granger',    badgeColor: '#60a5fa',
+      type: 'Statistical',            family: 'Interpretable',
+      codeFile: 'scripts/run_interpretable_models.py',
+      pruning: 'None',
+      tools: ['feature_builder', 'macro_fetcher'],
+      validation: 'Granger F-test p-value',
+      status: 'DIAGNOSTIC',
+      statusColor: '#60a5fa',
+      notes: 'Tests which features Granger-cause the stock return. Directional causality, not correlation.',
+    },
+    {
+      name: 'Markov Regime-Switching', badge: 'Markov',     badgeColor: '#60a5fa',
+      type: 'Statistical',             family: 'Interpretable',
+      codeFile: 'scripts/run_interpretable_models.py',
+      pruning: 'None',
+      tools: ['fetcher'],
+      validation: 'AIC / BIC',
+      status: 'DIAGNOSTIC',
+      statusColor: '#60a5fa',
+      notes: '2-state HMM on daily log returns (statsmodels). Identifies trending vs ranging regime with transition probabilities.',
+    },
+    // ── Rule-based ────────────────────────────────────────────────────────
+    {
+      name: 'Donchian Breakout',  badge: 'Donchian',        badgeColor: '#9ca3af',
+      type: 'Rule-based',         family: 'Price',
+      codeFile: 'quant/strategies/donchian.py',
+      pruning: 'None — grid search over entry_lb, exit ratio, min_hold',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'SCREENED — NO EDGE',
+      statusColor: 'var(--red)',
+      notes: '55-day entry / 20-day exit (Turtle System 2). MCPT: 0/22 validated tickers. Linear Regression dominates on ASX miners.',
+    },
+    {
+      name: 'Donchian (Long Only)', badge: 'Donchian L',    badgeColor: '#9ca3af',
+      type: 'Rule-based',           family: 'Price',
+      codeFile: 'quant/strategies/donchian_long_only.py',
+      pruning: 'None',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'SCREENED — NO EDGE',
+      statusColor: 'var(--red)',
+      notes: 'Long-only variant. Same result — no validated edge on ASX miners universe.',
+    },
+    {
+      name: 'Mean Reversion',     badge: 'MeanRev',         badgeColor: '#9ca3af',
+      type: 'Rule-based',         family: 'Price',
+      codeFile: 'quant/strategies/mean_reversion.py',
+      pruning: 'None',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'ACTIVE — REGIME CONDITIONAL',
+      statusColor: '#fbbf24',
+      notes: 'Bollinger-band mean reversion. Best in QUIET_RANGE (PF=1.397). Bad in VOLATILE_CHOP (PF=0.459). Use regime-conditional weighting.',
+    },
+    {
+      name: 'Ichimoku',           badge: 'Ichimoku',        badgeColor: '#9ca3af',
+      type: 'Rule-based',         family: 'Price',
+      codeFile: 'quant/strategies/ichimoku.py',
+      pruning: 'None',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'UNVALIDATED',
+      statusColor: 'var(--muted)',
+      notes: 'Cloud-based trend + momentum. Not in current batch pipeline.',
+    },
+    {
+      name: 'ATR Breakout',       badge: 'ATR Break',       badgeColor: '#9ca3af',
+      type: 'Rule-based',         family: 'Price',
+      codeFile: 'quant/strategies/atr_breakout.py',
+      pruning: 'None',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'UNVALIDATED',
+      statusColor: 'var(--muted)',
+      notes: 'ATR-scaled volatility breakout. Not in current batch pipeline.',
+    },
+    {
+      name: 'MA Crossover',       badge: 'MA Cross',        badgeColor: '#9ca3af',
+      type: 'Rule-based',         family: 'Price',
+      codeFile: 'quant/strategies/ma_crossover.py',
+      pruning: 'None',
+      tools: ['fetcher (OHLCV only)'],
+      validation: 'MCPT p < 0.05',
+      status: 'UNVALIDATED',
+      statusColor: 'var(--muted)',
+      notes: 'Simple moving average crossover. Baseline benchmark.',
     },
   ];
 
+  // ── Tools registry ────────────────────────────────────────────────────────
+  const TOOLS = [
+    {
+      name: 'fetcher.py',          codeFile: 'quant/data/fetcher.py',
+      fetches: 'yfinance',
+      api: 'fetch_ohlcv(), fetch_xauaud(), fetch_dxy()',
+      usedBy: 'All models',
+      notes: 'Primary price source. XAUAUD computed synthetically (GC=F / AUDUSD=X). No fallback if yfinance is down.',
+    },
+    {
+      name: 'macro_fetcher.py',    codeFile: 'quant/data/macro_fetcher.py',
+      fetches: 'yfinance + HTTP',
+      api: 'fetch_macro(index)',
+      usedBy: 'Ridge all variants, Regime Similarity, VAR+Granger',
+      notes: 'Fetches VIX, DXY, US10yr, AU10yr, AUDUSD, gold ratio, yield curve, risk-off composite. Joins as extra columns on OHLCV index before model call.',
+    },
+    {
+      name: 'feature_builder.py',  codeFile: 'quant/data/feature_builder.py',
+      fetches: 'SQLite (announcement_store) + asic_short_fetcher cache',
+      api: 'build_features(ohlcv)',
+      usedBy: 'Ridge all variants, OLS, Bayesian, VAR+Granger',
+      notes: '1,140 lines. Assembles 38+ engineered features: RSI, Hurst, ADX, vol ratios, MA slopes, macro momentum, short interest Z-score, announcement proximity flags.',
+    },
+    {
+      name: 'asic_short_fetcher.py', codeFile: 'quant/data/asic_short_fetcher.py',
+      fetches: 'ASIC HTTP → SQLite cache',
+      api: 'refresh_cache(), get_short_features(ticker, dates)',
+      usedBy: 'feature_builder (called internally)',
+      notes: 'Downloads ASIC short-selling data, caches to SQLite. feature_builder calls get_short_features() to produce si_pct, si_chg_5d, si_zscore_120d, si_squeeze_flag columns.',
+    },
+    {
+      name: 'announcement_store',  codeFile: 'storage/announcement_store.py',
+      fetches: 'SQLite (gold_trader.db)',
+      api: 'get_recent(ticker, days), count(ticker)',
+      usedBy: 'feature_builder (called internally)',
+      notes: 'Reads ASX earnings/dividend announcements. feature_builder uses this to build ann_days_since, ann_proximity, ann_surprise features.',
+    },
+  ];
+
+  const STATUS_ORDER = ['ACTIVE','EXPERIMENTAL','ACTIVE — REGIME CONDITIONAL','DIAGNOSTIC','SCREENED — NO EDGE','UNVALIDATED'];
+
   el.innerHTML = `
+    <!-- ── Model Registry ── -->
     <div class="section-divider" style="margin-top:40px">
       <div class="section-divider-line"></div>
-      <span class="section-divider-label tip" data-tip="Descriptions of each model type used in this system, including their architecture, key parameters, and best-use cases.">Model Glossary</span>
+      <span class="section-divider-label">Model Registry</span>
       <div class="section-divider-line"></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;margin-bottom:40px">
-      ${models.map(m => `
-        <div class="chart-card" style="padding:20px;display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:20px">${m.icon}</span>
-            <span style="font-size:14px;font-weight:700;color:#e5e7eb">${m.name}</span>
-            <span style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid ${m.badgeColor};color:${m.badgeColor};background:rgba(0,0,0,0.4)">${m.badge}</span>
-          </div>
-          <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0">${m.desc}</p>
-          <table style="width:100%;border-collapse:collapse;font-size:11px">
-            ${m.params.map(p => `
-              <tr style="border-bottom:1px solid #1a1a1a">
-                <td style="padding:5px 0;color:var(--muted);width:45%">${p.label}</td>
-                <td style="padding:5px 0;font-family:monospace;color:#d1d5db">${p.value}</td>
-              </tr>
-            `).join('')}
-          </table>
-          <div class="tip" style="font-size:11px;color:#60a5fa;line-height:1.5;cursor:help;border-left:2px solid #1e40af;padding-left:8px" data-tip="${m.tip}">
-            💡 ${m.tip}
-          </div>
-        </div>
-      `).join('')}
+    <p style="font-size:12px;color:var(--muted);margin:0 0 16px">All models in the system. Ridge (1yr) is the production standard — all others are experimental, diagnostic, or superseded.</p>
+    <div class="chart-card" style="overflow-x:auto;margin-bottom:40px;padding:0">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid #2a2a2a;background:#111">
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Model</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Type</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Family</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Source File</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Pruning</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Data Tools</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Validation</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Status</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${MODELS.map((m, i) => {
+            const isGold = m.badge === 'Ridge (1yr)';
+            const rowBg = isGold ? 'background:rgba(245,165,32,0.04);' : (i % 2 === 0 ? '' : 'background:#0d0d0d;');
+            const goldBorder = isGold ? 'border-left:2px solid var(--gold);' : '';
+            return `<tr style="border-bottom:1px solid #1a1a1a;${rowBg}${goldBorder}">
+              <td style="padding:9px 14px;white-space:nowrap">
+                <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${m.badgeColor};color:${m.badgeColor};background:rgba(0,0,0,0.4);font-weight:700">${m.badge}</span>
+              </td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px;white-space:nowrap">${m.type}</td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px">${m.family}</td>
+              <td style="padding:9px 14px;font-family:monospace;font-size:10px;color:#6b7280;white-space:nowrap">${m.codeFile.split(' + ')[0]}</td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px;max-width:220px">${m.pruning}</td>
+              <td style="padding:9px 14px;font-size:10px;max-width:200px">
+                ${m.tools.map(t => {
+                  const c = t === 'fetcher' ? '#374151' : t.startsWith('feature') ? 'rgba(245,165,32,0.15)' : t.startsWith('macro') ? 'rgba(96,165,250,0.15)' : t.startsWith('asic') ? 'rgba(167,139,250,0.15)' : t.startsWith('announcement') ? 'rgba(52,211,153,0.15)' : '#1f2937';
+                  return `<span style="display:inline-block;margin:1px 2px;padding:1px 6px;border-radius:3px;background:${c};color:#9ca3af;white-space:nowrap">${t}</span>`;
+                }).join('')}
+              </td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px;white-space:nowrap">${m.validation}</td>
+              <td style="padding:9px 14px;white-space:nowrap">
+                <span style="font-size:10px;font-weight:700;color:${m.statusColor}">${m.status}</span>
+              </td>
+              <td style="padding:9px 14px;color:#6b7280;font-size:11px;min-width:220px">${m.notes}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Tools Registry ── -->
+    <div class="section-divider" style="margin-top:20px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-label">Data Tools Registry</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 16px">All data fetching and feature engineering tools. Tools are model-agnostic — they do not change when the model changes.</p>
+    <div class="chart-card" style="overflow-x:auto;margin-bottom:40px;padding:0">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid #2a2a2a;background:#111">
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Tool</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Source File</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">External Source</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Public API</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Used By</th>
+            <th style="padding:10px 14px;text-align:left;color:var(--muted);font-weight:600">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${TOOLS.map((t, i) => `
+            <tr style="border-bottom:1px solid #1a1a1a;${i%2===0?'':'background:#0d0d0d'}">
+              <td style="padding:9px 14px;font-weight:700;color:#e5e7eb;white-space:nowrap">${t.name}</td>
+              <td style="padding:9px 14px;font-family:monospace;font-size:10px;color:#6b7280;white-space:nowrap">${t.codeFile}</td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px;white-space:nowrap">${t.fetches}</td>
+              <td style="padding:9px 14px;font-family:monospace;font-size:10px;color:#9ca3af">${t.api}</td>
+              <td style="padding:9px 14px;color:var(--muted);font-size:11px">${t.usedBy}</td>
+              <td style="padding:9px 14px;color:#6b7280;font-size:11px;min-width:220px">${t.notes}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Architecture note ── -->
+    <div class="chart-card" style="padding:18px 22px;margin-bottom:40px;border-left:2px solid var(--gold)">
+      <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px">Architectural Principle</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7">
+        <b style="color:#d1d5db">Tools are model-agnostic.</b> Announcement fetching, ASIC short data, and macro series work the same regardless of which model is running — they belong in <code style="font-size:11px;color:#9ca3af">quant/data/</code>.<br>
+        <b style="color:#d1d5db">Pruning is model-specific.</b> Different models have different feature sets and different pruning criteria — pruning logic belongs inside the model module (<code style="font-size:11px;color:#9ca3af">quant/strategies/</code>), not in standalone scripts.<br>
+        <b style="color:#d1d5db">Scripts are thin CLI wrappers</b> — they fetch data, call the model, and write JSON. No business logic should live in <code style="font-size:11px;color:#9ca3af">scripts/</code>.
+      </div>
     </div>
   `;
 }

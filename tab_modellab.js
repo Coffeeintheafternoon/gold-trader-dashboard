@@ -79,7 +79,7 @@ async function openTickerInModelLab(ticker, data, safeName) {
 // ══════════════════════════════════════════════════════════════════════════════
 // MODEL LAB — GOLD SCREENER + PER-TICKER DETAIL
 // ══════════════════════════════════════════════════════════════════════════════
-let _mlSummary = null;          // gold_screener_summary.json
+let _mlSummary = null;          // screener_full.json (filtered to model lab tickers)
 let _mlSortKey = 'is_sharpe';   // current sort column
 let _mlTickerCache = {};         // model_lab_*.json cache
 let _mlEquityChart = null;
@@ -119,10 +119,13 @@ const _ML_OVERFIT_LABELS = {
 
 async function loadGoldScreener() {
   try {
-    const res = await fetch(`./gold_screener_summary.json?v=${_CV}`);
-    if (!res.ok) { document.getElementById('ml-grid-spinner').textContent='No screener data yet. Run: python scripts/export_model_lab_data.py'; return; }
-    _mlSummary = await res.json();
-    buildScreenerGrid(_mlSummary.tickers || []);
+    const res = await fetch(`./screener_full.json?v=${_CV}`);
+    if (!res.ok) { document.getElementById('ml-grid-spinner').textContent='No screener data yet.'; return; }
+    const sf = await res.json();
+    // Only show tickers that have been run through the model lab pipeline
+    const tickers = (sf.tickers || []).filter(t => t.models && t.models.length > 0);
+    _mlSummary = { tickers };
+    buildScreenerGrid(tickers);
   } catch(e) {
     document.getElementById('ml-grid-spinner').textContent = 'Screener data unavailable.';
   }
@@ -139,21 +142,24 @@ function mlSortGrid(key) {
 function buildScreenerGrid(tickers) {
   document.getElementById('ml-grid-spinner').style.display = 'none';
   document.getElementById('ml-grid-wrap').style.display = '';
-  const sorted = [...tickers].filter(t => t.status === 'OK').sort((a,b) => {
-    const av = a[_mlSortKey] ?? -99, bv = b[_mlSortKey] ?? -99;
+  // screener_full uses pf/sharpe/overfit; sort keys map accordingly
+  const _keyMap = { is_pf:'pf', is_sharpe:'sharpe', ho_pf:'ho_pf', ho_sharpe:'ho_sharpe' };
+  const sortKey = _keyMap[_mlSortKey] || _mlSortKey;
+  const sorted = [...tickers].filter(t => !t.error).sort((a,b) => {
+    const av = a[sortKey] ?? -99, bv = b[sortKey] ?? -99;
     return bv - av;
   });
   const grid = document.getElementById('ml-ticker-grid');
   grid.innerHTML = sorted.map(t => {
-    const ov = t.overfit_signal || 'UNKNOWN';
+    const ov = t.overfit || 'UNKNOWN';
     const cardClass = { LOW:'ml-card-low', MEDIUM:'ml-card-medium', HIGH:'ml-card-high', NO_EDGE:'ml-card-noedge', REGIME_CHANGE:'ml-card-regime', UNKNOWN:'ml-card-noedge' }[ov] || 'ml-card-noedge';
-    const isPF = t.is_pf != null ? t.is_pf.toFixed(3) : '—';
-    const isSh = t.is_sharpe != null ? (t.is_sharpe >= 0 ? '+' : '') + t.is_sharpe.toFixed(2) : '—';
+    const isPF = t.pf != null ? t.pf.toFixed(3) : '—';
+    const isSh = t.sharpe != null ? (t.sharpe >= 0 ? '+' : '') + t.sharpe.toFixed(2) : '—';
     const hoSh = t.ho_sharpe != null ? (t.ho_sharpe >= 0 ? '+' : '') + t.ho_sharpe.toFixed(2) : '—';
     const hoPF = t.ho_pf != null ? t.ho_pf.toFixed(3) : '—';
-    const isSc = t.is_sharpe >= 0.5 ? 'var(--green)' : t.is_sharpe > 0 ? '#fbbf24' : 'var(--red)';
+    const isSc = t.sharpe >= 0.5 ? 'var(--green)' : t.sharpe > 0 ? '#fbbf24' : 'var(--red)';
     const hoSc = (t.ho_sharpe||0) >= 0.5 ? 'var(--green)' : (t.ho_sharpe||0) > 0 ? '#fbbf24' : 'var(--red)';
-    const safe = t.ticker.toLowerCase().replace(/\./g,'_');
+    const safe = (t.models && t.models[0]) ? t.models[0].safe_name : t.ticker.toLowerCase().replace(/\./g,'_');
     const ovLabel = { LOW:'✓ LOW', MEDIUM:'~ MED', HIGH:'⚠ HIGH', NO_EDGE:'✕ NONE', REGIME_CHANGE:'↑ SHIFT', UNKNOWN:'? UNK' }[ov] || ov;
     const ovColor = (_ML_OVERFIT_LABELS[ov]||{}).color || '#4b5563';
     return `<div class="ml-ticker-card ${cardClass}" onclick="openModelLabTicker('${safe}')" title="${t.ticker} — ${ov}">
@@ -171,7 +177,6 @@ function buildScreenerGrid(tickers) {
         <span style="color:var(--muted)">HO Shr</span><span style="font-family:monospace;color:${hoSc};font-weight:600">${hoSh}</span>
       </div>
       <div style="font-size:10px;font-weight:700;color:${ovColor};letter-spacing:0.5px">${ovLabel}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:2px">${t.ann_count} anns</div>
     </div>`;
   }).join('');
 }
@@ -181,7 +186,7 @@ async function openModelLabTicker(safe) {
   if (!data) {
     try {
       const res = await fetch(`./model_lab_${safe}.json?v=${_CV}`);
-      if (!res.ok) { alert('No model lab data for ' + safe + '. Run: python scripts/export_model_lab_data.py'); return; }
+      if (!res.ok) { alert('No model lab data for ' + safe + '. Run: python scripts/run_ridge_v3.py --tickers TICKER.AX'); return; }
       data = await res.json();
       _mlTickerCache[safe] = data;
     } catch(e) { console.error(e); return; }
@@ -334,7 +339,7 @@ function renderTickerDetail(d) {
   // Feature table
   mlRenderFeatTable();
 
-  // Pruning roadmap (lazy-loaded from pruning_{safe}.json)
+  // Pruning roadmap (embedded in model_lab_{safe}.json as "pruning" key)
   renderPruningRoadmap(d.ticker_raw || d.ticker || '');
 
   // Rolling performance chart
@@ -943,12 +948,12 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const binW  = (rMax - rMin) / nBins || 1;
   const isBins = Array.from({length: nBins}, (_,i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, cnt: 0, wins: 0 }));
   retsIS.forEach((r, ri) => {
-    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    const bi = Math.max(0, Math.min(nBins-1, Math.floor((r - rMin) / binW)));
     isBins[bi].cnt++; if (tradesIS[ri].win) isBins[bi].wins++;
   });
   const hoBins = Array.from({length: nBins}, (_,i) => ({ lo: rMin + i*binW, hi: rMin + (i+1)*binW, cnt: 0, wins: 0 }));
   retsHO.forEach((r, ri) => {
-    const bi = Math.min(nBins-1, Math.floor((r - rMin) / binW));
+    const bi = Math.max(0, Math.min(nBins-1, Math.floor((r - rMin) / binW)));
     hoBins[bi].cnt++; if ((tradesHO||[])[ri]?.win) hoBins[bi].wins++;
   });
   const binLabels = isBins.map(b => `${b.lo.toFixed(1)}%`);
@@ -2827,7 +2832,7 @@ async function loadFeaturePanel(ticker='waf_ax') {
 }
 
 // ── Feature Pruning Roadmap ────────────────────────────────────────────────────
-// Category membership for every known feature — mirrors export_model_lab_data._FEAT_CATEGORIES
+// Category membership for every known feature — mirrors export_model._FEAT_CATEGORIES
 const _FEAT_CAT_MAP = {
   rsi_14:'momentum',ret_1d:'momentum',ret_5d:'momentum',ret_20d:'momentum',ret_60d:'momentum',ret_126d:'momentum',ret_252d:'momentum',
   close_vs_ma50:'momentum',close_vs_ma200:'momentum',ma50_vs_ma200:'momentum',ma_cross_sig:'momentum',
@@ -2884,17 +2889,11 @@ async function renderPruningRoadmap(ticker) {
   placeholder.style.display = 'none';
 
   const safe = _mlCurrentSafe || ticker.toLowerCase().replace(/\./g, '_');
-  if (cmd) cmd.textContent = `python scripts/run_pruning.py --tickers ${ticker}`;
+  if (cmd) cmd.textContent = `python scripts/run_ridge_v3.py --tickers ${ticker}`;
 
-  let data;
-  try {
-    const resp = await fetch(`./pruning_${safe}.json?_=${Date.now()}`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    data = await resp.json();
-  } catch (_) {
-    placeholder.style.display = '';
-    return;
-  }
+  const cached = _mlTickerCache[safe];
+  const data = cached?.pruning || null;
+  if (!data) { placeholder.style.display = ''; return; }
 
   const rounds = data.rounds || [];
   if (!rounds.length) { placeholder.style.display = ''; return; }
