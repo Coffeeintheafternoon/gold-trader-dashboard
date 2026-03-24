@@ -368,6 +368,41 @@ function _mcTier(mc){
   return t?t[0]:null;
 }
 
+// Jitter-scatter distribution chart — one dot per model, grouped by category
+// Defined at top level so both _buildFeatureCharts and _buildAdvancedCharts can use it
+function _buildDistChart(canvasId, groups, order){
+  const ctx=document.getElementById(canvasId)?.getContext('2d');if(!ctx)return null;
+  const greenPts=[],amberPts=[],redPts=[],meanPts=[];
+  order.forEach((grp,i)=>{
+    const ms=(groups[grp]||[]).filter(m=>m.ho_pf!=null);
+    ms.forEach((m,j)=>{
+      const jit=(((j*7+3)%13)/13-0.5)*0.40;
+      const pt={x:i+jit,y:m.ho_pf,ticker:m.ticker,grp};
+      if(m.ho_pf>=1.10)greenPts.push(pt);else if(m.ho_pf>=1.00)amberPts.push(pt);else redPts.push(pt);
+    });
+    if(ms.length){const mean=ms.reduce((a,m)=>a+m.ho_pf,0)/ms.length;meanPts.push({x:i,y:mean,n:ms.length,grp});}
+  });
+  const _dc=new Chart(ctx,{data:{datasets:[
+    {type:'scatter',label:'≥ 1.10',data:greenPts,backgroundColor:GREEN_7,pointRadius:5,pointHoverRadius:8},
+    {type:'scatter',label:'1.0 – 1.10',data:amberPts,backgroundColor:'rgba(251,191,36,0.70)',pointRadius:5,pointHoverRadius:8},
+    {type:'scatter',label:'< 1.0',data:redPts,backgroundColor:RED_55,pointRadius:5,pointHoverRadius:8},
+    {type:'scatter',label:'Mean',data:meanPts,backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:12,pointHoverRadius:14,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
+    {type:'line',label:'_edge',data:[{x:-0.5,y:1.10},{x:order.length-0.5,y:1.10}],borderColor:'rgba(16,185,129,0.20)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+      tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`HO PF: ${p.y?.toFixed(3)}`];if(p?.grp&&p.n)return[`${p.grp} mean`,`Avg HO PF: ${p.y?.toFixed(3)} (n=${p.n})`];return[];}}},
+      zoom:_zoom('xy'),
+    },
+    scales:{
+      x:{min:-0.5,max:order.length-0.5,grid:{color:'#1a1a1a'},ticks:{color:'#9ca3af',font:{size:9},maxRotation:40,callback:(v)=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
+      y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},
+    },
+  }});
+  _addResetZoom(_dc.canvas,_dc);
+  return _dc;
+}
+
 function _buildFeatureCharts(filtered){
   const el=id=>document.getElementById(id);
   if(!el('meta-feat-heatmap'))return;
@@ -428,39 +463,6 @@ function _buildFeatureCharts(filtered){
     cont.innerHTML=htm;
   }
 
-  // Builds a jitter-scatter distribution chart showing every model as a dot per group
-  function _buildDistChart(canvasId, groups, order){
-    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
-    const greenPts=[],amberPts=[],redPts=[],meanPts=[];
-    order.forEach((grp,i)=>{
-      const ms=(groups[grp]||[]).filter(m=>m.ho_pf!=null);
-      ms.forEach((m,j)=>{
-        const jit=(((j*7+3)%13)/13-0.5)*0.40;
-        const pt={x:i+jit,y:m.ho_pf,ticker:m.ticker,grp};
-        if(m.ho_pf>=1.10)greenPts.push(pt);else if(m.ho_pf>=1.00)amberPts.push(pt);else redPts.push(pt);
-      });
-      if(ms.length){const mean=ms.reduce((a,m)=>a+m.ho_pf,0)/ms.length;meanPts.push({x:i,y:mean,n:ms.length,grp});}
-    });
-    const _dc=new Chart(ctx,{data:{datasets:[
-      {type:'scatter',label:'≥ 1.10',data:greenPts,backgroundColor:GREEN_7,pointRadius:5,pointHoverRadius:8},
-      {type:'scatter',label:'1.0 – 1.10',data:amberPts,backgroundColor:'rgba(251,191,36,0.70)',pointRadius:5,pointHoverRadius:8},
-      {type:'scatter',label:'< 1.0',data:redPts,backgroundColor:RED_55,pointRadius:5,pointHoverRadius:8},
-      {type:'scatter',label:'Mean',data:meanPts,backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:12,pointHoverRadius:14,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
-      {type:'line',label:'_edge',data:[{x:-0.5,y:1.10},{x:order.length-0.5,y:1.10}],borderColor:'rgba(16,185,129,0.20)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0},
-    ]},options:{responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
-        tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`HO PF: ${p.y?.toFixed(3)}`];if(p?.grp&&p.n)return[`${p.grp} mean`,`Avg HO PF: ${p.y?.toFixed(3)} (n=${p.n})`];return[];}}},
-        zoom:_zoom('xy'),
-      },
-      scales:{
-        x:{min:-0.5,max:order.length-0.5,grid:{color:'#1a1a1a'},ticks:{color:'#9ca3af',font:{size:9},maxRotation:40,callback:(v)=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
-        y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},
-      },
-    }});
-    _addResetZoom(_dc.canvas,_dc);
-    return _dc;
-  }
 
   // Builds a normalised 100% stacked bar (horizontal) for feature categories
   function _buildCatChart(canvasId){
