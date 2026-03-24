@@ -450,7 +450,8 @@ function _buildAirTraffic(data) {
   function _addAircraft(ac, isMilitary) {
     if (!ac.lat || !ac.lng) return;
     const colour  = ac.colour || '#a0a0a0';
-    const size    = isMilitary ? 14 : 9;
+    const isMilCall = ac.source === 'military_callsign';
+    const size    = isMilCall ? 14 : isMilitary ? 11 : 9;
     const heading = ac.heading || 0;
     const icon    = _makeAircraftIcon(heading, colour, size);
     const marker  = L.marker([ac.lat, ac.lng], { icon, zIndexOffset: isMilitary ? 200 : 0 });
@@ -458,9 +459,11 @@ function _buildAirTraffic(data) {
     const altFt   = ac.altitude ? Math.round(ac.altitude * 3.281) : '?';
     const spdKt   = ac.speed    ? Math.round(ac.speed * 1.944)    : '?';
     const callTag = ac.callsign || ac.icao || '(unknown)';
-    const milBadge = isMilitary
+    const milBadge = isMilCall
       ? `<span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#1a1a2a;border:1px solid ${colour};color:${colour};font-weight:700;margin-left:4px">MIL</span>`
-      : '';
+      : (ac.source === 'watch_country'
+        ? `<span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#1a1a1a;border:1px solid #3a3a3a;color:#7a7060;margin-left:4px">WATCH</span>`
+        : '');
 
     marker.bindTooltip(`
       <div>
@@ -501,6 +504,33 @@ function _buildAirTraffic(data) {
   // Conflict-zone aircraft (all)
   Object.values(sky.conflict_zones || {}).forEach(zone => {
     (zone.aircraft || []).forEach(ac => _addAircraft(ac, false));
+  });
+
+  // All aircraft globally — tiny dots for everyone else
+  const renderedIcao = new Set([
+    ...(sky.military || []).map(a => a.icao),
+    ...Object.values(sky.conflict_zones || {}).flatMap(z => (z.aircraft || []).map(a => a.icao)),
+  ]);
+  (sky.all_aircraft || []).forEach(ac => {
+    if (!ac.lat || !ac.lng || renderedIcao.has(ac.icao)) return;
+    const colour  = ac.colour || '#505050';
+    const heading = ac.heading || 0;
+    const icon    = _makeAircraftIcon(heading, colour, 6);
+    const marker  = L.marker([ac.lat, ac.lng], { icon, zIndexOffset: -100 });
+    const altFt   = ac.altitude ? Math.round(ac.altitude * 3.281) : '?';
+    const spdKt   = ac.speed    ? Math.round(ac.speed * 1.944)    : '?';
+    const callTag = ac.callsign || ac.icao || '(unknown)';
+    marker.bindTooltip(`
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#e8d5a0;margin-bottom:3px">${callTag}</div>
+        <div style="font-size:11px;color:#9a8a70">${ac.country}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">
+          Alt: ${altFt} ft &nbsp;·&nbsp; Spd: ${spdKt} kt &nbsp;·&nbsp; Hdg: ${heading}°
+        </div>
+        <div style="font-size:10px;color:#3a3a3a;margin-top:3px">ICAO: ${ac.icao} &nbsp;·&nbsp; ${fetchedAt}</div>
+      </div>
+    `, { direction: 'top', offset: [0, -4], className: 'sow-tooltip', maxWidth: 220 });
+    _sowLayers.airtraffic.group.addLayer(marker);
   });
 }
 
