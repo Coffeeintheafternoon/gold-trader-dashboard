@@ -979,46 +979,37 @@
       <div class="section-divider-line"></div>
     </div>
 
-    <!-- Chart 1: Feature × Sector Signed Weight Heatmap (full width) -->
+    <!-- Chart 1+2: Feature Heatmap — Sector / MC toggle -->
     <div class="chart-card" style="padding:20px;margin-bottom:16px">
-      <div class="chart-title">Feature × Sector Heatmap — Signed Weight</div>
-      <div class="chart-subtitle" style="margin-bottom:14px">Top 25 features (columns) × sectors (rows) · cell = avg signed weight · green = bullish signal · red = bearish · intensity = strength</div>
+      <div class="chart-title">Feature Signed Weight Heatmap</div>
+      <div class="chart-subtitle" style="margin-bottom:10px">Top features (columns) × groups (rows) · cell = avg signed weight · green = bullish · red = bearish · intensity = strength</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="meta-filter-btn active" data-gbid="heat" data-gbval="sector" onclick="_metaToggle('heat','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="heat" data-gbval="mc" onclick="_metaToggle('heat','mc')">MC Tier</button>
+      </div>
       <div id="meta-feat-heatmap"></div>
     </div>
 
-    <!-- Chart 2: Feature × Market Cap Tier Heatmap (full width) -->
+    <!-- Charts 3 + 4: HO PF Distribution — Sector / MC toggle -->
     <div class="chart-card" style="padding:20px;margin-bottom:16px">
-      <div class="chart-title">Feature × Market Cap Tier Heatmap — Signed Weight</div>
-      <div class="chart-subtitle" style="margin-bottom:14px">Top 20 features × market cap tiers · cell = avg signed weight · green = bullish · red = bearish · intensity = strength</div>
-      <div id="meta-mc-heatmap"></div>
+      <div class="chart-title">HO PF Distribution</div>
+      <div class="chart-subtitle">Every model as a dot · gold × = group mean · colour = edge status · sorted by mean HO PF</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="dist" data-gbval="sector" onclick="_metaToggle('dist','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="dist" data-gbval="mc" onclick="_metaToggle('dist','mc')">MC Tier</button>
+      </div>
+      <div class="chart-wrap" style="height:400px;margin-top:4px"><canvas id="meta-dist-sector-chart"></canvas></div>
     </div>
 
-    <!-- Charts 3 + 4: HO PF Distribution by Sector and Market Cap -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">HO PF Distribution by Sector</div>
-        <div class="chart-subtitle">Every model as a dot · gold × = group mean · sorted by mean HO PF</div>
-        <div class="chart-wrap" style="height:400px;margin-top:12px"><canvas id="meta-dist-sector-chart"></canvas></div>
+    <!-- Charts 5 + 6: Feature Category Composition — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Feature Category Composition</div>
+      <div class="chart-subtitle">What type of features dominate each group? · normalised to 100%</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="cat" data-gbval="sector" onclick="_metaToggle('cat','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="cat" data-gbval="mc" onclick="_metaToggle('cat','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">HO PF Distribution by Market Cap Tier</div>
-        <div class="chart-subtitle">Does company size predict edge? · gold × = group mean · colour = edge status</div>
-        <div class="chart-wrap" style="height:400px;margin-top:12px"><canvas id="meta-dist-mc-chart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- Charts 5 + 6: Feature Category Composition by Sector and Market Cap -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Feature Category Composition by Sector</div>
-        <div class="chart-subtitle">What type of features drive each sector? · normalised to 100%</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-cat-chart"></canvas></div>
-      </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Feature Category Composition by Market Cap Tier</div>
-        <div class="chart-subtitle">Do large caps use different features to nano caps? · normalised to 100%</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-cat-mc-chart"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:380px;margin-top:4px"><canvas id="meta-cat-chart"></canvas></div>
     </div>
 
     <!-- ══ ADVANCED ANALYTICS ════════════════════════════════════════════════ -->
@@ -1179,18 +1170,15 @@
       <div class="section-divider-line"></div>
     </div>
 
-    <!-- TM-1 + TM-2: Expected Value by Sector + MC -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Expected Value (EV) per Trade by Sector</div>
-        <div class="chart-subtitle">EV = (win_rate × payoff) − (1 − win_rate) · green &gt;0.05 = strong positive edge · any negative bar = loses money over time regardless of HO PF</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tm-ev-sec"></canvas></div>
+    <!-- TM-1 + TM-2: Expected Value — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Expected Value (EV) per Trade</div>
+      <div class="chart-subtitle">EV = (win_rate × payoff) − (1 − win_rate) · green &gt;0.05 = strong positive edge · any negative bar = loses money over time regardless of HO PF</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="tme" data-gbval="sector" onclick="_metaToggle('tme','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="tme" data-gbval="mc" onclick="_metaToggle('tme','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Expected Value (EV) per Trade by Market Cap Tier</div>
-        <div class="chart-subtitle">Same EV formula by size tier · verifies the trade math holds at each end of the market cap spectrum</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tm-ev-mc"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tm-ev-sec"></canvas></div>
     </div>
 
     <!-- TM-3: Trade regime classification scatter (full width) -->
@@ -1215,94 +1203,69 @@
       <div class="section-divider-line"></div>
     </div>
 
-    <!-- T1: Win Rate Jitter — Sector + MC Tier (with slider) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">HO Win Rate by Sector</div>
-        <div class="chart-subtitle">Every model as a dot · gold × = group mean · drag threshold to filter</div>
-        <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px">
-          <span style="font-size:11px;color:var(--muted)">Threshold</span>
-          <input id="tr1a-thr" type="range" min="30" max="75" value="50" step="1" style="flex:1;accent-color:var(--gold)">
-          <span id="tr1a-thr-val" style="font-size:11px;color:var(--gold);min-width:30px">50%</span>
+    <!-- T1: Win Rate Jitter — Sector / MC toggle (with threshold slider) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">HO Win Rate</div>
+      <div class="chart-subtitle">Every model as a dot · gold × = group mean · drag threshold to filter</div>
+      <div style="display:flex;align-items:center;gap:10px;margin:8px 0 4px;flex-wrap:wrap">
+        <div class="gb-toggle" style="display:flex;gap:6px">
+          <button class="meta-filter-btn active" data-gbid="tr1" data-gbval="sector" onclick="_metaToggle('tr1','sector')">Sector</button>
+          <button class="meta-filter-btn" data-gbid="tr1" data-gbval="mc" onclick="_metaToggle('tr1','mc')">MC Tier</button>
         </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr1a"></canvas></div>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">Threshold</span>
+        <input id="tr1a-thr" type="range" min="30" max="75" value="50" step="1" style="flex:1;min-width:100px;accent-color:var(--gold)">
+        <span id="tr1a-thr-val" style="font-size:11px;color:var(--gold);min-width:30px">50%</span>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">HO Win Rate by Market Cap Tier</div>
-        <div class="chart-subtitle">Do nano caps win more often? · gold × = group mean · drag threshold</div>
-        <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px">
-          <span style="font-size:11px;color:var(--muted)">Threshold</span>
-          <input id="tr1b-thr" type="range" min="30" max="75" value="50" step="1" style="flex:1;accent-color:var(--gold)">
-          <span id="tr1b-thr-val" style="font-size:11px;color:var(--gold);min-width:30px">50%</span>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr1b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr1a"></canvas></div>
     </div>
 
-    <!-- T2: Payoff Ratio by group -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Avg Payoff Ratio by Sector</div>
-        <div class="chart-subtitle">Avg win ÷ avg |loss| per sector · green ≥ 1.5× · amber ≥ 1.0× · red = negative edge</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr2a"></canvas></div>
+    <!-- T2: Payoff Ratio — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Avg Payoff Ratio</div>
+      <div class="chart-subtitle">Avg win ÷ avg |loss| · green ≥ 1.5× · amber ≥ 1.0× · red = negative edge</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="tr2" data-gbval="sector" onclick="_metaToggle('tr2','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="tr2" data-gbval="mc" onclick="_metaToggle('tr2','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Avg Payoff Ratio by Market Cap Tier</div>
-        <div class="chart-subtitle">Larger wins vs losses — does size matter? · green ≥ 1.5× · amber ≥ 1.0×</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr2b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr2a"></canvas></div>
     </div>
 
-    <!-- T3: Direction Bias -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Long/Short Direction Bias by Sector</div>
-        <div class="chart-subtitle">% of HO trades that are long vs short · reveals sector directionality of the model universe</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr3a"></canvas></div>
+    <!-- T3: Direction Bias — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Long/Short Direction Bias</div>
+      <div class="chart-subtitle">% of HO trades that are long vs short · 100% stacked</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="tr3" data-gbval="sector" onclick="_metaToggle('tr3','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="tr3" data-gbval="mc" onclick="_metaToggle('tr3','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Long/Short Direction Bias by Market Cap Tier</div>
-        <div class="chart-subtitle">Do small caps skew long? Large caps mean-revert short? · 100% stacked</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr3b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr3a"></canvas></div>
     </div>
 
-    <!-- T4: Avg Trade Return -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Avg HO Trade Return (%) by Sector</div>
-        <div class="chart-subtitle">Mean return per trade in holdout · positive = net edge · sorted best→worst</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr4a"></canvas></div>
+    <!-- T4: Avg Trade Return — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Avg HO Trade Return (%)</div>
+      <div class="chart-subtitle">Mean return per trade in holdout · positive = net edge · sorted best→worst</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="tr4" data-gbval="sector" onclick="_metaToggle('tr4','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="tr4" data-gbval="mc" onclick="_metaToggle('tr4','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Avg HO Trade Return (%) by Market Cap Tier</div>
-        <div class="chart-subtitle">Return per trade by size tier · does market cap predict per-trade profitability?</div>
-        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tr4b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-tr4a"></canvas></div>
     </div>
 
-    <!-- T5: Trade Count vs HO PF (slider) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Trade Count vs HO PF — by Sector</div>
-        <div class="chart-subtitle">Does more trades = more reliable edge? · drag slider to filter low-count models</div>
-        <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px">
-          <span style="font-size:11px;color:var(--muted)">Min trades</span>
-          <input id="tr5a-min" type="range" min="3" max="50" value="5" step="1" style="flex:1;accent-color:var(--gold)">
-          <span id="tr5a-min-val" style="font-size:11px;color:var(--gold);min-width:40px">≥ 5</span>
+    <!-- T5: Trade Count vs HO PF — Sector / MC toggle (with min-trades slider) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Trade Count vs HO PF</div>
+      <div class="chart-subtitle">Does more trades = more reliable edge? · drag slider to filter low-count models · hover for ticker details</div>
+      <div style="display:flex;align-items:center;gap:10px;margin:8px 0 4px;flex-wrap:wrap">
+        <div class="gb-toggle" style="display:flex;gap:6px">
+          <button class="meta-filter-btn active" data-gbid="tr5" data-gbval="sector" onclick="_metaToggle('tr5','sector')">Sector</button>
+          <button class="meta-filter-btn" data-gbid="tr5" data-gbval="mc" onclick="_metaToggle('tr5','mc')">MC Tier</button>
         </div>
-        <div class="chart-wrap" style="height:340px;margin-top:4px"><canvas id="meta-tr5a"></canvas></div>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">Min trades</span>
+        <input id="tr5a-min" type="range" min="3" max="50" value="5" step="1" style="flex:1;min-width:100px;accent-color:var(--gold)">
+        <span id="tr5a-min-val" style="font-size:11px;color:var(--gold);min-width:40px">≥ 5</span>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Trade Count vs HO PF — by Market Cap Tier</div>
-        <div class="chart-subtitle">Same view split by size tier · each colour = tier · hover for ticker details</div>
-        <div style="display:flex;align-items:center;gap:10px;margin:10px 0 4px">
-          <span style="font-size:11px;color:var(--muted)">Min trades</span>
-          <input id="tr5b-min" type="range" min="3" max="50" value="5" step="1" style="flex:1;accent-color:var(--gold)">
-          <span id="tr5b-min-val" style="font-size:11px;color:var(--gold);min-width:40px">≥ 5</span>
-        </div>
-        <div class="chart-wrap" style="height:340px;margin-top:4px"><canvas id="meta-tr5b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:340px;margin-top:4px"><canvas id="meta-tr5a"></canvas></div>
     </div>
 
     <!-- ══ MODEL ANALYTICS ════════════════════════════════════════════════════ -->
@@ -1313,100 +1276,73 @@
       <div class="section-divider-line"></div>
     </div>
 
-    <!-- M1: Win Rate vs Payoff scatter (color toggle) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Win Rate vs Payoff Ratio — by Sector</div>
-        <div class="chart-subtitle">Sweet spot: top-right · grey curve = breakeven EV · colour by HO PF / sector / MC tier</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap">
-          <button id="m1a-pf"  class="meta-filter-btn active" onclick="_m1aToggle('pf')">By HO PF</button>
-          <button id="m1a-sec" class="meta-filter-btn"        onclick="_m1aToggle('sec')">By Sector</button>
-          <button id="m1a-mc"  class="meta-filter-btn"        onclick="_m1aToggle('mc')">By MC Tier</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma1a"></canvas></div>
+    <!-- M1: Win Rate vs Payoff scatter — Sector/MC groupBy toggle + color toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Win Rate vs Payoff Ratio</div>
+      <div class="chart-subtitle">Sweet spot: top-right · grey curve = breakeven EV · models below breakeven curve are unprofitable</div>
+      <div style="display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);align-self:center;margin-right:2px">Group by</span>
+        <button class="meta-filter-btn active" data-gbid="m1" data-gbval="sector" onclick="_metaToggle('m1','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="m1" data-gbval="mc" onclick="_metaToggle('m1','mc')">MC Tier</button>
+        <span style="border-left:1px solid #2a2a2a;margin:0 4px"></span>
+        <span style="font-size:10px;color:var(--muted);align-self:center;margin-right:2px">Colour by</span>
+        <button id="m1a-pf"  class="meta-filter-btn active" onclick="_m1aToggle('pf')">HO PF</button>
+        <button id="m1a-sec" class="meta-filter-btn"        onclick="_m1aToggle('sec')">Sector</button>
+        <button id="m1a-mc"  class="meta-filter-btn"        onclick="_m1aToggle('mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Win Rate vs Payoff Ratio — by Market Cap Tier</div>
-        <div class="chart-subtitle">Same view · toggle to switch colouring · models below breakeven curve are unprofitable</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap">
-          <button id="m1b-pf"  class="meta-filter-btn active" onclick="_m1bToggle('pf')">By HO PF</button>
-          <button id="m1b-sec" class="meta-filter-btn"        onclick="_m1bToggle('sec')">By Sector</button>
-          <button id="m1b-mc"  class="meta-filter-btn"        onclick="_m1bToggle('mc')">By MC Tier</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma1b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma1a"></canvas></div>
     </div>
 
-    <!-- M2: Avg Holding Period vs HO PF -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Holding Period vs HO PF — coloured by Sector</div>
-        <div class="chart-subtitle">Does holding longer = more edge? · each dot = 1 model · dashed = PF≥1.10 threshold</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ma2a"></canvas></div>
+    <!-- M2: Avg Holding Period vs HO PF — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Holding Period vs HO PF</div>
+      <div class="chart-subtitle">Does holding longer = more edge? · each dot = 1 model · dashed = PF≥1.10 threshold</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="m2" data-gbval="sector" onclick="_metaToggle('m2','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="m2" data-gbval="mc" onclick="_metaToggle('m2','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Holding Period vs HO PF — coloured by MC Tier</div>
-        <div class="chart-subtitle">Does company size affect optimal holding duration? · dashed = edge threshold</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ma2b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:380px;margin-top:4px"><canvas id="meta-ma2a"></canvas></div>
     </div>
 
-    <!-- M3: Best vs Worst trade range (IS/HO toggle) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Best vs Worst Trade Range by Sector</div>
-        <div class="chart-subtitle">Avg of best and worst single trades per group · toggle IS vs HO to see regime difference</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px">
-          <button id="m3a-ho" class="meta-filter-btn active" onclick="_m3aToggle('ho')">Holdout</button>
-          <button id="m3a-is" class="meta-filter-btn"        onclick="_m3aToggle('is')">In-Sample</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma3a"></canvas></div>
+    <!-- M3: Best vs Worst Trade Range — Sector/MC toggle + IS/HO toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Best vs Worst Trade Range</div>
+      <div class="chart-subtitle">Avg of best and worst single trades per group · toggle IS vs HO · tail risk comparison</div>
+      <div style="display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);align-self:center;margin-right:2px">Group by</span>
+        <button class="meta-filter-btn active" data-gbid="m3" data-gbval="sector" onclick="_metaToggle('m3','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="m3" data-gbval="mc" onclick="_metaToggle('m3','mc')">MC Tier</button>
+        <span style="border-left:1px solid #2a2a2a;margin:0 4px"></span>
+        <button id="m3a-ho" class="meta-filter-btn active" onclick="_m3aToggle('ho')">Holdout</button>
+        <button id="m3a-is" class="meta-filter-btn"        onclick="_m3aToggle('is')">In-Sample</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Best vs Worst Trade Range by Market Cap Tier</div>
-        <div class="chart-subtitle">Tail risk by size tier · do nano caps have wilder swings? · HO vs IS toggle</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px">
-          <button id="m3b-ho" class="meta-filter-btn active" onclick="_m3bToggle('ho')">Holdout</button>
-          <button id="m3b-is" class="meta-filter-btn"        onclick="_m3bToggle('is')">In-Sample</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma3b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma3a"></canvas></div>
     </div>
 
-    <!-- M4: IS vs HO trade count comparison -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">IS vs HO Trade Frequency by Sector</div>
-        <div class="chart-subtitle">Avg number of signals · grey = in-sample · gold = holdout · tooltip shows HO÷IS ratio</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ma4a"></canvas></div>
+    <!-- M4: IS vs HO Trade Frequency — Sector / MC toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">IS vs HO Trade Frequency</div>
+      <div class="chart-subtitle">Avg number of signals · grey = in-sample · gold = holdout · tooltip shows HO÷IS ratio · ratio near 1.0 = stable signal generation</div>
+      <div class="gb-toggle" style="display:flex;gap:6px;margin:8px 0 4px">
+        <button class="meta-filter-btn active" data-gbid="m4" data-gbval="sector" onclick="_metaToggle('m4','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="m4" data-gbval="mc" onclick="_metaToggle('m4','mc')">MC Tier</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">IS vs HO Trade Frequency by Market Cap Tier</div>
-        <div class="chart-subtitle">HO÷IS ratio near 1.0 = stable signal generation across regimes · large gap = regime dependency</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ma4b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:380px;margin-top:4px"><canvas id="meta-ma4a"></canvas></div>
     </div>
 
-    <!-- M5: Long vs Short performance (metric toggle) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Long vs Short Performance by Sector</div>
-        <div class="chart-subtitle">Is the edge driven by longs, shorts, or both? · toggle between win rate and avg return</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px">
-          <button id="m5a-wr"  class="meta-filter-btn active" onclick="_m5aToggle('wr')">Win Rate</button>
-          <button id="m5a-ret" class="meta-filter-btn"        onclick="_m5aToggle('ret')">Avg Return</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma5a"></canvas></div>
+    <!-- M5: Long vs Short Performance — Sector/MC toggle + metric toggle -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Long vs Short Performance</div>
+      <div class="chart-subtitle">Is the edge driven by longs, shorts, or both? · toggle metric and grouping</div>
+      <div style="display:flex;gap:6px;margin:8px 0 4px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);align-self:center;margin-right:2px">Group by</span>
+        <button class="meta-filter-btn active" data-gbid="m5" data-gbval="sector" onclick="_metaToggle('m5','sector')">Sector</button>
+        <button class="meta-filter-btn" data-gbid="m5" data-gbval="mc" onclick="_metaToggle('m5','mc')">MC Tier</button>
+        <span style="border-left:1px solid #2a2a2a;margin:0 4px"></span>
+        <button id="m5a-wr"  class="meta-filter-btn active" onclick="_m5aToggle('wr')">Win Rate</button>
+        <button id="m5a-ret" class="meta-filter-btn"        onclick="_m5aToggle('ret')">Avg Return</button>
       </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Long vs Short Performance by Market Cap Tier</div>
-        <div class="chart-subtitle">Directional edge by size · do large caps short better? Small caps long better?</div>
-        <div style="display:flex;gap:6px;margin:10px 0 4px">
-          <button id="m5b-wr"  class="meta-filter-btn active" onclick="_m5bToggle('wr')">Win Rate</button>
-          <button id="m5b-ret" class="meta-filter-btn"        onclick="_m5bToggle('ret')">Avg Return</button>
-        </div>
-        <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma5b"></canvas></div>
-      </div>
+      <div class="chart-wrap" style="height:360px;margin-top:4px"><canvas id="meta-ma5a"></canvas></div>
     </div>
 
   </div>
@@ -1692,7 +1628,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 </script>
 <script src="tab_modellab.js?v=20260325"></script>
 <script src="tab_universe.js?v=20260325"></script>
-<script src="tab_meta.js?v=20260326"></script>
+<script src="tab_meta.js?v=20260327"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
 <script src="tab_papertrade.js?v=20260325"></script>
