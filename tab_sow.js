@@ -15,6 +15,7 @@ const _sowLayers = {
   tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false, live: false },
   heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false, live: false },
   airtraffic:   { label: 'Air Traffic',            color: '#60cfff', group: null, enabled: false, live: true  },
+  ships:        { label: 'Live Ships',             color: '#e07a30', group: null, enabled: false, live: true  },
   mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false, live: false },
   australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false, live: true  },
 };
@@ -534,6 +535,79 @@ function _buildAirTraffic(data) {
   });
 }
 
+// ── Live ships (AISStream) ─────────────────────────────────────────────────────
+function _makeShipIcon(heading, colour, size) {
+  // Diamond shape — distinguishable from aircraft triangles
+  const h = heading || 0;
+  return L.divIcon({
+    html: `<div style="width:${size}px;height:${size}px;background:${colour};transform:rotate(${h}deg);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);opacity:0.85"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    className: '',
+  });
+}
+
+function _buildShips(data) {
+  _sowLayers.ships.group = L.layerGroup();
+  const sd = data.ships;
+  if (!sd || !sd.ships) return;
+
+  const fetchedAt = sd.fetched_at ? sd.fetched_at.replace('T', ' ').slice(0, 16) + ' UTC' : '?';
+
+  const catSize = { tanker: 11, cargo: 10, military: 12, passenger: 9, special: 8, fishing: 7, other: 6 };
+  const catLabel = { tanker: 'Tanker', cargo: 'Cargo', military: 'Military', passenger: 'Passenger', special: 'Special', fishing: 'Fishing', other: 'Unknown' };
+  const statusLabel = {
+    0: 'Underway', 1: 'At anchor', 2: 'Not under command', 3: 'Restricted',
+    5: 'Moored', 6: 'Aground', 7: 'Fishing', 8: 'Underway (sail)',
+  };
+
+  (sd.ships || []).forEach(ship => {
+    if (!ship.lat || !ship.lng) return;
+    const cat    = ship.category || 'other';
+    const colour = ship.colour || '#6a6a6a';
+    const size   = catSize[cat] || 6;
+    const icon   = _makeShipIcon(ship.heading, colour, size);
+    const marker = L.marker([ship.lat, ship.lng], { icon, zIndexOffset: cat === 'military' ? 200 : cat === 'tanker' ? 100 : 0 });
+
+    const spdKt  = ship.speed ?? '?';
+    const status = statusLabel[ship.status] || 'Unknown';
+    const dest   = ship.dest ? ` → ${ship.dest}` : '';
+
+    marker.bindTooltip(`
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#e8d5a0;margin-bottom:3px">${ship.name}</div>
+        <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px">
+          <span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#1a1a1a;border:1px solid ${colour};color:${colour};font-weight:700">${catLabel[cat] || cat}</span>
+          <span style="font-size:10px;color:#7a7060">${status}${dest}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">Spd: ${spdKt} kt &nbsp;·&nbsp; Hdg: ${ship.heading}°</div>
+        <div style="font-size:10px;color:#3a3a3a;margin-top:3px">MMSI: ${ship.mmsi} &nbsp;·&nbsp; ${fetchedAt}</div>
+      </div>
+    `, { direction: 'top', offset: [0, -6], className: 'sow-tooltip', maxWidth: 240 });
+
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (el) el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${ship.name}</div>
+        <div style="margin-bottom:8px">
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${colour};color:${colour}">${catLabel[cat] || cat}</span>
+          ${dest ? `<span style="font-size:10px;color:#7a7060;margin-left:6px">${dest}</span>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px;background:#0d0d0d;border-radius:4px;border:1px solid #1a1a1a;margin-bottom:8px">
+          <div><div style="font-size:10px;color:var(--muted)">Speed</div><div style="font-size:12px;color:#e8d5a0">${spdKt} kt</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Heading</div><div style="font-size:12px;color:#e8d5a0">${ship.heading}°</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Status</div><div style="font-size:12px;color:#e8d5a0">${status}</div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Type</div><div style="font-size:12px;color:#e8d5a0">${ship.type_code || '?'}</div></div>
+        </div>
+        <div style="font-size:10px;color:#3a3a3a">MMSI: ${ship.mmsi} &nbsp;·&nbsp; Snapshot: ${fetchedAt}</div>`;
+      const s = document.getElementById('sow-status');
+      if (s) s.textContent = `${ship.name} — ${catLabel[cat] || cat}`;
+    });
+
+    _sowLayers.ships.group.addLayer(marker);
+  });
+}
+
 // ── Regional tone timelines ───────────────────────────────────────────────────
 const _toneCharts = {};
 
@@ -875,6 +949,22 @@ function _buildLegend() {
     el.appendChild(note);
   }
 
+  if (_sowLayers.ships.enabled) {
+    el.appendChild(divider());
+    el.appendChild(label('Live Ships'));
+    el.appendChild(row('#e07a30', 'dot', '◆ Tanker (oil/chemical/gas)'));
+    el.appendChild(row('#f5c842', 'dot', '◆ Cargo'));
+    el.appendChild(row('#e05252', 'dot', '◆ Military'));
+    el.appendChild(row('#7a9ae0', 'dot', '◆ Passenger'));
+    el.appendChild(row('#a78bfa', 'dot', '◆ Special / SAR / Tug'));
+    el.appendChild(row('#52c4a0', 'dot', '◆ Fishing'));
+    el.appendChild(row('#6a6a6a', 'dot', '◆ Unknown type'));
+    const note2 = document.createElement('div');
+    note2.style.cssText = 'font-size:10px;color:#3a3a3a;margin-top:2px';
+    note2.textContent = 'Diamond points in direction of travel';
+    el.appendChild(note2);
+  }
+
   if (_sowLayers.mining.enabled) {
     el.appendChild(row('#52c4a0', 'dot', '● Gold mining region'));
   }
@@ -1152,6 +1242,7 @@ function initSOWTab() {
       _buildTradeFlows(data);
       _buildNewsHeatmap(data);
       _buildAirTraffic(data);
+      _buildShips(data);
       _buildMiningRegions(data);
       _buildAustralia(data);
       _buildToneTimelines(data);
