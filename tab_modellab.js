@@ -93,6 +93,7 @@ let _mlStabilityChart = null;
 let _mlCurrentFeatures = [];    // full feature list for current ticker
 let _mlCurrentWH = [];          // weight_history for current ticker
 let _mlCurrentSafe = null;      // safe_name of currently displayed model
+let _modelIndex    = null;      // ticker → [{safe_name, label, model_type}] — populated if model_index.json exists
 let _mlStabShow     = { weight: true, cum_avg: true, cum_pval: true }; // which metrics visible
 let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
@@ -191,6 +192,7 @@ async function openModelLabTicker(safe) {
       _mlTickerCache[safe] = data;
     } catch(e) { console.error(e); return; }
   }
+  _mlCurrentSafe = safe;
   document.getElementById('ml-gold-screener').style.display = 'none';
   document.getElementById('ml-ticker-detail').style.display = '';
   renderTickerDetail(data);
