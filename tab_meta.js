@@ -1,5 +1,17 @@
 // tab_meta.js — Rich meta analysis: model_index.json + screener_full.json enrichment
 
+const _CAT_COLOR={
+  'macro':        'rgba(167,139,250,0.85)',
+  'momentum':     'rgba(245,165,32,0.85)',
+  'interaction':  'rgba(59,130,246,0.85)',
+  'volume':       'rgba(52,211,153,0.85)',
+  'announcement': 'rgba(248,113,113,0.80)',
+  'volatility':   'rgba(251,191,36,0.75)',
+  'candle':       'rgba(156,163,175,0.70)',
+  'trend':        'rgba(110,231,183,0.75)',
+  'other':        'rgba(107,114,128,0.60)',
+};
+
 const _MT_COLOR={
   'Ridge (1yr)':        'rgba(245,165,32,0.75)',
   'Ridge (6mo)':        'rgba(251,191,36,0.55)',
@@ -14,6 +26,8 @@ const _MT_COLOR={
 };
 const _SEC_PAL=['rgba(245,165,32,0.75)','rgba(59,130,246,0.75)','rgba(16,185,129,0.75)','rgba(239,68,68,0.75)','rgba(167,139,250,0.8)','rgba(251,191,36,0.6)','rgba(52,211,153,0.75)','rgba(248,113,113,0.7)','rgba(196,181,253,0.7)','rgba(134,239,172,0.7)','rgba(253,186,116,0.7)','rgba(147,197,253,0.7)','rgba(216,180,254,0.7)','rgba(252,211,77,0.7)','rgba(110,231,183,0.7)'];
 
+let _metaFeatData=null;
+let _metaMcapChart=null,_metaPvalChart=null,_metaCatChart=null,_metaTopFeatChart=null;
 let _modelIndexData=null, _screenerFull=null;
 let _modelIndexFlat=[];
 let _activeModelFilter='All';
@@ -24,6 +38,7 @@ async function initMetaTab(){
   if(!_modelIndexData) loads.push(fetch(`./model_index.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_modelIndexData=d;}).catch(()=>{}));
   if(!_fullScreenerData) loads.push(fetch(`./screener_full.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d){_fullScreenerData=d.tickers||[];}}).catch(()=>{}));
   if(!_compData) loads.push(fetch(`./models_comparison.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
+  if(!_metaFeatData) loads.push(fetch(`./meta_features.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_metaFeatData=d;}).catch(()=>{}));
   await Promise.all(loads);
   _screenerFull=_fullScreenerData||[];
 
@@ -254,5 +269,175 @@ function _buildMetaTab(){
     const fsorted=Object.entries(featCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const mx=fsorted.length?fsorted[0][1]:1;
     el('meta-feature-freq').innerHTML=fsorted.map(([name,count])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-family:monospace;color:#e5e7eb">${name}</span><span style="font-size:11px;color:var(--muted)">${count}/${ct.length} models</span></div><div style="height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${Math.round(count/mx*100)}%;background:var(--gold);border-radius:3px"></div></div></div>`).join('');
+  }
+
+  // ── Feature Intelligence charts ───────────────────────────────────────────
+  if(_metaFeatData) _buildFeatureCharts(filtered);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature Intelligence — 5 charts loaded from meta_features.json
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildFeatureCharts(filtered){
+  const el=id=>document.getElementById(id);
+  if(!el('meta-feat-heatmap'))return;
+
+  // Build lookup: "ticker|model_type" → feature record
+  const featLookup={};
+  (_metaFeatData.models||[]).forEach(m=>{featLookup[`${m.ticker}|${m.model_type}`]=m;});
+
+  // Join filtered model list with feature data
+  const joined=filtered.map(r=>{
+    const fd=featLookup[`${r.ticker}|${r.model_type}`];
+    return fd?{...r,features:fd.features,feature_count:fd.feature_count,pruned_count:fd.pruned_count,market_cap:fd.market_cap}:{...r,features:[],feature_count:0};
+  }).filter(r=>r.ho_pf!=null);
+
+  // ── 1. Feature × Sector Heatmap ──────────────────────────────────────────
+  // Top 25 features by frequency across joined set
+  const featFreq={};
+  joined.forEach(m=>m.features.forEach(f=>{featFreq[f.name]=(featFreq[f.name]||0)+1;}));
+  const topFeats=Object.entries(featFreq).sort((a,b)=>b[1]-a[1]).slice(0,25).map(([n])=>n);
+
+  // All sectors with ≥ 2 models
+  const secGroups={};
+  joined.forEach(m=>{const s=m.sector||'Other';if(!secGroups[s])secGroups[s]=[];secGroups[s].push(m);});
+  const secs=Object.entries(secGroups).filter(([,ms])=>ms.length>=2).sort((a,b)=>b[1].length-a[1].length).map(([s])=>s);
+
+  // Compute avg signed weight per sector × feature
+  function cellVal(sec,feat){
+    const ms=secGroups[sec]||[];
+    const vals=ms.flatMap(m=>m.features.filter(f=>f.name===feat).map(f=>f.signed));
+    if(!vals.length)return null;
+    return vals.reduce((a,b)=>a+b,0)/vals.length;
+  }
+
+  // Get feature category lookup (most common category for each feature)
+  const featCat={};
+  joined.forEach(m=>m.features.forEach(f=>{if(!featCat[f.name])featCat[f.name]={}; featCat[f.name][f.category]=(featCat[f.name][f.category]||0)+1;}));
+  const getFeatCat=n=>{const c=featCat[n];if(!c)return'other';return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];};
+
+  // Build max absolute value for color normalisation
+  let maxAbs=0;
+  secs.forEach(s=>topFeats.forEach(f=>{const v=cellVal(s,f);if(v!=null&&Math.abs(v)>maxAbs)maxAbs=Math.abs(v);}));
+  if(maxAbs<1e-8)maxAbs=1;
+
+  const cellBg=(v)=>{
+    if(v==null)return'background:#0e0e0e';
+    const a=Math.min(0.9,0.12+0.78*Math.abs(v)/maxAbs);
+    return v>0?`background:rgba(16,185,129,${a.toFixed(2)})`:`background:rgba(239,68,68,${a.toFixed(2)})`;
+  };
+  const cellTxt=(v)=>{if(v==null)return'<span style="color:#222">·</span>';const c=v>0?'rgba(187,247,208,0.9)':'rgba(254,202,202,0.9)';return`<span style="color:${c};font-family:monospace;font-size:10px;font-weight:700">${v>0?'+':''}${(v*1000).toFixed(1)}<span style="font-size:8px">‰</span></span>`;};
+
+  // Abbreviate feature name
+  const abbr=n=>n.replace('macro_','m_').replace('price_fd_','fd_').replace('ann_','an_').replace('vol_','v_').replace('_ratio','_r').replace('_pct','%').replace('_20d','20').replace('_10d','10').replace('_5d','5').replace('_14','14').replace('_20','20');
+
+  let htm=`<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:11px;width:100%">`;
+  htm+=`<thead><tr><th style="padding:5px 8px;text-align:left;color:var(--gold);font-size:10px;border-bottom:1px solid #2a2a2a;white-space:nowrap">Sector</th>`;
+  topFeats.forEach(f=>{const cat=getFeatCat(f);const dot=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${_CAT_COLOR[cat]||'#6b7280'};margin-bottom:2px"></span>`;htm+=`<th style="padding:3px 4px;text-align:center;border-bottom:1px solid #2a2a2a;white-space:nowrap"><div style="writing-mode:vertical-rl;transform:rotate(180deg);height:70px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px"><span style="color:#9ca3af;font-size:9px">${abbr(f)}</span>${dot}</div></th>`;});
+  htm+=`</tr></thead><tbody>`;
+  secs.forEach(s=>{
+    const ms=secGroups[s];
+    const avgHo=ms.filter(m=>m.ho_pf).reduce((a,m)=>a+m.ho_pf,0)/(ms.filter(m=>m.ho_pf).length||1);
+    const pfC=avgHo>=1.10?'var(--green)':avgHo>=1.00?'#fbbf24':RED;
+    htm+=`<tr><td style="padding:5px 8px;font-weight:600;color:#e5e7eb;white-space:nowrap;border-bottom:1px solid #1a1a1a">${s} <span style="color:${pfC};font-size:10px;font-family:monospace">${avgHo.toFixed(2)}</span> <span style="color:#4b5563;font-size:9px">n=${ms.length}</span></td>`;
+    topFeats.forEach(f=>{const v=cellVal(s,f);htm+=`<td style="padding:3px 4px;text-align:center;border-bottom:1px solid #1a1a1a;${cellBg(v)}">${cellTxt(v)}</td>`;});
+    htm+=`</tr>`;
+  });
+  htm+=`</tbody></table></div>`;
+  htm+=`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px">`;
+  Object.entries(_CAT_COLOR).forEach(([cat,col])=>{htm+=`<span style="font-size:10px;display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col}"></span><span style="color:#9ca3af">${cat}</span></span>`;});
+  htm+=`<span style="font-size:10px;color:#4b5563;margin-left:8px">values in ‰ (avg signed weight × 1000) · green=bullish · red=bearish</span></div>`;
+  el('meta-feat-heatmap').innerHTML=htm;
+
+  // ── 2. Market Cap vs HO PF scatter ───────────────────────────────────────
+  const mcValid=joined.filter(r=>r.market_cap&&r.market_cap>0&&r.ho_pf!=null);
+  const secKeys=[...new Set(mcValid.map(r=>r.sector))].sort();
+  const mcDatasets=secKeys.map((s,i)=>({
+    type:'scatter',label:s,
+    data:mcValid.filter(r=>r.sector===s).map(r=>({x:Math.log10(r.market_cap),y:r.ho_pf,ticker:r.ticker,mc:r.market_cap,sector:s})),
+    backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:5,pointHoverRadius:8,
+  }));
+  // reference lines
+  mcDatasets.push({type:'line',label:'Edge (HO PF=1.10)',data:[{x:5,y:1.10},{x:12,y:1.10}],borderColor:'rgba(16,185,129,0.25)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false});
+  mcDatasets.push({type:'line',label:'Large cap ($1B)',data:[{x:9,y:0.5},{x:9,y:2.2}],borderColor:'rgba(255,255,255,0.10)',borderDash:[3,4],borderWidth:1,pointRadius:0,fill:false});
+  const mcCtx=el('meta-marketcap-chart')?.getContext('2d');
+  if(mcCtx){
+    if(_metaMcapChart)_metaMcapChart.destroy();
+    _metaMcapChart=new Chart(mcCtx,{data:{datasets:mcDatasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(!p?.ticker)return '';const mc=p.mc>=1e9?`$${(p.mc/1e9).toFixed(1)}B`:p.mc>=1e6?`$${(p.mc/1e6).toFixed(0)}M`:'<$1M';return[`${p.ticker} (${p.sector})`,`HO PF: ${p.y.toFixed(3)} · Mkt Cap: ${mc}`];}}}},
+      scales:{x:{title:{display:true,text:'Market Cap (log scale)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>{const vals={6:'$1M',7:'$10M',8:'$100M',9:'$1B',10:'$10B',11:'$100B'};return vals[v]||'';}}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 3. p-value vs HO PF scatter ──────────────────────────────────────────
+  const pvModels=joined.filter(r=>r.features.length>0&&r.ho_pf!=null);
+  function avgTopPval(feats,n=5){
+    const top=feats.slice(0,n).filter(f=>f.p_value!=null);
+    return top.length?top.reduce((a,f)=>a+f.p_value,0)/top.length:null;
+  }
+  const pvSecKeys=[...new Set(pvModels.map(r=>r.sector))].sort();
+  const pvDatasets=pvSecKeys.map((s,i)=>({
+    type:'scatter',label:s,
+    data:pvModels.filter(r=>r.sector===s).map(r=>{const pv=avgTopPval(r.features);return pv!=null?{x:pv,y:r.ho_pf,ticker:r.ticker,pv,fc:r.feature_count}:null;}).filter(Boolean),
+    backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7,
+  }));
+  pvDatasets.push({type:'line',label:'p=0.05',data:[{x:0.05,y:0.5},{x:0.05,y:2.2}],borderColor:'rgba(245,165,32,0.25)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false});
+  pvDatasets.push({type:'line',label:'HO PF=1.10',data:[{x:0,y:1.10},{x:0.5,y:1.10}],borderColor:'rgba(16,185,129,0.20)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false});
+  const pvCtx=el('meta-pvalue-chart')?.getContext('2d');
+  if(pvCtx){
+    if(_metaPvalChart)_metaPvalChart.destroy();
+    _metaPvalChart=new Chart(pvCtx,{data:{datasets:pvDatasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(!p?.ticker)return'';return[`${p.ticker}  HO PF: ${p.y.toFixed(3)}`,`Avg top-5 p-value: ${p.pv.toFixed(3)} · ${p.fc} features`];}}}},
+      scales:{x:{min:0,max:0.5,title:{display:true,text:'Avg p-value of top 5 features (lower = more significant)',color:'#6b7280',font:{size:10}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 4. Feature Category Composition per Sector (normalised 100% stacked) ─
+  const cats=['macro','momentum','volume','interaction','announcement','volatility','candle','trend','other'];
+  const secForCat=secs.slice(0,15); // cap at 15 sectors
+  function catPct(sec,cat){
+    const ms=secGroups[sec]||[];
+    const total=ms.reduce((a,m)=>a+m.features.length,0);
+    const cnt=ms.reduce((a,m)=>a+m.features.filter(f=>f.category===cat).length,0);
+    return total?cnt/total*100:0;
+  }
+  const catDatasets=cats.map(cat=>({
+    label:cat,
+    data:secForCat.map(s=>+catPct(s,cat).toFixed(1)),
+    backgroundColor:_CAT_COLOR[cat]||'rgba(107,114,128,0.6)',
+    borderWidth:0,
+  }));
+  const catCtx=el('meta-cat-chart')?.getContext('2d');
+  if(catCtx){
+    if(_metaCatChart)_metaCatChart.destroy();
+    _metaCatChart=new Chart(catCtx,{type:'bar',data:{labels:secForCat,datasets:catDatasets},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`}}},
+      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+
+  // ── 5. Top Features by Importance (frequency × avg |signed|) ─────────────
+  const featStats={};
+  joined.forEach(m=>m.features.forEach(f=>{
+    if(!featStats[f.name])featStats[f.name]={freq:0,signedSum:0,cat:f.category};
+    featStats[f.name].freq++;
+    featStats[f.name].signedSum+=f.signed;
+  }));
+  const nModels=joined.length||1;
+  const topImportance=Object.entries(featStats)
+    .map(([name,s])=>({name,freq:s.freq,avgSigned:s.signedSum/s.freq,freqPct:s.freq/nModels*100,cat:s.cat}))
+    .sort((a,b)=>b.freq-a.freq).slice(0,25);
+
+  const tfCtx=el('meta-topfeat-chart')?.getContext('2d');
+  if(tfCtx){
+    if(_metaTopFeatChart)_metaTopFeatChart.destroy();
+    const tfColors=topImportance.map(f=>_CAT_COLOR[f.cat]||'rgba(107,114,128,0.6)');
+    const tfLabels=topImportance.map(f=>abbr(f.name));
+    _metaTopFeatChart=new Chart(tfCtx,{type:'bar',data:{
+      labels:tfLabels,
+      datasets:[{
+        label:'% models using feature',
+        data:topImportance.map(f=>+f.freqPct.toFixed(1)),
+        backgroundColor:tfColors,borderColor:tfColors,borderWidth:1,borderRadius:3,
+      }]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const f=topImportance[ctx.dataIndex];const dir=f.avgSigned>0?'bullish ↑':'bearish ↓';return[`${f.name} (${f.cat})`,`${ctx.raw.toFixed(1)}% of models · avg direction: ${dir}`];}}}},
+      scales:{x:{max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of filtered models that selected this feature',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
   }
 }
