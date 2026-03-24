@@ -963,6 +963,25 @@ function _buildLegend() {
     note2.style.cssText = 'font-size:10px;color:#3a3a3a;margin-top:2px';
     note2.textContent = 'Diamond points in direction of travel';
     el.appendChild(note2);
+
+    // Zone counts + skipped note
+    const sd = _sowData && _sowData.ships;
+    if (sd && sd.zones) {
+      const shownTotal   = Object.values(sd.zones).reduce((s, z) => s + (z.count   || 0), 0);
+      const skippedTotal = Object.values(sd.zones).reduce((s, z) => s + (z.skipped || 0), 0);
+      const zoneEl = document.createElement('div');
+      zoneEl.style.cssText = 'margin-top:6px;font-size:10px;color:#5a5a5a;border-top:1px solid #1a1a1a;padding-top:4px';
+      let html = Object.entries(sd.zones)
+        .filter(([, z]) => z.count > 0)
+        .sort(([, a], [, b]) => b.count - a.count)
+        .map(([, z]) => `<div>${z.label}: ${z.count}${z.skipped ? ` <span style="color:#3a3a3a">+${z.skipped} not shown</span>` : ''}</div>`)
+        .join('');
+      if (skippedTotal > 0) {
+        html += `<div style="color:#e07a30;margin-top:3px">⚠ ${skippedTotal} ships above zone cap not shown</div>`;
+      }
+      zoneEl.innerHTML = html;
+      el.appendChild(zoneEl);
+    }
   }
 
   if (_sowLayers.mining.enabled) {

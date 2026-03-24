@@ -1,24 +1,28 @@
 {
-  "generated_at": "2026-03-24T00:35:43Z",
-  "n_tickers": 136,
-  "n_models": 156,
+  "generated_at": "2026-03-24T00:50:02.296676+00:00",
+  "n_tickers": 145,
+  "n_models": 160,
   "models": {
     "A2M.AX": [
       {
+        "safe_name": "a2m_ax",
+        "label": "Ridge (1yr)",
+        "file": "model_lab_a2m_ax.json",
+        "is_pf": null,
+        "is_sharpe": null,
+        "ho_pf": null,
+        "ho_sharpe": null
+      }
+    ],
+    "A2M.AX (Regime-Weighted 3M)": [
+      {
         "safe_name": "a2m_ax_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
+        "label": "A2M Ax Regime 3M",
+        "file": "model_lab_a2m_ax_regime_3m.json",
         "is_pf": 1.0479,
         "is_sharpe": 0.244,
         "ho_pf": 1.2762,
-        "ho_sharpe": 1.3349,
-        "overfit_signal": "MEDIUM",
-        "n_windows": 37,
-        "bars": 2781,
-        "period_start": "2015-03-31",
-        "period_end": "2026-03-24"
+        "ho_sharpe": 1.3349
       }
     ],
     "AAJ.AX": [
@@ -30,22 +34,17 @@
         "is_sharpe": 0.2503,
         "ho_pf": 0.693,
         "ho_sharpe": -2.0509
-      },
+      }
+    ],
+    "AAJ.AX (Regime-Weighted 3M)": [
       {
         "safe_name": "aaj_ax_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
+        "label": "Aaj Ax Regime 3M",
+        "file": "model_lab_aaj_ax_regime_3m.json",
         "is_pf": 1.4769,
         "is_sharpe": 1.4897,
         "ho_pf": 1.2775,
-        "ho_sharpe": 1.2843,
-        "overfit_signal": "LOW",
-        "n_windows": 54,
-        "bars": 3868,
-        "period_start": "2010-12-02",
-        "period_end": "2026-03-23"
+        "ho_sharpe": 1.2843
       }
     ],
     "AGL.AX": [
@@ -57,22 +56,17 @@
         "is_sharpe": -0.1536,
         "ho_pf": 0.7668,
         "ho_sharpe": -1.2034
-      },
+      }
+    ],
+    "AGL.AX (Regime-Weighted 3M)": [
       {
         "safe_name": "agl_ax_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
+        "label": "Agl Ax Regime 3M",
+        "file": "model_lab_agl_ax_regime_3m.json",
         "is_pf": 1.0602,
         "is_sharpe": 0.3092,
         "ho_pf": 1.0096,
-        "ho_sharpe": 0.0426,
-        "overfit": "MEDIUM",
-        "n_windows": 99,
-        "bars": 6670,
-        "period_start": "2000-01-04",
-        "period_end": "2026-03-23"
+        "ho_sharpe": 0.0426
       }
     ],
     "AKE.AX": [
@@ -152,7 +146,17 @@
         "ho_sharpe": -1.8882
       }
     ],
-    "ASX.AX": [],
+    "ASX.AX": [
+      {
+        "safe_name": "asx_ax",
+        "label": "Ridge (1yr)",
+        "file": "model_lab_asx_ax.json",
+        "is_pf": null,
+        "is_sharpe": null,
+        "ho_pf": null,
+        "ho_sharpe": null
+      }
+    ],
     "AUC.AX": [
       {
         "safe_name": "auc_ax",
@@ -164,7 +168,17 @@
         "ho_sharpe": 0.169
       }
     ],
-    "AZJ.AX": [],
+    "AZJ.AX": [
+      {
+        "safe_name": "azj_ax",
+        "label": "Ridge (1yr)",
+        "file": "model_lab_azj_ax.json",
+        "is_pf": null,
+        "is_sharpe": null,
+        "ho_pf": null,
+        "ho_sharpe": null
+      }
+    ],
     "BGL.AX": [
       {
         "safe_name": "bgl_ax",
@@ -181,32 +195,28 @@
         "safe_name": "bhp_ax",
         "label": "Ridge (1yr)",
         "file": "model_lab_bhp_ax.json",
-        "is_pf": 1.2225,
-        "is_sharpe": 1.1961,
-        "ho_pf": 0.8869,
-        "ho_sharpe": -0.7485
+        "is_pf": 1.206,
+        "is_sharpe": 1.1159,
+        "ho_pf": 0.8818,
+        "ho_sharpe": -0.7845
       },
       {
         "safe_name": "bhp_ax_v2",
-        "label": "Ridge V2 (5Y)",
+        "label": "V2",
         "file": "model_lab_bhp_ax_v2.json",
-        "ticker_raw": "BHP.AX",
         "is_pf": 1.172,
         "is_sharpe": 0.9455,
         "ho_pf": 0.8634,
-        "ho_sharpe": -0.9153,
-        "overfit_signal": "HIGH"
+        "ho_sharpe": -0.9153
       },
       {
         "safe_name": "bhp_ax_v3",
-        "label": "Ridge V3 (5Y)",
+        "label": "V3",
         "file": "model_lab_bhp_ax_v3.json",
-        "ticker_raw": "BHP.AX",
         "is_pf": 1.0114,
         "is_sharpe": 0.0675,
         "ho_pf": 0.9343,
-        "ho_sharpe": -0.4214,
-        "overfit_signal": "NO_EDGE"
+        "ho_sharpe": -0.4214
       }
     ],
     "BMN.AX": [
@@ -287,14 +297,12 @@
       },
       {
         "safe_name": "cba_ax_v3",
-        "label": "Ridge V3 (5Y)",
+        "label": "V3",
         "file": "model_lab_cba_ax_v3.json",
-        "ticker_raw": "CBA.AX",
         "is_pf": 0.9342,
         "is_sharpe": -0.3983,
         "ho_pf": 1.0415,
-        "ho_sharpe": 0.2244,
-        "overfit_signal": "NO_EDGE"
+        "ho_sharpe": 0.2244
       }
     ],
     "CHN.AX": [
@@ -1032,6 +1040,59 @@
         "ho_sharpe": -0.4831
       }
     ],
+    "PRN.AX": [
+      {
+        "safe_name": "prn_ax",
+        "label": "Ridge (1yr)",
+        "file": "model_lab_prn_ax.json",
+        "is_pf": 1.0758,
+        "is_sharpe": 0.4094,
+        "ho_pf": 0.6962,
+        "ho_sharpe": -2.1219
+      },
+      {
+        "safe_name": "prn_18y",
+        "label": "18yr \u00b7 1yr window",
+        "file": "model_lab_prn_18y.json",
+        "is_pf": 0.9888,
+        "is_sharpe": -0.0602,
+        "ho_pf": 1.0043,
+        "ho_sharpe": 0.0255
+      }
+    ],
+    "PRN.AX (Regime-Weighted 1Y)": [
+      {
+        "safe_name": "prn_ax_regime_1y",
+        "label": "Prn Ax Regime 1Y",
+        "file": "model_lab_prn_ax_regime_1y.json",
+        "is_pf": 0.9537,
+        "is_sharpe": -0.2539,
+        "ho_pf": 0.8785,
+        "ho_sharpe": -0.7623
+      }
+    ],
+    "PRN.AX (Regime-Weighted 3M)": [
+      {
+        "safe_name": "prn_ax_regime_3m",
+        "label": "Prn Ax Regime 3M",
+        "file": "model_lab_prn_ax_regime_3m.json",
+        "is_pf": 0.9742,
+        "is_sharpe": -0.14,
+        "ho_pf": 0.7198,
+        "ho_sharpe": -1.9328
+      }
+    ],
+    "PRN.AX (Regime-Weighted 6M)": [
+      {
+        "safe_name": "prn_ax_regime_6m",
+        "label": "Prn Ax Regime 6M",
+        "file": "model_lab_prn_ax_regime_6m.json",
+        "is_pf": 1.048,
+        "is_sharpe": 0.2498,
+        "ho_pf": 0.973,
+        "ho_sharpe": -0.1608
+      }
+    ],
     "PRU.AX": [
       {
         "safe_name": "pru_ax",
@@ -1384,6 +1445,17 @@
         "ho_sharpe": null
       }
     ],
+    "TLS.AX": [
+      {
+        "safe_name": "tls_ax",
+        "label": "Ridge (1yr)",
+        "file": "model_lab_tls_ax.json",
+        "is_pf": 1.097,
+        "is_sharpe": 0.5322,
+        "ho_pf": 1.2409,
+        "ho_sharpe": 1.2326
+      }
+    ],
     "TNE.AX": [
       {
         "safe_name": "tne_ax",
@@ -1464,54 +1536,37 @@
         "is_sharpe": -0.1443,
         "ho_pf": 0.8864,
         "ho_sharpe": -0.7401
-      },
-      {
-        "safe_name": "wbc_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
-        "is_pf": 1.0248,
-        "is_sharpe": 0.1349,
-        "ho_pf": 1.2447,
-        "ho_sharpe": 1.3242,
-        "n_windows": 65,
-        "bars": 4553,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-23",
-        "overfit_signal": "MEDIUM"
-      },
-      {
-        "safe_name": "wbc_regime_1y",
-        "label": "Regime-Weighted 1Y",
-        "model_type": "regime_similarity",
-        "step_days": 252,
-        "sigma": 1.5,
-        "is_pf": 1.0219,
-        "is_sharpe": 0.1195,
-        "ho_pf": 1.2447,
-        "ho_sharpe": 1.3242,
-        "n_windows": 16,
-        "bars": 4553,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-23",
-        "overfit_signal": "MEDIUM"
-      },
+      }
+    ],
+    "WBC.AX (Regime-Weighted 3M)": [
       {
         "safe_name": "wbc_ax_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
+        "label": "Wbc Ax Regime 3M",
+        "file": "model_lab_wbc_ax_regime_3m.json",
         "is_pf": 1.0102,
         "is_sharpe": 0.0567,
         "ho_pf": 0.7926,
-        "ho_sharpe": -1.4238,
-        "overfit_signal": "NO_EDGE",
-        "n_windows": 65,
-        "bars": 4554,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-24"
+        "ho_sharpe": -1.4238
+      },
+      {
+        "safe_name": "wbc_regime_3m",
+        "label": "Wbc Regime 3M",
+        "file": "model_lab_wbc_regime_3m.json",
+        "is_pf": 1.0771,
+        "is_sharpe": 0.4148,
+        "ho_pf": 1.0944,
+        "ho_sharpe": 0.5542
+      }
+    ],
+    "WBC.AX (Regime-Weighted 1Y)": [
+      {
+        "safe_name": "wbc_regime_1y",
+        "label": "Wbc Regime 1Y",
+        "file": "model_lab_wbc_regime_1y.json",
+        "is_pf": 1.0431,
+        "is_sharpe": 0.2354,
+        "ho_pf": 0.8249,
+        "ho_sharpe": -1.1821
       }
     ],
     "WDS.AX": [
@@ -1676,76 +1731,6 @@
         "is_sharpe": 0.4464,
         "ho_pf": 1.1926,
         "ho_sharpe": 0.8945
-      }
-    ],
-    "PRN.AX": [
-      {
-        "safe_name": "prn_ax",
-        "label": "Ridge (5yr)",
-        "file": "model_lab_prn_ax.json",
-        "is_pf": 1.0065,
-        "is_sharpe": 0.036,
-        "ho_pf": 0.6752,
-        "ho_sharpe": -2.2828,
-        "overfit_signal": "NO_EDGE"
-      },
-      {
-        "safe_name": "prn_18y",
-        "label": "18yr \u00b7 1yr window",
-        "file": "model_lab_prn_18y.json",
-        "is_pf": 0.9888,
-        "is_sharpe": -0.0602,
-        "ho_pf": 1.0043,
-        "ho_sharpe": 0.0255,
-        "overfit_signal": "NO_EDGE"
-      },
-      {
-        "safe_name": "prn_ax_regime_3m",
-        "label": "Regime-Weighted 3M",
-        "model_type": "regime_similarity",
-        "step_days": 63,
-        "sigma": 1.5,
-        "is_pf": 0.933,
-        "is_sharpe": -0.3668,
-        "ho_pf": 0.7557,
-        "ho_sharpe": -1.6232,
-        "n_windows": 65,
-        "bars": 4553,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-23",
-        "overfit_signal": "NO_EDGE"
-      },
-      {
-        "safe_name": "prn_ax_regime_6m",
-        "label": "Regime-Weighted 6M",
-        "model_type": "regime_similarity",
-        "step_days": 126,
-        "sigma": 1.5,
-        "is_pf": 1.052,
-        "is_sharpe": 0.2695,
-        "ho_pf": 0.72,
-        "ho_sharpe": -1.9109,
-        "n_windows": 32,
-        "bars": 4553,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-23",
-        "overfit_signal": "NO_EDGE"
-      },
-      {
-        "safe_name": "prn_ax_regime_1y",
-        "label": "Regime-Weighted 1Y",
-        "model_type": "regime_similarity",
-        "step_days": 252,
-        "sigma": 1.5,
-        "is_pf": 1.0942,
-        "is_sharpe": 0.4804,
-        "ho_pf": 0.9896,
-        "ho_sharpe": -0.0612,
-        "n_windows": 16,
-        "bars": 4553,
-        "period_start": "2008-03-25",
-        "period_end": "2026-03-23",
-        "overfit_signal": "HIGH"
       }
     ]
   }

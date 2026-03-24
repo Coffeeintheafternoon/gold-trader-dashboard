@@ -1404,7 +1404,7 @@ function buildMLRegimePanel(d) {
   bottomEl.innerHTML = `
     <div>
       <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">
-        Current Macro State (IS End — Regime Anchor)
+        Current Macro State (Live — Regime Anchor)
       </div>
       ${varRows}
       <div style="margin-top:8px;font-size:11px;color:var(--muted)">
