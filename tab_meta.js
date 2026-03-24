@@ -334,7 +334,9 @@ function _buildFeatureCharts(filtered){
   const joined=filtered.map(r=>{
     const fd=featLookup[`${r.ticker}|${r.model_type}`];
     const mc=_MC[r.ticker]||null;
-    return fd?{...r,features:fd.features,feature_count:fd.feature_count,market_cap:mc}:{...r,features:[],feature_count:0,market_cap:mc};
+    // Spread all fd fields (includes trade stats) then override with r (primary source),
+    // then pin features/feature_count/market_cap explicitly.
+    return fd?{...fd,...r,features:fd.features,feature_count:fd.feature_count,market_cap:mc}:{...r,features:[],feature_count:0,market_cap:mc};
   }).filter(r=>r.ho_pf!=null);
 
   // ── Shared helpers ────────────────────────────────────────────────────────
@@ -472,6 +474,9 @@ function _buildFeatureCharts(filtered){
 
   // ── Advanced Analytics (10 charts) ───────────────────────────────────────
   _buildAdvancedCharts(filtered, joined, topFeats, abbr);
+
+  // ── Edge Intelligence (4 charts) ─────────────────────────────────────────
+  _buildEdgeIntelCharts(joined);
 
   // ── Trade & Model Analytics (20 charts) ──────────────────────────────────
   _buildTradeCharts(filtered, joined);
@@ -853,4 +858,129 @@ function _buildTradeCharts(filtered,joined){
   DT(19);_trCharts[19]=buildLongShort('meta-ma5b',mcGrp,mcOrder,'wr');
   window._m5aToggle=function(mode){['wr','ret'].forEach(m=>{const b=document.getElementById('m5a-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(18);_trCharts[18]=buildLongShort('meta-ma5a',secGrp,secOrder,mode);};
   window._m5bToggle=function(mode){['wr','ret'].forEach(m=>{const b=document.getElementById('m5b-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(19);_trCharts[19]=buildLongShort('meta-ma5b',mcGrp,mcOrder,mode);};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Edge Intelligence — 4 synthesis charts
+// A: 2D Sector × MC Tier edge map (HTML table)
+// B: Feature discriminability (bar — which features predict good models?)
+// C: Win rate → HO PF scatter (what trade stat predicts edge?)
+// D: Per-ticker model consistency (floating bar — reliable tickers)
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildEdgeIntelCharts(joined){
+  const el=id=>document.getElementById(id);
+
+  // ── A: 2D Sector × MC Tier Edge Map ──────────────────────────────────────
+  (function buildEdgeMap(){
+    const cont=el('meta-edge-map');if(!cont)return;
+    const valid=joined.filter(m=>m.ho_pf!=null);
+    const tiers=_MC_TIERS.map(([l])=>l);
+    const grid={},secTotals={};
+    valid.forEach(m=>{
+      const s=m.sector||'Other';const t=_mcTier(m.market_cap);
+      if(!secTotals[s])secTotals[s]=[];secTotals[s].push(m.ho_pf);
+      if(t){if(!grid[s])grid[s]={};if(!grid[s][t])grid[s][t]=[];grid[s][t].push(m.ho_pf);}
+    });
+    const sortedSecs=Object.keys(secTotals).filter(s=>secTotals[s].length>=2).sort((a,b)=>{
+      const ma=secTotals[a].reduce((x,v)=>x+v,0)/secTotals[a].length;
+      const mb=secTotals[b].reduce((x,v)=>x+v,0)/secTotals[b].length;
+      return mb-ma;
+    });
+    const activeTiers=tiers.filter(t=>valid.some(m=>_mcTier(m.market_cap)===t));
+    const avg=arr=>arr.length?arr.reduce((a,v)=>a+v,0)/arr.length:null;
+    const cell=(v,n,bold)=>{
+      if(v==null)return`<td style="padding:5px 8px;text-align:center;color:#2a2a2a;border-bottom:1px solid #111">—</td>`;
+      const bg=v>=1.10?'rgba(16,185,129,0.18)':v>=1.0?'rgba(251,191,36,0.12)':'rgba(239,68,68,0.12)';
+      const tc=v>=1.10?'#6ee7b7':v>=1.0?'#fbbf24':'#f87171';
+      const bdr=bold?'border-left:1px solid #222;':'';
+      return`<td style="padding:5px 8px;text-align:center;background:${bg};border-bottom:1px solid #111;${bdr}"><span style="color:${tc};font-weight:700;font-family:monospace;font-size:11px">${v.toFixed(3)}</span><br><span style="color:#4b5563;font-size:9px">n=${n}</span></td>`;
+    };
+    let html=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">`;
+    html+=`<thead><tr><th style="padding:6px 10px;text-align:left;color:#6b7280;border-bottom:1px solid #222;font-weight:600">Sector ↓ · MC Tier →</th>`;
+    activeTiers.forEach(t=>{html+=`<th style="padding:6px 8px;text-align:center;color:#6b7280;border-bottom:1px solid #222;font-weight:600;min-width:80px;font-size:10px">${t}</th>`;});
+    html+=`<th style="padding:6px 8px;text-align:center;color:var(--gold);border-bottom:1px solid #222;font-weight:600;min-width:75px;border-left:1px solid #222">All</th></tr></thead><tbody>`;
+    sortedSecs.forEach((sec,ri)=>{
+      const rowBg=ri%2===0?'#0d0d0d':'#080808';
+      html+=`<tr style="background:${rowBg}"><td style="padding:6px 10px;color:#9ca3af;font-weight:600;border-bottom:1px solid #111">${sec}</td>`;
+      activeTiers.forEach(t=>{const vals=(grid[sec]||{})[t]||[];html+=cell(avg(vals),vals.length,false);});
+      const allVals=secTotals[sec]||[];html+=cell(avg(allVals),allVals.length,true);
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    html+=`<div style="margin-top:10px;font-size:10px;color:#4b5563">Cell = avg HO PF · <span style="color:#6ee7b7">green ≥ 1.10</span> · <span style="color:#fbbf24">amber ≥ 1.0</span> · <span style="color:#f87171">red < 1.0</span> · "—" = no models in that cell</div>`;
+    cont.innerHTML=html;
+  })();
+
+  // ── B: Feature Discriminability ───────────────────────────────────────────
+  (function buildFeatDiscrim(){
+    const ctx=el('meta-ei-discrim')?.getContext('2d');if(!ctx)return;
+    const validPF=joined.filter(m=>m.ho_pf!=null);
+    // Build include/exclude lists per feature
+    const featInc={};
+    validPF.forEach(m=>{
+      const seen=new Set();
+      (m.features||[]).forEach(f=>{if(f.name&&!seen.has(f.name)){seen.add(f.name);if(!featInc[f.name])featInc[f.name]=[];featInc[f.name].push(m);}});
+    });
+    const avg=arr=>arr.length?arr.reduce((a,v)=>a+v,0)/arr.length:null;
+    const entries=Object.entries(featInc)
+      .filter(([,ms])=>ms.length>=8)
+      .map(([name,incMs])=>{
+        const excMs=validPF.filter(m=>!(m.features||[]).some(f=>f.name===name));
+        const incAvg=avg(incMs.map(m=>m.ho_pf));
+        const excAvg=avg(excMs.map(m=>m.ho_pf));
+        const diff=incAvg!=null&&excAvg!=null?incAvg-excAvg:null;
+        return{name,incAvg,excAvg,diff,n:incMs.length};
+      })
+      .filter(e=>e.diff!=null)
+      .sort((a,b)=>b.diff-a.diff);
+    const show=[...entries.slice(0,15),...entries.filter(e=>e.diff<0).slice(-5)];
+    const abbr2=s=>s.length>24?s.slice(0,22)+'…':s;
+    new Chart(ctx,{type:'bar',
+      data:{labels:show.map(e=>abbr2(e.name)),datasets:[
+        {label:'Avg HO PF when included',data:show.map(e=>+e.incAvg.toFixed(4)),backgroundColor:show.map(e=>e.diff>=0?GREEN_7:RED_55),borderWidth:0,borderRadius:3},
+        {label:'Avg HO PF when excluded',data:show.map(e=>+e.excAvg.toFixed(4)),backgroundColor:'rgba(107,114,128,0.38)',borderWidth:0,borderRadius:3},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:c=>{const e=show[c.dataIndex];return c.datasetIndex===0?[`Included (n=${e.n}): ${c.raw?.toFixed(4)}`,`Δ vs excluded: ${e.diff>=0?'+':''}${e.diff.toFixed(4)}`]:[`Excluded: ${c.raw?.toFixed(4)}`];}}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO Profit Factor  ·  gap = alpha contribution of this feature',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  })();
+
+  // ── C: Win Rate → HO PF + Payoff → HO PF scatter ─────────────────────────
+  ['wr','payoff'].forEach(mode=>{
+    const ctx=el(mode==='wr'?'meta-ei-wr-pf':'meta-ei-payoff-pf')?.getContext('2d');if(!ctx)return;
+    const valid=joined.filter(m=>m.ho_pf!=null&&(mode==='wr'?m.win_rate_ho!=null:m.payoff_ratio!=null));
+    const secs=[...new Set(valid.map(m=>m.sector||'Other'))].sort();
+    const datasets=secs.map((s,i)=>({type:'scatter',label:s,
+      data:valid.filter(m=>(m.sector||'Other')===s).map(m=>({x:mode==='wr'?m.win_rate_ho*100:m.payoff_ratio,y:m.ho_pf,ticker:m.ticker})),
+      backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    datasets.push({type:'line',label:'_e',data:[{x:mode==='wr'?0:0,y:1.10},{x:mode==='wr'?100:6,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
+    new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker}`,mode==='wr'?`Win rate: ${p.x.toFixed(1)}%`:`Payoff: ${p.x.toFixed(2)}x`,`HO PF: ${p.y.toFixed(3)}`];return[];}}}},
+      scales:{x:{title:{display:true,text:mode==='wr'?'Win Rate % (HO)':'Payoff Ratio (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>mode==='wr'?v+'%':v+'x'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  });
+
+  // ── D: Per-Ticker Model Consistency (floating bar) ────────────────────────
+  (function buildTickerConsistency(){
+    const ctx=el('meta-ei-ticker-consist')?.getContext('2d');if(!ctx)return;
+    const valid=joined.filter(m=>m.ho_pf!=null);
+    const tg={};
+    valid.forEach(m=>{if(!tg[m.ticker])tg[m.ticker]=[];tg[m.ticker].push(m.ho_pf);});
+    const entries=Object.entries(tg).filter(([,pfs])=>pfs.length>=2).map(([ticker,pfs])=>{
+      const a=pfs.reduce((x,v)=>x+v,0)/pfs.length;
+      return{ticker,avg:a,min:Math.min(...pfs),max:Math.max(...pfs),n:pfs.length,
+        allGood:pfs.every(v=>v>=1.10),someGood:pfs.some(v=>v>=1.10)};
+    }).sort((a,b)=>b.avg-a.avg).slice(0,35);
+    const colors=entries.map(e=>e.allGood?GREEN_7:e.someGood?'rgba(251,191,36,0.65)':RED_55);
+    new Chart(ctx,{type:'bar',
+      data:{labels:entries.map(e=>e.ticker),datasets:[
+        {label:'HO PF range',data:entries.map(e=>[e.min,e.max]),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:2},
+        {type:'scatter',label:'Avg HO PF',data:entries.map((e,i)=>({x:i,y:e.avg,n:e.n,ticker:e.ticker})),backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:9,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0){const e=entries[c.dataIndex];return[`${e.ticker} · ${e.n} variants`,`Range: ${e.min.toFixed(3)} → ${e.max.toFixed(3)}`,`Avg: ${e.avg.toFixed(3)} · ${e.allGood?'✓ all pass':e.someGood?'~ mixed':'✗ none pass'}`];}const p=c.raw;return[`Avg HO PF: ${p.y?.toFixed(3)}`];}}}},
+        scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9},maxRotation:45}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}}}}}});
+  })();
 }

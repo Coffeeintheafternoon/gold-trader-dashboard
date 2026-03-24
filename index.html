@@ -1094,6 +1094,49 @@
       </div>
     </div>
 
+    <!-- ══ EDGE INTELLIGENCE ═════════════════════════════════════════════════ -->
+    <div class="section-divider" style="margin-top:16px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🎯</span>
+      <span class="section-divider-label">Edge Intelligence — Where Is the Alpha Concentrated?</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- A: 2D Sector × MC Tier Edge Map (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">2D Edge Map — Sector × Market Cap Tier</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">Avg HO PF for every sector × size intersection · green = strong edge · red = no edge · "—" = no models in that cell · sorted by overall avg HO PF</div>
+      <div id="meta-edge-map"></div>
+    </div>
+
+    <!-- B: Feature Discriminability (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Feature Discriminability — Which Features Predict Good Models?</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">For each feature: avg HO PF of models that include it vs. exclude it · a large gap means including this feature is strongly associated with better edge · requires ≥ 8 appearances</div>
+      <div class="chart-wrap" style="height:500px;margin-top:12px"><canvas id="meta-ei-discrim"></canvas></div>
+    </div>
+
+    <!-- C: Win Rate → PF + Payoff → PF scatter -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Win Rate vs HO PF — What Predicts Edge?</div>
+        <div class="chart-subtitle">Does a high win rate = better model? · each dot = 1 model · dashed = HO PF 1.10 threshold · colour = sector</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ei-wr-pf"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Payoff Ratio vs HO PF — What Predicts Edge?</div>
+        <div class="chart-subtitle">Does a high payoff ratio = better model? · or is win rate the driver? · colour = sector · dashed = edge threshold</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ei-payoff-pf"></canvas></div>
+      </div>
+    </div>
+
+    <!-- D: Per-Ticker Consistency (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Per-Ticker Model Consistency — Which Tickers Produce Reliable Models?</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">For each ticker with 2+ model variants: bar = min→max HO PF range · gold × = avg · green = all variants pass · amber = some pass · red = none pass · sorted by avg HO PF</div>
+      <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ei-ticker-consist"></canvas></div>
+    </div>
+
     <!-- ══ TRADE LOG ANALYTICS ═══════════════════════════════════════════════ -->
     <div class="section-divider" style="margin-top:16px">
       <div class="section-divider-line"></div>
