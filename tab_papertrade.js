@@ -24,7 +24,7 @@ async function _ptLoad() {
   document.getElementById('pt-spinner').style.display = 'none';
   document.getElementById('pt-content').style.display = 'block';
 
-  if (!portfolio || portfolio._status === 'uninitialised') {
+  if (!portfolio || (!portfolio.last_updated && !portfolio.equity_curve?.length)) {
     _ptShowEmpty();
     return;
   }
