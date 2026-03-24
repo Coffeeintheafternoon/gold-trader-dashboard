@@ -14,18 +14,23 @@ let _filteredRows=[];
 let _metaTop20=[];
 
 let _modelIndex = null; // {ticker: [{safe_name, label, file, is_pf, ...}]}
+let _tickerNotes = {}; // {ticker: {label, note}}
 
 async function loadFullScreenerPanel() {
   let data;
   try { const res=await fetch(`screener_full.json?v=${_CV}`); if(!res.ok)return; data=await res.json(); } catch(e){return;}
   const tickers=data.tickers||[];if(!tickers.length)return;
 
-  // Load model index and attach models to each ticker row
+  // Load model index and ticker notes, attach to each ticker row
   try {
     const mi=await fetch(`model_index.json?v=${_CV}`);
     if(mi.ok){ const midx=await mi.json(); _modelIndex=midx.models||{}; }
   } catch(_){}
-  tickers.forEach(t=>{ t._models=(_modelIndex&&_modelIndex[t.ticker])||[]; });
+  try {
+    const nr=await fetch(`ticker_notes.json?v=${_CV}`);
+    if(nr.ok){ const nd=await nr.json(); _tickerNotes=nd||{}; }
+  } catch(_){}
+  tickers.forEach(t=>{ t._models=(_modelIndex&&_modelIndex[t.ticker])||[]; t._note=_tickerNotes[t.ticker]||null; });
 
   _fullScreenerData=tickers;
   document.getElementById('full-screener-section').style.display='';
@@ -40,6 +45,21 @@ async function loadFullScreenerPanel() {
   const sel=document.getElementById('full-screener-sector-filter');
   sectors.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
   filterFullScreener();
+}
+
+function _notesBadge(note) {
+  if(!note) return '<span style="color:#333;font-size:10px">—</span>';
+  const cfg = {
+    'BANKRUPT':   { bg:'rgba(220,38,38,0.15)',  border:'rgba(220,38,38,0.5)',  color:'#f87171' },
+    'DO NOT USE': { bg:'rgba(234,88,12,0.15)',  border:'rgba(234,88,12,0.5)',  color:'#fb923c' },
+    'DELIST RISK':{ bg:'rgba(234,179,8,0.12)',  border:'rgba(234,179,8,0.4)', color:'#fbbf24' },
+    'ILLIQUID':   { bg:'rgba(139,92,246,0.12)', border:'rgba(139,92,246,0.4)',color:'#a78bfa' },
+    'MERGED':     { bg:'rgba(75,85,99,0.15)',   border:'rgba(75,85,99,0.5)',  color:'#9ca3af' },
+    'NOTE':       { bg:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.4)',color:'#60a5fa' },
+  };
+  const s = cfg[note.label] || cfg['NOTE'];
+  const tip = note.note ? ` title="${note.note.replace(/"/g,'&quot;')}"` : '';
+  return `<span${tip} style="display:inline-block;padding:2px 7px;border-radius:3px;border:1px solid ${s.border};background:${s.bg};color:${s.color};font-size:10px;font-weight:700;white-space:nowrap">${note.label}</span>`;
 }
 
 function _modelBadges(models, activeTicker) {
@@ -80,12 +100,13 @@ function filterFullScreener() {
     const defaultSafe=t._models&&t._models.length?t._models[0].safe_name:null;
     const clickable=`onclick="openTickerInModelLab('${t.ticker}',{},${defaultSafe?`'${defaultSafe}'`:'null'})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
     const badges=_modelBadges(t._models, t.ticker);
-    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td></tr>`;
+    const noteBadge=_notesBadge(t._note);
+    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
     const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
     const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
-    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td></tr>`;
+    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
   }).join('');
 }
 
