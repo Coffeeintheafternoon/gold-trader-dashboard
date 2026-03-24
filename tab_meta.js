@@ -17,14 +17,19 @@ async function initMetaTab() {
   (_fullScreenerData||[]).forEach(t=>{if(t.ticker)secLookup[t.ticker]=t.sector||'Other';});
 
   // Flatten model_index → one record per model entry
+  // model_type: derived from key suffix "(Regime-Weighted 3M)" if present, else entry.label
   _modelIndexFlat=[];
   if(_modelIndexData&&_modelIndexData.models){
+    const _suffixRe=/\(([^)]+)\)\s*$/;
     for(const[key,entries] of Object.entries(_modelIndexData.models)){
-      const ticker=key.replace(/\s*\([^)]*\)\s*$/,'').trim();
+      const suffixMatch=key.match(_suffixRe);
+      const ticker=key.replace(_suffixRe,'').trim();
       (entries||[]).forEach(e=>{
+        const modelType=suffixMatch?suffixMatch[1]:(e.label||'Unknown');
         _modelIndexFlat.push({
           ticker,
-          label:e.label||'Unknown',
+          label:e.label||modelType,
+          model_type:modelType,
           safe_name:e.safe_name||'',
           ho_pf:e.ho_pf,
           ho_sharpe:e.ho_sharpe,
@@ -43,7 +48,7 @@ async function initMetaTab() {
 function _buildFilterButtons() {
   const container=document.getElementById('meta-filter-bar');
   if(!container)return;
-  const rawLabels=[...new Set(_modelIndexFlat.map(r=>r.label))].sort();
+  const rawLabels=[...new Set(_modelIndexFlat.map(r=>r.model_type))].sort();
   const labels=['All',...rawLabels];
   container.innerHTML=labels.map(lbl=>`<button class="meta-filter-btn${lbl===_activeModelFilter?' active':''}" onclick="setMetaFilter(${JSON.stringify(lbl)})">${lbl}</button>`).join('');
 }
@@ -58,7 +63,7 @@ function _buildMetaTab(){
   document.getElementById('meta-spinner').style.display='none';
   document.getElementById('meta-content').style.display='';
 
-  const filtered=_activeModelFilter==='All'?_modelIndexFlat:_modelIndexFlat.filter(r=>r.label===_activeModelFilter);
+  const filtered=_activeModelFilter==='All'?_modelIndexFlat:_modelIndexFlat.filter(r=>r.model_type===_activeModelFilter);
   const valid=filtered.filter(r=>r.ho_pf!=null);
   const edge=valid.filter(r=>r.ho_pf>=1.10);
   const avgHoPF=valid.length?valid.reduce((s,r)=>s+(r.ho_pf||0),0)/valid.length:0;
@@ -123,7 +128,7 @@ function _buildMetaTab(){
     const pfC=r.ho_pf>=1.10?'var(--green)':r.ho_pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=r.ho_sharpe!=null?(r.ho_sharpe>=0.5?'var(--green)':r.ho_sharpe>=0.2?'#fbbf24':'var(--muted)'):'var(--muted)';
     const safePassed=r.safe_name||r.ticker.toLowerCase().replace(/\./g,'_');
-    return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="openTickerInModelLab('${r.ticker}',{},'${safePassed}')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:#e5e7eb">${r.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td><td style="padding:7px 10px;font-size:10px;color:#6b7280;white-space:nowrap">${r.label}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${r.ho_pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${r.ho_sharpe!=null?r.ho_sharpe.toFixed(2):'—'}</td></tr>`;
+    return`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="openTickerInModelLab('${r.ticker}',{},'${safePassed}')" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:#e5e7eb">${r.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td><td style="padding:7px 10px;font-size:10px;color:#6b7280;white-space:nowrap">${r.model_type}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${r.ho_pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${r.ho_sharpe!=null?r.ho_sharpe.toFixed(2):'—'}</td></tr>`;
   }).join('');
 
   // ── Model summary (IS → HO decay) ──────────────────────────────────────────
