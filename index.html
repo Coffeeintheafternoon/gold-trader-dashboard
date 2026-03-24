@@ -981,21 +981,28 @@
       <div id="meta-feat-heatmap"></div>
     </div>
 
-    <!-- Charts 2 + 3: Market Cap scatter + p-value scatter -->
+    <!-- Chart 2: Feature × Market Cap Tier Heatmap (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Feature × Market Cap Tier Heatmap — Signed Weight</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">Top 20 features × market cap tiers · cell = avg signed weight · green = bullish · red = bearish · intensity = strength</div>
+      <div id="meta-mc-heatmap"></div>
+    </div>
+
+    <!-- Charts 3 + 4: HO PF Distribution by Sector and Market Cap -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Market Cap vs HO Profit Factor</div>
-        <div class="chart-subtitle">Does company size predict model edge? · colour = sector · n = models with market cap data</div>
-        <div class="chart-wrap" style="height:300px;margin-top:12px"><canvas id="meta-marketcap-chart"></canvas></div>
+        <div class="chart-title">HO PF Distribution by Sector</div>
+        <div class="chart-subtitle">Every model as a dot · gold × = group mean · sorted by mean HO PF</div>
+        <div class="chart-wrap" style="height:400px;margin-top:12px"><canvas id="meta-dist-sector-chart"></canvas></div>
       </div>
       <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Feature p-value vs HO PF</div>
-        <div class="chart-subtitle">Does statistical significance predict OOS performance? · x = avg p-value of top 5 features · colour = sector</div>
-        <div class="chart-wrap" style="height:300px;margin-top:12px"><canvas id="meta-pvalue-chart"></canvas></div>
+        <div class="chart-title">HO PF Distribution by Market Cap Tier</div>
+        <div class="chart-subtitle">Does company size predict edge? · gold × = group mean · colour = edge status</div>
+        <div class="chart-wrap" style="height:400px;margin-top:12px"><canvas id="meta-dist-mc-chart"></canvas></div>
       </div>
     </div>
 
-    <!-- Charts 4 + 5: Category composition + Top features -->
+    <!-- Charts 5 + 6: Feature Category Composition by Sector and Market Cap -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div class="chart-card" style="padding:20px;margin-bottom:0">
         <div class="chart-title">Feature Category Composition by Sector</div>
@@ -1003,9 +1010,9 @@
         <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-cat-chart"></canvas></div>
       </div>
       <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Top 25 Features by Selection Frequency</div>
-        <div class="chart-subtitle">How often each feature was selected across all filtered models · colour = category</div>
-        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-topfeat-chart"></canvas></div>
+        <div class="chart-title">Feature Category Composition by Market Cap Tier</div>
+        <div class="chart-subtitle">Do large caps use different features to nano caps? · normalised to 100%</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-cat-mc-chart"></canvas></div>
       </div>
     </div>
 
