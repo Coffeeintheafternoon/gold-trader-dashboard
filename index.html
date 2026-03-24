@@ -1016,6 +1016,84 @@
       </div>
     </div>
 
+    <!-- ══ ADVANCED ANALYTICS ════════════════════════════════════════════════ -->
+    <div class="section-divider" style="margin-top:16px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">📊</span>
+      <span class="section-divider-label">Advanced Analytics — Deeper Diagnostics</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Row 1: IS→HO Decay + Cumulative Pass Rate -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">IS→HO Decay by Sector</div>
+        <div class="chart-subtitle">Avg performance decay from in-sample to holdout · red = high overfit risk · green = stable</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-decay-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Cumulative Pass Rate by HO PF Threshold</div>
+        <div class="chart-subtitle">% of models beating each threshold · shows the distribution shape of the whole universe</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-cumpass-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 2: HO Sharpe vs PF + Feature Count vs PF -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">HO Sharpe vs HO PF</div>
+        <div class="chart-subtitle">Risk-return view · colour = sector · dashes = edge thresholds (PF≥1.10 · Sharpe≥0.5)</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-sharpepf-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Final Feature Count vs HO PF</div>
+        <div class="chart-subtitle">Does more features = better edge? · colour = model type · count is post-pruning</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-featcount-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Feature Stability vs PF + Sign Consistency vs PF -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Feature Stability vs HO PF</div>
+        <div class="chart-subtitle">Avg sign-stability of all features vs holdout edge · do stable features = better OOS?</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-stability-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Sign Consistency vs HO PF</div>
+        <div class="chart-subtitle">Avg % time features predict in consistent direction · does consistency predict edge?</div>
+        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-signcon-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 4: Overfit Distribution + Category Directional Bias -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Overfit Flag Distribution by Sector</div>
+        <div class="chart-subtitle">% of models in each sector with each overfit flag · grey = clean (no flag)</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-adv-overfit-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Feature Category Directional Bias</div>
+        <div class="chart-subtitle">Avg signed weight per category across all models · green = net bullish signal · red = net bearish</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-adv-catweight-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 5: HO PF by Model Type + Feature Rank Consistency -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">HO PF Distribution by Model Type</div>
+        <div class="chart-subtitle">Every model as a dot · gold × = mean · sorted best→worst</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-adv-mtdist-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Top 10 Feature Rank Consistency</div>
+        <div class="chart-subtitle">Of models that selected each feature — how often was it ranked in top 5 vs lower bands?</div>
+        <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-adv-rankdist-chart"></canvas></div>
+      </div>
+    </div>
+
   </div>
 </div>
 

@@ -62,6 +62,7 @@ const _MC={
 
 let _metaFeatData=null;
 let _metaDistSectorChart=null,_metaDistMcChart=null,_metaCatChart=null,_metaCatMcChart=null;
+let _advCharts=new Array(10).fill(null);
 let _modelIndexData=null, _screenerFull=null;
 let _modelIndexFlat=[];
 let _activeModelFilter='All';
@@ -467,4 +468,150 @@ function _buildFeatureCharts(filtered){
   if(_metaCatMcChart)_metaCatMcChart.destroy();
   _metaCatMcChart=_buildCatChart('meta-cat-mc-chart');
   _fillCatChart(_metaCatMcChart,mcGroups,mcTierOrder);
+
+  // ── Advanced Analytics (10 extra charts) ─────────────────────────────────
+  _buildAdvancedCharts(filtered, joined, topFeats, abbr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Advanced Analytics — 10 diagnostic charts
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
+  const el=id=>document.getElementById(id);
+  const D=i=>{if(_advCharts[i]){_advCharts[i].destroy();_advCharts[i]=null;}};
+
+  // ── 1. IS→HO Decay by Sector ──────────────────────────────────────────────
+  D(0);
+  const decayMap={};
+  filtered.filter(r=>r.is_pf>0&&r.ho_pf!=null).forEach(r=>{
+    const s=r.sector||'Other';
+    if(!decayMap[s])decayMap[s]={sum:0,n:0};
+    decayMap[s].sum+=(r.is_pf-r.ho_pf)/r.is_pf*100;
+    decayMap[s].n++;
+  });
+  const decayE=Object.entries(decayMap).map(([s,d])=>({s,avg:d.sum/d.n})).sort((a,b)=>b.avg-a.avg);
+  const c1=el('meta-adv-decay-chart')?.getContext('2d');
+  if(c1) _advCharts[0]=new Chart(c1,{type:'bar',
+    data:{labels:decayE.map(e=>e.s),datasets:[{data:decayE.map(e=>+e.avg.toFixed(1)),backgroundColor:decayE.map(e=>e.avg>25?RED_55:e.avg>15?'rgba(251,191,36,0.65)':GREEN_7),borderWidth:0,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`IS→HO decay: ${c.raw.toFixed(1)}%`}}},
+      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+
+  // ── 2. Cumulative Pass Rate by PF threshold ────────────────────────────────
+  D(1);
+  const thresholds=[0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25,1.30,1.40,1.50];
+  const v2=filtered.filter(r=>r.ho_pf!=null);
+  const cumPass=thresholds.map(t=>v2.length?+(v2.filter(r=>r.ho_pf>=t).length/v2.length*100).toFixed(1):0);
+  const c2=el('meta-adv-cumpass-chart')?.getContext('2d');
+  if(c2) _advCharts[1]=new Chart(c2,{type:'line',
+    data:{labels:thresholds.map(t=>t.toFixed(2)),datasets:[{label:'% models ≥ threshold',data:cumPass,borderColor:'rgba(245,165,32,0.85)',backgroundColor:'rgba(245,165,32,0.07)',borderWidth:2,fill:true,tension:0.3,pointRadius:5,pointHoverRadius:8,pointBackgroundColor:thresholds.map(t=>t>=1.10?GREEN_7:'rgba(245,165,32,0.85)')}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}% of models pass HO PF ≥ ${thresholds[c.dataIndex].toFixed(2)}`}}},
+      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}},title:{display:true,text:'HO PF Threshold',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:'#6b7280',font:{size:11}}}}}});
+
+  // ── 3. HO Sharpe vs HO PF scatter ─────────────────────────────────────────
+  D(2);
+  const v3=filtered.filter(r=>r.ho_pf!=null&&r.ho_sharpe!=null);
+  const secs3=[...new Set(v3.map(r=>r.sector))].sort();
+  const c3=el('meta-adv-sharpepf-chart')?.getContext('2d');
+  if(c3){
+    const ds3=secs3.map((s,i)=>({type:'scatter',label:s,data:v3.filter(r=>r.sector===s).map(r=>({x:r.ho_sharpe,y:r.ho_pf,ticker:r.ticker,sec:s})),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    ds3.push({type:'line',label:'_h',data:[{x:-4,y:1.10},{x:6,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    ds3.push({type:'line',label:'_v',data:[{x:0.5,y:0.4},{x:0.5,y:2.8}],borderColor:'rgba(245,165,32,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    _advCharts[2]=new Chart(c3,{data:{datasets:ds3},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Sharpe: ${p.x?.toFixed(2)} · PF: ${p.y?.toFixed(3)}`];return[];}}}},
+      scales:{x:{title:{display:true,text:'HO Sharpe',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 4. Feature Count vs HO PF ─────────────────────────────────────────────
+  D(3);
+  const fcV=joined.filter(r=>r.feature_count>0&&r.ho_pf!=null);
+  const mt4=[...new Set(fcV.map(r=>r.model_type))].sort();
+  const c4=el('meta-adv-featcount-chart')?.getContext('2d');
+  if(c4){
+    const ds4=mt4.map(mt=>({type:'scatter',label:mt,data:fcV.filter(r=>r.model_type===mt).map(r=>({x:r.feature_count,y:r.ho_pf,ticker:r.ticker,mt})),backgroundColor:_MT_COLOR[mt]||'rgba(107,114,128,0.55)',pointRadius:4,pointHoverRadius:7}));
+    ds4.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:120,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    _advCharts[3]=new Chart(c4,{data:{datasets:ds4},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.mt})`,`${p.x} features · HO PF: ${p.y?.toFixed(3)}`];return[];}}}},
+      scales:{x:{title:{display:true,text:'Final feature count after pruning',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 5. Avg Feature Stability vs HO PF ─────────────────────────────────────
+  D(4);
+  const stV=joined.filter(r=>r.features.length>0&&r.ho_pf!=null);
+  const avgStab=feats=>{const v=feats.filter(f=>f.stability!=null).map(f=>f.stability);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const secs5=[...new Set(stV.map(r=>r.sector))].sort();
+  const c5=el('meta-adv-stability-chart')?.getContext('2d');
+  if(c5){
+    const ds5=secs5.map((s,i)=>({type:'scatter',label:s,data:stV.filter(r=>r.sector===s).map(r=>{const st=avgStab(r.features);return st!=null?{x:+st.toFixed(3),y:r.ho_pf,ticker:r.ticker,sec:s}:null;}).filter(Boolean),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    ds5.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:1,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    _advCharts[4]=new Chart(c5,{data:{datasets:ds5},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Stability: ${p.x?.toFixed(3)} · HO PF: ${p.y?.toFixed(3)}`];return[];}}}},
+      scales:{x:{min:0,max:1,title:{display:true,text:'Avg feature stability (0=random · 1=always same direction)',color:'#6b7280',font:{size:10}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 6. Avg Sign Consistency vs HO PF ──────────────────────────────────────
+  D(5);
+  const scV=joined.filter(r=>r.features.length>0&&r.ho_pf!=null);
+  const avgSP=feats=>{const v=feats.filter(f=>f.sign_pct!=null).map(f=>f.sign_pct);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const secs6=[...new Set(scV.map(r=>r.sector))].sort();
+  const c6=el('meta-adv-signcon-chart')?.getContext('2d');
+  if(c6){
+    const ds6=secs6.map((s,i)=>({type:'scatter',label:s,data:scV.filter(r=>r.sector===s).map(r=>{const sp=avgSP(r.features);return sp!=null?{x:+sp.toFixed(3),y:r.ho_pf,ticker:r.ticker,sec:s}:null;}).filter(Boolean),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    ds6.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:1,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    _advCharts[5]=new Chart(c6,{data:{datasets:ds6},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Sign consistency: ${(p.x*100).toFixed(1)}% · HO PF: ${p.y?.toFixed(3)}`];return[];}}}},
+      scales:{x:{min:0,max:1,title:{display:true,text:'Avg sign consistency % (features pointing same direction)',color:'#6b7280',font:{size:10}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>(v*100).toFixed(0)+'%'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+
+  // ── 7. Overfit Flag distribution — 100% stacked by sector ─────────────────
+  D(6);
+  const ofSecs=[...new Set(filtered.map(r=>r.sector||'Other'))].sort();
+  const ofPct=(s,flag)=>{const all=filtered.filter(r=>(r.sector||'Other')===s);const cnt=all.filter(r=>flag==='None'?!r.overfit:r.overfit===flag).length;return all.length?+(cnt/all.length*100).toFixed(1):0;};
+  const c7=el('meta-adv-overfit-chart')?.getContext('2d');
+  if(c7) _advCharts[6]=new Chart(c7,{type:'bar',
+    data:{labels:ofSecs,datasets:[
+      {label:'No Flag',data:ofSecs.map(s=>ofPct(s,'None')),backgroundColor:'rgba(107,114,128,0.55)',borderWidth:0},
+      {label:'LOW',data:ofSecs.map(s=>ofPct(s,'LOW')),backgroundColor:GREEN_7,borderWidth:0},
+      {label:'MEDIUM',data:ofSecs.map(s=>ofPct(s,'MEDIUM')),backgroundColor:'rgba(251,191,36,0.70)',borderWidth:0},
+      {label:'HIGH',data:ofSecs.map(s=>ofPct(s,'HIGH')),backgroundColor:RED_55,borderWidth:0},
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models`}}},
+      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+
+  // ── 8. Feature category directional bias ──────────────────────────────────
+  D(7);
+  const cats8=['macro','momentum','volume','interaction','announcement','volatility','candle','trend','other'];
+  const catW=cats8.map(cat=>{const feats=joined.flatMap(m=>m.features.filter(f=>f.category===cat&&f.signed!=null));const avg=feats.length?feats.reduce((a,f)=>a+f.signed,0)/feats.length:0;return{cat,avg,n:feats.length};}).sort((a,b)=>b.avg-a.avg);
+  const c8=el('meta-adv-catweight-chart')?.getContext('2d');
+  if(c8){
+    const cw_c=catW.map(c=>c.avg>0?GREEN_7:RED_55);
+    _advCharts[7]=new Chart(c8,{type:'bar',
+      data:{labels:catW.map(c=>c.cat),datasets:[{data:catW.map(c=>+(c.avg*1000).toFixed(2)),backgroundColor:cw_c,borderColor:cw_c,borderWidth:1,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const cw=catW[c.dataIndex];return[`${cw.cat}: ${c.raw.toFixed(2)}‰ avg`,`${cw.n} feature appearances · ${cw.avg>0?'bullish bias':'bearish bias'}`];}}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'‰'},title:{display:true,text:'Avg signed weight ‰ (+  bullish · −  bearish)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+
+  // ── 9. HO PF Distribution by Model Type (reuse jitter helper) ─────────────
+  D(8);
+  const mtG={};
+  filtered.forEach(r=>{const mt=r.model_type;if(!mtG[mt])mtG[mt]=[];mtG[mt].push(r);});
+  const mtO=[...new Set(filtered.map(r=>r.model_type))].sort((a,b)=>{
+    const ga=mtG[a].filter(m=>m.ho_pf!=null),gb=mtG[b].filter(m=>m.ho_pf!=null);
+    const ma=ga.length?ga.reduce((s,m)=>s+m.ho_pf,0)/ga.length:0,mb=gb.length?gb.reduce((s,m)=>s+m.ho_pf,0)/gb.length:0;
+    return mb-ma;
+  });
+  _advCharts[8]=_buildDistChart('meta-adv-mtdist-chart',mtG,mtO);
+
+  // ── 10. Top 10 feature rank consistency ───────────────────────────────────
+  D(9);
+  const top10=topFeats.slice(0,10);
+  const rankBands=[['Top 5',0,5,'rgba(16,185,129,0.80)'],['6–10',5,10,'rgba(245,165,32,0.75)'],['11–20',10,20,'rgba(59,130,246,0.65)'],['21+',20,999,'rgba(107,114,128,0.50)']];
+  const c10=el('meta-adv-rankdist-chart')?.getContext('2d');
+  if(c10) _advCharts[9]=new Chart(c10,{type:'bar',
+    data:{labels:top10.map(f=>abbr(f)),datasets:rankBands.map(([label,lo,hi,col])=>({
+      label,
+      data:top10.map(feat=>{const models=joined.filter(m=>m.features.some(f=>f.name===feat));if(!models.length)return 0;const cnt=models.filter(m=>m.features.some(f=>f.name===feat&&f.rank>lo&&f.rank<=hi)).length;return+(cnt/models.length*100).toFixed(1);}),
+      backgroundColor:col,borderWidth:0,
+    }))},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models using this feature`}}},
+      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
 }
