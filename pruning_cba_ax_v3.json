@@ -1,0 +1,191 @@
+{
+  "ticker": "CBA.AX",
+  "generated_at": "2026-03-24T00:35:43Z",
+  "pruning_mode": "ridge_v3",
+  "baseline_features": 98,
+  "final_excluded": [
+    "adx_14",
+    "buy_sell_ratio_chg"
+  ],
+  "stop_reason": "oos_patience",
+  "best_oos_round": 1,
+  "best_oos_sharpe": 0.2244,
+  "params": {
+    "max_rounds": 60,
+    "per_round": 2,
+    "min_pval": 0.05,
+    "patience": 3,
+    "train_days": 252,
+    "step_days": 63,
+    "period": "5y"
+  },
+  "rounds": [
+    {
+      "round": 0,
+      "pruned_this_round": [],
+      "excluded_total": [],
+      "features_remaining": 98,
+      "metrics": {
+        "is_pf": 0.9336,
+        "is_sharpe": -0.4022,
+        "ho_pf": 1.0415,
+        "ho_sharpe": 0.2244,
+        "is_pf_delta": null,
+        "is_sharpe_delta": null
+      },
+      "stopped": false
+    },
+    {
+      "round": 1,
+      "pruned_this_round": [
+        {
+          "name": "adx_14",
+          "p_value": 0.9989,
+          "effect_size": 0.0004,
+          "instability": 2486.1556,
+          "max_group_corr": 0.0,
+          "prune_score": 3.4962
+        },
+        {
+          "name": "buy_sell_ratio_chg",
+          "p_value": 0.993,
+          "effect_size": 0.0026,
+          "instability": 387.6876,
+          "max_group_corr": 0.0,
+          "prune_score": 3.4755
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "buy_sell_ratio_chg"
+      ],
+      "features_remaining": 96,
+      "metrics": {
+        "is_pf": 0.9342,
+        "is_sharpe": -0.3983,
+        "ho_pf": 1.0415,
+        "ho_sharpe": 0.2244,
+        "is_pf_delta": 0.001,
+        "is_sharpe_delta": 0.004
+      },
+      "stopped": false
+    },
+    {
+      "round": 2,
+      "pruned_this_round": [
+        {
+          "name": "macro_yield_curve_acc5",
+          "p_value": 0.9908,
+          "effect_size": 0.0034,
+          "instability": 295.3795,
+          "max_group_corr": 0.0,
+          "prune_score": 3.4678
+        },
+        {
+          "name": "macro_gold_mom20d",
+          "p_value": 0.989,
+          "effect_size": 0.0041,
+          "instability": 246.2595,
+          "max_group_corr": 0.0,
+          "prune_score": 3.4615
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "buy_sell_ratio_chg",
+        "macro_gold_mom20d",
+        "macro_yield_curve_acc5"
+      ],
+      "features_remaining": 94,
+      "metrics": {
+        "is_pf": 0.9222,
+        "is_sharpe": -0.4742,
+        "ho_pf": 0.9449,
+        "ho_sharpe": -0.313,
+        "is_pf_delta": -0.012,
+        "is_sharpe_delta": -0.076
+      },
+      "stopped": false
+    },
+    {
+      "round": 3,
+      "pruned_this_round": [
+        {
+          "name": "macro_aud_vol20d",
+          "p_value": 0.9515,
+          "effect_size": 0.0179,
+          "instability": 55.78,
+          "max_group_corr": 0.0,
+          "prune_score": 3.3302
+        },
+        {
+          "name": "mfi_14",
+          "p_value": 0.9337,
+          "effect_size": 0.0245,
+          "instability": 40.7981,
+          "max_group_corr": 0.0,
+          "prune_score": 3.2679
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "buy_sell_ratio_chg",
+        "macro_aud_vol20d",
+        "macro_gold_mom20d",
+        "macro_yield_curve_acc5",
+        "mfi_14"
+      ],
+      "features_remaining": 92,
+      "metrics": {
+        "is_pf": 0.9373,
+        "is_sharpe": -0.3789,
+        "ho_pf": 1.0165,
+        "ho_sharpe": 0.0904,
+        "is_pf_delta": 0.015,
+        "is_sharpe_delta": 0.095
+      },
+      "stopped": false
+    },
+    {
+      "round": 4,
+      "pruned_this_round": [
+        {
+          "name": "ret_1d",
+          "p_value": 0.988,
+          "effect_size": 0.0044,
+          "instability": 225.052,
+          "max_group_corr": 0.0,
+          "prune_score": 3.458
+        },
+        {
+          "name": "vol_ratio",
+          "p_value": 0.9251,
+          "effect_size": 0.0277,
+          "instability": 36.0792,
+          "max_group_corr": 0.0,
+          "prune_score": 3.2378
+        }
+      ],
+      "excluded_total": [
+        "adx_14",
+        "buy_sell_ratio_chg",
+        "macro_aud_vol20d",
+        "macro_gold_mom20d",
+        "macro_yield_curve_acc5",
+        "mfi_14",
+        "ret_1d",
+        "vol_ratio"
+      ],
+      "features_remaining": 90,
+      "metrics": {
+        "is_pf": 0.9597,
+        "is_sharpe": -0.2408,
+        "ho_pf": 1.0165,
+        "ho_sharpe": 0.0904,
+        "is_pf_delta": 0.022,
+        "is_sharpe_delta": 0.138
+      },
+      "stopped": true
+    }
+  ]
+}
