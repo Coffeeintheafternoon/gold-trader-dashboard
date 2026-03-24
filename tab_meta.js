@@ -611,17 +611,54 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models`}}},
       scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
 
-  // ── 8. Feature category directional bias ──────────────────────────────────
+  // ── 8. Feature category directional bias — boxplots ───────────────────────
   D(7);
   const cats8=['macro','momentum','volume','interaction','announcement','volatility','candle','trend','other'];
-  const catW=cats8.map(cat=>{const feats=joined.flatMap(m=>m.features.filter(f=>f.category===cat&&f.signed!=null));const avg=feats.length?feats.reduce((a,f)=>a+f.signed,0)/feats.length:0;return{cat,avg,n:feats.length};}).sort((a,b)=>b.avg-a.avg);
+  const _bpMed=arr=>{const s=[...arr].sort((x,y)=>x-y);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+  const catBox8=cats8.map(cat=>{
+    const vals=joined.flatMap(m=>m.features.filter(f=>f.category===cat&&f.signed!=null)).map(f=>+(f.signed*1000).toFixed(4));
+    return{cat,vals};
+  }).filter(c=>c.vals.length>0).sort((a,b)=>_bpMed(b.vals)-_bpMed(a.vals));
   const c8=el('meta-adv-catweight-chart')?.getContext('2d');
   if(c8){
-    const cw_c=catW.map(c=>c.avg>0?GREEN_7:RED_55);
-    _advCharts[7]=new Chart(c8,{type:'bar',
-      data:{labels:catW.map(c=>c.cat),datasets:[{data:catW.map(c=>+(c.avg*1000).toFixed(2)),backgroundColor:cw_c,borderColor:cw_c,borderWidth:1,borderRadius:3}]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const cw=catW[c.dataIndex];return[`${cw.cat}: ${c.raw.toFixed(2)}‰ avg`,`${cw.n} feature appearances · ${cw.avg>0?'bullish bias':'bearish bias'}`];}}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'‰'},title:{display:true,text:'Avg signed weight ‰ (+  bullish · −  bearish)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+    const boxColors=catBox8.map(c=>_bpMed(c.vals)>=0?'rgba(16,185,129,0.45)':'rgba(239,68,68,0.45)');
+    const borderColors=catBox8.map(c=>_bpMed(c.vals)>=0?'rgba(16,185,129,0.90)':'rgba(239,68,68,0.90)');
+    _advCharts[7]=new Chart(c8,{
+      type:'boxplot',
+      data:{
+        labels:catBox8.map(c=>c.cat),
+        datasets:[{
+          label:'Signed weight ‰',
+          data:catBox8.map(c=>c.vals),
+          backgroundColor:boxColors,
+          borderColor:borderColors,
+          borderWidth:1.5,
+          outlierBackgroundColor:'rgba(156,163,175,0.45)',
+          outlierBorderColor:'rgba(156,163,175,0.75)',
+          outlierRadius:2,
+          medianColor:'#f5a520',
+        }]
+      },
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:c=>{
+            const s=c.raw;if(!s)return[];
+            return[
+              `Median: ${s.median?.toFixed(2)}‰`,
+              `IQR: ${s.q1?.toFixed(2)} → ${s.q3?.toFixed(2)}‰`,
+              `Range: ${s.min?.toFixed(2)} → ${s.max?.toFixed(2)}‰`,
+              `n=${catBox8[c.dataIndex]?.vals.length} appearances`,
+            ];
+          }}}
+        },
+        scales:{
+          x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'‰'},title:{display:true,text:'Signed weight ‰  (+  bullish · −  bearish)',color:'#6b7280',font:{size:10}}},
+          y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+        }
+      }
+    });
   }
 
   // ── 9. HO PF Distribution by Model Type (reuse jitter helper) ─────────────
