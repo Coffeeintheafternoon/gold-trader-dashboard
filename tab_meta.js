@@ -63,6 +63,7 @@ const _MC={
 let _metaFeatData=null;
 let _metaDistSectorChart=null,_metaDistMcChart=null,_metaCatChart=null,_metaCatMcChart=null;
 let _advCharts=new Array(10).fill(null);
+let _trCharts=new Array(20).fill(null);
 let _modelIndexData=null, _screenerFull=null;
 let _modelIndexFlat=[];
 let _activeModelFilter='All';
@@ -469,8 +470,11 @@ function _buildFeatureCharts(filtered){
   _metaCatMcChart=_buildCatChart('meta-cat-mc-chart');
   _fillCatChart(_metaCatMcChart,mcGroups,mcTierOrder);
 
-  // ── Advanced Analytics (10 extra charts) ─────────────────────────────────
+  // ── Advanced Analytics (10 charts) ───────────────────────────────────────
   _buildAdvancedCharts(filtered, joined, topFeats, abbr);
+
+  // ── Trade & Model Analytics (20 charts) ──────────────────────────────────
+  _buildTradeCharts(filtered, joined);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -614,4 +618,239 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     }))},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models using this feature`}}},
       scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trade & Model Analytics — 20 charts (10 pairs × sector + market cap)
+// Interactive: T1 threshold slider · T5 min-trades slider
+//              M1 color toggle · M3 IS/HO toggle · M5 metric toggle
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildTradeCharts(filtered,joined){
+  const el=id=>document.getElementById(id);
+  const DT=i=>{if(_trCharts[i]){_trCharts[i].destroy();_trCharts[i]=null;}};
+
+  // Only models with HO trade data
+  const trd=joined.filter(r=>r.n_trades_ho!=null&&r.n_trades_ho>0);
+
+  // Group by sector and market cap tier
+  const secGrp={},mcGrp={};
+  _MC_TIERS.forEach(([l])=>{mcGrp[l]=[];});
+  trd.forEach(m=>{
+    const s=m.sector||'Other';
+    if(!secGrp[s])secGrp[s]=[];
+    secGrp[s].push(m);
+    const t=_mcTier(m.market_cap);
+    if(t)mcGrp[t].push(m);
+  });
+  // Sort sectors by avg win rate desc
+  const secOrder=Object.keys(secGrp).sort((a,b)=>{
+    const ga=secGrp[a].filter(m=>m.win_rate_ho!=null),gb=secGrp[b].filter(m=>m.win_rate_ho!=null);
+    const ma=ga.length?ga.reduce((s,m)=>s+m.win_rate_ho,0)/ga.length:0,mb=gb.length?gb.reduce((s,m)=>s+m.win_rate_ho,0)/gb.length:0;
+    return mb-ma;
+  });
+  const mcOrder=_MC_TIERS.filter(([l])=>(mcGrp[l]||[]).length>=2).map(([l])=>l);
+
+  // ── T1: Win Rate jitter + threshold slider ────────────────────────────────
+  function buildWinRateJitter(canvasId,groups,order,thrId){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const gPts=[],aPts=[],rPts=[],mPts=[];
+    order.forEach((grp,i)=>{
+      const ms=(groups[grp]||[]).filter(m=>m.win_rate_ho!=null);
+      ms.forEach((m,j)=>{const jit=(((j*7+3)%13)/13-0.5)*0.40,wr=m.win_rate_ho*100;const pt={x:i+jit,y:wr,ticker:m.ticker,grp,n:m.n_trades_ho};if(wr>=55)gPts.push(pt);else if(wr>=45)aPts.push(pt);else rPts.push(pt);});
+      if(ms.length){const mn=ms.reduce((a,m)=>a+m.win_rate_ho,0)/ms.length*100;mPts.push({x:i,y:mn,n:ms.length,grp});}
+    });
+    const chart=new Chart(ctx,{data:{datasets:[
+      {type:'scatter',label:'≥ 55%',data:gPts,backgroundColor:GREEN_7,pointRadius:5,pointHoverRadius:8},
+      {type:'scatter',label:'45–55%',data:aPts,backgroundColor:'rgba(251,191,36,0.70)',pointRadius:5,pointHoverRadius:8},
+      {type:'scatter',label:'< 45%',data:rPts,backgroundColor:RED_55,pointRadius:5,pointHoverRadius:8},
+      {type:'scatter',label:'Mean',data:mPts,backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:12,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
+      {type:'line',label:'_thr',data:[{x:-0.5,y:50},{x:order.length-0.5,y:50}],borderColor:'rgba(245,165,32,0.35)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+        tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`Win rate: ${p.y?.toFixed(1)}% · ${p.n} trades`];if(p?.grp&&p.n)return[`${p.grp} mean`,`${p.y?.toFixed(1)}%`];return[];}}}},
+      scales:{x:{min:-0.5,max:order.length-0.5,grid:{color:'#1a1a1a'},ticks:{color:'#9ca3af',font:{size:9},maxRotation:40,callback:v=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
+        y:{min:0,max:100,title:{display:true,text:'Win Rate %',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}}}}});
+    const thr=el(thrId),thrv=el(thrId+'-val');
+    if(thr){thr.addEventListener('input',()=>{const v=+thr.value;if(thrv)thrv.textContent=v+'%';chart.data.datasets[4].data=[{x:-0.5,y:v},{x:order.length-0.5,y:v}];chart.update('none');});}
+    return chart;
+  }
+  DT(0);_trCharts[0]=buildWinRateJitter('meta-tr1a',secGrp,secOrder,'tr1a-thr');
+  DT(1);_trCharts[1]=buildWinRateJitter('meta-tr1b',mcGrp,mcOrder,'tr1b-thr');
+
+  // ── T2: Payoff Ratio by group (bar, sorted) ───────────────────────────────
+  function buildPayoffBar(canvasId,groups,order){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const entries=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.payoff_ratio!=null);return ms.length?{g,avg:ms.reduce((a,m)=>a+m.payoff_ratio,0)/ms.length,n:ms.length}:null;}).filter(Boolean).sort((a,b)=>b.avg-a.avg);
+    const colors=entries.map(e=>e.avg>=1.5?GREEN_7:e.avg>=1.0?'rgba(251,191,36,0.70)':RED_55);
+    return new Chart(ctx,{type:'bar',
+      data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(2)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Payoff: ${c.raw?.toFixed(2)}x`,`avg win ÷ avg |loss| · n=${entries[c.dataIndex].n} models`]}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'},title:{display:true,text:'Payoff ratio (avg win ÷ avg |loss|)  ·  >1.0 = wins bigger than losses',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(2);_trCharts[2]=buildPayoffBar('meta-tr2a',secGrp,secOrder);
+  DT(3);_trCharts[3]=buildPayoffBar('meta-tr2b',mcGrp,mcOrder);
+
+  // ── T3: Direction Bias — % long vs short ─────────────────────────────────
+  function buildDirBias(canvasId,groups,order){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const lp=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.long_pct!=null);return ms.length?+(ms.reduce((a,m)=>a+m.long_pct,0)/ms.length*100).toFixed(1):50;});
+    return new Chart(ctx,{type:'bar',
+      data:{labels:order,datasets:[{label:'Long',data:lp,backgroundColor:'rgba(16,185,129,0.65)',borderWidth:0},{label:'Short',data:lp.map(v=>+(100-v).toFixed(1)),backgroundColor:'rgba(239,68,68,0.55)',borderWidth:0}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}%`}}},
+        scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of HO trades by direction',color:'#6b7280',font:{size:10}}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(4);_trCharts[4]=buildDirBias('meta-tr3a',secGrp,secOrder);
+  DT(5);_trCharts[5]=buildDirBias('meta-tr3b',mcGrp,mcOrder);
+
+  // ── T4: Avg Trade Return % per group (bar, sorted) ───────────────────────
+  function buildAvgTradeRet(canvasId,groups,order){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const entries=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.avg_trade_pct!=null);return ms.length?{g,avg:ms.reduce((a,m)=>a+m.avg_trade_pct,0)/ms.length,n:ms.length}:null;}).filter(Boolean).sort((a,b)=>b.avg-a.avg);
+    const colors=entries.map(e=>e.avg>=1.0?GREEN_7:e.avg>=0?'rgba(251,191,36,0.65)':RED_55);
+    return new Chart(ctx,{type:'bar',
+      data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(3)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Avg trade: ${c.raw.toFixed(3)}%`,`n=${entries[c.dataIndex].n} models`]}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg return per HO trade  ·  positive = net profitable per trade',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(6);_trCharts[6]=buildAvgTradeRet('meta-tr4a',secGrp,secOrder);
+  DT(7);_trCharts[7]=buildAvgTradeRet('meta-tr4b',mcGrp,mcOrder);
+
+  // ── T5: Trade Count vs HO PF scatter (interactive min-trades slider) ──────
+  function buildTradeCountPF(canvasId,groups,order,minId){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const minEl=el(minId),minVEl=el(minId+'-val');
+    const getMin=()=>minEl?+minEl.value:5;
+    function makeDS(minN){
+      return order.map((grp,i)=>({type:'scatter',label:grp,
+        data:(groups[grp]||[]).filter(m=>m.n_trades_ho>=minN&&m.ho_pf!=null).map(m=>({x:m.n_trades_ho,y:m.ho_pf,ticker:m.ticker,grp,wr:m.win_rate_ho})),
+        backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:5,pointHoverRadius:8}));
+    }
+    const datasets=makeDS(getMin());
+    datasets.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:200,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
+    datasets.push({type:'line',label:'_r',data:[{x:15,y:0.4},{x:15,y:2.8}],borderColor:'rgba(245,165,32,0.18)',borderDash:[3,4],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
+    const chart=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`${p.x} trades · HO PF: ${p.y?.toFixed(3)}`,`Win rate: ${p.wr!=null?(p.wr*100).toFixed(1)+'%':'n/a'}`];return[];}}}},
+      scales:{x:{title:{display:true,text:'HO trade count',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+    if(minEl){minEl.addEventListener('input',()=>{const minN=+minEl.value;if(minVEl)minVEl.textContent='≥ '+minN;const nd=makeDS(minN);for(let i=0;i<order.length;i++)chart.data.datasets[i].data=nd[i].data;chart.update('none');});}
+    return chart;
+  }
+  DT(8);_trCharts[8]=buildTradeCountPF('meta-tr5a',secGrp,secOrder,'tr5a-min');
+  DT(9);_trCharts[9]=buildTradeCountPF('meta-tr5b',mcGrp,mcOrder,'tr5b-min');
+
+  // ── M1: Win Rate vs Payoff scatter (interactive color toggle) ─────────────
+  const m1Data=trd.filter(m=>m.win_rate_ho!=null&&m.payoff_ratio!=null&&m.n_trades_ho>=5);
+  function buildM1(canvasId,mode){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    let datasets;
+    const mk=m=>({x:m.win_rate_ho*100,y:m.payoff_ratio,ticker:m.ticker,sec:m.sector,pf:m.ho_pf,n:m.n_trades_ho});
+    if(mode==='pf'){
+      datasets=[
+        {type:'scatter',label:'HO PF ≥ 1.10',data:m1Data.filter(m=>m.ho_pf>=1.10).map(mk),backgroundColor:GREEN_7,pointRadius:5,pointHoverRadius:8},
+        {type:'scatter',label:'1.0–1.10',data:m1Data.filter(m=>m.ho_pf>=1.0&&m.ho_pf<1.10).map(mk),backgroundColor:'rgba(251,191,36,0.70)',pointRadius:5,pointHoverRadius:8},
+        {type:'scatter',label:'< 1.0',data:m1Data.filter(m=>m.ho_pf<1.0).map(mk),backgroundColor:RED_55,pointRadius:5,pointHoverRadius:8},
+      ];
+    }else if(mode==='sec'){
+      const secs=[...new Set(m1Data.map(m=>m.sector))].sort();
+      datasets=secs.map((s,i)=>({type:'scatter',label:s,data:m1Data.filter(m=>m.sector===s).map(mk),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:5,pointHoverRadius:8}));
+    }else{
+      datasets=_MC_TIERS.map(([label],i)=>({type:'scatter',label,data:m1Data.filter(m=>_mcTier(m.market_cap)===label).map(mk),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:5,pointHoverRadius:8}));
+    }
+    // Breakeven curve: win% * payoff = 100
+    datasets.push({type:'line',label:'_be',data:[30,35,40,45,50,55,60,65,70,75,80].map(x=>({x,y:+(100/x).toFixed(2)})),borderColor:'rgba(255,255,255,0.12)',borderDash:[3,3],borderWidth:1,pointRadius:0,fill:false,tension:0.3,order:0});
+    return new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+        tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Win: ${p.x?.toFixed(1)}% · Payoff: ${p.y?.toFixed(2)}x`,`HO PF: ${p.pf?.toFixed(3)} · ${p.n} trades`];return[];}}}},
+      scales:{x:{min:20,max:90,title:{display:true,text:'Win Rate % (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},
+        y:{min:0,title:{display:true,text:'Payoff Ratio',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'}}}}}); 
+  }
+  DT(10);_trCharts[10]=buildM1('meta-ma1a','pf');
+  DT(11);_trCharts[11]=buildM1('meta-ma1b','pf');
+  window._m1aToggle=function(mode){['pf','sec','mc'].forEach(m=>{const b=document.getElementById('m1a-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(10);_trCharts[10]=buildM1('meta-ma1a',mode);};
+  window._m1bToggle=function(mode){['pf','sec','mc'].forEach(m=>{const b=document.getElementById('m1b-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(11);_trCharts[11]=buildM1('meta-ma1b',mode);};
+
+  // ── M2: Avg Holding Period vs HO PF scatter ───────────────────────────────
+  function buildHoldingPF(canvasId,colorMode){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const valid=trd.filter(m=>m.avg_bars_held!=null&&m.ho_pf!=null);
+    let datasets;
+    if(colorMode==='sec'){
+      const secs=[...new Set(valid.map(m=>m.sector))].sort();
+      datasets=secs.map((s,i)=>({type:'scatter',label:s,data:valid.filter(m=>m.sector===s).map(m=>({x:m.avg_bars_held,y:m.ho_pf,ticker:m.ticker,sec:s})),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    }else{
+      datasets=_MC_TIERS.map(([label],i)=>({type:'scatter',label,data:valid.filter(m=>_mcTier(m.market_cap)===label).map(m=>({x:m.avg_bars_held,y:m.ho_pf,ticker:m.ticker,sec:m.sector})),backgroundColor:_SEC_PAL[i%_SEC_PAL.length],pointRadius:4,pointHoverRadius:7}));
+    }
+    datasets.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:60,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
+    return new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Avg hold: ${p.x?.toFixed(1)} bars · HO PF: ${p.y?.toFixed(3)}`];return[];}}}},
+      scales:{x:{title:{display:true,text:'Avg holding period (bars per trade)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+  }
+  DT(12);_trCharts[12]=buildHoldingPF('meta-ma2a','sec');
+  DT(13);_trCharts[13]=buildHoldingPF('meta-ma2b','mc');
+
+  // ── M3: Best vs Worst Trade per group (bar, IS/HO toggle) ─────────────────
+  function buildRangeBar(canvasId,groups,order,mode){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const bk=mode==='ho'?'best_trade':'best_trade_is',wk=mode==='ho'?'worst_trade':'worst_trade_is';
+    const entries=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m[bk]!=null&&m[wk]!=null);if(!ms.length)return null;return{g,best:+(ms.reduce((a,m)=>a+m[bk],0)/ms.length).toFixed(2),worst:+(ms.reduce((a,m)=>a+m[wk],0)/ms.length).toFixed(2),n:ms.length};}).filter(Boolean);
+    return new Chart(ctx,{type:'bar',
+      data:{labels:entries.map(e=>e.g),datasets:[
+        {label:'Avg Worst Trade',data:entries.map(e=>e.worst),backgroundColor:'rgba(239,68,68,0.55)',borderColor:'rgba(239,68,68,0.7)',borderWidth:1,borderRadius:2},
+        {label:'Avg Best Trade',data:entries.map(e=>e.best),backgroundColor:'rgba(16,185,129,0.55)',borderColor:'rgba(16,185,129,0.7)',borderWidth:1,borderRadius:2},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw?.toFixed(2)}%`,`n=${entries[c.dataIndex].n} models`]}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:`Avg ${mode==='ho'?'HO (holdout)':'IS (in-sample)'} trade extremes by group`,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(14);_trCharts[14]=buildRangeBar('meta-ma3a',secGrp,secOrder,'ho');
+  DT(15);_trCharts[15]=buildRangeBar('meta-ma3b',mcGrp,mcOrder,'ho');
+  window._m3aToggle=function(mode){['ho','is'].forEach(m=>{const b=document.getElementById('m3a-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(14);_trCharts[14]=buildRangeBar('meta-ma3a',secGrp,secOrder,mode);};
+  window._m3bToggle=function(mode){['ho','is'].forEach(m=>{const b=document.getElementById('m3b-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(15);_trCharts[15]=buildRangeBar('meta-ma3b',mcGrp,mcOrder,mode);};
+
+  // ── M4: IS vs HO Trade Frequency (grouped bar) ────────────────────────────
+  function buildTradeFreqComp(canvasId,groups,order){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    const hoAvg=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.n_trades_ho!=null);return ms.length?+(ms.reduce((a,m)=>a+m.n_trades_ho,0)/ms.length).toFixed(1):0;});
+    const isAvg=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.n_trades_is!=null);return ms.length?+(ms.reduce((a,m)=>a+m.n_trades_is,0)/ms.length).toFixed(1):0;});
+    const ratio=order.map((_,i)=>isAvg[i]>0?+(hoAvg[i]/isAvg[i]).toFixed(3):null);
+    return new Chart(ctx,{type:'bar',
+      data:{labels:order,datasets:[
+        {label:'IS avg trades',data:isAvg,backgroundColor:'rgba(107,114,128,0.45)',borderWidth:0,borderRadius:2},
+        {label:'HO avg trades',data:hoAvg,backgroundColor:'rgba(245,165,32,0.70)',borderWidth:0,borderRadius:2},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw.toFixed(1)}`,`HO/IS ratio: ${ratio[c.dataIndex]!=null?ratio[c.dataIndex].toFixed(2)+'×':'n/a'}`]}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg trade count  ·  tooltip shows HO÷IS ratio',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(16);_trCharts[16]=buildTradeFreqComp('meta-ma4a',secGrp,secOrder);
+  DT(17);_trCharts[17]=buildTradeFreqComp('meta-ma4b',mcGrp,mcOrder);
+
+  // ── M5: Long vs Short performance (metric toggle) ─────────────────────────
+  function buildLongShort(canvasId,groups,order,mode){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return null;
+    let lv,sv,xl;
+    if(mode==='wr'){
+      lv=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.long_win_rate!=null);return ms.length?+(ms.reduce((a,m)=>a+m.long_win_rate,0)/ms.length*100).toFixed(1):null;});
+      sv=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.short_win_rate!=null);return ms.length?+(ms.reduce((a,m)=>a+m.short_win_rate,0)/ms.length*100).toFixed(1):null;});
+      xl='Win rate % by direction';
+    }else{
+      lv=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.long_avg_ret!=null);return ms.length?+(ms.reduce((a,m)=>a+m.long_avg_ret,0)/ms.length).toFixed(3):null;});
+      sv=order.map(g=>{const ms=(groups[g]||[]).filter(m=>m.short_avg_ret!=null);return ms.length?+(ms.reduce((a,m)=>a+m.short_avg_ret,0)/ms.length).toFixed(3):null;});
+      xl='Avg return per trade (%) by direction';
+    }
+    return new Chart(ctx,{type:'bar',
+      data:{labels:order,datasets:[
+        {label:'Long',data:lv,backgroundColor:'rgba(16,185,129,0.65)',borderWidth:0,borderRadius:2},
+        {label:'Short',data:sv,backgroundColor:'rgba(59,130,246,0.65)',borderWidth:0,borderRadius:2},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(mode==='wr'?1:3)+'%':'n/a'}`}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:xl,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+  }
+  DT(18);_trCharts[18]=buildLongShort('meta-ma5a',secGrp,secOrder,'wr');
+  DT(19);_trCharts[19]=buildLongShort('meta-ma5b',mcGrp,mcOrder,'wr');
+  window._m5aToggle=function(mode){['wr','ret'].forEach(m=>{const b=document.getElementById('m5a-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(18);_trCharts[18]=buildLongShort('meta-ma5a',secGrp,secOrder,mode);};
+  window._m5bToggle=function(mode){['wr','ret'].forEach(m=>{const b=document.getElementById('m5b-'+m);if(b)b.className='meta-filter-btn'+(m===mode?' active':'');});DT(19);_trCharts[19]=buildLongShort('meta-ma5b',mcGrp,mcOrder,mode);};
 }
