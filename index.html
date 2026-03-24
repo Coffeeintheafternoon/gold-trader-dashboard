@@ -1357,65 +1357,78 @@
   </div>
   <div id="pt-content" style="display:none">
 
-    <!-- Ticker selector -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:0.5px">MODEL</span>
-      <select id="pt-model-select" onchange="loadPaperTrade()" style="background:#111;color:#e5e7eb;border:1px solid #2a2a2a;padding:5px 10px;border-radius:4px;font-size:12px">
-        <option value="wow_ax">WOW.AX — Ridge (1yr)</option>
-        <option value="wow_manual_regime">WOW.AX — Manual Regime</option>
-        <option value="wow_gmm_regime">WOW.AX — GMM Regime</option>
-      </select>
-      <span id="pt-mode-badge" style="font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(245,165,32,0.12);border:1px solid rgba(245,165,32,0.3);color:var(--gold)">PAPER / DEMO</span>
+    <!-- Header bar -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <span id="pt-watchlist-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(245,165,32,0.12);border:1px solid rgba(245,165,32,0.3);color:var(--gold)">PAPER</span>
+      <span id="pt-strategy-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:#111;border:1px solid #2a2a2a;color:var(--muted)"></span>
       <span id="pt-last-updated" style="font-size:11px;color:var(--muted)"></span>
     </div>
 
     <!-- Hero row -->
     <div id="pt-hero-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px"></div>
 
-    <!-- Current position -->
-    <div class="section-divider"><span class="section-divider-label">Current Position</span></div>
-    <div id="pt-position-card" style="margin-bottom:24px"></div>
-
-    <!-- Signal history chart -->
-    <div class="section-divider"><span class="section-divider-label">Daily Signals</span></div>
-    <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:6px;padding:16px;margin-bottom:24px">
-      <div style="height:160px"><canvas id="pt-signal-chart"></canvas></div>
-    </div>
-
-    <!-- Trade history table -->
-    <div class="section-divider"><span class="section-divider-label">Trade History</span></div>
+    <!-- Open positions -->
+    <div class="section-divider"><span class="section-divider-label">Open Positions</span></div>
     <div style="overflow-x:auto;margin-bottom:24px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
-            <th style="text-align:left;padding:7px 10px">Direction</th>
+            <th style="text-align:left;padding:7px 10px">Ticker</th>
+            <th style="text-align:left;padding:7px 10px">Dir</th>
             <th style="text-align:left;padding:7px 10px">Entry Date</th>
             <th style="text-align:right;padding:7px 10px">Entry</th>
-            <th style="text-align:left;padding:7px 10px">Exit Date</th>
-            <th style="text-align:right;padding:7px 10px">Exit</th>
-            <th style="text-align:right;padding:7px 10px">P&L (AUD)</th>
-            <th style="text-align:right;padding:7px 10px">P&L %</th>
-            <th style="text-align:center;padding:7px 10px">Status</th>
+            <th style="text-align:right;padding:7px 10px">Current</th>
+            <th style="text-align:right;padding:7px 10px">Unrealised</th>
+            <th style="text-align:right;padding:7px 10px">Stop</th>
+            <th style="text-align:right;padding:7px 10px">Score</th>
           </tr>
         </thead>
-        <tbody id="pt-trades-tbody"></tbody>
+        <tbody id="pt-positions-tbody"></tbody>
       </table>
     </div>
 
-    <!-- Signal log table -->
-    <div class="section-divider"><span class="section-divider-label">Signal Log</span></div>
+    <!-- Equity curve -->
+    <div class="section-divider"><span class="section-divider-label">Portfolio Equity</span></div>
+    <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:6px;padding:16px;margin-bottom:24px">
+      <div id="pt-equity-wrap"><div style="height:180px"><canvas id="pt-equity-chart"></canvas></div></div>
+    </div>
+
+    <!-- Today's signals -->
+    <div class="section-divider"><span class="section-divider-label">Today's Signals</span></div>
+    <div style="overflow-x:auto;margin-bottom:24px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
+            <th style="text-align:left;padding:7px 10px">Ticker</th>
+            <th style="text-align:center;padding:7px 10px">Signal</th>
+            <th style="text-align:right;padding:7px 10px">Pred Ret %</th>
+            <th style="text-align:right;padding:7px 10px">Score</th>
+            <th style="text-align:right;padding:7px 10px">HO Sharpe</th>
+            <th style="text-align:right;padding:7px 10px">Price</th>
+            <th style="text-align:center;padding:7px 10px">Status</th>
+          </tr>
+        </thead>
+        <tbody id="pt-signals-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Closed trades -->
+    <div class="section-divider"><span class="section-divider-label">Closed Trades</span></div>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
-            <th style="text-align:left;padding:7px 10px">Date</th>
-            <th style="text-align:center;padding:7px 10px">Signal</th>
-            <th style="text-align:center;padding:7px 10px">Prev</th>
-            <th style="text-align:right;padding:7px 10px">Close</th>
-            <th style="text-align:left;padding:7px 10px">Action</th>
+            <th style="text-align:left;padding:7px 10px">Ticker</th>
+            <th style="text-align:left;padding:7px 10px">Entry</th>
+            <th style="text-align:left;padding:7px 10px">Exit</th>
+            <th style="text-align:right;padding:7px 10px">Entry $</th>
+            <th style="text-align:right;padding:7px 10px">Exit $</th>
+            <th style="text-align:right;padding:7px 10px">P&L</th>
+            <th style="text-align:right;padding:7px 10px">P&L %</th>
+            <th style="text-align:left;padding:7px 10px">Reason</th>
           </tr>
         </thead>
-        <tbody id="pt-signals-tbody"></tbody>
+        <tbody id="pt-trades-tbody"></tbody>
       </table>
     </div>
 
@@ -1628,7 +1641,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 </script>
 <script src="tab_modellab.js?v=20260325"></script>
 <script src="tab_universe.js?v=20260325"></script>
-<script src="tab_meta.js?v=20260327"></script>
+<script src="tab_meta.js?v=20260328"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
 <script src="tab_papertrade.js?v=20260325"></script>
