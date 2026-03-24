@@ -1316,7 +1316,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const bucketsCanvas = document.getElementById('ml-score-buckets-chart');
   if (bucketsCanvas && buckets.length) {
     const bLabels = buckets.map(b => b.label);
-    const bWR     = buckets.map(b => +(b.win_rate * 100).toFixed(1));
+    const bWR     = buckets.map(b => b.win_rate != null ? +(b.win_rate * 100).toFixed(1) : null);
     const bN      = buckets.map(b => b.n);
     _mlScoreBucketsChart = new Chart(bucketsCanvas.getContext('2d'), {
       type: 'bar',
@@ -1325,8 +1325,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
         datasets: [{
           label: 'Win Rate %',
           data: bWR,
-          backgroundColor: bWR.map(v => v >= 50 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
-          borderColor:     bWR.map(v => v >= 50 ? '#00ff41' : '#ff5050'),
+          backgroundColor: bWR.map(v => v == null ? 'rgba(100,100,100,0.3)' : v >= 50 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
+          borderColor:     bWR.map(v => v == null ? '#555' : v >= 50 ? '#00ff41' : '#ff5050'),
           borderWidth: 1, borderRadius: 3,
         }]
       },
