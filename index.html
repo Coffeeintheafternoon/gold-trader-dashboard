@@ -1137,6 +1137,71 @@
       <div class="chart-wrap" style="height:380px;margin-top:12px"><canvas id="meta-ei-ticker-consist"></canvas></div>
     </div>
 
+    <!-- ══ FEATURE INTERACTION ANALYSIS ═════════════════════════════════════ -->
+    <div class="section-divider" style="margin-top:16px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">🔗</span>
+      <span class="section-divider-label">Feature Interaction Analysis — Which Feature Combinations Drive Edge?</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- FI-1: Feature co-occurrence heatmap (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Feature Co-Occurrence Heatmap — Top 18 Features</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">How often do feature pairs appear in the same model · cell = count · green = &gt;50% of those models pass HO PF≥1.10 · amber = &lt;50% pass · intensity = frequency · hover for detail</div>
+      <div id="meta-fi-coheatmap"></div>
+    </div>
+
+    <!-- FI-2 + FI-3: Feature pair PF + Category pair PF -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Top Feature Pairs by Avg HO PF</div>
+        <div class="chart-subtitle">Feature pairs (A+B both present) sorted by avg HO PF · gap vs "pair absent" bars shows combined alpha · requires ≥5 co-appearances</div>
+        <div class="chart-wrap" style="height:500px;margin-top:12px"><canvas id="meta-fi-pairpf"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Feature Category Pair Avg HO PF</div>
+        <div class="chart-subtitle">Which combinations of feature categories (macro+momentum, volume+trend, etc.) produce the best models? · sorted by avg HO PF · requires ≥4 models</div>
+        <div class="chart-wrap" style="height:500px;margin-top:12px"><canvas id="meta-fi-catpair"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══ TRADE MECHANICS ASSESSMENT ════════════════════════════════════════ -->
+    <div class="section-divider" style="margin-top:16px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">⚖️</span>
+      <span class="section-divider-label">Trade Mechanics Assessment — Does the Edge Make Mathematical Sense?</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- TM-1 + TM-2: Expected Value by Sector + MC -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Expected Value (EV) per Trade by Sector</div>
+        <div class="chart-subtitle">EV = (win_rate × payoff) − (1 − win_rate) · green &gt;0.05 = strong positive edge · any negative bar = loses money over time regardless of HO PF</div>
+        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tm-ev-sec"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px;margin-bottom:0">
+        <div class="chart-title">Expected Value (EV) per Trade by Market Cap Tier</div>
+        <div class="chart-subtitle">Same EV formula by size tier · verifies the trade math holds at each end of the market cap spectrum</div>
+        <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tm-ev-mc"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TM-3: Trade regime classification scatter (full width) -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Trade Regime Classification — Trend-Following vs Mean-Reversion vs Ideal vs Broken</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">Every model classified by win rate × payoff · blue = trend-follow (low WR, high payoff) · purple = mean-revert (high WR, low payoff) · green = ideal (both high) · red = broken · gold dashed = breakeven EV curve · models above the gold curve are profitable</div>
+      <div class="chart-wrap" style="height:440px;margin-top:12px"><canvas id="meta-tm-regime"></canvas></div>
+    </div>
+
+    <!-- TM-4: Long-only concentration risk by sector -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Directional Concentration Risk by Sector</div>
+      <div class="chart-subtitle" style="margin-bottom:14px">% of models per sector that are long-dominant (&gt;60% long trades) vs balanced vs short-dominant · a sector that's all-green is a hidden long-only equity bet — dangerous in a bear market</div>
+      <div class="chart-wrap" style="height:360px;margin-top:12px"><canvas id="meta-tm-concentration"></canvas></div>
+    </div>
+
     <!-- ══ TRADE LOG ANALYTICS ═══════════════════════════════════════════════ -->
     <div class="section-divider" style="margin-top:16px">
       <div class="section-divider-line"></div>
@@ -1620,13 +1685,13 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 
 // ── Tab init functions ────────────────────────────────────────────────────────
 </script>
-<script src="tab_modellab.js"></script>
-<script src="tab_universe.js"></script>
-<script src="tab_meta.js"></script>
-<script src="tab_signal.js"></script>
-<script src="tab_regime.js"></script>
-<script src="tab_papertrade.js"></script>
-<script src="tab_chatter.js"></script>
-<script src="tab_sow.js"></script>
+<script src="tab_modellab.js?v=20260325"></script>
+<script src="tab_universe.js?v=20260325"></script>
+<script src="tab_meta.js?v=20260325"></script>
+<script src="tab_signal.js?v=20260325"></script>
+<script src="tab_regime.js?v=20260325"></script>
+<script src="tab_papertrade.js?v=20260325"></script>
+<script src="tab_chatter.js?v=20260325"></script>
+<script src="tab_sow.js?v=20260325"></script>
 </body>
 </html>

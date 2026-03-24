@@ -478,6 +478,12 @@ function _buildFeatureCharts(filtered){
   // ── Edge Intelligence (4 charts) ─────────────────────────────────────────
   _buildEdgeIntelCharts(joined);
 
+  // ── Feature Interaction Analysis ─────────────────────────────────────────
+  _buildFeatureInteractionCharts(joined, topFeats);
+
+  // ── Trade Mechanics Assessment ────────────────────────────────────────────
+  _buildTradeMechanicsCharts(joined);
+
   // ── Trade & Model Analytics (20 charts) ──────────────────────────────────
   _buildTradeCharts(filtered, joined);
 }
@@ -982,5 +988,244 @@ function _buildEdgeIntelCharts(joined){
         plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
           tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0){const e=entries[c.dataIndex];return[`${e.ticker} · ${e.n} variants`,`Range: ${e.min.toFixed(3)} → ${e.max.toFixed(3)}`,`Avg: ${e.avg.toFixed(3)} · ${e.allGood?'✓ all pass':e.someGood?'~ mixed':'✗ none pass'}`];}const p=c.raw;return[`Avg HO PF: ${p.y?.toFixed(3)}`];}}}},
         scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9},maxRotation:45}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}}}}}});
+  })();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature Interaction Analysis
+// FI-1: Top feature co-occurrence pairs in passing models (heatmap table)
+// FI-2: Feature pair avg HO PF — top 20 pairs sorted by combined edge
+// FI-3: Feature category co-occurrence — which category combos work best
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildFeatureInteractionCharts(joined,topFeats){
+  const el=id=>document.getElementById(id);
+
+  // Models with HO PF and features
+  const valid=joined.filter(m=>m.ho_pf!=null&&m.features&&m.features.length>0);
+  const passing=valid.filter(m=>m.ho_pf>=1.10);
+
+  // ── FI-1: Co-occurrence heatmap — how often do top features appear together? ──
+  (function buildCoHeatmap(){
+    const cont=el('meta-fi-coheatmap');if(!cont)return;
+    const topN=topFeats.slice(0,18);
+    // Build co-occurrence matrix (count of models where both features appear)
+    const coAll={},coPass={};
+    topN.forEach(a=>topN.forEach(b=>{coAll[a+'|'+b]=0;coPass[a+'|'+b]=0;}));
+    [valid,passing].forEach((arr,pi)=>{
+      arr.forEach(m=>{
+        const mFeats=new Set((m.features||[]).map(f=>f.name));
+        topN.forEach(a=>topN.forEach(b=>{
+          if(a!==b&&mFeats.has(a)&&mFeats.has(b)){
+            if(pi===0)coAll[a+'|'+b]++;else coPass[a+'|'+b]++;
+          }
+        }));
+      });
+    });
+    // Max for normalisation
+    let maxCo=1;topN.forEach(a=>topN.forEach(b=>{if(a!==b)maxCo=Math.max(maxCo,coAll[a+'|'+b]);}));
+    const abbr3=n=>n.replace('macro_','m_').replace('price_fd_','fd_').replace('ann_','an_').replace('vol_','v_').replace('_ratio','_r').replace('_pct','%').replace('_20d','20').replace('_10d','10').replace('_5d','5');
+    let htm=`<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:10px">`;
+    htm+=`<thead><tr><th style="padding:3px 8px;color:var(--gold);font-size:10px;border-bottom:1px solid #222;text-align:left">Feature</th>`;
+    topN.forEach(f=>htm+=`<th style="padding:2px 3px;border-bottom:1px solid #222;white-space:nowrap"><div style="writing-mode:vertical-rl;transform:rotate(180deg);height:60px;display:flex;align-items:center;justify-content:flex-end"><span style="color:#9ca3af;font-size:9px">${abbr3(f)}</span></div></th>`);
+    htm+=`</tr></thead><tbody>`;
+    topN.forEach((a,ri)=>{
+      htm+=`<tr style="background:${ri%2===0?'#0d0d0d':'#080808'}"><td style="padding:3px 8px;color:#9ca3af;font-size:9px;white-space:nowrap;border-bottom:1px solid #111">${abbr3(a)}</td>`;
+      topN.forEach(b=>{
+        if(a===b){htm+=`<td style="background:#111;border-bottom:1px solid #111"></td>`;return;}
+        const n=coAll[a+'|'+b]||0;
+        const np=coPass[a+'|'+b]||0;
+        const passRate=n>0?np/n:0;
+        if(n===0){htm+=`<td style="padding:2px 3px;text-align:center;color:#222;border-bottom:1px solid #111;font-size:9px">·</td>`;return;}
+        const opacity=(0.08+0.82*n/maxCo).toFixed(2);
+        const bg=passRate>=0.5?`rgba(16,185,129,${opacity})`:`rgba(245,165,32,${opacity})`;
+        htm+=`<td title="${a} + ${b}: ${n} models, ${np} pass (${(passRate*100).toFixed(0)}%)" style="padding:2px 3px;text-align:center;background:${bg};border-bottom:1px solid #111;cursor:default"><span style="color:rgba(255,255,255,0.75);font-size:9px;font-weight:700">${n}</span></td>`;
+      });
+      htm+=`</tr>`;
+    });
+    htm+=`</tbody></table></div>`;
+    htm+=`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:16px;font-size:10px;color:#4b5563">`;
+    htm+=`<span>Cell = count of models where both features appear · <span style="color:rgba(16,185,129,0.8)">green</span> = >50% of those models pass (HO PF≥1.10) · <span style="color:rgba(245,165,32,0.8)">amber</span> = &lt;50% pass · intensity = co-occurrence count</span>`;
+    htm+=`</div>`;
+    cont.innerHTML=htm;
+  })();
+
+  // ── FI-2: Top feature pairs by avg HO PF ─────────────────────────────────
+  (function buildPairPF(){
+    const ctx=el('meta-fi-pairpf')?.getContext('2d');if(!ctx)return;
+    const topN=topFeats.slice(0,20);
+    const pairs=[];
+    for(let i=0;i<topN.length;i++){
+      for(let j=i+1;j<topN.length;j++){
+        const a=topN[i],b=topN[j];
+        const withBoth=valid.filter(m=>{const s=new Set((m.features||[]).map(f=>f.name));return s.has(a)&&s.has(b);});
+        if(withBoth.length<5)continue;
+        const avg=withBoth.reduce((s,m)=>s+m.ho_pf,0)/withBoth.length;
+        const withoutBoth=valid.filter(m=>{const s=new Set((m.features||[]).map(f=>f.name));return!(s.has(a)&&s.has(b));});
+        const avgOut=withoutBoth.length?withoutBoth.reduce((s,m)=>s+m.ho_pf,0)/withoutBoth.length:null;
+        pairs.push({a,b,avg,avgOut,diff:avgOut!=null?avg-avgOut:0,n:withBoth.length});
+      }
+    }
+    pairs.sort((x,y)=>y.avg-x.avg);
+    const top20=pairs.slice(0,20);
+    const abbr3=n=>n.replace('macro_','m_').replace('price_fd_','fd_').replace('ann_','an_').replace('vol_','v_').replace('_ratio','_r').replace('_pct','%').replace('_20d','20').replace('_10d','10').replace('_5d','5');
+    const colors=top20.map(p=>p.avg>=1.10?GREEN_7:p.avg>=1.0?'rgba(251,191,36,0.70)':RED_55);
+    new Chart(ctx,{type:'bar',
+      data:{labels:top20.map(p=>abbr3(p.a)+' + '+abbr3(p.b)),datasets:[
+        {label:'Avg HO PF (both present)',data:top20.map(p=>+p.avg.toFixed(4)),backgroundColor:colors,borderWidth:0,borderRadius:3},
+        {label:'Avg HO PF (pair absent)',data:top20.map(p=>p.avgOut!=null?+p.avgOut.toFixed(4):null),backgroundColor:'rgba(107,114,128,0.35)',borderWidth:0,borderRadius:3},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:c=>{const p=top20[c.dataIndex];return c.datasetIndex===0?[`n=${p.n} models · avg HO PF: ${p.avg.toFixed(4)}`,`Δ vs without pair: ${p.diff>=0?'+':''}${p.diff.toFixed(4)}`]:[`Without this pair: ${c.raw?.toFixed(4)}`];}}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when both features appear in the same model',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}});
+  })();
+
+  // ── FI-3: Category co-occurrence avg HO PF ────────────────────────────────
+  (function buildCatPairPF(){
+    const ctx=el('meta-fi-catpair')?.getContext('2d');if(!ctx)return;
+    const cats=['macro','momentum','volume','interaction','announcement','volatility','candle','trend'];
+    const pairs=[];
+    for(let i=0;i<cats.length;i++){
+      for(let j=i+1;j<cats.length;j++){
+        const a=cats[i],b=cats[j];
+        const withBoth=valid.filter(m=>{
+          const hasCat=cat=>( m.features||[]).some(f=>f.category===cat);
+          return hasCat(a)&&hasCat(b);
+        });
+        if(withBoth.length<4)continue;
+        const avg=withBoth.reduce((s,m)=>s+m.ho_pf,0)/withBoth.length;
+        const passRate=withBoth.filter(m=>m.ho_pf>=1.10).length/withBoth.length;
+        pairs.push({a,b,avg,passRate,n:withBoth.length});
+      }
+    }
+    pairs.sort((x,y)=>y.avg-x.avg);
+    const colors=pairs.map(p=>p.avg>=1.10?GREEN_7:p.avg>=1.0?'rgba(251,191,36,0.70)':RED_55);
+    new Chart(ctx,{type:'bar',
+      data:{labels:pairs.map(p=>p.a+' + '+p.b),datasets:[
+        {label:'Avg HO PF',data:pairs.map(p=>+p.avg.toFixed(4)),backgroundColor:colors,borderWidth:0,borderRadius:3},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>{const p=pairs[c.dataIndex];return[`${p.a} + ${p.b}`,`Avg HO PF: ${p.avg.toFixed(4)} · n=${p.n} models`,`Pass rate: ${(p.passRate*100).toFixed(0)}% above 1.10`];}}}},
+        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when model has features from both categories',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}}});
+  })();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trade Mechanics Assessment
+// TM-1: Expected Value (EV) by sector — is win_rate × payoff > 1.0?
+// TM-2: EV by MC tier
+// TM-3: Trade regime classification — trend-follow vs mean-revert (scatter)
+// TM-4: Long-only concentration risk by sector (stacked bar of direction × sector)
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildTradeMechanicsCharts(joined){
+  const el=id=>document.getElementById(id);
+  const trd=joined.filter(m=>m.n_trades_ho!=null&&m.n_trades_ho>=5&&m.win_rate_ho!=null&&m.payoff_ratio!=null);
+
+  // ── TM-1 + TM-2: EV gauge by sector and MC tier ───────────────────────────
+  function buildEVChart(canvasId,groups,order){
+    const ctx=el(canvasId)?.getContext('2d');if(!ctx)return;
+    // EV = win_rate * payoff - (1 - win_rate) * 1.0  [normalised to per unit risked]
+    // or simpler: expected return per trade = win_rate * avg_win + (1-win_rate) * avg_loss
+    const entries=order.map(g=>{
+      const ms=(groups[g]||[]).filter(m=>m.win_rate_ho!=null&&m.payoff_ratio!=null);
+      if(!ms.length)return null;
+      const wr=ms.reduce((a,m)=>a+m.win_rate_ho,0)/ms.length;
+      const pr=ms.reduce((a,m)=>a+m.payoff_ratio,0)/ms.length;
+      // EV: every $1 risked → win wr% of the time for payoff×$1, lose (1-wr)% of the time for $1
+      const ev=wr*pr-(1-wr);
+      const evPct=wr*pr*100; // as percentage of entry (simplified)
+      return{g,wr:+( wr*100).toFixed(1),pr:+pr.toFixed(2),ev:+ev.toFixed(3),evPct,n:ms.length,
+        pass:ms.filter(m=>m.ho_pf>=1.10).length};
+    }).filter(Boolean).sort((a,b)=>b.ev-a.ev);
+    const evColors=entries.map(e=>e.ev>=0.05?GREEN_7:e.ev>=0?'rgba(251,191,36,0.70)':RED_55);
+    new Chart(ctx,{type:'bar',
+      data:{labels:entries.map(e=>e.g),datasets:[{
+        data:entries.map(e=>e.ev),backgroundColor:evColors,borderColor:evColors,borderWidth:1,borderRadius:3,
+      }]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>{const e=entries[c.dataIndex];return[
+            `EV per unit: ${c.raw>=0?'+':''}${c.raw.toFixed(3)}`,
+            `Win rate: ${e.wr}% · Payoff: ${e.pr}x`,
+            `n=${e.n} models · ${e.pass} pass HO PF≥1.10`,
+            c.raw>0?'✓ Positive expected value':'✗ Negative expected value — loses money long run',
+          ];}}}},
+        scales:{
+          x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'EV = (win_rate × payoff) − (1 − win_rate)  ·  >0 = profitable · <0 = guaranteed losing',color:'#6b7280',font:{size:10}}},
+          y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+        }}});
+  }
+  const secGrp={},mcGrp={};
+  _MC_TIERS.forEach(([l])=>{mcGrp[l]=[];});
+  trd.forEach(m=>{const s=m.sector||'Other';if(!secGrp[s])secGrp[s]=[];secGrp[s].push(m);const t=_mcTier(m.market_cap);if(t)mcGrp[t].push(m);});
+  const secOrder=Object.keys(secGrp).sort((a,b)=>secGrp[b].length-secGrp[a].length);
+  const mcOrder=_MC_TIERS.filter(([l])=>(mcGrp[l]||[]).length>=2).map(([l])=>l);
+  buildEVChart('meta-tm-ev-sec',secGrp,secOrder);
+  buildEVChart('meta-tm-ev-mc',mcGrp,mcOrder);
+
+  // ── TM-3: Trade regime classification — trend vs mean-revert scatter ───────
+  (function buildRegimeScatter(){
+    const ctx=el('meta-tm-regime')?.getContext('2d');if(!ctx)return;
+    // Quadrants:
+    //   High WR + Low payoff  = mean-reversion (many small wins)
+    //   Low WR + High payoff  = trend-following (few big wins)
+    //   High WR + High payoff = ideal (rarely real)
+    //   Low WR + Low payoff   = broken model
+    const quadColors={
+      'Trend-Follow (Low WR, High Payoff)':'rgba(59,130,246,0.72)',
+      'Mean-Revert (High WR, Low Payoff)':'rgba(167,139,250,0.72)',
+      'Ideal (High WR, High Payoff)':GREEN_7,
+      'Broken (Low WR, Low Payoff)':RED_55,
+    };
+    const classify=m=>{
+      const wr=m.win_rate_ho*100;const pr=m.payoff_ratio;
+      if(wr>=50&&pr>=1.2)return'Ideal (High WR, High Payoff)';
+      if(wr>=50&&pr<1.2)return'Mean-Revert (High WR, Low Payoff)';
+      if(wr<50&&pr>=1.2)return'Trend-Follow (Low WR, High Payoff)';
+      return'Broken (Low WR, Low Payoff)';
+    };
+    const groups={};Object.keys(quadColors).forEach(k=>{groups[k]=[];});
+    trd.forEach(m=>{const q=classify(m);groups[q].push({x:m.win_rate_ho*100,y:m.payoff_ratio,ticker:m.ticker,sec:m.sector||'Other',pf:m.ho_pf,n:m.n_trades_ho});});
+    const datasets=Object.entries(quadColors).map(([label,color])=>({type:'scatter',label,data:groups[label],backgroundColor:color,pointRadius:5,pointHoverRadius:8}));
+    // Dividing lines
+    datasets.push({type:'line',label:'_wr50',data:[{x:50,y:0.3},{x:50,y:4.5}],borderColor:'rgba(255,255,255,0.10)',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
+    datasets.push({type:'line',label:'_pr12',data:[{x:20,y:1.2},{x:85,y:1.2}],borderColor:'rgba(255,255,255,0.10)',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
+    // Breakeven curve
+    datasets.push({type:'line',label:'_be',data:[30,35,40,45,50,55,60,65,70,75,80].map(x=>({x,y:+(1/( x/100)).toFixed(2)})),borderColor:'rgba(245,165,32,0.20)',borderDash:[2,4],borderWidth:1.5,pointRadius:0,fill:false,tension:0.3,order:0});
+    new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+        tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Win: ${p.x?.toFixed(1)}% · Payoff: ${p.y?.toFixed(2)}x`,`HO PF: ${p.pf?.toFixed(3)} · ${p.n} trades`];return[];}}}},
+      scales:{
+        x:{min:20,max:85,title:{display:true,text:'Win Rate % (HO)  ·  dashed lines = quadrant boundaries',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},
+        y:{min:0.3,title:{display:true,text:'Payoff Ratio  ·  gold dashed curve = breakeven EV',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'}},
+      }}});
+  })();
+
+  // ── TM-4: Long-only concentration risk ────────────────────────────────────
+  (function buildConcentrationRisk(){
+    const ctx=el('meta-tm-concentration')?.getContext('2d');if(!ctx)return;
+    // For each sector: show what % of models are predominantly long (>60%), mixed, predominantly short
+    const results=secOrder.map(sec=>{
+      const ms=(secGrp[sec]||[]).filter(m=>m.long_pct!=null);
+      if(!ms.length)return null;
+      const longDom=ms.filter(m=>m.long_pct>0.60).length;
+      const shortDom=ms.filter(m=>m.long_pct<0.40).length;
+      const mixed=ms.length-longDom-shortDom;
+      return{sec,longDom,mixed,shortDom,n:ms.length};
+    }).filter(Boolean);
+    new Chart(ctx,{type:'bar',
+      data:{labels:results.map(r=>r.sec),datasets:[
+        {label:'Long-dominant (>60% long)',data:results.map(r=>+( r.longDom/r.n*100).toFixed(1)),backgroundColor:'rgba(16,185,129,0.65)',borderWidth:0,borderRadius:0},
+        {label:'Balanced (40–60%)',data:results.map(r=>+(r.mixed/r.n*100).toFixed(1)),backgroundColor:'rgba(107,114,128,0.45)',borderWidth:0,borderRadius:0},
+        {label:'Short-dominant (<40% long)',data:results.map(r=>+(r.shortDom/r.n*100).toFixed(1)),backgroundColor:'rgba(239,68,68,0.55)',borderWidth:0,borderRadius:0},
+      ]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:c=>{const r=results[c.dataIndex];return`${c.dataset.label}: ${c.raw.toFixed(1)}% (${Math.round(c.raw/100*r.n)} of ${r.n} models)`;}}}},
+        scales:{
+          x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of models by trade direction dominance  ·  green = long-heavy = directional risk in bear markets',color:'#6b7280',font:{size:10}}},
+          y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+        }}});
   })();
 }
