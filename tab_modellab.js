@@ -381,28 +381,43 @@ function buildMLEquityChart(equityIS, equityHO, hoStart) {
   // Build a single merged label set (sorted union of IS + HO dates)
   const isMap = {}, hoMap = {};
   equityIS.forEach(e => { isMap[e.date] = +((Math.exp(e.cum_ret||0)-1)*100).toFixed(4); });
+  // HO resets to 0 at its own start — already the case from the data, displayed on right axis
   equityHO.forEach(e => { hoMap[e.date] = +((Math.exp(e.cum_ret||0)-1)*100).toFixed(4); });
   const allDates = [...new Set([...Object.keys(isMap), ...Object.keys(hoMap)])].sort();
 
   const isVals = allDates.map(d => isMap[d] != null ? isMap[d] : null);
   const hoVals = allDates.map(d => hoMap[d] != null ? hoMap[d] : null);
 
+  const hasHO = equityHO.length > 0;
+
   _mlEquityChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: allDates,
       datasets: [
-        { label: 'IS Walk-Forward',    data: isVals, borderColor: '#60a5fa', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false },
-        { label: 'Holdout (never seen)', data: hoVals, borderColor: '#f5a520', backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2, borderDash: [5,3], spanGaps: false },
+        { label: 'IS Walk-Forward',      data: isVals, borderColor: '#60a5fa', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false, yAxisID: 'yIS' },
+        { label: 'Holdout (never seen)', data: hoVals, borderColor: '#f5a520', backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2, borderDash: [5,3], spanGaps: false, yAxisID: 'yHO' },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color:'#aaa', font:{size:11} } },
-                 tooltip: { mode:'index', intersect:false, callbacks: { label: c => c.raw != null ? ` ${c.dataset.label}: ${c.raw >= 0 ? '+' : ''}${c.raw.toFixed(2)}%` : null, filter: c => c.raw != null } } },
+      plugins: {
+        legend: { labels: { color:'#aaa', font:{size:11} } },
+        tooltip: {
+          mode:'index', intersect:false,
+          callbacks: {
+            label: c => c.raw != null ? ` ${c.dataset.label}: ${c.raw >= 0 ? '+' : ''}${c.raw.toFixed(2)}%` : null,
+            filter: c => c.raw != null
+          }
+        }
+      },
       scales: {
-        x: { grid: {color:'#1a1a1a'}, ticks: {color:'#555', maxTicksLimit:8, font:{size:10}} },
-        y: { grid: {color:'#1a1a1a'}, ticks: {color:'#555', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(1)+'%'} }
+        x:   { grid: {color:'#1a1a1a'}, ticks: {color:'#555', maxTicksLimit:8, font:{size:10}} },
+        yIS: { position: 'left',  grid: {color:'#1a1a1a'}, ticks: {color:'#60a5fa', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
+               title: { display: true, text: 'IS %', color: '#60a5fa', font:{size:10} } },
+        yHO: { position: 'right', grid: {drawOnChartArea: false}, ticks: {color:'#f5a520', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
+               title: { display: hasHO, text: 'HO %', color: '#f5a520', font:{size:10} },
+               display: hasHO },
       }
     }
   });
