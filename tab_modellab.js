@@ -235,8 +235,16 @@ function renderTickerDetail(d) {
   }
 
   // Derive display title
-  const isRegimeModelEarly = d.model_type === 'regime_similarity';
-  const modelLabel = isRegimeModelEarly ? 'Regime Similarity Model' : 'Linear Regression Model';
+  function _modelLabel(mt) {
+    if (!mt) return 'Linear Regression Model';
+    if (mt === 'regime_similarity') return 'Regime Similarity Model';
+    if (mt.includes('v4')) return 'Ridge v4 Model';
+    if (mt.includes('v3')) return 'Ridge v3 Model';
+    if (mt.includes('v2')) return 'Ridge v2 Model';
+    if (mt.includes('v1') || mt.startsWith('ridge_')) return 'Ridge v1 Model';
+    return 'Linear Regression Model';
+  }
+  const modelLabel = _modelLabel(d.model_type);
   document.getElementById('ml-detail-title').textContent = ticker + ' — ' + modelLabel;
   document.getElementById('ml-detail-period').textContent = `${d.period_start} → ${d.period_end}  (${d.bars} bars  |  ${d.ann_count} announcements)`;
 
