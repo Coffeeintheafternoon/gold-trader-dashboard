@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-25T00:18:42Z",
+  "generated_at": "2026-03-25T04:09:48Z",
   "n_total": 319,
   "n_valid": 258,
   "n_error": 61,
@@ -8,11 +8,11 @@
       "ticker": "NST.AX",
       "sector": "Gold (Large)",
       "strategy": "linear_regression",
-      "pf": 1.0048,
-      "sharpe": 0.028,
-      "ho_pf": 1.2701,
-      "ho_sharpe": 1.3185,
-      "overfit": "MEDIUM",
+      "pf": 1.1257,
+      "sharpe": 0.5119,
+      "ho_pf": 1.8799,
+      "ho_sharpe": 2.1769,
+      "overfit": "LOW",
       "mean_ann_pct": 59.905,
       "se_ann_pct": 0.974,
       "ci95_lower": 57.996,
@@ -22,17 +22,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "nst_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_nst_ax_v4.json",
+          "is_pf": 1.1257,
+          "is_sharpe": 0.5119,
+          "ho_pf": 1.8799,
+          "ho_sharpe": 2.1769
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "EVN.AX",
       "sector": "Gold (Large)",
       "strategy": "linear_regression",
-      "pf": 0.9298,
-      "sharpe": -0.4037,
-      "ho_pf": 1.0795,
-      "ho_sharpe": 0.4555,
-      "overfit": "NO_EDGE",
+      "pf": 0.982,
+      "sharpe": -0.072,
+      "ho_pf": 1.5383,
+      "ho_sharpe": 1.9157,
+      "overfit": "REGIME_CHANGE",
       "mean_ann_pct": 12.456,
       "se_ann_pct": 0.892,
       "ci95_lower": 10.709,
@@ -52,8 +64,18 @@
           "is_sharpe": -0.2527,
           "ho_pf": 1.2687,
           "ho_sharpe": 1.4331
+        },
+        {
+          "safe_name": "evn_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_evn_ax_v4.json",
+          "is_pf": 0.982,
+          "is_sharpe": -0.072,
+          "ho_pf": 1.5383,
+          "ho_sharpe": 1.9157
         }
-      ]
+      ],
+      "note": null
     },
     {
       "ticker": "NCM.AX",
@@ -79,15 +101,15 @@
       "ticker": "WAF.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 1.124,
-      "sharpe": 0.595,
+      "pf": 1.3027,
+      "sharpe": 1.1754,
       "mean_ann_pct": 41.167,
       "se_ann_pct": 1.135,
       "ci95_lower": 38.943,
       "ci95_upper": 43.391,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 3717,
+      "oos_bars": 180,
       "n_bars_total": 3990,
       "error": null,
       "models": [
@@ -99,17 +121,31 @@
           "is_sharpe": 0.3287,
           "ho_pf": 1.2288,
           "ho_sharpe": 1.2509
+        },
+        {
+          "safe_name": "waf_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_waf_ax_v4.json",
+          "is_pf": 1.3027,
+          "is_sharpe": 1.1754,
+          "ho_pf": 1.5604,
+          "ho_sharpe": 1.5088
         }
-      ]
+      ],
+      "ho_pf": 1.5604,
+      "ho_sharpe": 1.5088,
+      "overfit": "LOW",
+      "pipeline": true,
+      "note": null
     },
     {
       "ticker": "RRL.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 1.1661,
-      "sharpe": 0.8853,
-      "ho_pf": 1.1674,
-      "ho_sharpe": 0.9028,
+      "pf": 1.288,
+      "sharpe": 1.0007,
+      "ho_pf": 2.0704,
+      "ho_sharpe": 3.1057,
       "overfit": "LOW",
       "mean_ann_pct": 40.041,
       "se_ann_pct": 0.847,
@@ -130,18 +166,28 @@
           "is_sharpe": 0.8182,
           "ho_pf": 1.2212,
           "ho_sharpe": 1.1649
+        },
+        {
+          "safe_name": "rrl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_rrl_ax_v4.json",
+          "is_pf": 1.288,
+          "is_sharpe": 1.0007,
+          "ho_pf": 2.0704,
+          "ho_sharpe": 3.1057
         }
-      ]
+      ],
+      "note": null
     },
     {
       "ticker": "RMS.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 0.9738,
-      "sharpe": -0.1528,
-      "ho_pf": 1.033,
-      "ho_sharpe": 0.1957,
-      "overfit": "NO_EDGE",
+      "pf": 1.1034,
+      "sharpe": 0.4254,
+      "ho_pf": 1.3246,
+      "ho_sharpe": 1.284,
+      "overfit": "LOW",
       "mean_ann_pct": 15.086,
       "se_ann_pct": 0.948,
       "ci95_lower": 13.227,
@@ -151,16 +197,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "rms_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_rms_ax_v4.json",
+          "is_pf": 1.1034,
+          "is_sharpe": 0.4254,
+          "ho_pf": 1.3246,
+          "ho_sharpe": 1.284
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "GMD.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 0.9474,
-      "sharpe": -0.3139,
-      "ho_pf": 1.1545,
-      "ho_sharpe": 0.8466,
+      "pf": 0.9925,
+      "sharpe": -0.0347,
+      "ho_pf": 1.7029,
+      "ho_sharpe": 2.641,
       "overfit": "REGIME_CHANGE",
       "mean_ann_pct": 21.631,
       "se_ann_pct": 1.39,
@@ -171,21 +229,33 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "gmd_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_gmd_ax_v4.json",
+          "is_pf": 0.9925,
+          "is_sharpe": -0.0347,
+          "ho_pf": 1.7029,
+          "ho_sharpe": 2.641
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "BGL.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.016,
-      "sharpe": 0.066,
+      "pf": 1.1383,
+      "sharpe": 0.4376,
       "mean_ann_pct": 6.26,
       "se_ann_pct": 1.353,
       "ci95_lower": 3.607,
       "ci95_upper": 8.912,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4851,
+      "oos_bars": 180,
       "n_bars_total": 5121,
       "error": null,
       "models": [
@@ -197,8 +267,22 @@
           "is_sharpe": -0.022,
           "ho_pf": 0.6813,
           "ho_sharpe": -2.2848
+        },
+        {
+          "safe_name": "bgl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_bgl_ax_v4.json",
+          "is_pf": 1.1383,
+          "is_sharpe": 0.4376,
+          "ho_pf": 2.0133,
+          "ho_sharpe": 2.9717
         }
-      ]
+      ],
+      "ho_pf": 2.0133,
+      "ho_sharpe": 2.9717,
+      "overfit": "LOW",
+      "pipeline": true,
+      "note": null
     },
     {
       "ticker": "GOR.AX",
@@ -224,10 +308,10 @@
       "ticker": "CMM.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 1.235,
-      "sharpe": 1.2111,
-      "ho_pf": 1.317,
-      "ho_sharpe": 1.6257,
+      "pf": 1.2596,
+      "sharpe": 1.0884,
+      "ho_pf": 1.6474,
+      "ho_sharpe": 2.1815,
       "overfit": "LOW",
       "mean_ann_pct": 8.29,
       "se_ann_pct": 1.354,
@@ -238,16 +322,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "cmm_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_cmm_ax_v4.json",
+          "is_pf": 1.2596,
+          "is_sharpe": 1.0884,
+          "ho_pf": 1.6474,
+          "ho_sharpe": 2.1815
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "WGX.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 0.9295,
-      "sharpe": -0.4247,
-      "ho_pf": 0.738,
-      "ho_sharpe": -1.7701,
+      "pf": 1.0234,
+      "sharpe": 0.1051,
+      "ho_pf": 0.9634,
+      "ho_sharpe": -0.1834,
       "overfit": "NO_EDGE",
       "mean_ann_pct": 4.262,
       "se_ann_pct": 1.165,
@@ -258,23 +354,51 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "wgx_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_wgx_ax_v4.json",
+          "is_pf": 1.0234,
+          "is_sharpe": 0.1051,
+          "ho_pf": 0.9634,
+          "ho_sharpe": -0.1834
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "PRU.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 1.044,
-      "sharpe": 0.239,
+      "pf": 1.4254,
+      "sharpe": 1.6925,
       "mean_ann_pct": 15.211,
       "se_ann_pct": 0.887,
       "ci95_lower": 13.473,
       "ci95_upper": 16.949,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 5166,
+      "oos_bars": 180,
       "n_bars_total": 5439,
-      "error": null
+      "error": null,
+      "ho_pf": 1.4979,
+      "ho_sharpe": 1.8551,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "pru_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_pru_ax_v4.json",
+          "is_pf": 1.4254,
+          "is_sharpe": 1.6925,
+          "ho_pf": 1.4979,
+          "ho_sharpe": 1.8551
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SLR.AX",
@@ -320,17 +444,33 @@
       "ticker": "ALK.AX",
       "sector": "Gold (Mid)",
       "strategy": "linear_regression",
-      "pf": 1.139,
-      "sharpe": 0.524,
+      "pf": 1.1338,
+      "sharpe": 0.5369,
       "mean_ann_pct": 39.132,
       "se_ann_pct": 0.766,
       "ci95_lower": 37.63,
       "ci95_upper": 40.633,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9513,
+      "oos_bars": 180,
       "n_bars_total": 9778,
-      "error": null
+      "error": null,
+      "ho_pf": 1.0577,
+      "ho_sharpe": 0.2577,
+      "overfit": "MEDIUM",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "alk_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_alk_ax_v4.json",
+          "is_pf": 1.1338,
+          "is_sharpe": 0.5369,
+          "ho_pf": 1.0577,
+          "ho_sharpe": 0.2577
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "RED.AX",
@@ -356,47 +496,79 @@
       "ticker": "RSG.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.046,
-      "sharpe": 0.209,
+      "pf": 1.1041,
+      "sharpe": 0.4305,
       "mean_ann_pct": 11.818,
       "se_ann_pct": 0.581,
       "ci95_lower": 10.679,
       "ci95_upper": 12.957,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9513,
+      "oos_bars": 180,
       "n_bars_total": 9780,
-      "error": null
+      "error": null,
+      "ho_pf": 1.3693,
+      "ho_sharpe": 1.4622,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "rsg_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_rsg_ax_v4.json",
+          "is_pf": 1.1041,
+          "is_sharpe": 0.4305,
+          "ho_pf": 1.3693,
+          "ho_sharpe": 1.4622
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "OBM.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.014,
-      "sharpe": 0.053,
+      "pf": 1.0167,
+      "sharpe": 0.0753,
       "mean_ann_pct": 2.835,
       "se_ann_pct": 0.814,
       "ci95_lower": 1.24,
       "ci95_upper": 4.429,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4347,
+      "oos_bars": 180,
       "n_bars_total": 4618,
-      "error": null
+      "error": null,
+      "ho_pf": 1.4421,
+      "ho_sharpe": 1.5145,
+      "overfit": "MEDIUM",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "obm_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_obm_ax_v4.json",
+          "is_pf": 1.0167,
+          "is_sharpe": 0.0753,
+          "ho_pf": 1.4421,
+          "ho_sharpe": 1.5145
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "CYL.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.13,
-      "sharpe": 0.462,
+      "pf": 1.1388,
+      "sharpe": 0.5362,
       "mean_ann_pct": 35.779,
       "se_ann_pct": 1.135,
       "ci95_lower": 33.555,
       "ci95_upper": 38.003,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4662,
+      "oos_bars": 180,
       "n_bars_total": 4972,
       "error": null,
       "models": [
@@ -408,24 +580,54 @@
           "is_sharpe": -0.0353,
           "ho_pf": 0.7972,
           "ho_sharpe": -1.2716
+        },
+        {
+          "safe_name": "cyl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_cyl_ax_v4.json",
+          "is_pf": 1.1388,
+          "is_sharpe": 0.5362,
+          "ho_pf": 2.2847,
+          "ho_sharpe": 3.6216
         }
-      ]
+      ],
+      "ho_pf": 2.2847,
+      "ho_sharpe": 3.6216,
+      "overfit": "LOW",
+      "pipeline": true,
+      "note": null
     },
     {
       "ticker": "SBM.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.053,
-      "sharpe": 0.21,
+      "pf": 1.2053,
+      "sharpe": 0.7123,
       "mean_ann_pct": 15.645,
       "se_ann_pct": 0.765,
       "ci95_lower": 14.145,
       "ci95_upper": 17.145,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9513,
+      "oos_bars": 180,
       "n_bars_total": 9779,
-      "error": null
+      "error": null,
+      "ho_pf": 0.9962,
+      "ho_sharpe": -0.0171,
+      "overfit": "HIGH",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "sbm_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_sbm_ax_v4.json",
+          "is_pf": 1.2053,
+          "is_sharpe": 0.7123,
+          "ho_pf": 0.9962,
+          "ho_sharpe": -0.0171
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SXG.AX",
@@ -471,65 +673,129 @@
       "ticker": "KCN.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.0,
-      "sharpe": -0.002,
+      "pf": 1.1194,
+      "sharpe": 0.4221,
       "mean_ann_pct": -0.093,
       "se_ann_pct": 0.616,
       "ci95_lower": -1.3,
       "ci95_upper": 1.113,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9450,
+      "oos_bars": 180,
       "n_bars_total": 9716,
-      "error": null
+      "error": null,
+      "ho_pf": 1.3044,
+      "ho_sharpe": 0.8963,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "kcn_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_kcn_ax_v4.json",
+          "is_pf": 1.1194,
+          "is_sharpe": 0.4221,
+          "ho_pf": 1.3044,
+          "ho_sharpe": 0.8963
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MML.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.105,
-      "sharpe": 0.395,
+      "pf": 1.25,
+      "sharpe": 0.5281,
       "mean_ann_pct": 39.534,
       "se_ann_pct": 3.801,
       "ci95_lower": 32.084,
       "ci95_upper": 46.983,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 693,
+      "oos_bars": 180,
       "n_bars_total": 985,
-      "error": null
+      "error": null,
+      "ho_pf": 1.1238,
+      "ho_sharpe": 0.5004,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "mml_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_mml_ax_v4.json",
+          "is_pf": 1.25,
+          "is_sharpe": 0.5281,
+          "ho_pf": 1.1238,
+          "ho_sharpe": 0.5004
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "STN.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 0.992,
-      "sharpe": -0.043,
+      "pf": 1.4829,
+      "sharpe": 1.5347,
       "mean_ann_pct": -3.158,
       "se_ann_pct": 1.74,
       "ci95_lower": -6.569,
       "ci95_upper": 0.253,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 1764,
+      "oos_bars": 180,
       "n_bars_total": 2033,
-      "error": null
+      "error": null,
+      "ho_pf": 2.0801,
+      "ho_sharpe": 3.0119,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "stn_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_stn_ax_v4.json",
+          "is_pf": 1.4829,
+          "is_sharpe": 1.5347,
+          "ho_pf": 2.0801,
+          "ho_sharpe": 3.0119
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SVL.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.135,
-      "sharpe": 0.485,
+      "pf": 1.3026,
+      "sharpe": 1.1081,
       "mean_ann_pct": 64.808,
       "se_ann_pct": 1.985,
       "ci95_lower": 60.916,
       "ci95_upper": 68.699,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4536,
+      "oos_bars": 180,
       "n_bars_total": 4848,
-      "error": null
+      "error": null,
+      "ho_pf": 1.1146,
+      "ho_sharpe": 0.518,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "svl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_svl_ax_v4.json",
+          "is_pf": 1.3026,
+          "is_sharpe": 1.1081,
+          "ho_pf": 1.1146,
+          "ho_sharpe": 0.518
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "CAI.AX",
@@ -555,17 +821,33 @@
       "ticker": "HGO.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.032,
-      "sharpe": 0.093,
+      "pf": 1.4217,
+      "sharpe": 1.6033,
       "mean_ann_pct": 10.529,
       "se_ann_pct": 1.274,
       "ci95_lower": 8.031,
       "ci95_upper": 13.027,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 7812,
+      "oos_bars": 180,
       "n_bars_total": 8078,
-      "error": null
+      "error": null,
+      "ho_pf": 1.051,
+      "ho_sharpe": 0.1977,
+      "overfit": "MEDIUM",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "hgo_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_hgo_ax_v4.json",
+          "is_pf": 1.4217,
+          "is_sharpe": 1.6033,
+          "ho_pf": 1.051,
+          "ho_sharpe": 0.1977
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MGV.AX",
@@ -591,33 +873,65 @@
       "ticker": "ERM.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.151,
-      "sharpe": 0.699,
+      "pf": 1.2708,
+      "sharpe": 0.9404,
       "mean_ann_pct": 55.759,
       "se_ann_pct": 1.21,
       "ci95_lower": 53.388,
       "ci95_upper": 58.13,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4347,
+      "oos_bars": 180,
       "n_bars_total": 4619,
-      "error": null
+      "error": null,
+      "ho_pf": 0.8181,
+      "ho_sharpe": -0.9486,
+      "overfit": "HIGH",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "erm_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_erm_ax_v4.json",
+          "is_pf": 1.2708,
+          "is_sharpe": 0.9404,
+          "ho_pf": 0.8181,
+          "ho_sharpe": -0.9486
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "AUC.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.135,
-      "sharpe": 0.593,
+      "pf": 1.8681,
+      "sharpe": 2.6904,
       "mean_ann_pct": 53.119,
       "se_ann_pct": 1.444,
       "ci95_lower": 50.288,
       "ci95_upper": 55.95,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 3843,
+      "oos_bars": 180,
       "n_bars_total": 4110,
-      "error": null
+      "error": null,
+      "ho_pf": 1.5598,
+      "ho_sharpe": 2.1447,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "auc_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_auc_ax_v4.json",
+          "is_pf": 1.8681,
+          "is_sharpe": 2.6904,
+          "ho_pf": 1.5598,
+          "ho_sharpe": 2.1447
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "GBZ.AX",
@@ -643,17 +957,33 @@
       "ticker": "LCL.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.245,
-      "sharpe": 0.932,
+      "pf": 1.7306,
+      "sharpe": 1.5397,
       "mean_ann_pct": 123.576,
       "se_ann_pct": 1.997,
       "ci95_lower": 119.662,
       "ci95_upper": 127.491,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4410,
+      "oos_bars": 180,
       "n_bars_total": 4671,
-      "error": null
+      "error": null,
+      "ho_pf": 3.1452,
+      "ho_sharpe": 4.2635,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "lcl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_lcl_ax_v4.json",
+          "is_pf": 1.7306,
+          "is_sharpe": 1.5397,
+          "ho_pf": 3.1452,
+          "ho_sharpe": 4.2635
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "TSC.AX",
@@ -679,17 +1009,33 @@
       "ticker": "AAJ.AX",
       "sector": "Gold (Small)",
       "strategy": "linear_regression",
-      "pf": 1.338,
-      "sharpe": 1.127,
+      "pf": 1.5073,
+      "sharpe": 1.2592,
       "mean_ann_pct": 142.0,
       "se_ann_pct": 2.104,
       "ci95_lower": 137.876,
       "ci95_upper": 146.123,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 3591,
+      "oos_bars": 180,
       "n_bars_total": 3867,
-      "error": null
+      "error": null,
+      "ho_pf": 1.4726,
+      "ho_sharpe": 1.2789,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "aaj_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_aaj_ax_v4.json",
+          "is_pf": 1.5073,
+          "is_sharpe": 1.2592,
+          "ho_pf": 1.4726,
+          "ho_sharpe": 1.2789
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "RXM.AX",
@@ -715,27 +1061,43 @@
       "ticker": "S2R.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.184,
-      "sharpe": 0.846,
+      "pf": 1.734,
+      "sharpe": 2.1819,
       "mean_ann_pct": 76.141,
       "se_ann_pct": 1.866,
       "ci95_lower": 72.484,
       "ci95_upper": 79.798,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 2331,
+      "oos_bars": 180,
       "n_bars_total": 2638,
-      "error": null
+      "error": null,
+      "ho_pf": 1.7011,
+      "ho_sharpe": 2.5054,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "s2r_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_s2r_ax_v4.json",
+          "is_pf": 1.734,
+          "is_sharpe": 2.1819,
+          "ho_pf": 1.7011,
+          "ho_sharpe": 2.5054
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MTC.AX",
       "sector": "Mining Services",
       "strategy": "linear_regression",
-      "pf": 1.1162,
-      "sharpe": 0.529,
-      "ho_pf": 1.0273,
-      "ho_sharpe": 0.1487,
-      "overfit": "MEDIUM",
+      "pf": 1.1713,
+      "sharpe": 0.5331,
+      "ho_pf": 0.9915,
+      "ho_sharpe": -0.0399,
+      "overfit": "HIGH",
       "mean_ann_pct": 129.901,
       "se_ann_pct": 2.711,
       "ci95_lower": 124.588,
@@ -745,103 +1107,211 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "mtc_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_mtc_ax_v4.json",
+          "is_pf": 1.1713,
+          "is_sharpe": 0.5331,
+          "ho_pf": 0.9915,
+          "ho_sharpe": -0.0399
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "GTE.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.171,
-      "sharpe": 0.646,
+      "pf": 1.494,
+      "sharpe": 1.1594,
       "mean_ann_pct": 87.83,
       "se_ann_pct": 2.033,
       "ci95_lower": 83.847,
       "ci95_upper": 91.814,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4473,
+      "oos_bars": 180,
       "n_bars_total": 4755,
-      "error": null
+      "error": null,
+      "ho_pf": 1.2659,
+      "ho_sharpe": 1.0663,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "gte_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_gte_ax_v4.json",
+          "is_pf": 1.494,
+          "is_sharpe": 1.1594,
+          "ho_pf": 1.2659,
+          "ho_sharpe": 1.0663
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "DTM.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.173,
-      "sharpe": 0.629,
+      "pf": 1.7228,
+      "sharpe": 1.5056,
       "mean_ann_pct": 76.262,
       "se_ann_pct": 1.813,
       "ci95_lower": 72.709,
       "ci95_upper": 79.815,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4473,
+      "oos_bars": 180,
       "n_bars_total": 4773,
-      "error": null
+      "error": null,
+      "ho_pf": 1.9859,
+      "ho_sharpe": 2.1229,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "dtm_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_dtm_ax_v4.json",
+          "is_pf": 1.7228,
+          "is_sharpe": 1.5056,
+          "ho_pf": 1.9859,
+          "ho_sharpe": 2.1229
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "KNB.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.049,
-      "sharpe": 0.216,
+      "pf": 1.4924,
+      "sharpe": 1.5354,
       "mean_ann_pct": 27.133,
       "se_ann_pct": 4.396,
       "ci95_lower": 18.517,
       "ci95_upper": 35.748,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 819,
+      "oos_bars": 180,
       "n_bars_total": 1132,
-      "error": null
+      "error": null,
+      "ho_pf": 1.4319,
+      "ho_sharpe": 1.8455,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "knb_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_knb_ax_v4.json",
+          "is_pf": 1.4924,
+          "is_sharpe": 1.5354,
+          "ho_pf": 1.4319,
+          "ho_sharpe": 1.8455
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "ENR.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.026,
-      "sharpe": 0.115,
+      "pf": 1.4566,
+      "sharpe": 1.4878,
       "mean_ann_pct": 11.233,
       "se_ann_pct": 1.417,
       "ci95_lower": 8.455,
       "ci95_upper": 14.011,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4788,
+      "oos_bars": 180,
       "n_bars_total": 5057,
-      "error": null
+      "error": null,
+      "ho_pf": 1.0436,
+      "ho_sharpe": 0.1537,
+      "overfit": "MEDIUM",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "enr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_enr_ax_v4.json",
+          "is_pf": 1.4566,
+          "is_sharpe": 1.4878,
+          "ho_pf": 1.0436,
+          "ho_sharpe": 0.1537
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "NAG.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.16,
-      "sharpe": 0.605,
+      "pf": 2.3528,
+      "sharpe": 2.9783,
       "mean_ann_pct": 59.722,
       "se_ann_pct": 1.436,
       "ci95_lower": 56.908,
       "ci95_upper": 62.535,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 4725,
+      "oos_bars": 180,
       "n_bars_total": 5026,
-      "error": null
+      "error": null,
+      "ho_pf": 2.4272,
+      "ho_sharpe": 2.8954,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "nag_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_nag_ax_v4.json",
+          "is_pf": 2.3528,
+          "is_sharpe": 2.9783,
+          "ho_pf": 2.4272,
+          "ho_sharpe": 2.8954
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "TG1.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.06,
-      "sharpe": 0.278,
+      "pf": 1.612,
+      "sharpe": 1.5483,
       "mean_ann_pct": 34.431,
       "se_ann_pct": 4.027,
       "ci95_lower": 26.538,
       "ci95_upper": 42.324,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 945,
+      "oos_bars": 180,
       "n_bars_total": 1255,
-      "error": null
+      "error": null,
+      "ho_pf": 1.9227,
+      "ho_sharpe": 2.8803,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "tg1_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_tg1_ax_v4.json",
+          "is_pf": 1.612,
+          "is_sharpe": 1.5483,
+          "ho_pf": 1.9227,
+          "ho_sharpe": 2.8803
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "AOP.AX",
@@ -907,33 +1377,65 @@
       "ticker": "SHG.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 1.037,
-      "sharpe": 0.183,
+      "pf": 1.1306,
+      "sharpe": 0.3904,
       "mean_ann_pct": 18.095,
       "se_ann_pct": 3.111,
       "ci95_lower": 11.996,
       "ci95_upper": 24.193,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 1008,
+      "oos_bars": 180,
       "n_bars_total": 1291,
-      "error": null
+      "error": null,
+      "ho_pf": 2.079,
+      "ho_sharpe": 3.4624,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "shg_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_shg_ax_v4.json",
+          "is_pf": 1.1306,
+          "is_sharpe": 0.3904,
+          "ho_pf": 2.079,
+          "ho_sharpe": 3.4624
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "KAL.AX",
       "sector": "Gold (Micro)",
       "strategy": "linear_regression",
-      "pf": 0.92,
-      "sharpe": -0.368,
+      "pf": 1.6116,
+      "sharpe": 1.46,
       "mean_ann_pct": -43.281,
       "se_ann_pct": 4.111,
       "ci95_lower": -51.338,
       "ci95_upper": -35.224,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 819,
+      "oos_bars": 180,
       "n_bars_total": 1096,
-      "error": null
+      "error": null,
+      "ho_pf": 1.3781,
+      "ho_sharpe": 1.2631,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "kal_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_kal_ax_v4.json",
+          "is_pf": 1.6116,
+          "is_sharpe": 1.46,
+          "ho_pf": 1.3781,
+          "ho_sharpe": 1.2631
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "DEG.AX",
@@ -979,91 +1481,171 @@
       "ticker": "HRN.AX",
       "sector": "Gold (Developer)",
       "strategy": "linear_regression",
-      "pf": 1.024,
-      "sharpe": 0.089,
+      "pf": 2.0617,
+      "sharpe": 2.2191,
       "mean_ann_pct": 6.154,
       "se_ann_pct": 1.508,
       "ci95_lower": 3.199,
       "ci95_upper": 9.109,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 2079,
+      "oos_bars": 180,
       "n_bars_total": 2338,
-      "error": null
+      "error": null,
+      "ho_pf": 1.1942,
+      "ho_sharpe": 0.7416,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "hrn_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_hrn_ax_v4.json",
+          "is_pf": 2.0617,
+          "is_sharpe": 2.2191,
+          "ho_pf": 1.1942,
+          "ho_sharpe": 0.7416
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "GML.AX",
       "sector": "Gold (Developer)",
       "strategy": "linear_regression",
-      "pf": 1.255,
-      "sharpe": 0.689,
+      "pf": 1.8517,
+      "sharpe": 2.2293,
       "mean_ann_pct": 63.285,
       "se_ann_pct": 0.942,
       "ci95_lower": 61.439,
       "ci95_upper": 65.132,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9513,
+      "oos_bars": 180,
       "n_bars_total": 9779,
-      "error": null
+      "error": null,
+      "ho_pf": 1.044,
+      "ho_sharpe": 0.2241,
+      "overfit": "MEDIUM",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "gml_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_gml_ax_v4.json",
+          "is_pf": 1.8517,
+          "is_sharpe": 2.2293,
+          "ho_pf": 1.044,
+          "ho_sharpe": 0.2241
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LEX.AX",
       "sector": "Gold (Developer)",
       "strategy": "linear_regression",
-      "pf": 1.125,
-      "sharpe": 0.2,
+      "pf": 1.6306,
+      "sharpe": 1.8905,
       "mean_ann_pct": 14.86,
       "se_ann_pct": 0.762,
       "ci95_lower": 13.367,
       "ci95_upper": 16.352,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 9513,
+      "oos_bars": 180,
       "n_bars_total": 9781,
-      "error": null
+      "error": null,
+      "ho_pf": 1.8471,
+      "ho_sharpe": 2.8178,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "lex_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_lex_ax_v4.json",
+          "is_pf": 1.6306,
+          "is_sharpe": 1.8905,
+          "ho_pf": 1.8471,
+          "ho_sharpe": 2.8178
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "RXL.AX",
       "sector": "Gold (Developer)",
       "strategy": "linear_regression",
-      "pf": 1.059,
-      "sharpe": 0.265,
+      "pf": 1.3393,
+      "sharpe": 0.5476,
       "mean_ann_pct": 27.753,
       "se_ann_pct": 1.441,
       "ci95_lower": 24.928,
       "ci95_upper": 30.578,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 5292,
+      "oos_bars": 180,
       "n_bars_total": 5544,
-      "error": null
+      "error": null,
+      "ho_pf": 1.581,
+      "ho_sharpe": 2.0659,
+      "overfit": "LOW",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "rxl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_rxl_ax_v4.json",
+          "is_pf": 1.3393,
+          "is_sharpe": 0.5476,
+          "ho_pf": 1.581,
+          "ho_sharpe": 2.0659
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SKY.AX",
       "sector": "Gold (Developer)",
       "strategy": "linear_regression",
-      "pf": 1.187,
-      "sharpe": 0.711,
+      "pf": 2.2515,
+      "sharpe": 1.0984,
       "mean_ann_pct": 79.803,
       "se_ann_pct": 1.542,
       "ci95_lower": 76.78,
       "ci95_upper": 82.826,
       "p_value": null,
       "signal": "\u2014",
-      "oos_bars": 5292,
+      "oos_bars": 180,
       "n_bars_total": 5578,
-      "error": null
+      "error": null,
+      "ho_pf": 0.7645,
+      "ho_sharpe": -1.1709,
+      "overfit": "HIGH",
+      "pipeline": true,
+      "models": [
+        {
+          "safe_name": "sky_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_sky_ax_v4.json",
+          "is_pf": 2.2515,
+          "is_sharpe": 1.0984,
+          "ho_pf": 0.7645,
+          "ho_sharpe": -1.1709
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "BHP.AX",
       "sector": "Diversified",
       "strategy": "linear_regression",
-      "pf": 1.0438,
-      "sharpe": 0.2545,
-      "ho_pf": 0.9208,
-      "ho_sharpe": -0.512,
-      "overfit": "NO_EDGE",
+      "pf": 1.1167,
+      "sharpe": 0.4601,
+      "ho_pf": 1.0626,
+      "ho_sharpe": 0.2777,
+      "overfit": "MEDIUM",
       "mean_ann_pct": 0.45,
       "se_ann_pct": 0.261,
       "ci95_lower": -0.062,
@@ -1073,16 +1655,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "bhp_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_bhp_ax_v4.json",
+          "is_pf": 1.1167,
+          "is_sharpe": 0.4601,
+          "ho_pf": 1.0626,
+          "ho_sharpe": 0.2777
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "RIO.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 0.8637,
-      "sharpe": -0.8768,
-      "ho_pf": 0.9273,
-      "ho_sharpe": -0.465,
+      "pf": 0.9498,
+      "sharpe": -0.1728,
+      "ho_pf": 0.907,
+      "ho_sharpe": -0.4929,
       "overfit": "NO_EDGE",
       "mean_ann_pct": -5.605,
       "se_ann_pct": 0.285,
@@ -1093,7 +1687,19 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "rio_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_rio_ax_v4.json",
+          "is_pf": 0.9498,
+          "is_sharpe": -0.1728,
+          "ho_pf": 0.907,
+          "ho_sharpe": -0.4929
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "FMG.AX",
@@ -1101,8 +1707,8 @@
       "strategy": "linear_regression",
       "pf": 1.2951,
       "sharpe": 1.0913,
-      "ho_pf": 1.2519,
-      "ho_sharpe": 1.1067,
+      "ho_pf": 1.2674,
+      "ho_sharpe": 1.1712,
       "overfit": "LOW",
       "mean_ann_pct": 12.163,
       "se_ann_pct": 0.867,
@@ -1121,8 +1727,8 @@
           "file": "model_lab_fmg_ax_v4.json",
           "is_pf": 1.2951,
           "is_sharpe": 1.0913,
-          "ho_pf": 1.2519,
-          "ho_sharpe": 1.1067
+          "ho_pf": 1.2674,
+          "ho_sharpe": 1.1712
         }
       ],
       "note": null
@@ -1131,11 +1737,11 @@
       "ticker": "CIA.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.0116,
-      "sharpe": 0.0649,
-      "ho_pf": 0.7774,
-      "ho_sharpe": -1.4462,
-      "overfit": "NO_EDGE",
+      "pf": 1.1428,
+      "sharpe": 0.5095,
+      "ho_pf": 0.8874,
+      "ho_sharpe": -0.6308,
+      "overfit": "HIGH",
       "mean_ann_pct": -19.305,
       "se_ann_pct": 1.189,
       "ci95_lower": -21.634,
@@ -1145,17 +1751,29 @@
       "oos_bars": 180,
       "n_bars_total": 2531,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "cia_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_cia_ax_v4.json",
+          "is_pf": 1.1428,
+          "is_sharpe": 0.5095,
+          "ho_pf": 0.8874,
+          "ho_sharpe": -0.6308
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "GRR.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 0.9719,
-      "sharpe": -0.1592,
-      "ho_pf": 0.7739,
-      "ho_sharpe": -1.4941,
-      "overfit": "NO_EDGE",
+      "pf": 1.3026,
+      "sharpe": 1.1148,
+      "ho_pf": 1.6466,
+      "ho_sharpe": 2.392,
+      "overfit": "LOW",
       "mean_ann_pct": 7.125,
       "se_ann_pct": 0.731,
       "ci95_lower": 5.694,
@@ -1165,17 +1783,29 @@
       "oos_bars": 180,
       "n_bars_total": 2531,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "grr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_grr_ax_v4.json",
+          "is_pf": 1.3026,
+          "is_sharpe": 1.1148,
+          "ho_pf": 1.6466,
+          "ho_sharpe": 2.392
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MGX.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.038,
-      "sharpe": 0.2167,
-      "ho_pf": 0.6642,
-      "ho_sharpe": -2.3323,
-      "overfit": "NO_EDGE",
+      "pf": 1.4181,
+      "sharpe": 1.4605,
+      "ho_pf": 0.7266,
+      "ho_sharpe": -1.7205,
+      "overfit": "HIGH",
       "mean_ann_pct": 8.513,
       "se_ann_pct": 0.665,
       "ci95_lower": 7.21,
@@ -1185,17 +1815,29 @@
       "oos_bars": 180,
       "n_bars_total": 2531,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "mgx_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_mgx_ax_v4.json",
+          "is_pf": 1.4181,
+          "is_sharpe": 1.4605,
+          "ho_pf": 0.7266,
+          "ho_sharpe": -1.7205
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "FEX.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.1206,
-      "sharpe": 0.5305,
-      "ho_pf": 0.8157,
-      "ho_sharpe": -1.1556,
-      "overfit": "HIGH",
+      "pf": 1.4822,
+      "sharpe": 1.5858,
+      "ho_pf": 1.0873,
+      "ho_sharpe": 0.4049,
+      "overfit": "LOW",
       "mean_ann_pct": 31.631,
       "se_ann_pct": 1.465,
       "ci95_lower": 28.76,
@@ -1205,7 +1847,19 @@
       "oos_bars": 180,
       "n_bars_total": 2531,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "fex_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_fex_ax_v4.json",
+          "is_pf": 1.4822,
+          "is_sharpe": 1.5858,
+          "ho_pf": 1.0873,
+          "ho_sharpe": 0.4049
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SRX.AX",
@@ -1231,11 +1885,11 @@
       "ticker": "GWR.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 0.8422,
-      "sharpe": -0.7798,
-      "ho_pf": 1.0798,
-      "ho_sharpe": 0.4139,
-      "overfit": "NO_EDGE",
+      "pf": 1.4975,
+      "sharpe": 1.297,
+      "ho_pf": 1.9132,
+      "ho_sharpe": 2.5703,
+      "overfit": "LOW",
       "mean_ann_pct": 9.114,
       "se_ann_pct": 1.256,
       "ci95_lower": 6.652,
@@ -1245,17 +1899,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "gwr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_gwr_ax_v4.json",
+          "is_pf": 1.4975,
+          "is_sharpe": 1.297,
+          "ho_pf": 1.9132,
+          "ho_sharpe": 2.5703
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "IRD.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.2698,
-      "sharpe": 1.0667,
-      "ho_pf": 0.9253,
-      "ho_sharpe": -0.3548,
-      "overfit": "HIGH",
+      "pf": 1.7003,
+      "sharpe": 1.818,
+      "ho_pf": 1.4096,
+      "ho_sharpe": 1.3468,
+      "overfit": "LOW",
       "mean_ann_pct": 31.02,
       "se_ann_pct": 1.331,
       "ci95_lower": 28.411,
@@ -1265,16 +1931,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "ird_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_ird_ax_v4.json",
+          "is_pf": 1.7003,
+          "is_sharpe": 1.818,
+          "ho_pf": 1.4096,
+          "ho_sharpe": 1.3468
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "HIO.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.3105,
-      "sharpe": 1.2738,
-      "ho_pf": 1.1673,
-      "ho_sharpe": 0.8678,
+      "pf": 1.2803,
+      "sharpe": 0.7285,
+      "ho_pf": 2.6879,
+      "ho_sharpe": 4.4215,
       "overfit": "LOW",
       "mean_ann_pct": 19.698,
       "se_ann_pct": 1.619,
@@ -1285,16 +1963,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "hio_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_hio_ax_v4.json",
+          "is_pf": 1.2803,
+          "is_sharpe": 0.7285,
+          "ho_pf": 2.6879,
+          "ho_sharpe": 4.4215
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "HAV.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.1303,
-      "sharpe": 0.6128,
-      "ho_pf": 0.7912,
-      "ho_sharpe": -1.066,
+      "pf": 1.3912,
+      "sharpe": 1.2443,
+      "ho_pf": 0.8399,
+      "ho_sharpe": -0.8021,
       "overfit": "HIGH",
       "mean_ann_pct": 38.621,
       "se_ann_pct": 1.011,
@@ -1305,17 +1995,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "hav_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_hav_ax_v4.json",
+          "is_pf": 1.3912,
+          "is_sharpe": 1.2443,
+          "ho_pf": 0.8399,
+          "ho_sharpe": -0.8021
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "CZR.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.4025,
-      "sharpe": 1.666,
-      "ho_pf": 0.9565,
-      "ho_sharpe": -0.2425,
-      "overfit": "HIGH",
+      "pf": 1.3853,
+      "sharpe": 0.9432,
+      "ho_pf": 1.4692,
+      "ho_sharpe": 1.6694,
+      "overfit": "LOW",
       "mean_ann_pct": 50.78,
       "se_ann_pct": 1.628,
       "ci95_lower": 47.589,
@@ -1325,16 +2027,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "czr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_czr_ax_v4.json",
+          "is_pf": 1.3853,
+          "is_sharpe": 0.9432,
+          "ho_pf": 1.4692,
+          "ho_sharpe": 1.6694
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SRK.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.4845,
-      "sharpe": 1.8669,
-      "ho_pf": 1.1255,
-      "ho_sharpe": 0.4581,
+      "pf": 2.1433,
+      "sharpe": 2.5766,
+      "ho_pf": 1.5861,
+      "ho_sharpe": 1.5355,
       "overfit": "LOW",
       "mean_ann_pct": 16.025,
       "se_ann_pct": 0.933,
@@ -1345,16 +2059,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "srk_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_srk_ax_v4.json",
+          "is_pf": 2.1433,
+          "is_sharpe": 2.5766,
+          "ho_pf": 1.5861,
+          "ho_sharpe": 1.5355
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LCY.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.3723,
-      "sharpe": 1.3217,
-      "ho_pf": 3.6159,
-      "ho_sharpe": 5.5838,
+      "pf": 1.9018,
+      "sharpe": 2.1614,
+      "ho_pf": 21.0381,
+      "ho_sharpe": 7.1729,
       "overfit": "LOW",
       "mean_ann_pct": 136.734,
       "se_ann_pct": 2.058,
@@ -1365,17 +2091,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "lcy_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_lcy_ax_v4.json",
+          "is_pf": 1.9018,
+          "is_sharpe": 2.1614,
+          "ho_pf": 21.0381,
+          "ho_sharpe": 7.1729
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MIO.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.3051,
-      "sharpe": 1.1757,
-      "ho_pf": 1.0521,
-      "ho_sharpe": 0.1755,
-      "overfit": "MEDIUM",
+      "pf": 0.6853,
+      "sharpe": -0.3071,
+      "ho_pf": 1.199,
+      "ho_sharpe": 0.4486,
+      "overfit": "NO_EDGE",
       "mean_ann_pct": 80.949,
       "se_ann_pct": 2.823,
       "ci95_lower": 75.415,
@@ -1385,17 +2123,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "mio_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_mio_ax_v4.json",
+          "is_pf": 0.6853,
+          "is_sharpe": -0.3071,
+          "ho_pf": 1.199,
+          "ho_sharpe": 0.4486
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "VMS.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.606,
-      "sharpe": 2.3913,
-      "ho_pf": 0.9143,
-      "ho_sharpe": -0.266,
-      "overfit": "HIGH",
+      "pf": 2.3662,
+      "sharpe": 2.9773,
+      "ho_pf": 5.3496,
+      "ho_sharpe": 1.3923,
+      "overfit": "LOW",
       "mean_ann_pct": 370.535,
       "se_ann_pct": 3.409,
       "ci95_lower": 363.854,
@@ -1405,16 +2155,28 @@
       "oos_bars": 180,
       "n_bars_total": 979,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "vms_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_vms_ax_v4.json",
+          "is_pf": 2.3662,
+          "is_sharpe": 2.9773,
+          "ho_pf": 5.3496,
+          "ho_sharpe": 1.3923
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "PFE.AX",
       "sector": "Iron Ore",
       "strategy": "linear_regression",
-      "pf": 1.3786,
-      "sharpe": 1.4628,
-      "ho_pf": 1.1543,
-      "ho_sharpe": 0.7922,
+      "pf": 1.7134,
+      "sharpe": 1.8531,
+      "ho_pf": 2.1758,
+      "ho_sharpe": 3.1808,
       "overfit": "LOW",
       "mean_ann_pct": 146.873,
       "se_ann_pct": 3.597,
@@ -1425,17 +2187,29 @@
       "oos_bars": 180,
       "n_bars_total": 1172,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "pfe_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_pfe_ax_v4.json",
+          "is_pf": 1.7134,
+          "is_sharpe": 1.8531,
+          "ho_pf": 2.1758,
+          "ho_sharpe": 3.1808
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "PLS.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 0.9526,
-      "sharpe": -0.287,
-      "ho_pf": 0.6826,
-      "ho_sharpe": -2.1823,
-      "overfit": "NO_EDGE",
+      "pf": 1.0755,
+      "sharpe": 0.3464,
+      "ho_pf": 0.6701,
+      "ho_sharpe": -1.8044,
+      "overfit": "HIGH",
       "mean_ann_pct": 30.686,
       "se_ann_pct": 1.227,
       "ci95_lower": 28.28,
@@ -1445,16 +2219,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "pls_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_pls_ax_v4.json",
+          "is_pf": 1.0755,
+          "is_sharpe": 0.3464,
+          "ho_pf": 0.6701,
+          "ho_sharpe": -1.8044
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LTR.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.0055,
-      "sharpe": 0.0289,
-      "ho_pf": 1.2441,
-      "ho_sharpe": 1.276,
+      "pf": 1.0208,
+      "sharpe": 0.0819,
+      "ho_pf": 1.11,
+      "ho_sharpe": 0.5249,
       "overfit": "MEDIUM",
       "mean_ann_pct": 75.791,
       "se_ann_pct": 1.615,
@@ -1465,7 +2251,19 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "ltr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_ltr_ax_v4.json",
+          "is_pf": 1.0208,
+          "is_sharpe": 0.0819,
+          "ho_pf": 1.11,
+          "ho_sharpe": 0.5249
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "AKE.AX",
@@ -1491,11 +2289,11 @@
       "ticker": "VUL.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.0167,
-      "sharpe": 0.0963,
-      "ho_pf": 0.8861,
-      "ho_sharpe": -0.6928,
-      "overfit": "NO_EDGE",
+      "pf": 0.9705,
+      "sharpe": -0.1379,
+      "ho_pf": 1.3587,
+      "ho_sharpe": 1.5367,
+      "overfit": "REGIME_CHANGE",
       "mean_ann_pct": -2.645,
       "se_ann_pct": 1.976,
       "ci95_lower": -6.518,
@@ -1505,17 +2303,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "vul_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_vul_ax_v4.json",
+          "is_pf": 0.9705,
+          "is_sharpe": -0.1379,
+          "ho_pf": 1.3587,
+          "ho_sharpe": 1.5367
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "CXO.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 0.9649,
-      "sharpe": -0.183,
-      "ho_pf": 0.9517,
-      "ho_sharpe": -0.2821,
-      "overfit": "NO_EDGE",
+      "pf": 1.0511,
+      "sharpe": 0.2255,
+      "ho_pf": 1.356,
+      "ho_sharpe": 1.4972,
+      "overfit": "MEDIUM",
       "mean_ann_pct": 4.84,
       "se_ann_pct": 1.587,
       "ci95_lower": 1.73,
@@ -1525,16 +2335,28 @@
       "oos_bars": 180,
       "n_bars_total": 2531,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "cxo_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_cxo_ax_v4.json",
+          "is_pf": 1.0511,
+          "is_sharpe": 0.2255,
+          "ho_pf": 1.356,
+          "ho_sharpe": 1.4972
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LKE.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.136,
-      "sharpe": 0.706,
-      "ho_pf": 0.9119,
-      "ho_sharpe": -0.5167,
+      "pf": 1.3123,
+      "sharpe": 1.1469,
+      "ho_pf": 0.8302,
+      "ho_sharpe": -0.9362,
       "overfit": "HIGH",
       "mean_ann_pct": 8.868,
       "se_ann_pct": 1.222,
@@ -1545,7 +2367,19 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "lke_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_lke_ax_v4.json",
+          "is_pf": 1.3123,
+          "is_sharpe": 1.1469,
+          "ho_pf": 0.8302,
+          "ho_sharpe": -0.9362
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "SYA.AX",
@@ -1571,10 +2405,10 @@
       "ticker": "INR.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.0542,
-      "sharpe": 0.3099,
-      "ho_pf": 1.2053,
-      "ho_sharpe": 1.0264,
+      "pf": 1.257,
+      "sharpe": 0.9938,
+      "ho_pf": 1.3391,
+      "ho_sharpe": 1.2912,
       "overfit": "LOW",
       "mean_ann_pct": 41.541,
       "se_ann_pct": 1.452,
@@ -1585,17 +2419,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "inr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_inr_ax_v4.json",
+          "is_pf": 1.257,
+          "is_sharpe": 0.9938,
+          "ho_pf": 1.3391,
+          "ho_sharpe": 1.2912
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "WR1.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 0.9569,
-      "sharpe": -0.2523,
-      "ho_pf": 0.8365,
-      "ho_sharpe": -1.0415,
-      "overfit": "NO_EDGE",
+      "pf": 1.0821,
+      "sharpe": 0.3328,
+      "ho_pf": 1.5791,
+      "ho_sharpe": 2.0112,
+      "overfit": "LOW",
       "mean_ann_pct": -19.343,
       "se_ann_pct": 3.156,
       "ci95_lower": -25.53,
@@ -1605,7 +2451,19 @@
       "oos_bars": 180,
       "n_bars_total": 1089,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "wr1_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_wr1_ax_v4.json",
+          "is_pf": 1.0821,
+          "is_sharpe": 0.3328,
+          "ho_pf": 1.5791,
+          "ho_sharpe": 2.0112
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LRS.AX",
@@ -1631,10 +2489,10 @@
       "ticker": "GL1.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.0032,
-      "sharpe": 0.0185,
-      "ho_pf": 0.7025,
-      "ho_sharpe": -2.0547,
+      "pf": 0.9755,
+      "sharpe": -0.103,
+      "ho_pf": 0.9358,
+      "ho_sharpe": -0.3548,
       "overfit": "NO_EDGE",
       "mean_ann_pct": 11.111,
       "se_ann_pct": 2.428,
@@ -1645,7 +2503,19 @@
       "oos_bars": 180,
       "n_bars_total": 1234,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "gl1_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_gl1_ax_v4.json",
+          "is_pf": 0.9755,
+          "is_sharpe": -0.103,
+          "ho_pf": 0.9358,
+          "ho_sharpe": -0.3548
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "EMH.AX",
@@ -1671,10 +2541,10 @@
       "ticker": "AGY.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.2005,
-      "sharpe": 0.9805,
-      "ho_pf": 1.0857,
-      "ho_sharpe": 0.5053,
+      "pf": 1.2643,
+      "sharpe": 0.7735,
+      "ho_pf": 1.1101,
+      "ho_sharpe": 0.5636,
       "overfit": "LOW",
       "mean_ann_pct": -24.736,
       "se_ann_pct": 1.631,
@@ -1685,16 +2555,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "agy_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_agy_ax_v4.json",
+          "is_pf": 1.2643,
+          "is_sharpe": 0.7735,
+          "ho_pf": 1.1101,
+          "ho_sharpe": 0.5636
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "LIT.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.3512,
-      "sharpe": 1.4297,
-      "ho_pf": 1.3379,
-      "ho_sharpe": 1.4348,
+      "pf": 1.3915,
+      "sharpe": 0.7092,
+      "ho_pf": 3.3031,
+      "ho_sharpe": 4.4558,
       "overfit": "LOW",
       "mean_ann_pct": 63.979,
       "se_ann_pct": 1.345,
@@ -1705,17 +2587,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "lit_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_lit_ax_v4.json",
+          "is_pf": 1.3915,
+          "is_sharpe": 0.7092,
+          "ho_pf": 3.3031,
+          "ho_sharpe": 4.4558
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "KLI.AX",
       "sector": "Lithium",
       "strategy": "linear_regression",
-      "pf": 1.0275,
-      "sharpe": 0.1203,
-      "ho_pf": 0.609,
-      "ho_sharpe": -1.4628,
-      "overfit": "NO_EDGE",
+      "pf": 1.2406,
+      "sharpe": 0.6573,
+      "ho_pf": 1.4143,
+      "ho_sharpe": 0.8687,
+      "overfit": "LOW",
       "mean_ann_pct": 1.658,
       "se_ann_pct": 4.46,
       "ci95_lower": -7.085,
@@ -1725,7 +2619,19 @@
       "oos_bars": 180,
       "n_bars_total": 1041,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "kli_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_kli_ax_v4.json",
+          "is_pf": 1.2406,
+          "is_sharpe": 0.6573,
+          "ho_pf": 1.4143,
+          "ho_sharpe": 0.8687
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "FFX.AX",
@@ -1751,11 +2657,11 @@
       "ticker": "IGO.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0103,
-      "sharpe": 0.0619,
-      "ho_pf": 1.0026,
-      "ho_sharpe": 0.0145,
-      "overfit": "MEDIUM",
+      "pf": 0.9898,
+      "sharpe": -0.0454,
+      "ho_pf": 1.1033,
+      "ho_sharpe": 0.432,
+      "overfit": "NO_EDGE",
       "mean_ann_pct": -7.981,
       "se_ann_pct": 0.653,
       "ci95_lower": -9.26,
@@ -1765,17 +2671,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "igo_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_igo_ax_v4.json",
+          "is_pf": 0.9898,
+          "is_sharpe": -0.0454,
+          "ho_pf": 1.1033,
+          "ho_sharpe": 0.432
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MIN.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0938,
-      "sharpe": 0.4933,
-      "ho_pf": 0.7971,
-      "ho_sharpe": -1.3158,
-      "overfit": "HIGH",
+      "pf": 1.2155,
+      "sharpe": 0.5978,
+      "ho_pf": 1.1289,
+      "ho_sharpe": 0.5398,
+      "overfit": "LOW",
       "mean_ann_pct": -3.953,
       "se_ann_pct": 0.668,
       "ci95_lower": -5.262,
@@ -1785,17 +2703,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "min_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_min_ax_v4.json",
+          "is_pf": 1.2155,
+          "is_sharpe": 0.5978,
+          "ho_pf": 1.1289,
+          "ho_sharpe": 0.5398
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "NIC.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0652,
-      "sharpe": 0.3546,
-      "ho_pf": 0.7656,
-      "ho_sharpe": -1.7001,
-      "overfit": "HIGH",
+      "pf": 1.4475,
+      "sharpe": 1.3813,
+      "ho_pf": 1.0749,
+      "ho_sharpe": 0.3151,
+      "overfit": "LOW",
       "mean_ann_pct": 46.844,
       "se_ann_pct": 1.219,
       "ci95_lower": 44.454,
@@ -1805,7 +2735,19 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "nic_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_nic_ax_v4.json",
+          "is_pf": 1.4475,
+          "is_sharpe": 1.3813,
+          "ho_pf": 1.0749,
+          "ho_sharpe": 0.3151
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "MCR.AX",
@@ -1831,11 +2773,11 @@
       "ticker": "SYR.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0327,
-      "sharpe": 0.1784,
-      "ho_pf": 0.8617,
-      "ho_sharpe": -0.7268,
-      "overfit": "NO_EDGE",
+      "pf": 1.2549,
+      "sharpe": 0.9856,
+      "ho_pf": 1.8008,
+      "ho_sharpe": 2.2797,
+      "overfit": "LOW",
       "mean_ann_pct": -0.033,
       "se_ann_pct": 1.255,
       "ci95_lower": -2.492,
@@ -1845,17 +2787,29 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "syr_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_syr_ax_v4.json",
+          "is_pf": 1.2549,
+          "is_sharpe": 0.9856,
+          "ho_pf": 1.8008,
+          "ho_sharpe": 2.2797
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "NMT.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0272,
-      "sharpe": 0.1501,
-      "ho_pf": 0.932,
-      "ho_sharpe": -0.4225,
-      "overfit": "NO_EDGE",
+      "pf": 1.0681,
+      "sharpe": 0.3136,
+      "ho_pf": 0.9764,
+      "ho_sharpe": -0.1182,
+      "overfit": "HIGH",
       "mean_ann_pct": 13.572,
       "se_ann_pct": 1.037,
       "ci95_lower": 11.54,
@@ -1865,16 +2819,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "nmt_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_nmt_ax_v4.json",
+          "is_pf": 1.0681,
+          "is_sharpe": 0.3136,
+          "ho_pf": 0.9764,
+          "ho_sharpe": -0.1182
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "AVL.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.2364,
-      "sharpe": 1.1568,
-      "ho_pf": 1.0915,
-      "ho_sharpe": 0.4392,
+      "pf": 2.0563,
+      "sharpe": 2.6872,
+      "ho_pf": 3.9126,
+      "ho_sharpe": 5.0896,
       "overfit": "LOW",
       "mean_ann_pct": 70.02,
       "se_ann_pct": 1.562,
@@ -1885,16 +2851,28 @@
       "oos_bars": 180,
       "n_bars_total": 1265,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "avl_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_avl_ax_v4.json",
+          "is_pf": 2.0563,
+          "is_sharpe": 2.6872,
+          "ho_pf": 3.9126,
+          "ho_sharpe": 5.0896
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "EV1.AX",
       "sector": "Battery Metals",
       "strategy": "linear_regression",
-      "pf": 1.0817,
-      "sharpe": 0.4068,
-      "ho_pf": 1.3333,
-      "ho_sharpe": 1.5835,
+      "pf": 1.771,
+      "sharpe": 1.6469,
+      "ho_pf": 1.954,
+      "ho_sharpe": 2.8476,
       "overfit": "LOW",
       "mean_ann_pct": 134.52,
       "se_ann_pct": 3.856,
@@ -1905,7 +2883,19 @@
       "oos_bars": 180,
       "n_bars_total": 1099,
       "pipeline": true,
-      "error": null
+      "error": null,
+      "models": [
+        {
+          "safe_name": "ev1_ax_v4",
+          "label": "Ridge (v4)",
+          "file": "model_lab_ev1_ax_v4.json",
+          "is_pf": 1.771,
+          "is_sharpe": 1.6469,
+          "ho_pf": 1.954,
+          "ho_sharpe": 2.8476
+        }
+      ],
+      "note": null
     },
     {
       "ticker": "HXG.AX",
