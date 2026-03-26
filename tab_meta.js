@@ -13,10 +13,11 @@ const _CAT_COLOR={
 };
 
 const _MT_COLOR={
+  'Ridge (v4)':         'rgba(16,185,129,0.85)',
   'Ridge (1yr)':        'rgba(245,165,32,0.75)',
   'Ridge (6mo)':        'rgba(251,191,36,0.55)',
-  'V2':                 'rgba(59,130,246,0.80)',
-  'V3':                 'rgba(16,185,129,0.80)',
+  'Ridge (v2)':         'rgba(59,130,246,0.80)',
+  'Ridge (v3)':         'rgba(96,165,250,0.80)',
   'Regime-Weighted 3M': 'rgba(167,139,250,0.85)',
   'Regime-Weighted 6M': 'rgba(139,92,246,0.85)',
   'Regime-Weighted 1Y': 'rgba(109,40,217,0.85)',
