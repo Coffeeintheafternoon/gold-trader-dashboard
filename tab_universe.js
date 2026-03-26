@@ -98,6 +98,18 @@ function filterFullScreener() {
   _renderScreenerPage();
 }
 
+function _phaseBadge(t) {
+  const phase = t.phase;
+  if (!phase) return '';
+  const styles = {
+    'Explorer':  'color:#60a5fa;border-color:#1d4ed8;background:rgba(29,78,216,0.12)',
+    'Developer': 'color:#fbbf24;border-color:#b45309;background:rgba(180,83,9,0.12)',
+    'Producer':  'color:#34d399;border-color:#065f46;background:rgba(6,95,70,0.12)',
+  };
+  const s = styles[phase] || 'color:#9ca3af;border-color:#374151;background:transparent';
+  return `<span style="display:inline-block;margin-top:2px;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid;letter-spacing:0.04em;${s}">${phase.toUpperCase()}</span>`;
+}
+
 function _renderScreenerPage() {
   const total=_filteredRows.length;
   const totalPages=Math.max(1,Math.ceil(total/_SCREENER_PAGE_SIZE));
@@ -114,12 +126,14 @@ function _renderScreenerPage() {
     const clickable=`onclick="openTickerInModelLab('${t.ticker}',{},${defaultSafe?`'${defaultSafe}'`:'null'})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
     const badges=_modelBadges(t._models, t.ticker);
     const noteBadge=_notesBadge(t._note);
-    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td><td style="padding:6px 10px;color:#4b5563;font-size:11px">${t.sector||'—'}</td><td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
+    const phase=_phaseBadge(t);
+    const sectorCell=`<td style="padding:6px 10px;font-size:11px"><div style="color:var(--muted)">${t.sector||'—'}</div>${phase}</td>`;
+    if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td>${sectorCell}<td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
     const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
     const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
     const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
-    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
+    return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td>${sectorCell}<td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
   }).join('');
 
   // Pagination controls

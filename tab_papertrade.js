@@ -1,8 +1,11 @@
 // ── Paper Trading Tab ──────────────────────────────────────────────────────────
-// Reads: paper_portfolio.json  +  paper_signals.json
-// No per-ticker model selector — portfolio-centric view.
+// Reads: paper_watchlists_index.json
+//        paper_portfolio_{watchlist}.json
+//        paper_signals_{watchlist}.json
 
-let _ptEquityChart = null;
+let _ptEquityChart   = null;
+let _ptActiveWl      = null;   // currently selected watchlist name
+let _ptIndexData     = null;   // cached index
 
 function initPaperTradeTab() {
   document.getElementById('pt-spinner').style.display = 'flex';
@@ -11,21 +14,95 @@ function initPaperTradeTab() {
 }
 
 async function _ptLoad() {
+  // 1. Load index to discover available watchlists
+  let index = null;
+  try {
+    const r = await fetch(`./paper_watchlists_index.json?v=${_CV}`);
+    if (r.ok) index = await r.json();
+  } catch(e) { /* leave null */ }
+
+  document.getElementById('pt-spinner').style.display = 'none';
+  document.getElementById('pt-content').style.display = 'block';
+
+  if (!index || !index.watchlists?.length) {
+    _ptShowEmpty();
+    return;
+  }
+
+  _ptIndexData = index;
+
+  // 2. Render strategy selector pills
+  _ptRenderSelector(index.watchlists);
+
+  // 3. Load first watchlist by default (or previously selected)
+  const first = _ptActiveWl || index.watchlists[0].name;
+  _ptLoadWatchlist(first);
+}
+
+// ── Strategy selector ──────────────────────────────────────────────────────────
+
+function _ptRenderSelector(watchlists) {
+  const wrap = document.getElementById('pt-selector-wrap');
+  if (!wrap) return;
+
+  const pills = watchlists.map(wl => {
+    const label   = _ptWlLabel(wl.name);
+    const isActive = wl.name === (_ptActiveWl || watchlists[0].name);
+    const dot      = wl.has_data ? '' : '<span style="font-size:9px;opacity:0.5"> (empty)</span>';
+    return `<button
+      class="pt-wl-btn${isActive ? ' pt-wl-active' : ''}"
+      onclick="_ptLoadWatchlist('${wl.name}')"
+      title="${wl.name}"
+    >${label}${dot}</button>`;
+  }).join('');
+
+  // Action buttons — only shown when local server is live
+  const actions = _srvLive ? `
+    <span style="flex:1"></span>
+    <button class="pt-wl-btn" onclick="_ptRunEngine()" id="pt-run-btn"
+      title="Run paper trade engine for current watchlist"
+      style="border-color:#1d4ed8;color:#60a5fa">▶ RUN ENGINE</button>
+    <button class="pt-wl-btn" onclick="_ptAddTickerPrompt()"
+      title="Add ticker to current watchlist"
+      style="border-color:#065f46;color:#34d399">+ ADD TICKER</button>
+  ` : '';
+
+  wrap.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%">${pills}${actions}</div>`;
+}
+
+function _ptWlLabel(name) {
+  // Convert snake_case watchlist name to a readable label
+  // e.g. "mcpt_mar26_conservative" → "MCPT MAR26 · CONSERVATIVE"
+  //      "mcpt_mar26_no_stop"      → "MCPT MAR26 · NO STOP"
+  //      "default"                 → "DEFAULT"
+  return name.toUpperCase().replace(/_/g, ' ').replace(/\s([A-Z]{2,})\s([A-Z]{2,})\s/,
+    (m, a, b) => ` ${a}${b} · `).replace(/^(\S+\s\S+)\s/, '$1 · ');
+}
+
+async function _ptLoadWatchlist(name) {
+  _ptActiveWl = name;
+
+  // Re-render selector to update active pill
+  if (_ptIndexData) _ptRenderSelector(_ptIndexData.watchlists);
+
+  // Show mini-spinner in content area while loading
+  const content = document.getElementById('pt-watchlist-content');
+  if (content) content.style.opacity = '0.4';
+
   let portfolio = null, signals = { signals: {} };
   try {
     const [pr, sr] = await Promise.all([
-      fetch(`./paper_portfolio.json?v=${_CV}`),
-      fetch(`./paper_signals.json?v=${_CV}`)
+      fetch(`./paper_portfolio_${name}.json?v=${_CV}`),
+      fetch(`./paper_signals_${name}.json?v=${_CV}`)
     ]);
     if (pr.ok) portfolio = await pr.json();
     if (sr.ok) signals   = await sr.json();
   } catch(e) { /* leave nulls */ }
 
-  document.getElementById('pt-spinner').style.display = 'none';
-  document.getElementById('pt-content').style.display = 'block';
+  if (content) content.style.opacity = '1';
 
   if (!portfolio || (!portfolio.last_updated && !portfolio.equity_curve?.length)) {
-    _ptShowEmpty();
+    _ptShowEmptyWatchlist(name);
     return;
   }
 
@@ -37,19 +114,34 @@ async function _ptLoad() {
   _ptRenderTrades(portfolio);
 }
 
-// ── Empty state ────────────────────────────────────────────────────────────────
+// ── Empty states ───────────────────────────────────────────────────────────────
 
 function _ptShowEmpty() {
+  const sel = document.getElementById('pt-selector-wrap');
+  if (sel) sel.innerHTML = '';
   document.getElementById('pt-hero-row').innerHTML =
     `<div style="color:var(--muted);font-size:13px;padding:20px 0">
       No paper trading data yet.<br><br>
       1. Add tickers to <code>config/paper_trading/watchlists.yaml</code><br>
-      2. Run: <code>python scripts/paper_trade_engine.py --watchlist default --dry-run</code>
+      2. Run: <code>python scripts/paper_trade_engine.py --all</code>
     </div>`;
   ['pt-positions-tbody','pt-signals-tbody','pt-trades-tbody'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
+}
+
+function _ptShowEmptyWatchlist(name) {
+  document.getElementById('pt-header-row').innerHTML =
+    `<span style="color:var(--muted);font-size:12px">${name} — no data yet.
+     Run: <code>python scripts/paper_trade_engine.py --watchlist ${name}</code></span>`;
+  document.getElementById('pt-hero-row').innerHTML = '';
+  ['pt-positions-tbody','pt-signals-tbody','pt-trades-tbody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  const wrap = document.getElementById('pt-equity-wrap');
+  if (wrap) wrap.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">No data — run the engine first</div>';
 }
 
 // ── Header bar ─────────────────────────────────────────────────────────────────
@@ -58,11 +150,12 @@ function _ptRenderHeader(portfolio, signals) {
   const wl    = (portfolio.watchlist || 'default').toUpperCase();
   const strat = portfolio.strategy_snapshot || {};
   const ts    = signals.generated_at || portfolio.last_updated;
+  const stop  = strat.stop_loss_pct >= 999 ? 'No stop-loss' : `Stop ${strat.stop_loss_pct}%`;
 
   document.getElementById('pt-watchlist-badge').textContent = `PAPER — ${wl}`;
 
   const stratDesc = strat.broker
-    ? `${strat.broker}  ·  A$${strat.position_size}/trade  ·  max ${strat.max_open_positions} pos`
+    ? `${strat.broker}  ·  A$${strat.position_size}/trade  ·  max ${strat.max_open_positions} pos  ·  ${stop}`
     : '';
   document.getElementById('pt-strategy-badge').textContent = stratDesc;
 
@@ -78,7 +171,6 @@ function _ptRenderHero(portfolio, signals) {
   const cash   = portfolio.cash || 0;
   const sigMap = signals.signals || {};
 
-  // Current equity = cash + mark-to-market open positions
   let equity = cash;
   for (const [ticker, pos] of Object.entries(portfolio.positions || {})) {
     const price = (sigMap[ticker] || {}).current_price || pos.entry_price;
@@ -118,6 +210,7 @@ function _ptRenderHero(portfolio, signals) {
 function _ptRenderPositions(portfolio, signals) {
   const sigMap  = signals.signals || {};
   const stopPct = (portfolio.strategy_snapshot || {}).stop_loss_pct || 15;
+  const noStop  = stopPct >= 999;
   const entries = Object.entries(portfolio.positions || {});
   const tbody   = document.getElementById('pt-positions-tbody');
 
@@ -131,7 +224,13 @@ function _ptRenderPositions(portfolio, signals) {
     const price   = (sigMap[ticker] || {}).current_price || pos.entry_price;
     const unreal  = (price - pos.entry_price) / pos.entry_price * 100;
     const uC      = unreal >= 0 ? 'var(--green)' : 'var(--red)';
-    const stopLvl = (pos.entry_price * (1 - stopPct / 100)).toFixed(3);
+    const stopLvl = noStop ? '—' : (pos.entry_price * (1 - stopPct / 100)).toFixed(3);
+    const closeBtn = _srvLive
+      ? `<button onclick="_ptClosePosition('${ticker}')"
+           style="padding:2px 8px;font-size:10px;border-radius:3px;border:1px solid #7f1d1d;
+                  background:rgba(127,29,29,0.2);color:#f87171;cursor:pointer;font-weight:700"
+           title="Manually close this position">✕ CLOSE</button>`
+      : '';
     return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
       <td style="padding:6px 10px;font-weight:700;color:#e5e7eb">${ticker}</td>
       <td style="padding:6px 10px"><span style="color:var(--green);font-weight:700">▲ LONG</span></td>
@@ -139,8 +238,10 @@ function _ptRenderPositions(portfolio, signals) {
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${pos.entry_price.toFixed(3)}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${price.toFixed(3)}</td>
       <td style="padding:6px 10px;text-align:right;font-weight:700;color:${uC}">${unreal >= 0 ? '+' : ''}${unreal.toFixed(2)}%</td>
-      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:var(--red)">${stopLvl}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${noStop ? 'var(--muted)' : 'var(--red)'}">
+        ${stopLvl}</td>
       <td style="padding:6px 10px;text-align:right;color:var(--muted)">${pos.composite_score != null ? pos.composite_score.toFixed(3) : '—'}</td>
+      <td style="padding:6px 10px;text-align:center">${closeBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -148,15 +249,14 @@ function _ptRenderPositions(portfolio, signals) {
 // ── Equity curve chart ─────────────────────────────────────────────────────────
 
 function _ptRenderEquityCurve(portfolio) {
-  const curve  = portfolio.equity_curve || [];
-  const wrap   = document.getElementById('pt-equity-wrap');
+  const curve = portfolio.equity_curve || [];
+  const wrap  = document.getElementById('pt-equity-wrap');
 
   if (!curve.length) {
     wrap.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">No equity data yet — run the engine first</div>';
     return;
   }
 
-  // Restore canvas if it was replaced
   if (!document.getElementById('pt-equity-chart')) {
     wrap.innerHTML = '<div style="height:180px"><canvas id="pt-equity-chart"></canvas></div>';
   }
@@ -207,7 +307,7 @@ function _ptRenderSignals(signals, portfolio) {
   const rows = Object.values(sigMap).sort((a, b) => (b.composite_score || 0) - (a.composite_score || 0));
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:16px;color:var(--muted);text-align:center">No signals yet — run generate_paper_signals.py</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:16px;color:var(--muted);text-align:center">No signals yet — run paper_trade_engine.py</td></tr>';
     return;
   }
 
@@ -221,7 +321,7 @@ function _ptRenderSignals(signals, portfolio) {
     const score  = s.composite_score != null ? s.composite_score.toFixed(3) : '—';
     const shr    = s.ho_sharpe != null ? s.ho_sharpe.toFixed(2) : '—';
     const price  = s.current_price != null ? s.current_price.toFixed(3) : '—';
-    const eligible = dir === 'LONG' || dir === 'SHORT';
+    const eligible  = dir === 'LONG' || dir === 'SHORT';
     const statusBg  = isOpen ? 'rgba(245,165,32,0.12)' : eligible ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)';
     const statusCol = isOpen ? 'var(--gold)' : eligible ? 'var(--green)' : 'var(--muted)';
     const statusTxt = isOpen ? 'OPEN' : eligible ? 'ELIGIBLE' : dir;
@@ -266,4 +366,84 @@ function _ptRenderTrades(portfolio) {
       <td style="padding:6px 10px;font-size:10px;color:${rsnC}">${reason}</td>
     </tr>`;
   }).join('');
+}
+
+// ── Interactive API actions ────────────────────────────────────────────────────
+
+async function _ptRunEngine() {
+  if (!_ptActiveWl) return;
+  const btn = document.getElementById('pt-run-btn');
+  if (btn) { btn.textContent = '⏳ RUNNING…'; btn.disabled = true; }
+
+  try {
+    const r = await fetch(`${_SRV_BASE}/api/paper/engine/run`, {
+      method: 'POST',
+      headers: _srvHeaders(),
+      body: JSON.stringify({ watchlist: _ptActiveWl }),
+    });
+    const data = await r.json();
+    if (!r.ok) { alert(`Engine error: ${data.error || r.status}`); return; }
+
+    // Poll for completion
+    const jobId = data.job_id;
+    let done = false;
+    for (let i = 0; i < 60 && !done; i++) {
+      await new Promise(res => setTimeout(res, 5000));
+      try {
+        const sr = await fetch(`${_SRV_BASE}/api/paper/engine/status/${jobId}`, { headers: _srvHeaders() });
+        const job = await sr.json();
+        if (job.status === 'done')  { done = true; }
+        if (job.status === 'error') { alert(`Engine failed: ${job.error}`); done = true; return; }
+      } catch(e) { /* keep polling */ }
+    }
+    // Reload portfolio data
+    await _ptLoadWatchlist(_ptActiveWl);
+  } catch(e) {
+    alert(`Request failed: ${e.message}`);
+  } finally {
+    if (btn) { btn.textContent = '▶ RUN ENGINE'; btn.disabled = false; }
+  }
+}
+
+function _ptAddTickerPrompt() {
+  if (!_ptActiveWl) return;
+  const ticker = prompt(`Add ticker to ${_ptActiveWl}\n\nEnter ASX ticker (e.g. LYC.AX):`);
+  if (!ticker) return;
+  _ptAddTicker(ticker.trim().toUpperCase());
+}
+
+async function _ptAddTicker(ticker) {
+  try {
+    const r = await fetch(`${_SRV_BASE}/api/paper/watchlist/update`, {
+      method: 'POST',
+      headers: _srvHeaders(),
+      body: JSON.stringify({ watchlist: _ptActiveWl, action: 'add', ticker }),
+    });
+    const data = await r.json();
+    if (!r.ok) { alert(`Error: ${data.error || r.status}`); return; }
+    alert(`${ticker} added to ${_ptActiveWl}.\n\nTickers now: ${(data.tickers || []).join(', ')}\n\nRun the engine to generate its first signal.`);
+  } catch(e) {
+    alert(`Request failed: ${e.message}`);
+  }
+}
+
+async function _ptClosePosition(ticker) {
+  if (!_ptActiveWl) return;
+  if (!confirm(`Close ${ticker} position in ${_ptActiveWl}?\n\nThis will book the trade at the last known price.`)) return;
+
+  try {
+    const r = await fetch(`${_SRV_BASE}/api/paper/position/close`, {
+      method: 'POST',
+      headers: _srvHeaders(),
+      body: JSON.stringify({ watchlist: _ptActiveWl, ticker }),
+    });
+    const data = await r.json();
+    if (!r.ok) { alert(`Error: ${data.error || r.status}`); return; }
+    const pnlSign = data.pnl >= 0 ? '+' : '';
+    alert(`${ticker} closed.\nExit: ${data.exit_price?.toFixed(3)}\nP&L: ${pnlSign}A$${data.pnl?.toFixed(2)} (${pnlSign}${data.pnl_pct?.toFixed(2)}%)`);
+    // Reload portfolio
+    await _ptLoadWatchlist(_ptActiveWl);
+  } catch(e) {
+    alert(`Request failed: ${e.message}`);
+  }
 }

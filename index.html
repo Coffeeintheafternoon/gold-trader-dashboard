@@ -33,6 +33,26 @@
     .meta-filter-btn:hover:not(.active) { border-color:var(--gold);color:var(--gold); }
     .ml-sort-btn.ml-sort-active { background:var(--gold);color:#000;border-color:var(--gold); }
     .ml-sort-btn:hover:not(.ml-sort-active) { border-color:var(--gold);color:var(--gold); }
+    .pt-wl-btn { padding:5px 14px;border-radius:3px;border:1px solid #2a2a2a;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:#0a0a0a;color:var(--muted);transition:border-color 0.15s,color 0.15s; }
+    .pt-wl-active { background:rgba(245,165,32,0.12);border-color:rgba(245,165,32,0.5);color:var(--gold); }
+    .pt-wl-btn:hover:not(.pt-wl-active) { border-color:var(--gold);color:var(--gold); }
+    /* Server status dot */
+    .srv-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
+    .srv-dot-live    { background:#00ff41;box-shadow:0 0 6px rgba(0,255,65,0.6); }
+    .srv-dot-offline { background:#444; }
+    .srv-status-wrap { display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:3px;border:1px solid #1a1a1a; }
+    .srv-status-wrap:hover { border-color:#333; }
+    /* Token modal */
+    .token-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center; }
+    .token-modal { background:#0d0d0d;border:1px solid var(--gold);border-radius:8px;padding:28px 32px;max-width:480px;width:90%; }
+    .token-modal h3 { color:var(--gold);margin-bottom:12px;font-size:15px; }
+    .token-modal p { color:var(--muted);font-size:12px;margin-bottom:16px;line-height:1.6; }
+    .token-modal input { width:100%;background:#111;border:1px solid #333;border-radius:4px;padding:8px 10px;color:#e8d8b4;font-family:monospace;font-size:12px;margin-bottom:14px; }
+    .token-modal input:focus { outline:none;border-color:var(--gold); }
+    .token-modal-btns { display:flex;gap:8px;justify-content:flex-end; }
+    .btn-primary { padding:6px 18px;border-radius:3px;border:none;background:var(--gold);color:#000;font-weight:700;font-size:12px;cursor:pointer; }
+    .btn-ghost   { padding:6px 18px;border-radius:3px;border:1px solid #333;background:transparent;color:var(--muted);font-size:12px;cursor:pointer; }
+    .btn-ghost:hover { border-color:var(--gold);color:var(--gold); }
     .ml-ticker-card { background:var(--card);border:1px solid #222;border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s,background 0.1s; }
     .ml-ticker-card:hover { background:#141414; }
     .ml-ticker-card.ml-card-low    { border-color:#16a34a; }
@@ -115,6 +135,11 @@
     <button class="tab-btn" id="tabnav-sow" onclick="switchTab('sow')">S.O.W</button>
   </nav>
   <div class="header-right">
+    <!-- Local server status indicator -->
+    <div id="srv-status" class="srv-status-wrap" onclick="_srvTokenPrompt()" title="Click to set API token">
+      <span id="srv-dot" class="srv-dot srv-dot-offline"></span>
+      <span id="srv-label">LOCAL</span>
+    </div>
     <div id="interval-toggle-wrap" style="display:none;gap:4px">
       <button id="btn-interval-1d" onclick="switchInterval('1d')" style="background:#222;color:#9ca3af;border:1px solid #444;border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">1D</button>
       <button id="btn-interval-1h" onclick="switchInterval('1h')" style="background:#222;color:#9ca3af;border:1px solid #444;border-radius:5px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">1H</button>
@@ -1509,8 +1534,14 @@
   </div>
   <div id="pt-content" style="display:none">
 
+    <!-- Strategy selector pills -->
+    <div id="pt-selector-wrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px"></div>
+
+    <!-- Per-watchlist content wrapper -->
+    <div id="pt-watchlist-content">
+
     <!-- Header bar -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <div id="pt-header-row" style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
       <span id="pt-watchlist-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(245,165,32,0.12);border:1px solid rgba(245,165,32,0.3);color:var(--gold)">PAPER</span>
       <span id="pt-strategy-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:#111;border:1px solid #2a2a2a;color:var(--muted)"></span>
       <span id="pt-last-updated" style="font-size:11px;color:var(--muted)"></span>
@@ -1584,6 +1615,7 @@
       </table>
     </div>
 
+    </div><!-- /pt-watchlist-content -->
   </div>
 </div>
 
@@ -1792,12 +1824,85 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 // ── Tab init functions ────────────────────────────────────────────────────────
 </script>
 <script src="tab_modellab.js?v=20260325"></script>
-<script src="tab_universe.js?v=20260326e"></script>
+<script src="tab_universe.js?v=20260326f"></script>
 <script src="tab_meta.js?v=20260326d"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
-<script src="tab_papertrade.js?v=20260325"></script>
+<script src="tab_papertrade.js?v=20260326h"></script>
 <script src="tab_chatter.js?v=20260325"></script>
 <script src="tab_sow.js?v=20260325"></script>
+
+<!-- ── Token modal ──────────────────────────────────────────────────────────── -->
+<div id="token-modal" class="token-modal-overlay" style="display:none">
+  <div class="token-modal">
+    <h3>Connect to Local Server</h3>
+    <p>
+      Paste the API token from your terminal to enable interactive features
+      (run engine, add tickers, close positions).<br><br>
+      Find it in <code>.env</code> as <code>DASHBOARD_API_TOKEN</code>,
+      or it prints to the console when you run <code>start_server.sh</code>.
+    </p>
+    <input id="token-input" type="password" placeholder="8a1bab…" autocomplete="off" />
+    <div class="token-modal-btns">
+      <button class="btn-ghost" onclick="_srvTokenCancel()">Cancel</button>
+      <button class="btn-primary" onclick="_srvTokenSave()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Local server status + token management ─────────────────────────────────────
+const _SRV_BASE = window.location.origin;   // works whether on localhost:5001 or tunnel URL
+let   _srvLive  = false;
+
+async function _srvCheck() {
+  try {
+    const r = await fetch(`${_SRV_BASE}/api/status`, { cache: 'no-store' });
+    if (r.ok) {
+      _srvLive = true;
+      document.getElementById('srv-dot').className   = 'srv-dot srv-dot-live';
+      document.getElementById('srv-label').textContent = 'LIVE';
+      return;
+    }
+  } catch(e) { /* offline */ }
+  _srvLive = false;
+  document.getElementById('srv-dot').className   = 'srv-dot srv-dot-offline';
+  document.getElementById('srv-label').textContent = 'LOCAL';
+}
+
+function _srvToken() {
+  return localStorage.getItem('squant_api_token') || '';
+}
+
+function _srvHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _srvToken() };
+}
+
+function _srvTokenPrompt() {
+  document.getElementById('token-input').value = _srvToken();
+  document.getElementById('token-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('token-input').focus(), 50);
+}
+
+function _srvTokenCancel() {
+  document.getElementById('token-modal').style.display = 'none';
+}
+
+function _srvTokenSave() {
+  const t = document.getElementById('token-input').value.trim();
+  if (t) localStorage.setItem('squant_api_token', t);
+  document.getElementById('token-modal').style.display = 'none';
+  _srvCheck();
+}
+
+// Enter key submits modal
+document.getElementById('token-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') _srvTokenSave();
+});
+
+// Check server on load and every 60s
+_srvCheck();
+setInterval(_srvCheck, 60000);
+</script>
 </body>
 </html>
