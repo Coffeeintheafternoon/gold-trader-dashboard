@@ -111,7 +111,7 @@ async function initMetaTab(){
   _screenerFull.forEach(t=>{
     if(!t.ticker)return;
     secLookup[t.ticker]=t.sector||'Other';
-    enrichLookup[t.ticker]={overfit:t.overfit,oos_bars:t.oos_bars,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower};
+    enrichLookup[t.ticker]={overfit:t.overfit,p_value:t.p_value,oos_bars:t.oos_bars,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower};
   });
 
   // Flatten screener_full.json tickers → one record per model entry
@@ -124,7 +124,7 @@ async function initMetaTab(){
         ticker:t.ticker, model_type:e.label||'Unknown', label:e.label||'Unknown', safe_name:e.safe_name||'',
         ho_pf:e.ho_pf, ho_sharpe:e.ho_sharpe, is_pf:e.is_pf, is_sharpe:e.is_sharpe,
         sector:secLookup[t.ticker]||'Other',
-        overfit:en.overfit, oos_bars:en.oos_bars,
+        overfit:en.overfit, p_value:en.p_value, oos_bars:en.oos_bars,
         mean_ann_pct:en.mean_ann_pct, ci95_lower:en.ci95_lower,
       });
     });
@@ -143,12 +143,32 @@ function _buildFilterButtons(){
 
 function setMetaFilter(label){_activeModelFilter=label;_buildFilterButtons();_buildMetaTab();}
 
+function _applyMetaFilters(){_buildMetaTab();}
+
+function _getMetaFiltered(){
+  const minPF   = parseFloat(document.getElementById('meta-filter-pf')?.value) || 0;
+  const minShV  = document.getElementById('meta-filter-sharpe')?.value || '';
+  const minSh   = minShV !== '' ? parseFloat(minShV) : null;
+  const mcptF   = document.getElementById('meta-filter-mcpt')?.value || '';
+  const ovfF    = document.getElementById('meta-filter-overfit')?.value || '';
+  const ovfVals = ovfF ? ovfF.split('|') : null;
+  let rows = _activeModelFilter==='All' ? _modelIndexFlat : _modelIndexFlat.filter(r=>r.model_type===_activeModelFilter);
+  if(minPF)   rows=rows.filter(r=>r.ho_pf!=null&&r.ho_pf>=minPF);
+  if(minSh!=null) rows=rows.filter(r=>r.ho_sharpe!=null&&r.ho_sharpe>=minSh);
+  if(mcptF)   rows=rows.filter(r=>r.p_value!=null&&r.p_value<=parseFloat(mcptF));
+  if(ovfVals) rows=rows.filter(r=>r.overfit&&ovfVals.includes(r.overfit));
+  return rows;
+}
+
 function _buildMetaTab(){
   document.getElementById('meta-spinner').style.display='none';
   document.getElementById('meta-content').style.display='';
   const el=id=>document.getElementById(id);
 
-  const filtered=_activeModelFilter==='All'?_modelIndexFlat:_modelIndexFlat.filter(r=>r.model_type===_activeModelFilter);
+  const filtered=_getMetaFiltered();
+  // Update count label
+  const countEl=el('meta-filter-count');
+  if(countEl) countEl.textContent=`${filtered.length} model${filtered.length!==1?'s':''} match`;
   const valid=filtered.filter(r=>r.ho_pf!=null);
   const edge=valid.filter(r=>r.ho_pf>=1.10);
   const nTickers=new Set(filtered.map(r=>r.ticker)).size;
