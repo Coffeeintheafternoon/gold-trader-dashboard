@@ -102,6 +102,16 @@ function filterFullScreener() {
 }
 
 let _mvmSharpeChart=null,_mvmEdgeChart=null,_mvmScatterChart=null;
+let _mvmAllLabels=[], _mvmActiveLabels=new Set(), _mvmByModel={};
+
+function _toggleMvmModel(label) {
+  if (_mvmActiveLabels.has(label)) {
+    if (_mvmActiveLabels.size > 1) _mvmActiveLabels.delete(label);
+  } else {
+    _mvmActiveLabels.add(label);
+  }
+  _renderMvmCharts();
+}
 
 function _populateModelFilter() {
   if (!_fullScreenerData) return;
@@ -112,105 +122,128 @@ function _populateModelFilter() {
   sel.innerHTML = '<option value="">All Models</option>' + labels.map(l => `<option value="${l}">${l}</option>`).join('');
 }
 
+const _MVM_PALETTE = ['#f5a520','#10b981','#a78bfa','#60a5fa','#fb923c','#f472b6','#34d399','#fbbf24'];
+const _mvmColFor = label => _MVM_PALETTE[_mvmAllLabels.indexOf(label) % _MVM_PALETTE.length];
+
 function _buildModelVsModel() {
   if (!_fullScreenerData) return;
 
   // Group all model entries by label
-  const byModel = {};
+  _mvmByModel = {};
   _fullScreenerData.forEach(t => {
     (t._models || []).forEach(m => {
-      if (!byModel[m.label]) byModel[m.label] = [];
-      byModel[m.label].push({ ticker: t.ticker, sector: t.sector, is_sharpe: m.is_sharpe, ho_sharpe: m.ho_sharpe, is_pf: m.is_pf, ho_pf: m.ho_pf });
+      if (!_mvmByModel[m.label]) _mvmByModel[m.label] = [];
+      _mvmByModel[m.label].push({ ticker: t.ticker, sector: t.sector, is_sharpe: m.is_sharpe, ho_sharpe: m.ho_sharpe, is_pf: m.is_pf, ho_pf: m.ho_pf });
     });
   });
 
-  const labels = Object.keys(byModel).sort();
-  if (!labels.length) return;
+  _mvmAllLabels = Object.keys(_mvmByModel).sort();
+  if (!_mvmAllLabels.length) return;
 
-  // Model palette
-  const PALETTE = ['#f5a520','#10b981','#a78bfa','#60a5fa','#fb923c','#f472b6','#34d399','#fbbf24'];
-  const colFor = (i) => PALETTE[i % PALETTE.length];
+  // Default: all models active
+  _mvmActiveLabels = new Set(_mvmAllLabels);
 
-  // Hero cards
+  // Toggle bar
+  const toggleBar = document.getElementById('mvm-toggle-bar');
+  if (toggleBar) {
+    toggleBar.innerHTML = _mvmAllLabels.map(label => {
+      const col = _mvmColFor(label);
+      return `<button id="mvmbtn-${label.replace(/\W/g,'_')}" onclick="_toggleMvmModel('${label.replace(/'/g,"&#39;")}')"
+        style="padding:5px 14px;border-radius:3px;border:1px solid ${col};background:${col}22;color:${col};font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.4px">${label}</button>`;
+    }).join('');
+  }
+
+  _renderMvmCharts();
+  document.getElementById('model-vs-model-section').style.display = '';
+}
+
+function _renderMvmCharts() {
+  const active = _mvmAllLabels.filter(l => _mvmActiveLabels.has(l));
+  if (!active.length) return;
+
+  // Update toggle button styles
+  _mvmAllLabels.forEach(label => {
+    const btn = document.getElementById('mvmbtn-' + label.replace(/\W/g,'_'));
+    if (!btn) return;
+    const col = _mvmColFor(label);
+    const on = _mvmActiveLabels.has(label);
+    btn.style.background = on ? col + '33' : 'transparent';
+    btn.style.borderColor = on ? col : '#333';
+    btn.style.color = on ? col : '#555';
+  });
+
+  // Hero cards (all labels, greyed if inactive)
   const heroEl = document.getElementById('mvm-hero-row');
   if (heroEl) {
-    heroEl.innerHTML = labels.map((label, i) => {
-      const ms = byModel[label];
+    heroEl.innerHTML = _mvmAllLabels.map(label => {
+      const on = _mvmActiveLabels.has(label);
+      const ms = _mvmByModel[label];
       const valid = ms.filter(m => m.ho_sharpe != null && m.ho_pf != null);
-      const n = ms.length;
-      const avgSh = valid.length ? (valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length) : null;
+      const avgSh = valid.length ? valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length : null;
       const edgePct = valid.length ? Math.round(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100) : null;
-      const col = colFor(i);
-      const shC = avgSh == null ? 'var(--muted)' : avgSh >= 0.5 ? 'var(--green)' : avgSh >= 0 ? '#fbbf24' : 'var(--red)';
-      return `<div class="hero-card" style="min-width:160px;border-top:2px solid ${col}">
-        <div class="hero-label" style="color:${col}">${label}</div>
+      const col = _mvmColFor(label);
+      const shC = !on ? '#333' : avgSh == null ? 'var(--muted)' : avgSh >= 0.5 ? 'var(--green)' : avgSh >= 0 ? '#fbbf24' : 'var(--red)';
+      return `<div class="hero-card" onclick="_toggleMvmModel('${label.replace(/'/g,"&#39;")}')" style="min-width:150px;border-top:2px solid ${on?col:'#222'};cursor:pointer;opacity:${on?1:0.4}">
+        <div class="hero-label" style="color:${on?col:'#444'}">${label}</div>
         <div class="hero-value" style="color:${shC};font-size:22px">${avgSh != null ? avgSh.toFixed(2) : '—'}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${n} tickers · avg HO Sharpe</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${ms.length} tickers · avg HO Sharpe</div>
         <div style="font-size:11px;color:var(--muted)">${edgePct != null ? edgePct + '% PF ≥ 1.10' : '—'}</div>
       </div>`;
     }).join('');
   }
 
-  const avgSharpes = labels.map(label => {
-    const valid = byModel[label].filter(m => m.ho_sharpe != null);
+  const avgSharpes = active.map(label => {
+    const valid = _mvmByModel[label].filter(m => m.ho_sharpe != null);
     return valid.length ? +(valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length).toFixed(3) : null;
   });
-  const edgePcts = labels.map(label => {
-    const valid = byModel[label].filter(m => m.ho_pf != null);
+  const edgePcts = active.map(label => {
+    const valid = _mvmByModel[label].filter(m => m.ho_pf != null);
     return valid.length ? +(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100).toFixed(1) : null;
   });
-  const barColors = labels.map((_, i) => colFor(i));
+  const barColors = active.map(l => _mvmColFor(l));
 
-  // Avg HO Sharpe bar chart
   const shCtx = document.getElementById('mvm-sharpe-chart');
   if (shCtx) {
     if (_mvmSharpeChart) _mvmSharpeChart.destroy();
     _mvmSharpeChart = new Chart(shCtx, {
       type: 'bar',
-      data: { labels, datasets: [{ data: avgSharpes, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
+      data: { labels: active, datasets: [{ data: avgSharpes, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `Avg HO Sharpe: ${c.raw?.toFixed(3) ?? '—'}` } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', font: { size: 11 } } }, y: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af' }, title: { display: true, text: 'HO Sharpe', color: '#6b7280', font: { size: 10 } } } } }
     });
   }
 
-  // % edge bar chart
   const edCtx = document.getElementById('mvm-edge-chart');
   if (edCtx) {
     if (_mvmEdgeChart) _mvmEdgeChart.destroy();
     _mvmEdgeChart = new Chart(edCtx, {
       type: 'bar',
-      data: { labels, datasets: [{ data: edgePcts, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
+      data: { labels: active, datasets: [{ data: edgePcts, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw?.toFixed(1) ?? '—'}% of tickers PF ≥ 1.10` } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', font: { size: 11 } } }, y: { min: 0, max: 100, grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', callback: v => v + '%' }, title: { display: true, text: '% tickers PF ≥ 1.10', color: '#6b7280', font: { size: 10 } } } } }
     });
   }
 
-  // IS vs HO Sharpe scatter
   const scCtx = document.getElementById('mvm-scatter-chart');
   if (scCtx) {
     if (_mvmScatterChart) _mvmScatterChart.destroy();
-    // Build scatter datasets (one per model type) + diagonal reference line
-    const scatterDatasets = labels.map((label, i) => ({
+    const scatterDatasets = active.map(label => ({
       label,
-      data: byModel[label].filter(m => m.is_sharpe != null && m.ho_sharpe != null).map(m => ({ x: m.is_sharpe, y: m.ho_sharpe, ticker: m.ticker })),
-      backgroundColor: colFor(i) + 'aa',
-      borderColor: colFor(i),
-      borderWidth: 1,
-      pointRadius: 5,
-      pointHoverRadius: 7,
-      type: 'scatter',
+      data: _mvmByModel[label].filter(m => m.is_sharpe != null && m.ho_sharpe != null).map(m => ({ x: m.is_sharpe, y: m.ho_sharpe, ticker: m.ticker })),
+      backgroundColor: _mvmColFor(label) + 'aa',
+      borderColor: _mvmColFor(label),
+      borderWidth: 1, pointRadius: 5, pointHoverRadius: 7, type: 'scatter',
     }));
-    // Diagonal reference line
-    const allIS = labels.flatMap(l => byModel[l].map(m => m.is_sharpe)).filter(v => v != null);
-    const allHO = labels.flatMap(l => byModel[l].map(m => m.ho_sharpe)).filter(v => v != null);
+    const allIS = active.flatMap(l => _mvmByModel[l].map(m => m.is_sharpe)).filter(v => v != null);
+    const allHO = active.flatMap(l => _mvmByModel[l].map(m => m.ho_sharpe)).filter(v => v != null);
     const axMin = Math.min(...allIS, ...allHO, -0.5);
     const axMax = Math.max(...allIS, ...allHO, 1.5);
-    scatterDatasets.push({ label: 'IS = HO (diagonal)', data: [{ x: axMin, y: axMin }, { x: axMax, y: axMax }], type: 'line', borderColor: 'rgba(255,255,255,0.15)', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, fill: false });
+    scatterDatasets.push({ label: 'IS = HO', data: [{ x: axMin, y: axMin }, { x: axMax, y: axMax }], type: 'line', borderColor: 'rgba(255,255,255,0.15)', borderDash: [5,4], borderWidth: 1.5, pointRadius: 0, fill: false });
     _mvmScatterChart = new Chart(scCtx, {
       type: 'scatter',
       data: { datasets: scatterDatasets },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8, filter: item => item.text !== 'IS = HO (diagonal)' } },
+          legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8, filter: item => item.text !== 'IS = HO' } },
           tooltip: { callbacks: { label: c => c.raw.ticker ? `${c.raw.ticker}: IS ${c.raw.x?.toFixed(2)} → HO ${c.raw.y?.toFixed(2)}` : null } }
         },
         scales: {
@@ -220,8 +253,6 @@ function _buildModelVsModel() {
       }
     });
   }
-
-  document.getElementById('model-vs-model-section').style.display = '';
 }
 
 // ── Screener Panel ────────────────────────────────────────────────────────────

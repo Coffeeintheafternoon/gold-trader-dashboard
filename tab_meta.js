@@ -137,7 +137,7 @@ function _buildFilterButtons(){
   const c=document.getElementById('meta-filter-bar');
   if(!c)return;
   const types=[...new Set(_modelIndexFlat.map(r=>r.model_type))].sort();
-  c.innerHTML=['All',...types].map(t=>`<button class="meta-filter-btn${t===_activeModelFilter?' active':''}" onclick="setMetaFilter(${JSON.stringify(t)})">${t}</button>`).join('');
+  c.innerHTML=['All',...types].map(t=>`<button class="meta-filter-btn${t===_activeModelFilter?' active':''}" onclick="setMetaFilter('${t.replace(/'/g,"&#39;")}')">${t}</button>`).join('');
 }
 
 function setMetaFilter(label){_activeModelFilter=label;_buildFilterButtons();_buildMetaTab();}
