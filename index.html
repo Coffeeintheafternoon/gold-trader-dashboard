@@ -1559,11 +1559,13 @@
             <th style="text-align:left;padding:7px 10px">Ticker</th>
             <th style="text-align:left;padding:7px 10px">Dir</th>
             <th style="text-align:left;padding:7px 10px">Entry Date</th>
+            <th style="text-align:right;padding:7px 10px">Days</th>
             <th style="text-align:right;padding:7px 10px">Entry</th>
             <th style="text-align:right;padding:7px 10px">Current</th>
-            <th style="text-align:right;padding:7px 10px">Unrealised</th>
+            <th style="text-align:right;padding:7px 10px">Unreal %</th>
+            <th style="text-align:right;padding:7px 10px">Unreal A$</th>
             <th style="text-align:right;padding:7px 10px">Stop</th>
-            <th style="text-align:right;padding:7px 10px">Score</th>
+            <th style="text-align:center;padding:7px 10px"></th>
           </tr>
         </thead>
         <tbody id="pt-positions-tbody"></tbody>
@@ -1587,6 +1589,8 @@
             <th style="text-align:right;padding:7px 10px">Pred Ret %</th>
             <th style="text-align:right;padding:7px 10px">Score</th>
             <th style="text-align:right;padding:7px 10px">HO Sharpe</th>
+            <th style="text-align:center;padding:7px 10px">Overfit</th>
+            <th style="text-align:right;padding:7px 10px">MCPT p</th>
             <th style="text-align:right;padding:7px 10px">Price</th>
             <th style="text-align:center;padding:7px 10px">Status</th>
           </tr>
@@ -1594,6 +1598,9 @@
         <tbody id="pt-signals-tbody"></tbody>
       </table>
     </div>
+
+    <!-- Model health panel (populated by JS) -->
+    <div id="pt-model-health-wrap"></div>
 
     <!-- Closed trades -->
     <div class="section-divider"><span class="section-divider-label">Closed Trades</span></div>
@@ -1606,8 +1613,9 @@
             <th style="text-align:left;padding:7px 10px">Exit</th>
             <th style="text-align:right;padding:7px 10px">Entry $</th>
             <th style="text-align:right;padding:7px 10px">Exit $</th>
-            <th style="text-align:right;padding:7px 10px">P&L</th>
-            <th style="text-align:right;padding:7px 10px">P&L %</th>
+            <th style="text-align:right;padding:7px 10px">P&amp;L</th>
+            <th style="text-align:right;padding:7px 10px">P&amp;L %</th>
+            <th style="text-align:right;padding:7px 10px">Cum P&amp;L</th>
             <th style="text-align:left;padding:7px 10px">Reason</th>
           </tr>
         </thead>
@@ -1828,7 +1836,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_meta.js?v=20260326d"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
-<script src="tab_papertrade.js?v=20260326h"></script>
+<script src="tab_papertrade.js?v=20260326i"></script>
 <script src="tab_chatter.js?v=20260325"></script>
 <script src="tab_sow.js?v=20260325"></script>
 
