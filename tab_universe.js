@@ -12,6 +12,8 @@ async function initUniverseTab() {
 let _fullScreenerData=null;
 let _filteredRows=[];
 let _metaTop20=[];
+let _screenerPage=0;
+const _SCREENER_PAGE_SIZE=20;
 
 async function loadFullScreenerPanel() {
   let data;
@@ -84,10 +86,22 @@ function filterFullScreener() {
   else if(sortF==='oos_desc')rows.sort((a,b)=>(b.oos_bars||0)-(a.oos_bars||0));
   else if(sortF==='ticker_asc')rows.sort((a,b)=>a.ticker.localeCompare(b.ticker));
   _filteredRows=rows;
-  document.getElementById('full-screener-count').textContent=`Showing ${rows.length} of ${_fullScreenerData.length} tickers`;
-  document.getElementById('full-screener-tbody').innerHTML=rows.map((t,i)=>{
+  _screenerPage=0;
+  _renderScreenerPage();
+}
+
+function _renderScreenerPage() {
+  const total=_filteredRows.length;
+  const totalPages=Math.max(1,Math.ceil(total/_SCREENER_PAGE_SIZE));
+  if(_screenerPage>=totalPages)_screenerPage=totalPages-1;
+  const start=_screenerPage*_SCREENER_PAGE_SIZE;
+  const pageRows=_filteredRows.slice(start,start+_SCREENER_PAGE_SIZE);
+
+  document.getElementById('full-screener-count').textContent=
+    `Showing ${start+1}–${Math.min(start+_SCREENER_PAGE_SIZE,total)} of ${total} tickers`;
+
+  document.getElementById('full-screener-tbody').innerHTML=pageRows.map((t,i)=>{
     const rowBg=i%2===0?'':'background:#111';
-    // Default model to open on row click: first model if any, else derived safe
     const defaultSafe=t._models&&t._models.length?t._models[0].safe_name:null;
     const clickable=`onclick="openTickerInModelLab('${t.ticker}',{},${defaultSafe?`'${defaultSafe}'`:'null'})" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''"`;
     const badges=_modelBadges(t._models, t.ticker);
@@ -99,6 +113,29 @@ function filterFullScreener() {
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
     return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
   }).join('');
+
+  // Pagination controls
+  const pag=document.getElementById('full-screener-pagination');
+  if(!pag)return;
+  const btnStyle=(disabled,active)=>`style="padding:4px 10px;border-radius:3px;border:1px solid ${active?'var(--gold)':'#444'};background:${active?'rgba(245,165,32,0.15)':'#1a1a1a'};color:${active?'var(--gold)':'#aaa'};font-size:11px;cursor:${disabled?'default':'pointer'};opacity:${disabled?0.4:1}"`;
+  let html=`<button ${btnStyle(_screenerPage===0,false)} onclick="_goScreenerPage(0)" ${_screenerPage===0?'disabled':''}>«</button>`;
+  html+=`<button ${btnStyle(_screenerPage===0,false)} onclick="_goScreenerPage(${_screenerPage-1})" ${_screenerPage===0?'disabled':''}>‹</button>`;
+  // Page number buttons — show up to 7 around current
+  const wing=3;
+  const lo=Math.max(0,_screenerPage-wing), hi=Math.min(totalPages-1,_screenerPage+wing);
+  for(let p=lo;p<=hi;p++){
+    html+=`<button ${btnStyle(false,p===_screenerPage)} onclick="_goScreenerPage(${p})">${p+1}</button>`;
+  }
+  html+=`<button ${btnStyle(_screenerPage>=totalPages-1,false)} onclick="_goScreenerPage(${_screenerPage+1})" ${_screenerPage>=totalPages-1?'disabled':''}>›</button>`;
+  html+=`<button ${btnStyle(_screenerPage>=totalPages-1,false)} onclick="_goScreenerPage(${totalPages-1})" ${_screenerPage>=totalPages-1?'disabled':''}>»</button>`;
+  html+=`<span style="font-size:11px;color:var(--muted);margin-left:4px">Page ${_screenerPage+1} of ${totalPages}</span>`;
+  pag.innerHTML=html;
+}
+
+function _goScreenerPage(p) {
+  _screenerPage=p;
+  _renderScreenerPage();
+  document.getElementById('full-screener-table')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 let _mvmSharpeChart=null,_mvmEdgeChart=null,_mvmScatterChart=null;
