@@ -681,10 +681,6 @@
           <label style="font-size:12px;color:var(--muted)">Model:</label>
           <select id="full-screener-model-filter" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
             <option value="">All Models</option>
-            <option value="Ridge (1yr)">Ridge (1yr)</option>
-            <option value="Ridge (6mo)">Ridge (6mo)</option>
-            <option value="Donchian">Donchian</option>
-            <option value="Mean-Reversion">Mean-Reversion</option>
           </select>
           <label style="font-size:12px;color:var(--muted)">Show:</label>
           <select id="full-screener-show" onchange="filterFullScreener()" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer">
@@ -714,6 +710,33 @@
         </table>
       </div>
       <div id="full-screener-count" style="margin-top:8px;font-size:11px;color:var(--muted);text-align:right"></div>
+    </div>
+  </div>
+
+  <div id="model-vs-model-section" style="display:none">
+    <div class="section-divider" style="margin-top:40px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-icon">⚖</span>
+      <span class="section-divider-label">Model vs Model — Aggregate Performance</span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px" id="mvm-hero-row"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title">Avg HO Sharpe by Model Version</div>
+        <div class="chart-subtitle">Risk-adjusted holdout performance averaged across all tickers</div>
+        <div class="chart-wrap" style="height:240px;margin-top:14px"><canvas id="mvm-sharpe-chart"></canvas></div>
+      </div>
+      <div class="chart-card" style="padding:20px">
+        <div class="chart-title">% Tickers with HO PF ≥ 1.10</div>
+        <div class="chart-subtitle">How often each model version finds a profitable edge</div>
+        <div class="chart-wrap" style="height:240px;margin-top:14px"><canvas id="mvm-edge-chart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="padding:20px">
+      <div class="chart-title">IS Sharpe vs HO Sharpe — All Tickers by Model</div>
+      <div class="chart-subtitle">Each dot = one ticker · dots above diagonal = IS overstates HO · dots below = IS is conservative</div>
+      <div class="chart-wrap" style="height:360px;margin-top:14px"><canvas id="mvm-scatter-chart"></canvas></div>
     </div>
   </div>
 
@@ -1662,8 +1685,8 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 // ── Tab init functions ────────────────────────────────────────────────────────
 </script>
 <script src="tab_modellab.js?v=20260325"></script>
-<script src="tab_universe.js?v=20260325"></script>
-<script src="tab_meta.js?v=20260328"></script>
+<script src="tab_universe.js?v=20260326a"></script>
+<script src="tab_meta.js?v=20260326a"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
 <script src="tab_papertrade.js?v=20260325"></script>

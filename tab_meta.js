@@ -113,26 +113,21 @@ async function initMetaTab(){
     enrichLookup[t.ticker]={overfit:t.overfit,oos_bars:t.oos_bars,mean_ann_pct:t.mean_ann_pct,ci95_lower:t.ci95_lower};
   });
 
-  // Flatten model_index → one record per model entry
+  // Flatten screener_full.json tickers → one record per model entry
   _modelIndexFlat=[];
-  const _sfxRe=/\(([^)]+)\)\s*$/;
-  if(_modelIndexData&&_modelIndexData.models){
-    for(const[key,entries] of Object.entries(_modelIndexData.models)){
-      const m=key.match(_sfxRe);
-      const ticker=key.replace(_sfxRe,'').trim();
-      (entries||[]).forEach(e=>{
-        const model_type=m?m[1]:(e.label||'Unknown');
-        const en=enrichLookup[ticker]||{};
-        _modelIndexFlat.push({
-          ticker, model_type, label:e.label||model_type, safe_name:e.safe_name||'',
-          ho_pf:e.ho_pf, ho_sharpe:e.ho_sharpe, is_pf:e.is_pf, is_sharpe:e.is_sharpe,
-          sector:secLookup[ticker]||'Other',
-          overfit:en.overfit, oos_bars:en.oos_bars,
-          mean_ann_pct:en.mean_ann_pct, ci95_lower:en.ci95_lower,
-        });
+  _screenerFull.forEach(t=>{
+    if(!t.ticker)return;
+    const en=enrichLookup[t.ticker]||{};
+    (t.models||[]).forEach(e=>{
+      _modelIndexFlat.push({
+        ticker:t.ticker, model_type:e.label||'Unknown', label:e.label||'Unknown', safe_name:e.safe_name||'',
+        ho_pf:e.ho_pf, ho_sharpe:e.ho_sharpe, is_pf:e.is_pf, is_sharpe:e.is_sharpe,
+        sector:secLookup[t.ticker]||'Other',
+        overfit:en.overfit, oos_bars:en.oos_bars,
+        mean_ann_pct:en.mean_ann_pct, ci95_lower:en.ci95_lower,
       });
-    }
-  }
+    });
+  });
 
   _buildFilterButtons();
   _buildMetaTab();

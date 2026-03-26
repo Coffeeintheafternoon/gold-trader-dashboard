@@ -34,6 +34,8 @@ async function loadFullScreenerPanel() {
   const sel=document.getElementById('full-screener-sector-filter');
   sectors.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
   filterFullScreener();
+  _populateModelFilter();
+  _buildModelVsModel();
 }
 
 function _notesBadge(note) {
@@ -97,6 +99,129 @@ function filterFullScreener() {
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
     return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td><td style="padding:6px 10px;color:var(--muted);font-size:11px">${t.sector||'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
   }).join('');
+}
+
+let _mvmSharpeChart=null,_mvmEdgeChart=null,_mvmScatterChart=null;
+
+function _populateModelFilter() {
+  if (!_fullScreenerData) return;
+  const labels = [...new Set(_fullScreenerData.flatMap(t => (t._models||[]).map(m => m.label)))].sort();
+  const sel = document.getElementById('full-screener-model-filter');
+  if (!sel) return;
+  // Keep the "All Models" option, replace the rest
+  sel.innerHTML = '<option value="">All Models</option>' + labels.map(l => `<option value="${l}">${l}</option>`).join('');
+}
+
+function _buildModelVsModel() {
+  if (!_fullScreenerData) return;
+
+  // Group all model entries by label
+  const byModel = {};
+  _fullScreenerData.forEach(t => {
+    (t._models || []).forEach(m => {
+      if (!byModel[m.label]) byModel[m.label] = [];
+      byModel[m.label].push({ ticker: t.ticker, sector: t.sector, is_sharpe: m.is_sharpe, ho_sharpe: m.ho_sharpe, is_pf: m.is_pf, ho_pf: m.ho_pf });
+    });
+  });
+
+  const labels = Object.keys(byModel).sort();
+  if (!labels.length) return;
+
+  // Model palette
+  const PALETTE = ['#f5a520','#10b981','#a78bfa','#60a5fa','#fb923c','#f472b6','#34d399','#fbbf24'];
+  const colFor = (i) => PALETTE[i % PALETTE.length];
+
+  // Hero cards
+  const heroEl = document.getElementById('mvm-hero-row');
+  if (heroEl) {
+    heroEl.innerHTML = labels.map((label, i) => {
+      const ms = byModel[label];
+      const valid = ms.filter(m => m.ho_sharpe != null && m.ho_pf != null);
+      const n = ms.length;
+      const avgSh = valid.length ? (valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length) : null;
+      const edgePct = valid.length ? Math.round(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100) : null;
+      const col = colFor(i);
+      const shC = avgSh == null ? 'var(--muted)' : avgSh >= 0.5 ? 'var(--green)' : avgSh >= 0 ? '#fbbf24' : 'var(--red)';
+      return `<div class="hero-card" style="min-width:160px;border-top:2px solid ${col}">
+        <div class="hero-label" style="color:${col}">${label}</div>
+        <div class="hero-value" style="color:${shC};font-size:22px">${avgSh != null ? avgSh.toFixed(2) : '—'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${n} tickers · avg HO Sharpe</div>
+        <div style="font-size:11px;color:var(--muted)">${edgePct != null ? edgePct + '% PF ≥ 1.10' : '—'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  const avgSharpes = labels.map(label => {
+    const valid = byModel[label].filter(m => m.ho_sharpe != null);
+    return valid.length ? +(valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length).toFixed(3) : null;
+  });
+  const edgePcts = labels.map(label => {
+    const valid = byModel[label].filter(m => m.ho_pf != null);
+    return valid.length ? +(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100).toFixed(1) : null;
+  });
+  const barColors = labels.map((_, i) => colFor(i));
+
+  // Avg HO Sharpe bar chart
+  const shCtx = document.getElementById('mvm-sharpe-chart');
+  if (shCtx) {
+    if (_mvmSharpeChart) _mvmSharpeChart.destroy();
+    _mvmSharpeChart = new Chart(shCtx, {
+      type: 'bar',
+      data: { labels, datasets: [{ data: avgSharpes, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `Avg HO Sharpe: ${c.raw?.toFixed(3) ?? '—'}` } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', font: { size: 11 } } }, y: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af' }, title: { display: true, text: 'HO Sharpe', color: '#6b7280', font: { size: 10 } } } } }
+    });
+  }
+
+  // % edge bar chart
+  const edCtx = document.getElementById('mvm-edge-chart');
+  if (edCtx) {
+    if (_mvmEdgeChart) _mvmEdgeChart.destroy();
+    _mvmEdgeChart = new Chart(edCtx, {
+      type: 'bar',
+      data: { labels, datasets: [{ data: edgePcts, backgroundColor: barColors.map(c => c + '99'), borderColor: barColors, borderWidth: 2, borderRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw?.toFixed(1) ?? '—'}% of tickers PF ≥ 1.10` } } }, scales: { x: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', font: { size: 11 } } }, y: { min: 0, max: 100, grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af', callback: v => v + '%' }, title: { display: true, text: '% tickers PF ≥ 1.10', color: '#6b7280', font: { size: 10 } } } } }
+    });
+  }
+
+  // IS vs HO Sharpe scatter
+  const scCtx = document.getElementById('mvm-scatter-chart');
+  if (scCtx) {
+    if (_mvmScatterChart) _mvmScatterChart.destroy();
+    // Build scatter datasets (one per model type) + diagonal reference line
+    const scatterDatasets = labels.map((label, i) => ({
+      label,
+      data: byModel[label].filter(m => m.is_sharpe != null && m.ho_sharpe != null).map(m => ({ x: m.is_sharpe, y: m.ho_sharpe, ticker: m.ticker })),
+      backgroundColor: colFor(i) + 'aa',
+      borderColor: colFor(i),
+      borderWidth: 1,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      type: 'scatter',
+    }));
+    // Diagonal reference line
+    const allIS = labels.flatMap(l => byModel[l].map(m => m.is_sharpe)).filter(v => v != null);
+    const allHO = labels.flatMap(l => byModel[l].map(m => m.ho_sharpe)).filter(v => v != null);
+    const axMin = Math.min(...allIS, ...allHO, -0.5);
+    const axMax = Math.max(...allIS, ...allHO, 1.5);
+    scatterDatasets.push({ label: 'IS = HO (diagonal)', data: [{ x: axMin, y: axMin }, { x: axMax, y: axMax }], type: 'line', borderColor: 'rgba(255,255,255,0.15)', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, fill: false });
+    _mvmScatterChart = new Chart(scCtx, {
+      type: 'scatter',
+      data: { datasets: scatterDatasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8, filter: item => item.text !== 'IS = HO (diagonal)' } },
+          tooltip: { callbacks: { label: c => c.raw.ticker ? `${c.raw.ticker}: IS ${c.raw.x?.toFixed(2)} → HO ${c.raw.y?.toFixed(2)}` : null } }
+        },
+        scales: {
+          x: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af' }, title: { display: true, text: 'IS Sharpe', color: '#6b7280', font: { size: 11 } } },
+          y: { grid: { color: '#1a1a1a' }, ticks: { color: '#9ca3af' }, title: { display: true, text: 'HO Sharpe', color: '#6b7280', font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  document.getElementById('model-vs-model-section').style.display = '';
 }
 
 // ── Screener Panel ────────────────────────────────────────────────────────────
