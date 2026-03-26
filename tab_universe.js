@@ -73,6 +73,10 @@ function filterFullScreener() {
   const modelF=(document.getElementById('full-screener-model-filter')||{}).value||'';
   const showF=document.getElementById('full-screener-show').value;
   const sortF=document.getElementById('full-screener-sort').value;
+  const minPF=parseFloat(document.getElementById('fs-filter-pf')?.value)||0;
+  const minSh=parseFloat(document.getElementById('fs-filter-sharpe')?.value);
+  const mcptF=document.getElementById('fs-filter-mcpt')?.value||'';
+  const overfitF=document.getElementById('fs-filter-overfit')?.value||'';
   let rows=_fullScreenerData.slice();
   if(tickerQ)rows=rows.filter(t=>t.ticker&&t.ticker.toUpperCase().includes(tickerQ));
   if(sectorF)rows=rows.filter(t=>t.sector===sectorF);
@@ -80,6 +84,10 @@ function filterFullScreener() {
   if(showF==='edge')rows=rows.filter(t=>t.pf&&t.pf>=1.10);
   else if(showF==='valid')rows=rows.filter(t=>!t.error);
   else if(showF==='models')rows=rows.filter(t=>t._models&&t._models.length>0);
+  if(minPF)rows=rows.filter(t=>t.ho_pf!=null&&t.ho_pf>=minPF);
+  if(!isNaN(minSh)&&document.getElementById('fs-filter-sharpe')?.value!=='')rows=rows.filter(t=>t.ho_sharpe!=null&&t.ho_sharpe>=minSh);
+  if(mcptF)rows=rows.filter(t=>t.p_value!=null&&t.p_value<=parseFloat(mcptF));
+  if(overfitF){const vals=overfitF.split('|');rows=rows.filter(t=>t.overfit&&vals.includes(t.overfit));}
   if(sortF==='pf_desc')rows.sort((a,b)=>(b.pf||0)-(a.pf||0));
   else if(sortF==='sharpe_desc')rows.sort((a,b)=>(b.sharpe||0)-(a.sharpe||0));
   else if(sortF==='mean_desc')rows.sort((a,b)=>(b.mean_ann_pct||0)-(a.mean_ann_pct||0));
@@ -170,7 +178,7 @@ function _buildModelVsModel() {
   _fullScreenerData.forEach(t => {
     (t._models || []).forEach(m => {
       if (!_mvmByModel[m.label]) _mvmByModel[m.label] = [];
-      _mvmByModel[m.label].push({ ticker: t.ticker, sector: t.sector, is_sharpe: m.is_sharpe, ho_sharpe: m.ho_sharpe, is_pf: m.is_pf, ho_pf: m.ho_pf });
+      _mvmByModel[m.label].push({ ticker: t.ticker, sector: t.sector, is_sharpe: m.is_sharpe, ho_sharpe: m.ho_sharpe, is_pf: m.is_pf, ho_pf: m.ho_pf, overfit: t.overfit, p_value: t.p_value });
     });
   });
 
@@ -194,6 +202,22 @@ function _buildModelVsModel() {
   document.getElementById('model-vs-model-section').style.display = '';
 }
 
+function _mvmFilteredRows(label) {
+  const minPF  = parseFloat(document.getElementById('mvm-filter-pf')?.value) || 0;
+  const minShV = document.getElementById('mvm-filter-sharpe')?.value || '';
+  const minSh  = minShV !== '' ? parseFloat(minShV) : null;
+  const mcptF  = document.getElementById('mvm-filter-mcpt')?.value || '';
+  const ovfF   = document.getElementById('mvm-filter-overfit')?.value || '';
+  const ovfVals= ovfF ? ovfF.split('|') : null;
+  return (_mvmByModel[label] || []).filter(m => {
+    if (minPF  && (m.ho_pf   == null || m.ho_pf   < minPF))  return false;
+    if (minSh  != null && (m.ho_sharpe == null || m.ho_sharpe < minSh))  return false;
+    if (mcptF  && (m.p_value == null || m.p_value > parseFloat(mcptF))) return false;
+    if (ovfVals && (!m.overfit || !ovfVals.includes(m.overfit))) return false;
+    return true;
+  });
+}
+
 function _renderMvmCharts() {
   const active = _mvmAllLabels.filter(l => _mvmActiveLabels.has(l));
   if (!active.length) return;
@@ -209,12 +233,17 @@ function _renderMvmCharts() {
     btn.style.color = on ? col : '#555';
   });
 
-  // Hero cards (all labels, greyed if inactive)
+  // Total filtered ticker count for filter bar
+  const totalFiltered = active.reduce((s, l) => s + _mvmFilteredRows(l).length, 0);
+  const countEl = document.getElementById('mvm-filter-count');
+  if (countEl) countEl.textContent = `${totalFiltered} model entries match`;
+
+  // Hero cards (all labels, greyed if inactive) — stats based on filtered rows
   const heroEl = document.getElementById('mvm-hero-row');
   if (heroEl) {
     heroEl.innerHTML = _mvmAllLabels.map(label => {
       const on = _mvmActiveLabels.has(label);
-      const ms = _mvmByModel[label];
+      const ms = on ? _mvmFilteredRows(label) : _mvmByModel[label];
       const valid = ms.filter(m => m.ho_sharpe != null && m.ho_pf != null);
       const avgSh = valid.length ? valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length : null;
       const edgePct = valid.length ? Math.round(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100) : null;
@@ -230,11 +259,11 @@ function _renderMvmCharts() {
   }
 
   const avgSharpes = active.map(label => {
-    const valid = _mvmByModel[label].filter(m => m.ho_sharpe != null);
+    const valid = _mvmFilteredRows(label).filter(m => m.ho_sharpe != null);
     return valid.length ? +(valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length).toFixed(3) : null;
   });
   const edgePcts = active.map(label => {
-    const valid = _mvmByModel[label].filter(m => m.ho_pf != null);
+    const valid = _mvmFilteredRows(label).filter(m => m.ho_pf != null);
     return valid.length ? +(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100).toFixed(1) : null;
   });
   const barColors = active.map(l => _mvmColFor(l));
@@ -264,13 +293,13 @@ function _renderMvmCharts() {
     if (_mvmScatterChart) _mvmScatterChart.destroy();
     const scatterDatasets = active.map(label => ({
       label,
-      data: _mvmByModel[label].filter(m => m.is_sharpe != null && m.ho_sharpe != null).map(m => ({ x: m.is_sharpe, y: m.ho_sharpe, ticker: m.ticker })),
+      data: _mvmFilteredRows(label).filter(m => m.is_sharpe != null && m.ho_sharpe != null).map(m => ({ x: m.is_sharpe, y: m.ho_sharpe, ticker: m.ticker })),
       backgroundColor: _mvmColFor(label) + 'aa',
       borderColor: _mvmColFor(label),
       borderWidth: 1, pointRadius: 5, pointHoverRadius: 7, type: 'scatter',
     }));
-    const allIS = active.flatMap(l => _mvmByModel[l].map(m => m.is_sharpe)).filter(v => v != null);
-    const allHO = active.flatMap(l => _mvmByModel[l].map(m => m.ho_sharpe)).filter(v => v != null);
+    const allIS = active.flatMap(l => _mvmFilteredRows(l).map(m => m.is_sharpe)).filter(v => v != null);
+    const allHO = active.flatMap(l => _mvmFilteredRows(l).map(m => m.ho_sharpe)).filter(v => v != null);
     const axMin = Math.min(...allIS, ...allHO, -0.5);
     const axMax = Math.max(...allIS, ...allHO, 1.5);
     scatterDatasets.push({ label: 'IS = HO', data: [{ x: axMin, y: axMin }, { x: axMax, y: axMax }], type: 'line', borderColor: 'rgba(255,255,255,0.15)', borderDash: [5,4], borderWidth: 1.5, pointRadius: 0, fill: false });
