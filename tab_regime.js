@@ -1526,10 +1526,12 @@ function _regimeBuildMomentumModels(container, models) {
   container.appendChild(hdr);
 
   const _MM_CFGS = [
-    { key:'3m',     label:'3-Month Model',              sub:'All features  ·  1989–present',             note:'' },
-    { key:'6m',     label:'6-Month Model',              sub:'All features  ·  1989–present',             note:'' },
-    { key:'3m_ext', label:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present',    note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-    { key:'6m_ext', label:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present',    note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'1m',     label:'1-Month Model',              sub:'All features  ·  1989–present  ·  ~1 month blind spot',   note:'' },
+    { key:'3m',     label:'3-Month Model',              sub:'All features  ·  1989–present  ·  ~3 month blind spot',   note:'' },
+    { key:'6m',     label:'6-Month Model',              sub:'All features  ·  1989–present  ·  ~6 month blind spot',   note:'' },
+    { key:'1m_ext', label:'1-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'3m_ext', label:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'6m_ext', label:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
   ];
 
   _MM_CFGS.forEach(({ key, label, sub, note }) => {
