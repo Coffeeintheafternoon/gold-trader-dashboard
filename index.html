@@ -419,8 +419,15 @@
 
     <!-- Weight cross-correlation panel -->
     <div class="chart-card" style="margin-bottom:16px" id="ml-wcorr-card">
-      <div class="chart-title">Weight Cross-Correlations</div>
-      <div class="chart-subtitle">How each feature's weight moves relative to others across walk-forward windows. Negative = substitutes (model swaps between them — likely correlated drivers). Positive = co-drivers (consistently rewarded together — independent signals).</div>
+      <div class="chart-title">Weight Cross-Correlations &amp; Regime Detection</div>
+      <div class="chart-subtitle">Rolling pairwise weight correlation across walk-forward windows. When lines cross zero, the relationship flips — a potential regime transition. Recurring colour bands in the regime strip suggest repeating market regimes detectable from weight patterns alone.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px" id="ml-wcorr-toggles"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ml-wcorr-chart"></canvas></div>
+      <div style="margin-top:6px;margin-bottom:12px">
+        <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Regime strip — cosine similarity of weight vectors (colour = detected regime, gap = transition)</div>
+        <div id="ml-wcorr-regime-strip" style="position:relative;height:18px;background:#111;border-radius:3px"></div>
+        <div id="ml-wcorr-regime-legend" style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted)"></div>
+      </div>
       <div id="ml-wcorr-body"></div>
     </div>
 

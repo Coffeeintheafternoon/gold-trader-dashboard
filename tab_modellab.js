@@ -1972,80 +1972,209 @@ function mlStabSearchUpdate(val) {
 }
 
 // ── Weight Cross-Correlation Panel ───────────────────────────────────────────
-function _pearsonWeights(nameA, nameB, wh) {
-  const xs = [], ys = [];
-  wh.forEach(w => {
-    const a = (w.weights || {})[nameA], b = (w.weights || {})[nameB];
-    if (a != null && b != null) { xs.push(a); ys.push(b); }
-  });
-  if (xs.length < 4) return null;
+let _mlWeightCorrChart = null;
+
+// Pearson of two equal-length arrays
+function _pearsonArr(xs, ys) {
   const n = xs.length;
-  const mx = xs.reduce((s,v)=>s+v,0)/n, my = ys.reduce((s,v)=>s+v,0)/n;
-  let num=0, dx2=0, dy2=0;
-  for (let i=0;i<n;i++) { num+=(xs[i]-mx)*(ys[i]-my); dx2+=(xs[i]-mx)**2; dy2+=(ys[i]-my)**2; }
-  const denom = Math.sqrt(dx2*dy2);
-  return denom < 1e-10 ? null : +(num/denom).toFixed(3);
+  if (n < 4) return null;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,dx2=0,dy2=0;
+  for(let i=0;i<n;i++){num+=(xs[i]-mx)*(ys[i]-my);dx2+=(xs[i]-mx)**2;dy2+=(ys[i]-my)**2;}
+  const d=Math.sqrt(dx2*dy2); return d<1e-10?null:+(num/d).toFixed(3);
+}
+
+// Full-history Pearson between two feature weight series
+function _pearsonWeights(nameA, nameB, wh) {
+  const xs=[],ys=[];
+  wh.forEach(w=>{const a=(w.weights||{})[nameA],b=(w.weights||{})[nameB];if(a!=null&&b!=null){xs.push(a);ys.push(b);}});
+  return _pearsonArr(xs,ys);
+}
+
+// Rolling Pearson of two pre-extracted series (null-safe)
+function _rollingPearson(sA, sB, roll) {
+  return sA.map((_,idx)=>{
+    const xs=[],ys=[];
+    for(let k=Math.max(0,idx-roll+1);k<=idx;k++){if(sA[k]!=null&&sB[k]!=null){xs.push(sA[k]);ys.push(sB[k]);}}
+    return _pearsonArr(xs,ys);
+  });
+}
+
+// Cosine similarity between two weight dicts
+function _cosineSim(wA, wB) {
+  const keys=Object.keys(wA);
+  let dot=0,nA=0,nB=0;
+  keys.forEach(k=>{const a=wA[k]||0,b=wB[k]||0;dot+=a*b;nA+=a*a;nB+=b*b;});
+  const d=Math.sqrt(nA)*Math.sqrt(nB); return d<1e-10?0:dot/d;
 }
 
 function buildWeightCorrPanel(features, wh) {
-  const el = document.getElementById('ml-wcorr-body');
+  const el      = document.getElementById('ml-wcorr-body');
+  const strip   = document.getElementById('ml-wcorr-regime-strip');
+  const legend  = document.getElementById('ml-wcorr-regime-legend');
+  const toggles = document.getElementById('ml-wcorr-toggles');
+  const ctxEl   = document.getElementById('ml-wcorr-chart');
+
+  if (_mlWeightCorrChart) { _mlWeightCorrChart.destroy(); _mlWeightCorrChart=null; }
+  if (toggles) toggles.innerHTML='';
+  if (strip)   strip.innerHTML='';
+  if (legend)  legend.innerHTML='';
+
   if (!el) return;
   if (!wh.length || features.length < 2) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Insufficient windows for weight correlation.</div>';
+    el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:12px 0">Insufficient windows for weight correlation.</div>';
     return;
   }
 
-  // Compute all pairwise weight correlations
-  const pairs = [];
-  for (let i = 0; i < features.length; i++) {
-    for (let j = i+1; j < features.length; j++) {
-      const r = _pearsonWeights(features[i].name, features[j].name, wh);
-      if (r !== null) pairs.push({ a: features[i], b: features[j], r });
+  // Sort windows by date
+  const sorted = [...wh].sort((a,b)=>(a.window_end||'').localeCompare(b.window_end||''));
+  const dates  = sorted.map(w=>w.window_end||w.train_start||'');
+  const n      = sorted.length;
+
+  // ── All-history pairwise correlations ──────────────────────────────────────
+  const pairs=[];
+  for(let i=0;i<features.length;i++)
+    for(let j=i+1;j<features.length;j++){
+      const r=_pearsonWeights(features[i].name,features[j].name,sorted);
+      if(r!==null) pairs.push({a:features[i],b:features[j],r});
     }
+  pairs.sort((x,y)=>Math.abs(y.r)-Math.abs(x.r));
+
+  const topPairs = pairs.filter(p=>Math.abs(p.r)>=0.40).slice(0,6);
+
+  // ── Regime detection — cosine similarity between consecutive windows ────────
+  const REGIME_COLORS = [
+    'rgba(245,165,32,0.55)',   // amber
+    'rgba(99,102,241,0.55)',   // indigo
+    'rgba(34,211,238,0.55)',   // cyan
+    'rgba(239,68,68,0.55)',    // red
+    'rgba(52,211,153,0.55)',   // green
+  ];
+  const REGIME_NAMES = ['Regime A','Regime B','Regime C','Regime D','Regime E'];
+  const TRANSITION_THRESH = 0.25;
+
+  const sims = sorted.map((w,i)=>i===0?1:_cosineSim(w.weights||{},sorted[i-1].weights||{}));
+  let regime=0;
+  const regimeIdx = sims.map((s,i)=>{ if(i>0&&s<TRANSITION_THRESH) regime=(regime+1)%REGIME_COLORS.length; return regime; });
+
+  // Regime strip (one coloured block per window, positioned by date)
+  if (strip && n>0) {
+    const t0=new Date(dates[0]).getTime(), t1=new Date(dates[n-1]).getTime(), span=t1-t0||1;
+    sorted.forEach((w,i)=>{
+      const ws = w.window_start||w.train_start;
+      if(!ws||!w.window_end) return;
+      const l=((new Date(ws).getTime()-t0)/span*100).toFixed(2);
+      const ww=((new Date(w.window_end).getTime()-new Date(ws).getTime())/span*100).toFixed(2);
+      const div=document.createElement('div');
+      div.title=`${ws} → ${w.window_end}  sim=${sims[i].toFixed(2)}  ${REGIME_NAMES[regimeIdx[i]]}`;
+      div.style.cssText=`position:absolute;left:${l}%;width:${ww}%;height:100%;background:${REGIME_COLORS[regimeIdx[i]]};box-sizing:border-box;${sims[i]<TRANSITION_THRESH?'border-left:2px solid #fff3':''}`;
+      strip.appendChild(div);
+    });
+    // Count windows per regime
+    const regimeCounts={};
+    regimeIdx.forEach(r=>regimeCounts[r]=(regimeCounts[r]||0)+1);
+    if(legend) legend.innerHTML=Object.entries(regimeCounts).map(([r,c])=>
+      `<span><span style="display:inline-block;width:10px;height:10px;background:${REGIME_COLORS[r]};border-radius:2px;margin-right:4px;vertical-align:middle"></span>${REGIME_NAMES[r]}: ${c} windows</span>`
+    ).join('') + `<span style="color:#555;font-size:10px">· White line = transition (cosine sim &lt; ${TRANSITION_THRESH})</span>`;
   }
-  pairs.sort((x,y) => Math.abs(y.r) - Math.abs(x.r));
 
-  const substitutes = pairs.filter(p => p.r <= -0.45);
-  const codrivers   = pairs.filter(p => p.r >=  0.55);
+  // ── Line chart — rolling correlation per pair ─────────────────────────────
+  const ROLL   = Math.max(6, Math.floor(n/8));
+  const COLORS = ['#f87171','#34d399','#60a5fa','#f59e0b','#a78bfa','#22d3ee'];
 
-  function fmtName(n) { return n.replace('ann_','★ ').replace('macro_','').replace('_mom','↑').replace('_chg','Δ').replace('_z','ᶻ'); }
-  function catColor(f) { return _ML_CAT_COLORS[f.category] || '#4b5563'; }
+  if (ctxEl && topPairs.length) {
+    function fmtShort(name){ return name.replace('macro_','').replace('ann_','★').replace(/_z$/,'ᶻ').replace('_mom','↑'); }
+    function catC(f){ return _ML_CAT_COLORS[f.category]||'#4b5563'; }
 
-  function pairRow(p, type) {
-    const barW = Math.abs(p.r) * 100;
-    const barColor = type === 'sub' ? '#f87171' : '#34d399';
-    const sign = p.r < 0 ? '↔' : '⟳';
-    const story = type === 'sub'
-      ? `When <b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> rises, <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> falls — same driver, model picks one per window`
-      : `<b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> and <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> are consistently rewarded together — independent signals`;
+    const datasets = topPairs.map((p,i)=>{
+      const sA=sorted.map(w=>(w.weights||{})[p.a.name]??null);
+      const sB=sorted.map(w=>(w.weights||{})[p.b.name]??null);
+      return {
+        label:  `${fmtShort(p.a.name)} ↔ ${fmtShort(p.b.name)}`,
+        _pair:  p,
+        data:   _rollingPearson(sA,sB,ROLL),
+        borderColor: COLORS[i%COLORS.length],
+        backgroundColor:'transparent',
+        borderWidth:1.5, pointRadius:2, tension:0.3, spanGaps:true,
+      };
+    });
+
+    // Zero reference line
+    datasets.push({label:'── zero',data:dates.map(()=>0),borderColor:'#333',borderDash:[4,4],borderWidth:1,pointRadius:0,spanGaps:true});
+
+    _mlWeightCorrChart = new Chart(ctxEl.getContext('2d'),{
+      type:'line',
+      data:{labels:dates,datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:c=>{
+            if(c.dataset.label==='── zero') return null;
+            const v=c.raw; if(v==null) return null;
+            const type=v<-0.3?'substitute':v>0.3?'co-driver':'neutral';
+            return ` ${c.dataset.label}: r=${v.toFixed(2)} (${type})`;
+          }}}
+        },
+        scales:{
+          x:{grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{size:9},maxTicksLimit:8}},
+          y:{min:-1,max:1,grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(1)},
+             title:{display:true,text:'Weight correlation (rolling)',color:'#555',font:{size:9}}},
+        }
+      }
+    });
+
+    // Toggle buttons per pair
+    if(toggles) {
+      toggles.innerHTML='<span style="font-size:10px;color:var(--muted)">Pairs:</span>';
+      topPairs.forEach((p,i)=>{
+        const btn=document.createElement('button');
+        btn.className='ml-sort-btn ml-sort-active';
+        btn.style.cssText=`font-size:10px;padding:2px 8px;border-color:${COLORS[i%COLORS.length]};color:${COLORS[i%COLORS.length]}`;
+        btn.textContent=`${fmtShort(p.a.name)} ↔ ${fmtShort(p.b.name)}`;
+        btn.onclick=()=>{
+          const ds=_mlWeightCorrChart.data.datasets[i];
+          const hidden=!_mlWeightCorrChart.getDatasetMeta(i).hidden;
+          _mlWeightCorrChart.setDatasetVisibility(i,!hidden);
+          btn.style.opacity=hidden?'0.35':'1';
+          _mlWeightCorrChart.update();
+        };
+        toggles.appendChild(btn);
+      });
+      // Add total correlation history note
+      const note=document.createElement('span');
+      note.style.cssText='font-size:9px;color:#555;align-self:center;margin-left:6px';
+      note.textContent=`rolling ${ROLL}-window`;
+      toggles.appendChild(note);
+    }
+  } else if(ctxEl) {
+    ctxEl.parentElement.innerHTML='<div style="color:var(--muted);font-size:12px;padding:20px">No pairs with |r| ≥ 0.40 found.</div>';
+  }
+
+  // ── Static summary table ──────────────────────────────────────────────────
+  function fmtName(n){ return n.replace('ann_','★ ').replace('macro_','').replace('_mom','↑').replace('_chg','Δ').replace('_z','ᶻ'); }
+  function catColor(f){ return _ML_CAT_COLORS[f.category]||'#4b5563'; }
+
+  const substitutes=pairs.filter(p=>p.r<=-0.45);
+  const codrivers=pairs.filter(p=>p.r>=0.55);
+
+  function pairRow(p,type){
+    const bw=Math.abs(p.r)*100, bc=type==='sub'?'#f87171':'#34d399';
+    const story=type==='sub'
+      ?`When <b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> rises, <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> falls — same driver, model picks one per window`
+      :`<b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> and <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> consistently rewarded together — independent signals`;
     return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #111">
-      <div style="width:36px;flex-shrink:0;font-family:monospace;font-size:11px;color:${p.r<0?'#f87171':'#34d399'};text-align:right">${p.r.toFixed(2)}</div>
-      <div style="flex:1">
-        <div style="font-size:11px;margin-bottom:3px">${story}</div>
-        <div style="height:4px;background:#1a1a1a;border-radius:2px;width:100%">
-          <div style="height:100%;width:${barW}%;background:${barColor};border-radius:2px;opacity:0.6"></div>
-        </div>
-      </div>
-    </div>`;
+      <div style="width:36px;flex-shrink:0;font-family:monospace;font-size:11px;color:${bc};text-align:right">${p.r.toFixed(2)}</div>
+      <div style="flex:1"><div style="font-size:11px;margin-bottom:3px">${story}</div>
+        <div style="height:4px;background:#1a1a1a;border-radius:2px"><div style="height:100%;width:${bw}%;background:${bc};border-radius:2px;opacity:0.6"></div></div>
+      </div></div>`;
   }
 
-  let html = '';
-
-  if (substitutes.length) {
-    html += `<div style="font-size:9px;color:#f87171;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;margin-top:4px">Substitutes — competing for the same signal (weight correlation ≤ −0.45)</div>`;
-    html += substitutes.map(p => pairRow(p,'sub')).join('');
-  }
-
-  if (codrivers.length) {
-    html += `<div style="font-size:9px;color:#34d399;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;margin-top:14px">Co-drivers — independently rewarded together (weight correlation ≥ +0.55)</div>`;
-    html += codrivers.map(p => pairRow(p,'co')).join('');
-  }
-
-  if (!substitutes.length && !codrivers.length) {
-    html = '<div style="color:var(--muted);font-size:12px;padding:12px 0">No strongly correlated weight pairs found — features are pulling relatively independently.</div>';
-  }
-
-  el.innerHTML = html;
+  let html='';
+  if(substitutes.length){html+=`<div style="font-size:9px;color:#f87171;text-transform:uppercase;letter-spacing:0.6px;margin:14px 0 6px">Substitutes (weight r ≤ −0.45)</div>`;html+=substitutes.map(p=>pairRow(p,'sub')).join('');}
+  if(codrivers.length){html+=`<div style="font-size:9px;color:#34d399;text-transform:uppercase;letter-spacing:0.6px;margin:14px 0 6px">Co-drivers (weight r ≥ +0.55)</div>`;html+=codrivers.map(p=>pairRow(p,'co')).join('');}
+  if(!substitutes.length&&!codrivers.length) html='<div style="color:var(--muted);font-size:12px;padding:12px 0">No strongly correlated weight pairs — features pulling independently.</div>';
+  el.innerHTML=html;
 }
 
 // ── Data Coverage Timeline ────────────────────────────────────────────────────
