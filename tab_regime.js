@@ -1358,14 +1358,14 @@ function _mmNearestDate(dates, target) {
 }
 
 const _MM_COLORS = {
-  gold_mom:    '#fbbf24',
-  dxy_mom:     '#60a5fa',
-  oil_mom:     '#f97316',
-  vix:         '#ef4444',
-  yield_curve: '#34d399',
-  real_rate:   '#a78bfa',
-  cpi_yoy:     '#fb923c',
-  ff_chg:      '#38bdf8',
+  gold_mom:    '#22c55e',   // green
+  dxy_mom:     '#60a5fa',   // blue
+  oil_mom:     '#f97316',   // orange
+  vix:         '#ef4444',   // red
+  yield_curve: '#e879f9',   // fuchsia
+  real_rate:   '#a78bfa',   // purple
+  cpi_yoy:     '#fbbf24',   // amber
+  ff_chg:      '#2dd4bf',   // teal
 };
 const _MM_LABELS = {
   gold_mom:    'Gold Mom',
