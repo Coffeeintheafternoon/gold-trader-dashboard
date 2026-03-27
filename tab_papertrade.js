@@ -117,7 +117,7 @@ async function _ptLoadWatchlist(name) {
   _ptRenderPositions(portfolio, signals);
   _ptRenderEquityCurve(portfolio);
   _ptRenderSignals(signals, portfolio);
-  _ptRenderTrades(portfolio);
+  _ptRenderTrades(portfolio, signals);
   _ptRenderModelHealth(signals);
 }
 
@@ -517,65 +517,101 @@ function _ptRenderSignals(signals, portfolio) {
   }).join('');
 }
 
-// ── Closed trade log (enhanced) ────────────────────────────────────────────────
+// ── Trade log (unified open + closed) ──────────────────────────────────────────
 
-function _ptRenderTrades(portfolio) {
-  const trades = [...(portfolio.trades || [])].reverse();   // newest first in table
-  const tbody  = document.getElementById('pt-trades-tbody');
+let _ptTradeLogFilter = 'all';   // 'all' | 'open' | 'closed'
+let _ptTradeLogData   = null;    // cached for tab switching
 
-  if (!trades.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="padding:16px;color:var(--muted);text-align:center">No closed trades yet</td></tr>';
+function _ptTradeLogTab(tab) {
+  _ptTradeLogFilter = tab;
+  ['all','open','closed'].forEach(t => {
+    const btn = document.getElementById(`pt-tl-tab-${t}`);
+    if (!btn) return;
+    const active = t === tab;
+    btn.style.borderColor  = active ? '#60a5fa' : '#444';
+    btn.style.background   = active ? '#60a5fa22' : 'transparent';
+    btn.style.color        = active ? '#60a5fa' : '#6b7280';
+  });
+  if (_ptTradeLogData) _ptRenderTradeLogRows(_ptTradeLogData);
+}
+
+function _ptRenderTrades(portfolio, signals) {
+  const sigMap = (signals || {}).signals || {};
+  const today  = Date.now();
+
+  // Build unified list: open positions + closed trades
+  const openRows = Object.entries(portfolio.positions || {}).map(([ticker, pos]) => {
+    const price  = (sigMap[ticker] || {}).current_price || pos.entry_price;
+    const pnlAud = (price - pos.entry_price) * pos.shares;
+    const pnlPct = (price - pos.entry_price) / pos.entry_price * 100;
+    const days   = Math.round((today - new Date(pos.entry_date).getTime()) / 86400000);
+    return { ticker, status: 'OPEN', entry_date: pos.entry_date, exit_date: null,
+             entry_price: pos.entry_price, exit_price: price,
+             pnl: pnlAud, pnl_pct: pnlPct, days, exit_reason: 'OPEN' };
+  });
+
+  const closedRows = (portfolio.trades || []).map(t => {
+    const days = Math.round((new Date(t.exit_date).getTime() - new Date(t.entry_date).getTime()) / 86400000);
+    return { ticker: t.ticker, status: 'CLOSED', entry_date: t.entry_date, exit_date: t.exit_date,
+             entry_price: t.entry_price, exit_price: t.exit_price,
+             pnl: t.pnl || 0, pnl_pct: t.pnl_pct || 0, days, exit_reason: t.exit_reason || '—' };
+  });
+
+  // Sort all rows newest entry first
+  const allRows = [...openRows, ...closedRows].sort((a, b) => b.entry_date.localeCompare(a.entry_date));
+  _ptTradeLogData = allRows;
+  _ptRenderTradeLogRows(allRows);
+}
+
+function _ptRenderTradeLogRows(allRows) {
+  const tbody = document.getElementById('pt-trades-tbody');
+  const count = document.getElementById('pt-tl-count');
+
+  const rows = _ptTradeLogFilter === 'open'   ? allRows.filter(r => r.status === 'OPEN')
+             : _ptTradeLogFilter === 'closed' ? allRows.filter(r => r.status === 'CLOSED')
+             : allRows;
+
+  if (count) count.textContent = `${rows.length} trade${rows.length !== 1 ? 's' : ''}`;
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="padding:16px;color:var(--muted);text-align:center">No trades to show</td></tr>`;
     return;
   }
 
-  // Build cumulative P&L map in chronological order (oldest first)
-  let runPnl = 0;
-  const cumPnlList = (portfolio.trades || []).map(t => {
-    runPnl += t.pnl || 0;
-    return { key: t.entry_date + t.ticker + t.exit_date, cum: runPnl };
-  });
-  const cumMap = new Map(cumPnlList.map(x => [x.key, x.cum]));
-
-  const _exitColor = r => {
-    if (!r || r === '—') return 'var(--muted)';
-    if (r.startsWith('STOP'))     return '#f87171';
-    if (r === 'SIGNAL_FLIP')      return '#fcd34d';
-    if (r === 'MANUAL_CLOSE')     return '#93c5fd';
+  const _reasonColor = r => {
+    if (r === 'OPEN')          return 'var(--green)';
+    if (!r || r === '—')       return 'var(--muted)';
+    if (r.startsWith('STOP'))  return '#f87171';
+    if (r === 'SIGNAL_FLIP')   return '#fcd34d';
+    if (r === 'MANUAL_CLOSE')  return '#93c5fd';
     return 'var(--muted)';
   };
-  const _exitBg = r => {
-    if (!r) return 'transparent';
+  const _reasonBg = r => {
+    if (r === 'OPEN')          return 'rgba(74,222,128,0.10)';
     if (r.startsWith('STOP'))  return 'rgba(248,113,113,0.10)';
     if (r === 'SIGNAL_FLIP')   return 'rgba(252,211,77,0.10)';
     if (r === 'MANUAL_CLOSE')  return 'rgba(147,197,253,0.10)';
     return 'transparent';
   };
 
-  tbody.innerHTML = trades.map((t, i) => {
-    const bg     = i % 2 ? 'background:#111' : '';
-    const pnl    = t.pnl || 0;
-    const pnlPct = t.pnl_pct || 0;
-    const pnlC   = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const reason = t.exit_reason || '—';
-    const cum    = cumMap.get(t.entry_date + t.ticker + t.exit_date);
-    const cumC   = cum == null ? 'var(--muted)' : cum >= 0 ? 'var(--green)' : 'var(--red)';
-
-    const asxUrl = `https://www.asx.com.au/markets/company/${t.ticker.replace('.AX','').replace('.ax','')}`;
-    return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
-      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${t.ticker}</a></td>
-      <td style="padding:6px 10px;color:var(--muted)">${t.entry_date}</td>
-      <td style="padding:6px 10px;color:var(--muted)">${t.exit_date}</td>
-      <td style="padding:6px 10px;text-align:right;font-family:monospace">${t.entry_price.toFixed(3)}</td>
-      <td style="padding:6px 10px;text-align:right;font-family:monospace">${t.exit_price.toFixed(3)}</td>
-      <td style="padding:6px 10px;text-align:right;font-weight:700;color:${pnlC}">${pnl >= 0 ? '+' : ''}A$${pnl.toFixed(2)}</td>
-      <td style="padding:6px 10px;text-align:right;color:${pnlC}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</td>
-      <td style="padding:6px 10px;text-align:right;font-weight:600;color:${cumC}">${cum != null ? (cum >= 0 ? '+' : '') + 'A$' + cum.toFixed(2) : '—'}</td>
-      <td style="padding:6px 10px"><span class="tip" data-tip="${
-        reason.startsWith('STOP') ? 'Hard stop-loss triggered — price fell more than the configured stop % from entry' :
-        reason === 'SIGNAL_FLIP'  ? 'Model reversed direction — consecutive negative bars exceeded threshold' :
-        reason === 'MANUAL_CLOSE' ? 'Manually closed via the dashboard Close button' :
-        'Exit reason'
-      }" style="font-size:10px;padding:1px 6px;border-radius:3px;background:${_exitBg(reason)};color:${_exitColor(reason)}">${reason}</span></td>
+  tbody.innerHTML = rows.map((r, i) => {
+    const bg    = i % 2 ? 'background:#111' : '';
+    const pnlC  = r.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const asxUrl = `https://www.asx.com.au/markets/company/${r.ticker.replace('.AX','').replace('.ax','')}`;
+    const statusBadge = r.status === 'OPEN'
+      ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(74,222,128,0.12);color:var(--green);font-weight:700">OPEN</span>`
+      : `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(107,114,128,0.15);color:var(--muted)">CLOSED</span>`;
+    return `<tr style="border-bottom:1px solid #1a1a1a;white-space:nowrap;${bg}">
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${r.ticker}</a></td>
+      <td style="padding:6px 10px">${statusBadge}</td>
+      <td style="padding:6px 10px;color:var(--muted)">${r.entry_date}</td>
+      <td style="padding:6px 10px;color:var(--muted)">${r.exit_date || '—'}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace">${r.entry_price.toFixed(3)}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${r.status === 'OPEN' ? 'var(--muted)' : ''}">${r.exit_price.toFixed(3)}</td>
+      <td style="padding:6px 10px;text-align:right;font-weight:700;color:${pnlC}">${r.pnl >= 0 ? '+' : ''}A$${r.pnl.toFixed(2)}</td>
+      <td style="padding:6px 10px;text-align:right;color:${pnlC}">${r.pnl_pct >= 0 ? '+' : ''}${r.pnl_pct.toFixed(2)}%</td>
+      <td style="padding:6px 10px;text-align:right;color:var(--muted)">${r.days}d</td>
+      <td style="padding:6px 10px"><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${_reasonBg(r.exit_reason)};color:${_reasonColor(r.exit_reason)}">${r.exit_reason}</span></td>
     </tr>`;
   }).join('');
 }

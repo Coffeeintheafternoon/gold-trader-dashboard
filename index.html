@@ -1637,21 +1637,28 @@
     <!-- Model health panel (populated by JS) -->
     <div id="pt-model-health-wrap"></div>
 
-    <!-- Closed trades -->
-    <div class="section-divider"><span class="section-divider-label">Closed Trades</span></div>
+    <!-- Trade Log -->
+    <div class="section-divider"><span class="section-divider-label">Trade Log</span></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+      <button id="pt-tl-tab-all"    onclick="_ptTradeLogTab('all')"    style="font-size:11px;padding:3px 12px;border-radius:4px;border:1px solid #60a5fa;background:#60a5fa22;color:#60a5fa;cursor:pointer">All</button>
+      <button id="pt-tl-tab-open"   onclick="_ptTradeLogTab('open')"   style="font-size:11px;padding:3px 12px;border-radius:4px;border:1px solid #444;background:transparent;color:#6b7280;cursor:pointer">Open</button>
+      <button id="pt-tl-tab-closed" onclick="_ptTradeLogTab('closed')" style="font-size:11px;padding:3px 12px;border-radius:4px;border:1px solid #444;background:transparent;color:#6b7280;cursor:pointer">Closed</button>
+      <span id="pt-tl-count" style="font-size:11px;color:var(--muted);margin-left:4px"></span>
+    </div>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
-          <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
+          <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:0.04em">
             <th style="text-align:left;padding:7px 10px">Ticker</th>
-            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was opened">Entry</span></th>
-            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was closed">Exit</span></th>
+            <th style="text-align:left;padding:7px 10px">Status</th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was opened">Entry Date</span></th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was closed (— if still open)">Exit Date</span></th>
             <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Price paid per share at entry">Entry $</span></th>
-            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Price received per share at exit">Exit $</span></th>
-            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Profit or loss in AUD after brokerage fees">P&amp;L</span></th>
-            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Return as % of entry position value">P&amp;L %</span></th>
-            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Running total of all trade P&amp;L from first trade to this row (chronological order)">Cum P&amp;L</span></th>
-            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="STOP_LOSS = hard stop triggered / SIGNAL_FLIP = model reversed / MANUAL_CLOSE = closed via dashboard">Reason</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Exit price (closed) or current market price (open)">Exit / Cur $</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Realised P&amp;L (closed) or unrealised P&amp;L at current price (open)">P&amp;L A$</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="P&amp;L as % of entry position value">P&amp;L %</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Days position has been / was held">Days</span></th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="OPEN = currently held · STOP_LOSS = hard stop · SIGNAL_FLIP = model reversed · MANUAL_CLOSE = closed via dashboard">Reason</span></th>
           </tr>
         </thead>
         <tbody id="pt-trades-tbody"></tbody>
