@@ -45,6 +45,9 @@ async function initRegimeTab() {
   // Section 0: Historical Regime Detection (1971–present)
   if (detectData) _regimeBuildDetectionSection(body, detectData);
 
+  // Section 0b: Rolling momentum models
+  if (detectData && detectData.momentum_models) _regimeBuildMomentumModels(body, detectData.momentum_models);
+
   _regimeBuildMacroSection(body, macroData);
   _regimeBuildModelSection(body, model3m, model1y);
   _regimeBuildSimilaritySection(body, model1y);
@@ -1308,4 +1311,200 @@ function _rdZoom(bars) {
   const n = _regimeDetectChart.data.labels.length;
   _regimeDetectChart.zoomScale('x', { min: Math.max(0, n - bars), max: n - 1 }, 'none');
   _regimeDetectChart.update('none');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Rolling Momentum Models — 3 charts per model (3m + 6m)
+//   Chart 1: Coefficients     — sensitivity (S&P response per 1σ of feature)
+//   Chart 2: Contributions    — coef × current feature z-score (actual impact)
+//   Chart 3: T-statistics     — coefficient reliability (signal vs noise)
+// No regime labels given — patterns emerge from the data.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _MM_COLORS = {
+  gold_mom:    '#fbbf24',
+  dxy_mom:     '#60a5fa',
+  oil_mom:     '#f97316',
+  vix:         '#ef4444',
+  yield_curve: '#34d399',
+  real_rate:   '#a78bfa',
+  cpi_yoy:     '#fb923c',
+  ff_chg:      '#38bdf8',
+};
+const _MM_LABELS = {
+  gold_mom:    'Gold Mom',
+  dxy_mom:     'DXY Mom',
+  oil_mom:     'Oil Mom',
+  vix:         'VIX',
+  yield_curve: 'Yield Curve',
+  real_rate:   'Real Rate',
+  cpi_yoy:     'CPI YoY',
+  ff_chg:      'Fed Funds Δ',
+};
+
+function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height) {
+  const togglesId = id + '-togs';
+  const wrap = document.createElement('div');
+  wrap.style.marginBottom = '20px';
+  wrap.innerHTML = `
+    <div class="tip" style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px"
+         data-tip="${tip}">${label}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px" id="${togglesId}"></div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-wrap" style="height:${height}px;cursor:crosshair"><canvas id="${id}"></canvas></div>
+    </div>
+  `;
+  container.appendChild(wrap);
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById(id);
+    const togsEl = document.getElementById(togglesId);
+    if (!canvas) return;
+
+    const datasets = feats.map(f => ({
+      label:           _MM_LABELS[f] || f,
+      data:            dataMap[f] || [],
+      borderColor:     _MM_COLORS[f] || '#888',
+      backgroundColor: 'transparent',
+      borderWidth:     1.1,
+      pointRadius:     0,
+      fill:            false,
+      tension:         0.25,
+      spanGaps:        true,
+    }));
+    datasets.push({ label:'_zero', data: dates.map(()=>0), borderColor:'#2a2a2a', borderWidth:1,
+                    borderDash:[3,3], pointRadius:0, fill:false, tension:0 });
+
+    const chart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: dates, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode:'index', intersect:false,
+            filter: item => item.dataset.label !== '_zero',
+            callbacks: {
+              title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); },
+              label: item => {
+                if (item.dataset.label === '_zero') return null;
+                const v = item.raw;
+                return `  ${item.dataset.label}: ${v != null ? yFmt(v) : '—'}`;
+              },
+            },
+          },
+          zoom: { pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'} },
+        },
+        scales: {
+          x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
+                       callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
+               grid:{color:'#111'} },
+          y: { grid:{color:'#1a1a1a'}, ticks:{ font:{size:9}, maxTicksLimit:7, callback: v => yFmt(v) } },
+        },
+      },
+    });
+
+    if (togsEl) {
+      feats.forEach((f, i) => {
+        const c = _MM_COLORS[f] || '#888';
+        const btn = document.createElement('button');
+        btn.dataset.active = 'true';
+        btn.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;border:1px solid ${c};background:${c}22;color:${c};font-size:10px;font-family:monospace;cursor:pointer;transition:opacity 0.15s`;
+        btn.innerHTML = `<span style="display:inline-block;width:10px;height:1.5px;background:${c};flex-shrink:0"></span>${_MM_LABELS[f]||f}`;
+        btn.onclick = () => {
+          const next = btn.dataset.active !== 'true';
+          btn.dataset.active = String(next);
+          btn.style.background = next ? `${c}22` : 'transparent';
+          btn.style.opacity = next ? '1' : '0.35';
+          chart.setDatasetVisibility(i, next);
+          chart.update();
+        };
+        togsEl.appendChild(btn);
+      });
+    }
+  });
+}
+
+function _regimeBuildMomentumModels(container, models) {
+
+  const hdr = document.createElement('div');
+  hdr.innerHTML = `
+    <div class="section-divider" style="margin-top:8px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-label tip" data-tip="Rolling Ridge regression (3-year window, daily step) predicting S&P 500 forward return from macro features. No regime labels used — any patterns that emerge are data-driven. Three views per model: sensitivity (coefficient), actual impact (contribution = coef × current signal), and reliability (t-statistic).">
+        Rolling Momentum Models  ·  Latent Regime Discovery
+      </span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:18px">
+      Daily rolling Ridge  ·  3-year training window  ·  standardised features
+      ·  <span style="color:#555">target = S&amp;P forward return  ·  no regime labels given to model</span>
+    </div>
+  `;
+  container.appendChild(hdr);
+
+  ['3m','6m'].forEach(key => {
+    const m = models[key];
+    if (!m || !m.dates || !m.dates.length) return;
+
+    const feats   = m.features      || [];
+    const coefs   = m.coefficients  || {};
+    const contribs = m.contributions || {};
+    const tstats  = m.t_stats       || {};
+    const r2arr   = m.r2            || [];
+    const dates   = m.dates;
+
+    // Model header
+    const modelHdr = document.createElement('div');
+    modelHdr.style.cssText = 'margin-bottom:12px;margin-top:8px';
+    modelHdr.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase">
+        ${key === '3m' ? '3-Month' : '6-Month'} Model  ·  S&amp;P forward ${key} return
+      </div>
+      <div style="font-size:10px;color:#555;margin-top:3px">
+        Horizon: ${m.horizon_days}d  ·  Window: ${m.window_days}d  ·  ${dates.length.toLocaleString()} daily obs
+        ·  Avg R²: <span style="font-family:monospace;color:#666">${r2arr.length ? (r2arr.reduce((a,b)=>a+b,0)/r2arr.length).toFixed(3) : '—'}</span>
+        ·  Current R²: <span style="font-family:monospace;color:#666">${r2arr.length ? r2arr[r2arr.length-1].toFixed(3) : '—'}</span>
+      </div>
+    `;
+    container.appendChild(modelHdr);
+
+    // Chart 1: Coefficients
+    _mmMakeChart(container,
+      `rd-mm-coef-${key}`,
+      'Sensitivity (Coefficients)',
+      'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. Drag to zoom.',
+      dates, feats, coefs,
+      v => (v >= 0 ? '+' : '') + v.toFixed(4),
+      300
+    );
+
+    // Chart 2: Contributions
+    _mmMakeChart(container,
+      `rd-mm-contrib-${key}`,
+      'Actual Impact (Contribution = Coef × Current Signal)',
+      'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is. A feature can have a large coefficient but contribute nothing if its signal is flat.',
+      dates, feats, contribs,
+      v => (v >= 0 ? '+' : '') + v.toFixed(4),
+      300
+    );
+
+    // Chart 3: T-statistics
+    _mmMakeChart(container,
+      `rd-mm-tstat-${key}`,
+      'Reliability (T-Statistic)  ·  |t| > 2 = statistically significant',
+      'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise). A feature with large t-stat was a consistently reliable predictor at that time.',
+      dates, feats, tstats,
+      v => (v >= 0 ? '+' : '') + v.toFixed(2),
+      300
+    );
+
+    // ±2 reference annotation note
+    const refNote = document.createElement('div');
+    refNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
+    refNote.textContent = '|t| > 2 threshold = statistical significance at ~95% confidence';
+    container.appendChild(refNote);
+  });
 }
