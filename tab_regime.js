@@ -1512,26 +1512,34 @@ function _regimeBuildMomentumModels(container, models) {
   `;
   container.appendChild(hdr);
 
-  ['3m','6m'].forEach(key => {
+  const _MM_CFGS = [
+    { key:'3m',     label:'3-Month Model',              sub:'All features  ·  1989–present',             note:'' },
+    { key:'6m',     label:'6-Month Model',              sub:'All features  ·  1989–present',             note:'' },
+    { key:'3m_ext', label:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present',    note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'6m_ext', label:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present',    note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+  ];
+
+  _MM_CFGS.forEach(({ key, label, sub, note }) => {
     const m = models[key];
     if (!m || !m.dates || !m.dates.length) return;
 
-    const feats   = m.features      || [];
-    const coefs   = m.coefficients  || {};
+    const feats    = m.features      || [];
+    const coefs    = m.coefficients  || {};
     const contribs = m.contributions || {};
-    const tstats  = m.t_stats       || {};
-    const r2arr   = m.r2            || [];
-    const dates   = m.dates;
+    const tstats   = m.t_stats       || {};
+    const r2arr    = m.r2            || [];
+    const dates    = m.dates;
 
     // Model header
     const modelHdr = document.createElement('div');
-    modelHdr.style.cssText = 'margin-bottom:12px;margin-top:8px';
+    modelHdr.style.cssText = 'margin-bottom:12px;margin-top:20px';
     modelHdr.innerHTML = `
       <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase">
-        ${key === '3m' ? '3-Month' : '6-Month'} Model  ·  S&amp;P forward ${key} return
+        ${label}  ·  S&amp;P forward ${key.replace('_ext','')} return
       </div>
+      ${note ? `<div style="font-size:10px;color:#555;margin-top:2px">${note}</div>` : ''}
       <div style="font-size:10px;color:#555;margin-top:3px">
-        Horizon: ${m.horizon_days}d  ·  Window: ${m.window_days}d  ·  ${dates.length.toLocaleString()} daily obs
+        ${sub}  ·  Horizon: ${m.horizon_days}d  ·  Window: ${m.window_days}d  ·  ${dates.length.toLocaleString()} daily obs
         ·  Avg R²: <span style="font-family:monospace;color:#666">${r2arr.length ? (r2arr.reduce((a,b)=>a+b,0)/r2arr.length).toFixed(3) : '—'}</span>
         ·  Current R²: <span style="font-family:monospace;color:#666">${r2arr.length ? r2arr[r2arr.length-1].toFixed(3) : '—'}</span>
       </div>
