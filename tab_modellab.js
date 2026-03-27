@@ -238,6 +238,7 @@ function renderTickerDetail(d) {
   function _modelLabel(mt) {
     if (!mt) return 'Linear Regression Model';
     if (mt === 'regime_similarity') return 'Regime Similarity Model';
+    if (mt.includes('v5')) return 'Ridge v5 Model';
     if (mt.includes('v4')) return 'Ridge v4 Model';
     if (mt.includes('v3')) return 'Ridge v3 Model';
     if (mt.includes('v2')) return 'Ridge v2 Model';
@@ -328,6 +329,12 @@ function renderTickerDetail(d) {
 
   // Announcement table
   buildAnnTable(_mlCurrentFeatures);
+
+  // Weight cross-correlations
+  buildWeightCorrPanel(_mlCurrentFeatures, _mlCurrentWH);
+
+  // Data coverage timeline
+  buildDataTimeline(d);
 
   // Weight stability
   buildMLStabilityChart(_mlCurrentFeatures, _mlCurrentWH);
@@ -1962,6 +1969,185 @@ function mlStabSearchUpdate(val) {
     </div>`;
   }).join('');
   drop.style.display = '';
+}
+
+// ── Weight Cross-Correlation Panel ───────────────────────────────────────────
+function _pearsonWeights(nameA, nameB, wh) {
+  const xs = [], ys = [];
+  wh.forEach(w => {
+    const a = (w.weights || {})[nameA], b = (w.weights || {})[nameB];
+    if (a != null && b != null) { xs.push(a); ys.push(b); }
+  });
+  if (xs.length < 4) return null;
+  const n = xs.length;
+  const mx = xs.reduce((s,v)=>s+v,0)/n, my = ys.reduce((s,v)=>s+v,0)/n;
+  let num=0, dx2=0, dy2=0;
+  for (let i=0;i<n;i++) { num+=(xs[i]-mx)*(ys[i]-my); dx2+=(xs[i]-mx)**2; dy2+=(ys[i]-my)**2; }
+  const denom = Math.sqrt(dx2*dy2);
+  return denom < 1e-10 ? null : +(num/denom).toFixed(3);
+}
+
+function buildWeightCorrPanel(features, wh) {
+  const el = document.getElementById('ml-wcorr-body');
+  if (!el) return;
+  if (!wh.length || features.length < 2) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">Insufficient windows for weight correlation.</div>';
+    return;
+  }
+
+  // Compute all pairwise weight correlations
+  const pairs = [];
+  for (let i = 0; i < features.length; i++) {
+    for (let j = i+1; j < features.length; j++) {
+      const r = _pearsonWeights(features[i].name, features[j].name, wh);
+      if (r !== null) pairs.push({ a: features[i], b: features[j], r });
+    }
+  }
+  pairs.sort((x,y) => Math.abs(y.r) - Math.abs(x.r));
+
+  const substitutes = pairs.filter(p => p.r <= -0.45);
+  const codrivers   = pairs.filter(p => p.r >=  0.55);
+
+  function fmtName(n) { return n.replace('ann_','★ ').replace('macro_','').replace('_mom','↑').replace('_chg','Δ').replace('_z','ᶻ'); }
+  function catColor(f) { return _ML_CAT_COLORS[f.category] || '#4b5563'; }
+
+  function pairRow(p, type) {
+    const barW = Math.abs(p.r) * 100;
+    const barColor = type === 'sub' ? '#f87171' : '#34d399';
+    const sign = p.r < 0 ? '↔' : '⟳';
+    const story = type === 'sub'
+      ? `When <b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> rises, <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> falls — same driver, model picks one per window`
+      : `<b style="color:${catColor(p.a)}">${fmtName(p.a.name)}</b> and <b style="color:${catColor(p.b)}">${fmtName(p.b.name)}</b> are consistently rewarded together — independent signals`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #111">
+      <div style="width:36px;flex-shrink:0;font-family:monospace;font-size:11px;color:${p.r<0?'#f87171':'#34d399'};text-align:right">${p.r.toFixed(2)}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;margin-bottom:3px">${story}</div>
+        <div style="height:4px;background:#1a1a1a;border-radius:2px;width:100%">
+          <div style="height:100%;width:${barW}%;background:${barColor};border-radius:2px;opacity:0.6"></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+
+  if (substitutes.length) {
+    html += `<div style="font-size:9px;color:#f87171;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;margin-top:4px">Substitutes — competing for the same signal (weight correlation ≤ −0.45)</div>`;
+    html += substitutes.map(p => pairRow(p,'sub')).join('');
+  }
+
+  if (codrivers.length) {
+    html += `<div style="font-size:9px;color:#34d399;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;margin-top:14px">Co-drivers — independently rewarded together (weight correlation ≥ +0.55)</div>`;
+    html += codrivers.map(p => pairRow(p,'co')).join('');
+  }
+
+  if (!substitutes.length && !codrivers.length) {
+    html = '<div style="color:var(--muted);font-size:12px;padding:12px 0">No strongly correlated weight pairs found — features are pulling relatively independently.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ── Data Coverage Timeline ────────────────────────────────────────────────────
+function buildDataTimeline(d) {
+  const el = document.getElementById('ml-timeline-body');
+  if (!el) return;
+
+  const wh = d.weight_history || [];
+  if (!wh.length || !d.period_start || !d.period_end) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0">No timeline data.</div>';
+    return;
+  }
+
+  const t0   = new Date(d.period_start).getTime();
+  const t1   = new Date(d.period_end).getTime();
+  const span = t1 - t0 || 1;
+
+  function left(dateStr)        { return ((new Date(dateStr).getTime() - t0) / span * 100).toFixed(2); }
+  function width(s, e)          { return ((new Date(e).getTime()  - new Date(s).getTime()) / span * 100).toFixed(2); }
+  function fmtD(dateStr)        { return dateStr ? dateStr.slice(0,7) : ''; }
+  function bar(l, w, bg, title) {
+    return `<div title="${title}" style="position:absolute;left:${l}%;width:${w}%;height:100%;background:${bg};border-radius:2px;box-sizing:border-box"></div>`;
+  }
+
+  const hoStart = (d.holdout || {}).period_start;
+  const hoEnd   = (d.holdout || {}).period_end;
+
+  // ── Row helper ──
+  function row(label, content) {
+    return `<div style="display:flex;align-items:center;margin-bottom:7px;gap:10px">
+      <div style="width:110px;flex-shrink:0;font-size:10px;color:var(--muted);text-align:right;white-space:nowrap">${label}</div>
+      <div style="flex:1;position:relative;height:16px;background:#111;border-radius:3px">${content}</div>
+    </div>`;
+  }
+
+  // ── Row 1: IS vs Holdout ──
+  const isW  = hoStart ? width(d.period_start, hoStart) : '100';
+  const hoL  = hoStart ? left(hoStart) : '100';
+  const hoW  = (hoStart && hoEnd) ? width(hoStart, hoEnd) : '0';
+  const r1 = bar('0', isW, 'rgba(245,165,32,0.30)', `In-sample: ${fmtD(d.period_start)} → ${fmtD(hoStart)}`)
+           + (hoStart ? bar(hoL, hoW, 'rgba(0,200,50,0.35)', `Holdout: ${fmtD(hoStart)} → ${fmtD(hoEnd)}`) : '');
+
+  // ── Row 2: Walk-forward windows (coloured by OOS Sharpe) ──
+  const palette = ['#f59e0b','#00c832','#2dd4bf','#a78bfa','#f97316','#f87171','#22d3ee','#d97706','#60a5fa','#34d399'];
+  const r2 = wh.map((w, i) => {
+    if (!w.window_start || !w.window_end) return '';
+    const l = left(w.window_start), ww = width(w.window_start, w.window_end);
+    const shr = w.oos_sharpe;
+    const bg = shr == null ? '#333' : shr >= 0.5 ? 'rgba(0,200,50,0.55)' : shr >= 0 ? 'rgba(245,165,32,0.45)' : 'rgba(220,38,38,0.45)';
+    return bar(l, ww, bg, `W${i+1}: ${fmtD(w.window_start)} → ${fmtD(w.window_end)}  OOS Shr=${shr != null ? shr.toFixed(2) : '—'}`);
+  }).join('');
+
+  // ── Row 3+: Feature presence per window ──
+  // Build feature list (top features + any announcement features)
+  const features = (d.features || []).slice(0, 20);
+  const annFeats = (d.features || []).filter(f => f.category === 'announcement');
+  const showFeats = features;
+
+  const featRows = showFeats.map(f => {
+    const cells = wh.map((w, i) => {
+      const wt = (w.weights || {})[f.name];
+      if (wt == null || wt === 0) return bar(left(w.window_start), width(w.window_start, w.window_end), '#1a1a1a', `${f.name} absent W${i+1}`);
+      const bg = wt > 0 ? 'rgba(0,200,50,0.55)' : 'rgba(220,38,38,0.50)';
+      return bar(left(w.window_start), width(w.window_start, w.window_end), bg, `${f.name} W${i+1}: ${wt>0?'+':''}${(wt*1000).toFixed(1)}×1k`);
+    }).join('');
+    const catColor = _ML_CAT_COLORS[f.category] || '#4b5563';
+    const shortName = f.name.replace('ann_','★ ').replace('macro_','').replace('_mom','↑').replace('_chg','Δ');
+    return `<div style="display:flex;align-items:center;margin-bottom:4px;gap:10px">
+      <div style="width:110px;flex-shrink:0;font-size:9px;color:${catColor};text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${f.name}">${shortName}</div>
+      <div style="flex:1;position:relative;height:10px;background:#111;border-radius:2px">${cells}</div>
+    </div>`;
+  }).join('');
+
+  // ── X-axis tick labels ──
+  const tickCount = Math.min(wh.length, 8);
+  const step = Math.floor(wh.length / tickCount) || 1;
+  const ticks = wh.filter((_, i) => i % step === 0 || i === wh.length - 1);
+  const tickHtml = `<div style="display:flex;align-items:center;margin-bottom:4px;gap:10px">
+    <div style="width:110px;flex-shrink:0"></div>
+    <div style="flex:1;position:relative;height:14px">` +
+    ticks.map(w => `<div style="position:absolute;left:${left(w.window_end)}%;transform:translateX(-50%);font-size:8px;color:#555;white-space:nowrap">${fmtD(w.window_end)}</div>`).join('') +
+    `</div></div>`;
+
+  // ── Legend ──
+  const legend = `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid #1a1a1a">
+    <span><span style="display:inline-block;width:10px;height:10px;background:rgba(245,165,32,0.30);border-radius:2px;margin-right:4px;vertical-align:middle"></span>In-sample</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:rgba(0,200,50,0.35);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Holdout</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:rgba(0,200,50,0.55);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Window (OOS Shr ≥0.5)</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:rgba(245,165,32,0.45);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Window (OOS 0–0.5)</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:rgba(220,38,38,0.45);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Window (OOS <0)</span>
+    <span>Feature rows: <span style="color:rgba(0,200,50,0.8)">■ positive weight</span> · <span style="color:rgba(220,38,38,0.8)">■ negative</span> · <span style="color:#333">■ absent</span></span>
+  </div>`;
+
+  el.innerHTML =
+    `<div style="margin-bottom:14px">` +
+      row('IS / Holdout', r1) +
+      row('Walk-forward', r2) +
+    `</div>` +
+    `<div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Feature presence per window (top ${showFeats.length})</div>` +
+    featRows +
+    tickHtml +
+    legend;
 }
 
 function _stabDataSeries(fname, weightHistory, metric) {

@@ -377,6 +377,12 @@
 
     <!-- Feature importance chart removed (redundant with feature table) -->
 
+    <!-- Data Coverage Timeline -->
+    <div class="chart-card" style="margin-bottom:16px" id="ml-timeline-card">
+      <div class="chart-title">Data Coverage Timeline</div>
+      <div class="chart-subtitle">Walk-forward windows on the date axis · Feature presence per window — reveals when each data source became available.</div>
+      <div id="ml-timeline-body"></div>
+    </div>
 
     <!-- Weight stability chart -->
     <div class="chart-card" style="margin-bottom:16px">
@@ -409,6 +415,13 @@
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;width:100%">The <strong style="color:#c8b89a">zero line</strong> is the key reference — a feature that repeatedly crosses zero (positive one window, negative the next) is directionally inconsistent and should be treated as noise regardless of average weight.</div>
       </div>
+    </div>
+
+    <!-- Weight cross-correlation panel -->
+    <div class="chart-card" style="margin-bottom:16px" id="ml-wcorr-card">
+      <div class="chart-title">Weight Cross-Correlations</div>
+      <div class="chart-subtitle">How each feature's weight moves relative to others across walk-forward windows. Negative = substitutes (model swaps between them — likely correlated drivers). Positive = co-drivers (consistently rewarded together — independent signals).</div>
+      <div id="ml-wcorr-body"></div>
     </div>
 
     <!-- Feature correlation analysis -->
