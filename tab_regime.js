@@ -18,14 +18,15 @@ async function initRegimeTab() {
     <div id="regime-body" style="display:none"></div>
   `;
 
-  let macroData, model3m, model1y;
+  let macroData, model3m, model1y, detectData;
 
-  // Fetch all three sources in parallel
+  // Fetch all sources in parallel — failures are non-fatal for optional sections
   try {
-    [macroData, model3m, model1y] = await Promise.all([
+    [macroData, model3m, model1y, detectData] = await Promise.all([
       fetch(`./regime_macro.json?v=${_CV}`).then(r => { if (!r.ok) throw new Error('regime_macro.json not found'); return r.json(); }),
       fetch(`./model_lab_wbc_regime_3m.json?v=${_CV}`).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch(`./model_lab_wbc_regime_1y.json?v=${_CV}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`./regime_data.json?v=${_CV}`).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
   } catch (e) {
     document.getElementById('regime-loading').innerHTML =
@@ -40,6 +41,9 @@ async function initRegimeTab() {
   document.getElementById('regime-loading').style.display = 'none';
   const body = document.getElementById('regime-body');
   body.style.cssText = 'display:block; padding: 0 16px';
+
+  // Section 0: Historical Regime Detection (1971–present)
+  if (detectData) _regimeBuildDetectionSection(body, detectData);
 
   _regimeBuildMacroSection(body, macroData);
   _regimeBuildModelSection(body, model3m, model1y);
@@ -913,4 +917,390 @@ function _regimeBuildSimilaritySection(container, model1y) {
     });
 
   }); // end requestAnimationFrame
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Section 0 — Historical Macro Regime Detection (1971–present)
+// Loaded from regime_data.json (output of scripts/run_regime_analysis.py)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _RD_COLORS = {
+  STAGFLATION:  '#f97316',
+  GOLD_BULL:    '#fbbf24',
+  CRISIS:       '#ef4444',
+  RISK_ON:      '#22c55e',
+  TIGHTENING:   '#3b82f6',
+  DEFLATION_QE: '#a855f7',
+  TRANSITION:   '#555555',
+};
+
+function _rdColor(regime, alpha) {
+  const hex = _RD_COLORS[regime] || '#888888';
+  if (!alpha) return hex;
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+let _regimeDetectChart = null;
+
+function _regimeBuildDetectionSection(container, d) {
+  const cr     = d.current_regime || {};
+  const labels = d.regime_labels  || {};
+  const ts     = d.timeseries     || {};
+  const dates  = ts.dates  || [];
+  const simMap = ts.sim    || {};
+  const macro  = ts.macro  || {};
+
+  // ── Section header ─────────────────────────────────────────────────────────
+  const hdr = document.createElement('div');
+  hdr.innerHTML = `
+    <div class="section-divider" style="margin-top:8px">
+      <div class="section-divider-line"></div>
+      <span class="section-divider-label tip" data-tip="Cosine-similarity regime detection across 1971–present using daily macro data. Each period is classified as the closest match to 6 named archetype vectors (Stagflation, Gold Bull, Crisis, Risk-On, Tightening, Deflation/QE). Transition = no archetype dominates. Smoothed over ~9 months to suppress noise.">
+        Historical Macro Regime Detection  ·  1971–present
+      </span>
+      <div class="section-divider-line"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:18px">
+      Generated ${d.generated || '—'}  ·  Data from 1971  ·  ${dates.length} monthly samples
+      ·  <span style="font-size:10px">Smoothing: 189-day rolling average of cosine similarity scores</span>
+    </div>
+  `;
+  container.appendChild(hdr);
+
+  // ── Current regime card ────────────────────────────────────────────────────
+  const regime   = cr.regime || 'TRANSITION';
+  const regLabel = cr.regime_label || regime;
+  const conf     = cr.confidence != null ? (cr.confidence * 100).toFixed(0) + '%' : '—';
+  const regColor = _RD_COLORS[regime] || '#888';
+  const topRegs  = (cr.top_regimes || []).slice(0, 3);
+  const readings = cr.key_readings || {};
+  const inTrans  = cr.in_transition;
+
+  const topBars = topRegs.map(([r, s]) => {
+    const pct = (s * 100).toFixed(0);
+    const c   = _RD_COLORS[r] || '#888';
+    return `<div style="margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:11px;color:${c}">${labels[r] || r}</span>
+        <span style="font-size:11px;font-family:monospace;color:${c}">${s.toFixed(3)}</span>
+      </div>
+      <div style="height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${c};border-radius:2px"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const readingRows = Object.entries(readings).map(([k, v]) => {
+    const col = k === 'vol_regime_z' ? (v > 1.5 ? '#ef4444' : v > 0 ? '#f5c842' : '#22c55e')
+               : k === 'real_rate'   ? (v < 0 ? '#22c55e' : v > 2 ? '#ef4444' : '#f5c842')
+               : (v >= 0 ? '#22c55e' : '#ef4444');
+    const lbl = { real_rate:'Real Rate', yield_curve:'Yield Curve', gold_mom_z:'Gold Mom (z)',
+                  spx_mom_z:'SPX Mom (z)', vol_regime_z:'Vol/VIX (z)',
+                  dxy_mom_z:'DXY Mom (z)', cpi_accel_z:'CPI Accel (z)' }[k] || k;
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #111">
+      <span style="font-size:11px;color:var(--muted)">${lbl}</span>
+      <span style="font-size:11px;font-family:monospace;color:${col}">${v >= 0 ? '+' : ''}${v.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+
+  const curCard = document.createElement('div');
+  curCard.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px';
+  curCard.innerHTML = `
+    <div class="chart-card" style="border-color:${regColor}55;background:${_rdColor(regime,0.06)}">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Current Regime</div>
+      <div style="font-size:28px;font-weight:800;color:${regColor};font-family:monospace;line-height:1.1;margin-bottom:6px">${regLabel}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">
+        Confidence: <span style="color:${regColor};font-weight:700">${conf}</span>
+        ${inTrans ? `<span style="margin-left:8px;font-size:10px;color:#f5c842;border:1px solid #f5c84255;padding:1px 6px;border-radius:3px">TRANSITIONING</span>` : ''}
+      </div>
+      <div style="font-size:10px;color:var(--muted)">AS AT ${cr.date || '—'}</div>
+    </div>
+    <div class="chart-card">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Similarity Scores</div>
+      ${topBars}
+    </div>
+    <div class="chart-card">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Key Readings (z-scores)</div>
+      ${readingRows}
+    </div>
+  `;
+  container.appendChild(curCard);
+
+  // ── Similarity scores timeseries chart ────────────────────────────────────
+  const simChartWrap = document.createElement('div');
+  simChartWrap.innerHTML = `
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px"
+         data-tip="Smoothed cosine similarity to each regime archetype over time. Higher = stronger match to that regime's macro fingerprint. Transition periods = no single regime exceeds 0.22 confidence. Drag/scroll to zoom.">
+      Regime Similarity Scores  ·  1971–present
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px" id="rd-sim-toggles"></div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+      ${[['5Y',260],['10Y',520],['20Y',1040],['All',99999]].map(([r,b])=>
+        `<button onclick="_rdZoom(${b})" style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #333;background:#111;color:var(--muted);cursor:pointer" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='#333'">${r}</button>`
+      ).join('')}
+    </div>
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-wrap" style="height:340px;cursor:crosshair"><canvas id="rd-sim-chart"></canvas></div>
+    </div>
+  `;
+  container.appendChild(simChartWrap);
+
+  // ── Macro series charts ────────────────────────────────────────────────────
+  const macroSectionHdr = document.createElement('div');
+  macroSectionHdr.innerHTML = `
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px"
+         data-tip="Raw macro series driving the regime detection. Monthly sampled for performance. Drag/scroll to zoom any chart.">
+      Underlying Macro Series  ·  1971–present
+    </div>
+  `;
+  container.appendChild(macroSectionHdr);
+
+  const macroGrid = document.createElement('div');
+  macroGrid.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px';
+  container.appendChild(macroGrid);
+
+  const macroCfgs = [
+    { key:'gold',        label:'Gold (USD/oz)',          fmt: v=>'$'+Math.round(v),          color:'#fbbf24', log:true  },
+    { key:'spx',         label:'S&P 500',                fmt: v=>Math.round(v).toLocaleString(), color:'#22c55e', log:true  },
+    { key:'vix',         label:'VIX (stitched)',          fmt: v=>v.toFixed(1),               color:'#ef4444', log:false },
+    { key:'yield_curve', label:'Yield Curve (10yr−3mo)',  fmt: v=>v.toFixed(2)+'%',           color:'#34d399', log:false },
+    { key:'real_rate',   label:'Real Rate (10yr−CPI)',    fmt: v=>v.toFixed(2)+'%',           color:'#60a5fa', log:false },
+    { key:'cpi_yoy',     label:'CPI YoY %',              fmt: v=>v.toFixed(1)+'%',           color:'#f97316', log:false },
+  ];
+
+  macroCfgs.forEach(cfg => {
+    if (!macro[cfg.key]) return;
+    const card = document.createElement('div');
+    card.className = 'chart-card';
+    card.style.marginBottom = '0';
+    card.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">${cfg.label}</div>
+      <div class="chart-wrap" style="height:200px;cursor:crosshair"><canvas id="rd-macro-${cfg.key}"></canvas></div>
+    `;
+    macroGrid.appendChild(card);
+  });
+
+  // ── Historical periods table ───────────────────────────────────────────────
+  const periods = (d.periods || []).filter(p => p.duration_days > 90 && p.regime !== 'TRANSITION');
+  const periodsWrap = document.createElement('div');
+  periodsWrap.innerHTML = `
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px"
+         data-tip="All sustained regime periods >90 days, excluding transition. Avg score = mean cosine similarity to the winning archetype during that period.">
+      Historical Regime Periods  ·  &gt;90 days
+    </div>
+    <div style="overflow-x:auto;margin-bottom:24px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid #2a2a2a">
+            <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Regime</th>
+            <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Start</th>
+            <th style="text-align:left;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">End</th>
+            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Duration</th>
+            <th style="text-align:right;padding:7px 10px;color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-family:monospace">Avg Score</th>
+          </tr>
+        </thead>
+        <tbody id="rd-periods-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  container.appendChild(periodsWrap);
+
+  // ── Regime definitions ─────────────────────────────────────────────────────
+  const regimeDefs = [
+    { r:'STAGFLATION',  desc:'Oil spike + high inflation + negative real rates + weak equities + strong gold. Classic 1970s conditions. Gold miners and commodities outperform; equities and bonds both suffer.', ex:'1973–74 Arab oil embargo, 1979–82 Volcker era' },
+    { r:'GOLD_BULL',    desc:'Gold outperforming on weak USD + low/negative real rates. Not necessarily a crisis — can be a slow structural USD debasement cycle. Gold miners outperform. Equities often positive but lag gold.', ex:'2001–07 post dot-com gold bull, 2018–20' },
+    { r:'CRISIS',       desc:'VIX spike + equity crash + yield curve flattening or inversion. Sharp short-duration events. Safe-haven flows into gold and treasuries. Opportunities in gold miners after initial vol flush.', ex:'1987 Black Monday, 2008–09 GFC, 2020 COVID' },
+    { r:'RISK_ON',      desc:'Equities up + low vol + moderate rates + gold neutral. Classic bull market conditions. Broad equity outperformance. Gold underperforms equities but remains stable.', ex:'1995–99 tech boom, 2012–15, 2017, 2023–24' },
+    { r:'TIGHTENING',   desc:'Fed hiking fast + rising DXY + falling equities + weak gold. Rate-shock regime. Gold faces headwinds from rising real rates and USD strength. Short-dated bonds outperform.', ex:'1994–95, 2004–06, 2022 Volcker echo' },
+    { r:'DEFLATION_QE', desc:'Zero/near-zero rates + QE + equities recovering + elevated gold + low CPI. Post-crisis QE era. Gold benefits from money printing expectations. Growth stocks outperform.', ex:'2009–15 QE era, 2020–21 COVID QE' },
+  ];
+
+  const defsWrap = document.createElement('div');
+  defsWrap.innerHTML = `
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px"
+         data-tip="Each regime is defined as a unit vector in 15-dimensional feature space. The classifier computes cosine similarity between the current feature vector and each archetype, then smooths over ~9 months (189 business days).">
+      Regime Definitions
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px">
+      ${regimeDefs.map(def => {
+        const c = _RD_COLORS[def.r] || '#888';
+        return `<div class="chart-card" style="border-left:3px solid ${c};padding:14px 14px 14px 16px">
+          <div style="font-size:13px;font-weight:700;color:${c};margin-bottom:6px">${labels[def.r] || def.r}</div>
+          <div style="font-size:11px;color:#9ca3af;line-height:1.5;margin-bottom:6px">${def.desc}</div>
+          <div style="font-size:10px;color:#555">Examples: ${def.ex}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+  container.appendChild(defsWrap);
+
+  // ── Data sources & methodology ─────────────────────────────────────────────
+  const methodWrap = document.createElement('div');
+  methodWrap.innerHTML = `
+    <div class="tip" style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px"
+         data-tip="Data sources and methodology used by the regime detection model.">
+      Data Sources &amp; Methodology
+    </div>
+    <div class="chart-card" style="margin-bottom:32px">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;font-size:11px;color:#9ca3af;line-height:1.7">
+        <div>
+          <div style="color:var(--gold);font-weight:700;margin-bottom:6px">Data Sources</div>
+          <div><span style="color:#555">Gold spot (1971+)</span> — Stooq XAUUSD daily</div>
+          <div><span style="color:#555">S&amp;P 500 (1927+)</span> — yfinance ^GSPC</div>
+          <div><span style="color:#555">ASX 200 (1992+)</span> — yfinance ^AXJO</div>
+          <div><span style="color:#555">DXY (1971+)</span> — yfinance DX-Y.NYB</div>
+          <div><span style="color:#555">US 10yr yield (1962+)</span> — yfinance ^TNX</div>
+          <div><span style="color:#555">US 3mo T-bill (1982+)</span> — yfinance ^IRX</div>
+          <div><span style="color:#555">VIX actual (1990+)</span> — yfinance ^VIX</div>
+          <div><span style="color:#555">VIX synthetic (pre-1990)</span> — Parkinson vol × 1/0.76 · r=0.886 vs actual</div>
+          <div><span style="color:#555">WTI oil (1986+)</span> — FRED DCOILWTICO</div>
+          <div><span style="color:#555">CPI YoY (1947+)</span> — FRED CPIAUCSL</div>
+          <div><span style="color:#555">Fed Funds (1954+)</span> — FRED FEDFUNDS</div>
+        </div>
+        <div>
+          <div style="color:var(--gold);font-weight:700;margin-bottom:6px">Methodology</div>
+          <div><b style="color:#ccc">Features (15)</b> — rolling z-scored: gold momentum (20d/63d), SPX momentum, vol regime, real rate, yield curve spread, CPI acceleration, DXY momentum, gold/SPX ratio, VIX percentile</div>
+          <div style="margin-top:8px"><b style="color:#ccc">Classification</b> — cosine similarity to 6 named archetype vectors. 189-day rolling average (≈9 months) to smooth rapid flickering. Transition = max similarity below 0.22 threshold</div>
+          <div style="margin-top:8px"><b style="color:#ccc">Synthetic VIX</b> — Parkinson realised vol (21-day) × calibration 1/0.76. Calibrated vs actual VIX 1990–2026 (r = 0.886)</div>
+          <div style="margin-top:8px"><b style="color:#ccc">Limitations</b> — Regimes are gradual transitions, not instant flips. Labels may revise as smoothing window fills. Pre-1982 data has thinner coverage (no 3mo yield, no real VIX)</div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(methodWrap);
+
+  // ── Build all charts after DOM ─────────────────────────────────────────────
+  requestAnimationFrame(() => {
+
+    // Similarity scores chart
+    const simCanvas  = document.getElementById('rd-sim-chart');
+    const togglesEl  = document.getElementById('rd-sim-toggles');
+    if (simCanvas && dates.length) {
+      const regimeKeys = Object.keys(simMap);
+      const datasets   = regimeKeys.map(r => ({
+        label:           labels[r] || r,
+        data:            simMap[r],
+        borderColor:     _RD_COLORS[r] || '#888',
+        backgroundColor: _rdColor(r, 0.07),
+        borderWidth: 1.8,
+        pointRadius: 0,
+        fill: false,
+        tension: 0.3,
+        spanGaps: true,
+      }));
+
+      if (togglesEl) {
+        regimeKeys.forEach((r, i) => {
+          const c   = _RD_COLORS[r] || '#888';
+          const btn = document.createElement('button');
+          btn.dataset.active = 'true';
+          btn.style.cssText  = `display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;border:1px solid ${c};background:${c}22;color:${c};font-size:10px;font-family:monospace;font-weight:600;cursor:pointer;transition:opacity 0.15s,background 0.15s`;
+          btn.innerHTML = `<span style="display:inline-block;width:12px;height:1.5px;background:${c};flex-shrink:0"></span>${labels[r] || r}`;
+          btn.onclick = () => {
+            const next = btn.dataset.active !== 'true';
+            btn.dataset.active  = String(next);
+            btn.style.background = next ? `${c}22` : 'transparent';
+            btn.style.opacity   = next ? '1' : '0.35';
+            if (_regimeDetectChart) { _regimeDetectChart.setDatasetVisibility(i, next); _regimeDetectChart.update(); }
+          };
+          togglesEl.appendChild(btn);
+        });
+      }
+
+      if (_regimeDetectChart) _regimeDetectChart.destroy();
+      _regimeDetectChart = new Chart(simCanvas.getContext('2d'), {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index', intersect: false,
+              callbacks: {
+                title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{month:'short',year:'numeric'}); },
+                label: item  => `  ${item.dataset.label}: ${item.raw != null ? item.raw.toFixed(3) : '—'}`,
+              },
+            },
+            zoom: { pan: { enabled:true, mode:'x' }, zoom: { wheel:{enabled:true}, pinch:{enabled:true}, mode:'x' } },
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit:12, maxRotation:0, font:{size:10}, callback: function(val) { const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.toLocaleDateString('en-AU',{month:'short',year:"'yy"}); } },
+              grid: { color:'#1a1a1a' },
+            },
+            y: { min:0, max:1, grid:{color:'#1a1a1a'}, ticks:{font:{size:10},maxTicksLimit:5} },
+          },
+        },
+      });
+    }
+
+    // Macro series charts
+    macroCfgs.forEach(cfg => {
+      const vals = macro[cfg.key];
+      if (!vals) return;
+      const canvas = document.getElementById(`rd-macro-${cfg.key}`);
+      if (!canvas) return;
+      new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: { labels: dates, datasets: [{ data:vals, borderColor:cfg.color, borderWidth:1.5, pointRadius:0, fill:false, tension:0.2, spanGaps:true }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{month:'short',year:'numeric'}); },
+                label: item  => `  ${cfg.label}: ${cfg.fmt ? cfg.fmt(item.raw) : (item.raw != null ? item.raw.toFixed(2) : '—')}`,
+              },
+            },
+            zoom: { pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'} },
+          },
+          scales: {
+            x: { ticks:{maxTicksLimit:8,maxRotation:0,font:{size:9},callback:function(val){const l=this.getLabelForValue(val);if(!l) return '';const d=new Date(l);return isNaN(d)?l:d.getFullYear();}}, grid:{color:'#111'} },
+            y: { type: cfg.log ? 'logarithmic' : 'linear', grid:{color:'#111'}, ticks:{font:{size:9},maxTicksLimit:5,callback:v=>cfg.fmt?cfg.fmt(v):v} },
+          },
+        },
+      });
+    });
+
+    // Periods table
+    const tbody = document.getElementById('rd-periods-tbody');
+    if (tbody && periods.length) {
+      tbody.innerHTML = periods.map((p, i) => {
+        const c   = _RD_COLORS[p.regime] || '#888';
+        const lbl = labels[p.regime] || p.regime;
+        const mo  = Math.round(p.duration_days / 30);
+        const bg  = i % 2 === 0 ? '' : 'background:#0d0d0d';
+        return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
+          <td style="padding:6px 10px">
+            <span style="display:inline-flex;align-items:center;gap:6px">
+              <span style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></span>
+              <span style="font-size:11px;color:${c};font-weight:600">${lbl}</span>
+            </span>
+          </td>
+          <td style="padding:6px 10px;font-family:monospace;font-size:11px;color:#9ca3af">${p.start}</td>
+          <td style="padding:6px 10px;font-family:monospace;font-size:11px;color:#9ca3af">${p.end}</td>
+          <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:#9ca3af">${mo}mo</td>
+          <td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:#555">${p.avg_score ? p.avg_score.toFixed(3) : '—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+  }); // end requestAnimationFrame
+}
+
+function _rdZoom(bars) {
+  if (!_regimeDetectChart) return;
+  if (bars >= 99999) { _regimeDetectChart.resetZoom(); return; }
+  const n = _regimeDetectChart.data.labels.length;
+  _regimeDetectChart.zoomScale('x', { min: Math.max(0, n - bars), max: n - 1 }, 'none');
+  _regimeDetectChart.update('none');
 }
