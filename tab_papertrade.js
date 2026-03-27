@@ -9,6 +9,110 @@ let _ptActiveWl      = null;   // currently selected watchlist name
 let _ptIndexData     = null;   // cached index
 let _ptHealthData    = null;   // model health from /api/paper/model/health (null if offline)
 
+// ── Model stats tooltip ────────────────────────────────────────────────────────
+let _ptScreenerIndex = null;   // ticker → screener_full entry
+let _ptModelCache    = {};     // ticker → computed stats (null = no model)
+
+async function _ptEnsureScreener() {
+  if (_ptScreenerIndex) return;
+  try {
+    const d = await fetch('screener_full.json').then(r => r.json());
+    _ptScreenerIndex = {};
+    for (const t of (d.tickers || [])) _ptScreenerIndex[t.ticker] = t;
+  } catch (e) { _ptScreenerIndex = {}; }
+}
+
+async function _ptGetModelStats(ticker) {
+  if (ticker in _ptModelCache) return _ptModelCache[ticker];
+  await _ptEnsureScreener();
+  const entry = (_ptScreenerIndex || {})[ticker];
+  if (!entry || !(entry.models || []).length) { _ptModelCache[ticker] = null; return null; }
+
+  const modelRef = entry.models[0];
+  try {
+    const d = await fetch(modelRef.file).then(r => r.json());
+    const trades  = d.trades_is || [];
+    const wins    = trades.filter(t => t.win);
+    const losses  = trades.filter(t => !t.win);
+    const barsList= trades.map(t => t.bars || 0);
+    const years   = (d.bars || 0) / 252;
+
+    const stats = {
+      label:          modelRef.label || 'Ridge',
+      is_pf:          modelRef.is_pf,
+      is_sharpe:      modelRef.is_sharpe,
+      ho_pf:          modelRef.ho_pf,
+      ho_sharpe:      modelRef.ho_sharpe,
+      overfit:        d.overfit_signal || entry.overfit || '—',
+      n_trades:       trades.length,
+      win_rate:       trades.length ? (wins.length / trades.length * 100).toFixed(1) : '—',
+      trades_per_yr:  years > 0 ? (trades.length / years).toFixed(1) : '—',
+      avg_hold_bars:  barsList.length ? (barsList.reduce((a,b)=>a+b,0)/barsList.length).toFixed(1) : '—',
+      avg_win_pct:    wins.length   ? (wins.reduce((s,t)=>s+t.return_pct,0)/wins.length).toFixed(2)   : '—',
+      avg_loss_pct:   losses.length ? (losses.reduce((s,t)=>s+t.return_pct,0)/losses.length).toFixed(2) : '—',
+      n_features:     (d.features || []).length,
+      period:         d.period_start && d.period_end ? `${d.period_start} → ${d.period_end}` : '—',
+      n_windows:      (d.is_model || {}).n_windows || '—',
+    };
+    _ptModelCache[ticker] = stats;
+    return stats;
+  } catch (e) { _ptModelCache[ticker] = null; return null; }
+}
+
+function _ptShowModelTip(ticker, event) {
+  const tip = document.getElementById('pt-model-tip');
+  if (!tip) return;
+  tip.innerHTML = `<div class="mt-head">${ticker} — loading model…</div>`;
+  tip.style.display = 'block';
+  _ptPositionTip(tip, event);
+
+  _ptGetModelStats(ticker).then(s => {
+    if (!tip.style.display || tip.style.display === 'none') return;  // hidden while loading
+    if (!s) {
+      tip.innerHTML = `<div class="mt-head">${ticker}</div><div style="color:var(--muted);font-size:11px">No model data found</div>`;
+      return;
+    }
+    const c = v => v == null ? '—' : v;
+    const pf  = v => v == null ? '—' : `<span style="color:${v>=1.2?'var(--green)':v>=1?'#fcd34d':'var(--red)'}">${v.toFixed(3)}</span>`;
+    const shr = v => v == null ? '—' : `<span style="color:${v>=0.5?'var(--green)':v>=0?'#fcd34d':'var(--red)'}">${v.toFixed(3)}</span>`;
+    const ovC = o => o === 'LOW' ? 'var(--green)' : o === 'HIGH' ? 'var(--red)' : '#fcd34d';
+    tip.innerHTML = `
+      <div class="mt-head">${ticker} <span style="font-size:10px;font-weight:400;color:var(--muted)">${s.label}</span></div>
+      <div class="mt-row"><span class="mt-label">IS Profit Factor</span>  <span class="mt-val">${pf(s.is_pf)}</span></div>
+      <div class="mt-row"><span class="mt-label">IS Sharpe</span>         <span class="mt-val">${shr(s.is_sharpe)}</span></div>
+      <div class="mt-row"><span class="mt-label">HO Profit Factor</span>  <span class="mt-val">${pf(s.ho_pf)}</span></div>
+      <div class="mt-row"><span class="mt-label">HO Sharpe</span>         <span class="mt-val">${shr(s.ho_sharpe)}</span></div>
+      <div class="mt-row"><span class="mt-label">Overfit Risk</span>      <span class="mt-val" style="color:${ovC(s.overfit)}">${c(s.overfit)}</span></div>
+      <div class="mt-sep"></div>
+      <div class="mt-row"><span class="mt-label">Win Rate (IS)</span>     <span class="mt-val">${s.win_rate}%</span></div>
+      <div class="mt-row"><span class="mt-label">Total Trades (IS)</span> <span class="mt-val">${c(s.n_trades)}</span></div>
+      <div class="mt-row"><span class="mt-label">Trades / Year</span>     <span class="mt-val">${c(s.trades_per_yr)}</span></div>
+      <div class="mt-row"><span class="mt-label">Avg Hold (bars)</span>   <span class="mt-val">${c(s.avg_hold_bars)}</span></div>
+      <div class="mt-row"><span class="mt-label">Avg Win %</span>         <span class="mt-val" style="color:var(--green)">+${c(s.avg_win_pct)}%</span></div>
+      <div class="mt-row"><span class="mt-label">Avg Loss %</span>        <span class="mt-val" style="color:var(--red)">${c(s.avg_loss_pct)}%</span></div>
+      <div class="mt-sep"></div>
+      <div class="mt-row"><span class="mt-label">Features</span>          <span class="mt-val">${c(s.n_features)}</span></div>
+      <div class="mt-row"><span class="mt-label">WF Windows</span>        <span class="mt-val">${c(s.n_windows)}</span></div>
+      <div class="mt-row"><span class="mt-label">Period</span>            <span class="mt-val" style="font-size:10px">${c(s.period)}</span></div>`;
+  });
+}
+
+function _ptPositionTip(tip, event) {
+  const pad = 14, vw = window.innerWidth, vh = window.innerHeight;
+  let x = event.clientX + pad, y = event.clientY + pad;
+  // Flip left if too close to right edge (estimate tooltip width ~240px)
+  if (x + 240 > vw) x = event.clientX - 240 - pad;
+  // Flip up if too close to bottom (estimate tooltip height ~300px)
+  if (y + 300 > vh) y = event.clientY - 300 - pad;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
+
+function _ptHideModelTip() {
+  const tip = document.getElementById('pt-model-tip');
+  if (tip) tip.style.display = 'none';
+}
+
 function initPaperTradeTab() {
   document.getElementById('pt-spinner').style.display = 'flex';
   document.getElementById('pt-content').style.display = 'none';
@@ -291,7 +395,7 @@ function _ptRenderPositions(portfolio, signals) {
 
     const asxUrl = `https://www.asx.com.au/markets/company/${ticker.replace('.AX','').replace('.ax','')}`;
     return `<tr style="border-bottom:1px solid #1a1a1a;white-space:nowrap;${bg}">
-      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${ticker}</a></td>
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="_ptShowModelTip('${ticker}',event);this.style.color='var(--gold)'" onmouseout="_ptHideModelTip();this.style.color='#e5e7eb'">${ticker}</a></td>
       <td style="padding:6px 10px"><span style="color:var(--green);font-weight:700">▲ LONG</span></td>
       <td style="padding:6px 10px;color:var(--muted)">${pos.entry_date}</td>
       <td style="padding:6px 10px;text-align:right;color:var(--muted)">${holdDays}d</td>
@@ -602,7 +706,7 @@ function _ptRenderTradeLogRows(allRows) {
       ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(74,222,128,0.12);color:var(--green);font-weight:700">OPEN</span>`
       : `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(107,114,128,0.15);color:var(--muted)">CLOSED</span>`;
     return `<tr style="border-bottom:1px solid #1a1a1a;white-space:nowrap;${bg}">
-      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${r.ticker}</a></td>
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="_ptShowModelTip('${r.ticker}',event);this.style.color='var(--gold)'" onmouseout="_ptHideModelTip();this.style.color='#e5e7eb'">${r.ticker}</a></td>
       <td style="padding:6px 10px">${statusBadge}</td>
       <td style="padding:6px 10px;color:var(--muted)">${r.entry_date}</td>
       <td style="padding:6px 10px;color:var(--muted)">${r.exit_date || '—'}</td>

@@ -67,6 +67,20 @@
     .tip:hover::after { opacity:1; }
     .tip-r::after { left:auto; right:0; transform:none; }
     .tip-l::after { left:0; transform:none; }
+    /* Model stats floating tooltip (paper trade ticker hover) */
+    #pt-model-tip {
+      position: fixed; z-index: 99999; pointer-events: none; display: none;
+      background: #161616; border: 1px solid #2e2e2e;
+      border-radius: 7px; padding: 11px 14px; min-width: 230px;
+      font-size: 11.5px; color: #e5e7eb; line-height: 1.6;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.7);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    #pt-model-tip .mt-head { font-size:12px; font-weight:700; color:var(--gold); margin-bottom:7px; border-bottom:1px solid #2a2a2a; padding-bottom:5px; }
+    #pt-model-tip .mt-row { display:flex; justify-content:space-between; gap:16px; padding:1px 0; }
+    #pt-model-tip .mt-label { color:var(--muted); }
+    #pt-model-tip .mt-val { font-weight:600; font-family:monospace; }
+    #pt-model-tip .mt-sep { border-top:1px solid #222; margin:5px 0; }
     /* Server status dot */
     .srv-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
     .srv-dot-live    { background:#00ff41;box-shadow:0 0 6px rgba(0,255,65,0.6); }
@@ -1954,5 +1968,8 @@ document.getElementById('token-input').addEventListener('keydown', e => {
 _srvCheck();
 setInterval(_srvCheck, 60000);
 </script>
+
+<!-- Model stats tooltip (paper trade ticker hover) -->
+<div id="pt-model-tip"></div>
 </body>
 </html>
