@@ -1509,6 +1509,18 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
 
 function _regimeBuildMomentumModels(container, models) {
 
+  const _MM_CFGS = [
+    { key:'1m',     label:'1M',     longLabel:'1-Month Model',              sub:'All features  ·  1989–present  ·  ~1 month blind spot',             note:'' },
+    { key:'3m',     label:'3M',     longLabel:'3-Month Model',              sub:'All features  ·  1989–present  ·  ~3 month blind spot',             note:'' },
+    { key:'6m',     label:'6M',     longLabel:'6-Month Model',              sub:'All features  ·  1989–present  ·  ~6 month blind spot',             note:'' },
+    { key:'1m_ext', label:'1M Ext', longLabel:'1-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'3m_ext', label:'3M Ext', longLabel:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+    { key:'6m_ext', label:'6M Ext', longLabel:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+  ];
+
+  const DEFAULT_KEY = '6m_ext';
+
+  // ── Section header ──────────────────────────────────────────────────────────
   const hdr = document.createElement('div');
   hdr.innerHTML = `
     <div class="section-divider" style="margin-top:8px">
@@ -1518,25 +1530,54 @@ function _regimeBuildMomentumModels(container, models) {
       </span>
       <div class="section-divider-line"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:18px">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">
       Daily rolling Ridge  ·  3-year training window  ·  standardised features
       ·  <span style="color:#555">target = S&amp;P forward return  ·  no regime labels given to model</span>
     </div>
   `;
   container.appendChild(hdr);
 
-  const _MM_CFGS = [
-    { key:'1m',     label:'1-Month Model',              sub:'All features  ·  1989–present  ·  ~1 month blind spot',   note:'' },
-    { key:'3m',     label:'3-Month Model',              sub:'All features  ·  1989–present  ·  ~3 month blind spot',   note:'' },
-    { key:'6m',     label:'6-Month Model',              sub:'All features  ·  1989–present  ·  ~6 month blind spot',   note:'' },
-    { key:'1m_ext', label:'1-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-    { key:'3m_ext', label:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-    { key:'6m_ext', label:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot', note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-  ];
+  // ── Model selector button bar ───────────────────────────────────────────────
+  const btnBar = document.createElement('div');
+  btnBar.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px';
+  container.appendChild(btnBar);
 
-  _MM_CFGS.forEach(({ key, label, sub, note }) => {
-    const m = models[key];
-    if (!m || !m.dates || !m.dates.length) return;
+  const btns = {};
+  _MM_CFGS.forEach(({ key, label, longLabel }) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.title = longLabel;
+    btn.dataset.key = key;
+    btn.style.cssText = 'padding:5px 14px;border-radius:4px;border:1px solid #333;background:#111;color:var(--muted);font-size:11px;letter-spacing:0.5px;cursor:pointer;transition:all 0.15s';
+    btn.onclick = () => showModel(key);
+    btnBar.appendChild(btn);
+    btns[key] = btn;
+  });
+
+  // ── Per-model content wrappers (lazy-rendered) ─────────────────────────────
+  const wrappers = {};
+  const rendered = new Set();
+  let activeKey = null;
+
+  _MM_CFGS.forEach(({ key }) => {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'none';
+    container.appendChild(wrap);
+    wrappers[key] = wrap;
+  });
+
+  function renderModel(key) {
+    if (rendered.has(key)) return;
+    rendered.add(key);
+
+    const cfg  = _MM_CFGS.find(c => c.key === key);
+    const wrap = wrappers[key];
+    const m    = models[key];
+
+    if (!m || !m.dates || !m.dates.length) {
+      wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px 0">No data available for model <code>${key}</code>.</div>`;
+      return;
+    }
 
     const feats    = m.features      || [];
     const coefs    = m.coefficients  || {};
@@ -1544,13 +1585,14 @@ function _regimeBuildMomentumModels(container, models) {
     const tstats   = m.t_stats       || {};
     const r2arr    = m.r2            || [];
     const dates    = m.dates;
+    const { longLabel, sub, note } = cfg;
 
     // Model header
     const modelHdr = document.createElement('div');
-    modelHdr.style.cssText = 'margin-bottom:12px;margin-top:20px';
+    modelHdr.style.cssText = 'margin-bottom:12px;margin-top:4px';
     modelHdr.innerHTML = `
       <div style="font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase">
-        ${label}  ·  S&amp;P forward ${key.replace('_ext','')} return
+        ${longLabel}  ·  S&amp;P forward ${key.replace('_ext','')} return
       </div>
       ${note ? `<div style="font-size:10px;color:#555;margin-top:2px">${note}</div>` : ''}
       <div style="font-size:10px;color:#555;margin-top:3px">
@@ -1559,10 +1601,10 @@ function _regimeBuildMomentumModels(container, models) {
         ·  Current R²: <span style="font-family:monospace;color:#666">${r2arr.length ? r2arr[r2arr.length-1].toFixed(3) : '—'}</span>
       </div>
     `;
-    container.appendChild(modelHdr);
+    wrap.appendChild(modelHdr);
 
-    // Chart 1: Coefficients (with event markers)
-    _mmMakeChart(container,
+    // Chart 1: Coefficients
+    _mmMakeChart(wrap,
       `rd-mm-coef-${key}`,
       'Sensitivity (Coefficients)',
       'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. Vertical lines = key macro events. Drag to zoom.',
@@ -1571,8 +1613,8 @@ function _regimeBuildMomentumModels(container, models) {
       340, true
     );
 
-    // Chart 2: Contributions (with events)
-    _mmMakeChart(container,
+    // Chart 2: Contributions
+    _mmMakeChart(wrap,
       `rd-mm-contrib-${key}`,
       'Actual Impact (Contribution = Coef × Current Signal)',
       'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is.',
@@ -1581,8 +1623,8 @@ function _regimeBuildMomentumModels(container, models) {
       300, true
     );
 
-    // Chart 3: T-statistics (with events)
-    _mmMakeChart(container,
+    // Chart 3: T-statistics
+    _mmMakeChart(wrap,
       `rd-mm-tstat-${key}`,
       'Reliability (T-Statistic)  ·  |t| > 2 = statistically significant',
       'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise).',
@@ -1591,10 +1633,33 @@ function _regimeBuildMomentumModels(container, models) {
       300, true
     );
 
-    // ±2 reference annotation note
     const refNote = document.createElement('div');
     refNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
     refNote.textContent = '|t| > 2 threshold = statistical significance at ~95% confidence';
-    container.appendChild(refNote);
-  });
+    wrap.appendChild(refNote);
+  }
+
+  function showModel(key) {
+    // Deactivate old
+    if (activeKey && wrappers[activeKey]) wrappers[activeKey].style.display = 'none';
+    if (activeKey && btns[activeKey]) {
+      btns[activeKey].style.background    = '#111';
+      btns[activeKey].style.borderColor   = '#333';
+      btns[activeKey].style.color         = 'var(--muted)';
+      btns[activeKey].style.fontWeight    = '400';
+    }
+
+    // Activate new — must show wrapper BEFORE rendering so canvas gets real width
+    activeKey = key;
+    wrappers[key].style.display = 'block';
+    renderModel(key);
+
+    btns[key].style.background  = '#1f1a0e';
+    btns[key].style.borderColor = 'var(--gold)';
+    btns[key].style.color       = 'var(--gold)';
+    btns[key].style.fontWeight  = '600';
+  }
+
+  // Load default on init
+  showModel(DEFAULT_KEY);
 }
