@@ -1238,7 +1238,7 @@ function _regimeBuildDetectionSection(container, d) {
           },
           scales: {
             x: {
-              ticks: { maxTicksLimit:12, maxRotation:0, font:{size:10}, callback: function(val) { const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.toLocaleDateString('en-AU',{month:'short',year:"'yy"}); } },
+              ticks: { maxTicksLimit:12, maxRotation:0, font:{size:10}, callback: function(val) { const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}); } },
               grid: { color:'#1a1a1a' },
             },
             y: { min:0, max:1, grid:{color:'#1a1a1a'}, ticks:{font:{size:10},maxTicksLimit:5} },
