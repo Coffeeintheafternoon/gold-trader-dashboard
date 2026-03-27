@@ -1507,6 +1507,150 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
   });
 }
 
+// ── Pairwise rolling correlation between coefficient series ────────────────────
+function _mmMakeCorrChart(container, id, dates, feats, coefs, rollDays) {
+  // Key pairs — only rendered if both features exist in this model
+  const ALL_PAIRS = [
+    { a:'real_rate', b:'cpi_yoy',   label:'Real Rate / CPI',        color:'#f472b6' },
+    { a:'vix',       b:'gold_mom',  label:'VIX / Gold Mom',         color:'#facc15' },
+    { a:'dxy_mom',   b:'gold_mom',  label:'DXY / Gold Mom',         color:'#4ade80' },
+    { a:'ff_chg',    b:'real_rate', label:'Fed Funds / Real Rate',  color:'#818cf8' },
+    { a:'ff_chg',    b:'cpi_yoy',   label:'Fed Funds / CPI',        color:'#fb923c' },
+    { a:'vix',       b:'ff_chg',    label:'VIX / Fed Funds',        color:'#38bdf8' },
+    { a:'dxy_mom',   b:'real_rate', label:'DXY / Real Rate',        color:'#a3e635' },
+  ];
+  const pairs = ALL_PAIRS.filter(p => feats.includes(p.a) && feats.includes(p.b));
+  if (!pairs.length) return;
+
+  // Rolling Pearson correlation
+  function rollingCorr(arr1, arr2, w) {
+    const n = arr1.length;
+    const out = new Array(n).fill(null);
+    for (let i = w - 1; i < n; i++) {
+      const xs = [], ys = [];
+      for (let j = i - w + 1; j <= i; j++) {
+        const x = arr1[j], y = arr2[j];
+        if (x != null && y != null) { xs.push(x); ys.push(y); }
+      }
+      if (xs.length < w * 0.7) continue;
+      const mx = xs.reduce((s, v) => s + v, 0) / xs.length;
+      const my = ys.reduce((s, v) => s + v, 0) / ys.length;
+      let cov = 0, sx = 0, sy = 0;
+      for (let k = 0; k < xs.length; k++) {
+        cov += (xs[k] - mx) * (ys[k] - my);
+        sx  += (xs[k] - mx) ** 2;
+        sy  += (ys[k] - my) ** 2;
+      }
+      const denom = Math.sqrt(sx) * Math.sqrt(sy);
+      out[i] = denom > 0 ? Math.max(-1, Math.min(1, cov / denom)) : null;
+    }
+    return out;
+  }
+
+  const togglesId = id + '-togs';
+  const wrap = document.createElement('div');
+  wrap.style.marginBottom = '20px';
+  wrap.innerHTML = `
+    <div class="tip" style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px"
+         data-tip="Rolling ${rollDays}-day Pearson correlation between pairs of feature coefficients. +1 = both features moving together (same regime story). −1 = diverging (opposite regime story). 0 = decorrelated. Watch for sustained flips from + to − and back — those mark regime transitions. Loud signal clusters = multiple pairs aligning at once.">
+      Feature Coupling  ·  ${rollDays}-Day Rolling Coefficient Correlation
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px" id="${togglesId}"></div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-wrap" style="height:300px;cursor:crosshair"><canvas id="${id}"></canvas></div>
+    </div>
+  `;
+  container.appendChild(wrap);
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById(id);
+    const togsEl = document.getElementById(togglesId);
+    if (!canvas) return;
+
+    const datasets = pairs.map(p => ({
+      label: p.label,
+      data:  rollingCorr(coefs[p.a] || [], coefs[p.b] || [], rollDays),
+      borderColor:     p.color,
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.3,
+    }));
+
+    // Reference lines at 0, +0.5, -0.5
+    [[0,'#2a2a2a',[]],[0.5,'#1c2a1c',[4,4]],[-0.5,'#2a1c1c',[4,4]]].forEach(([y, c, dash]) => {
+      datasets.push({ label:'_ref', data: dates.map(() => y), borderColor: c,
+        borderWidth: 1, borderDash: dash, pointRadius: 0, order: 99 });
+    });
+
+    // Annotation events (same as other charts)
+    const annotations = {};
+    if (typeof _MM_EVENTS !== 'undefined') {
+      _MM_EVENTS.forEach((ev, i) => {
+        const idx = typeof _mmNearestDate === 'function' ? _mmNearestDate(dates, ev.date) : null;
+        if (idx == null) return;
+        annotations[`ev_corr_${i}`] = {
+          type:'line', scaleID:'x', value: dates[idx],
+          borderColor: ev.color || '#444', borderWidth: 1,
+          borderDash:[3,4], label:{ content: ev.label, display:false }
+        };
+      });
+    }
+
+    const chart = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: dates, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { display: false },
+          annotation: { annotations },
+          tooltip: {
+            mode:'index', intersect:false,
+            filter: item => item.dataset.label !== '_ref',
+            callbacks: {
+              title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); },
+              label: item => {
+                if (item.dataset.label === '_ref') return null;
+                const v = item.raw;
+                return `  ${item.dataset.label}: ${v != null ? (v >= 0 ? '+' : '') + v.toFixed(3) : '—'}`;
+              },
+            },
+          },
+          zoom: { pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'} },
+        },
+        scales: {
+          x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
+                       callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
+               grid:{color:'#111'} },
+          y: { min:-1, max:1, grid:{color:'#1a1a1a'},
+               ticks:{ font:{size:9}, maxTicksLimit:9, callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) } },
+        },
+      },
+    });
+
+    if (togsEl) {
+      pairs.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.dataset.active = 'true';
+        btn.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;border:1px solid ${p.color};background:${p.color}22;color:${p.color};font-size:10px;font-family:monospace;cursor:pointer;transition:opacity 0.15s`;
+        btn.innerHTML = `<span style="display:inline-block;width:10px;height:1.5px;background:${p.color};flex-shrink:0"></span>${p.label}`;
+        btn.onclick = () => {
+          const next = btn.dataset.active !== 'true';
+          btn.dataset.active = String(next);
+          btn.style.background = next ? `${p.color}22` : 'transparent';
+          btn.style.opacity = next ? '1' : '0.35';
+          chart.setDatasetVisibility(i, next);
+          chart.update();
+        };
+        togsEl.appendChild(btn);
+      });
+    }
+  });
+}
+
 function _regimeBuildMomentumModels(container, models) {
 
   // Groups shown as labelled button clusters
@@ -1692,9 +1836,20 @@ function _regimeBuildMomentumModels(container, models) {
     );
 
     const refNote = document.createElement('div');
-    refNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
+    refNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:12px';
     refNote.textContent = '|t| > 2 threshold = statistical significance at ~95% confidence';
     wrap.appendChild(refNote);
+
+    // Chart 4: Feature coupling (pairwise rolling correlation of coefficients)
+    _mmMakeCorrChart(wrap,
+      `rd-mm-corr-${key}`,
+      dates, feats, coefs, 63   // 63-day (~3 month) rolling window for the correlation
+    );
+
+    const corrNote = document.createElement('div');
+    corrNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
+    corrNote.textContent = 'Correlation computed on 63-day rolling window of coefficients  ·  ±0.5 bands shown';
+    wrap.appendChild(corrNote);
   }
 
   function showModel(key) {
