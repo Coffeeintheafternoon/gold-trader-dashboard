@@ -1321,6 +1321,42 @@ function _rdZoom(bars) {
 // No regime labels given — patterns emerge from the data.
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Key macro events — shown as vertical lines on momentum model charts
+const _MM_EVENTS = [
+  { date:'1973-10-17', label:'Oil Crisis',       color:'#f97316' },
+  { date:'1979-01-16', label:'Iran Rev.',         color:'#f97316' },
+  { date:'1980-06-01', label:'Volcker Peak',      color:'#3b82f6' },
+  { date:'1987-10-19', label:'Black Monday',      color:'#ef4444' },
+  { date:'1990-08-02', label:'Gulf War',          color:'#f97316' },
+  { date:'1994-02-04', label:'Rate Shock',        color:'#3b82f6' },
+  { date:'1997-07-02', label:'Asia Crisis',       color:'#ef4444' },
+  { date:'1998-09-23', label:'LTCM',              color:'#ef4444' },
+  { date:'2000-03-10', label:'.com Peak',         color:'#a855f7' },
+  { date:'2001-09-11', label:'9/11',              color:'#ef4444' },
+  { date:'2003-03-20', label:'Iraq War',          color:'#f97316' },
+  { date:'2007-07-01', label:'Subprime',          color:'#ef4444' },
+  { date:'2008-09-15', label:'Lehman',            color:'#ef4444' },
+  { date:'2011-08-05', label:'US Downgrade',      color:'#f97316' },
+  { date:'2013-05-22', label:'Taper Tantrum',     color:'#3b82f6' },
+  { date:'2015-08-24', label:'China Deval.',      color:'#f97316' },
+  { date:'2018-10-01', label:'Q4 Selloff',        color:'#ef4444' },
+  { date:'2020-03-23', label:'COVID Low',         color:'#ef4444' },
+  { date:'2022-02-24', label:'Ukraine',           color:'#f97316' },
+  { date:'2022-03-16', label:'Rate Hikes',        color:'#3b82f6' },
+  { date:'2023-03-10', label:'SVB',               color:'#ef4444' },
+];
+
+// Find nearest date string in array to a target date
+function _mmNearestDate(dates, target) {
+  const td = new Date(target).getTime();
+  let best = dates[0], bestDiff = Infinity;
+  for (const d of dates) {
+    const diff = Math.abs(new Date(d).getTime() - td);
+    if (diff < bestDiff) { bestDiff = diff; best = d; }
+  }
+  return best;
+}
+
 const _MM_COLORS = {
   gold_mom:    '#fbbf24',
   dxy_mom:     '#60a5fa',
@@ -1342,7 +1378,7 @@ const _MM_LABELS = {
   ff_chg:      'Fed Funds Δ',
 };
 
-function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height) {
+function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents) {
   const togglesId = id + '-togs';
   const wrap = document.createElement('div');
   wrap.style.marginBottom = '20px';
@@ -1375,6 +1411,36 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
     datasets.push({ label:'_zero', data: dates.map(()=>0), borderColor:'#2a2a2a', borderWidth:1,
                     borderDash:[3,3], pointRadius:0, fill:false, tension:0 });
 
+    // Build event annotations
+    const dateStart = dates.length ? new Date(dates[0]).getTime() : 0;
+    const dateEnd   = dates.length ? new Date(dates[dates.length-1]).getTime() : Infinity;
+    const annotations = {};
+    if (showEvents) {
+      _MM_EVENTS.forEach((ev, i) => {
+        const evT = new Date(ev.date).getTime();
+        if (evT < dateStart || evT > dateEnd) return;
+        const nearest = _mmNearestDate(dates, ev.date);
+        annotations[`ev${i}`] = {
+          type: 'line',
+          xMin: nearest, xMax: nearest,
+          borderColor: ev.color + '77',
+          borderWidth: 1,
+          borderDash: [3, 3],
+          label: {
+            display: true,
+            content: ev.label,
+            position: 'start',
+            color: ev.color + 'cc',
+            font: { size: 8 },
+            rotation: -90,
+            backgroundColor: 'transparent',
+            padding: 2,
+            yAdjust: 4,
+          },
+        };
+      });
+    }
+
     const chart = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: { labels: dates, datasets },
@@ -1383,6 +1449,7 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
         interaction: { mode:'index', intersect:false },
         plugins: {
           legend: { display: false },
+          annotation: { annotations },
           tooltip: {
             mode:'index', intersect:false,
             filter: item => item.dataset.label !== '_zero',
@@ -1471,34 +1538,34 @@ function _regimeBuildMomentumModels(container, models) {
     `;
     container.appendChild(modelHdr);
 
-    // Chart 1: Coefficients
+    // Chart 1: Coefficients (with event markers)
     _mmMakeChart(container,
       `rd-mm-coef-${key}`,
       'Sensitivity (Coefficients)',
-      'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. Drag to zoom.',
+      'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. Vertical lines = key macro events. Drag to zoom.',
       dates, feats, coefs,
       v => (v >= 0 ? '+' : '') + v.toFixed(4),
-      300
+      340, true
     );
 
-    // Chart 2: Contributions
+    // Chart 2: Contributions (with events)
     _mmMakeChart(container,
       `rd-mm-contrib-${key}`,
       'Actual Impact (Contribution = Coef × Current Signal)',
-      'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is. A feature can have a large coefficient but contribute nothing if its signal is flat.',
+      'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is.',
       dates, feats, contribs,
       v => (v >= 0 ? '+' : '') + v.toFixed(4),
-      300
+      300, true
     );
 
-    // Chart 3: T-statistics
+    // Chart 3: T-statistics (with events)
     _mmMakeChart(container,
       `rd-mm-tstat-${key}`,
       'Reliability (T-Statistic)  ·  |t| > 2 = statistically significant',
-      'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise). A feature with large t-stat was a consistently reliable predictor at that time.',
+      'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise).',
       dates, feats, tstats,
       v => (v >= 0 ? '+' : '') + v.toFixed(2),
-      300
+      300, true
     );
 
     // ±2 reference annotation note
