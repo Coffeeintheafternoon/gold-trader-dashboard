@@ -264,6 +264,8 @@ function _ptRenderPositions(portfolio, signals) {
     return;
   }
 
+  let totalBookVal = 0, totalMktVal = 0;
+
   tbody.innerHTML = entries.map(([ticker, pos], i) => {
     const bg       = i % 2 ? 'background:#111' : '';
     const price    = (sigMap[ticker] || {}).current_price || pos.entry_price;
@@ -284,6 +286,9 @@ function _ptRenderPositions(portfolio, signals) {
     const mktVal  = price * pos.shares;
     const fmtQty  = pos.shares % 1 === 0 ? pos.shares.toLocaleString('en-AU') : pos.shares.toFixed(2);
 
+    totalBookVal += bookVal;
+    totalMktVal  += mktVal;
+
     const asxUrl = `https://www.asx.com.au/markets/company/${ticker.replace('.AX','').replace('.ax','')}`;
     return `<tr style="border-bottom:1px solid #1a1a1a;white-space:nowrap;${bg}">
       <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${ticker}</a></td>
@@ -302,6 +307,22 @@ function _ptRenderPositions(portfolio, signals) {
       <td style="padding:6px 10px;text-align:center">${closeBtn}</td>
     </tr>`;
   }).join('');
+
+  // ── Totals row ────────────────────────────────────────────────────────────
+  const totalUnrAud = totalMktVal - totalBookVal;
+  const totalUnrPct = totalBookVal > 0 ? (totalUnrAud / totalBookVal * 100) : 0;
+  const tC          = totalUnrAud >= 0 ? 'var(--green)' : 'var(--red)';
+  const tfoot       = document.getElementById('pt-positions-tfoot');
+  tfoot.innerHTML   = `
+    <tr style="border-top:2px solid #333;background:#0d0d0d;font-weight:700;white-space:nowrap">
+      <td style="padding:7px 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.05em" colspan="6">TOTAL (${entries.length} positions)</td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:var(--muted)">A$${totalBookVal.toFixed(2)}</td>
+      <td></td>
+      <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${tC}">A$${totalMktVal.toFixed(2)}</td>
+      <td style="padding:7px 10px;text-align:right;color:${tC}">${totalUnrPct >= 0 ? '+' : ''}${totalUnrPct.toFixed(2)}%</td>
+      <td style="padding:7px 10px;text-align:right;color:${tC}">${totalUnrAud >= 0 ? '+' : ''}A$${totalUnrAud.toFixed(2)}</td>
+      <td colspan="2"></td>
+    </tr>`;
 }
 
 // ── Equity curve chart (enhanced) ──────────────────────────────────────────────
