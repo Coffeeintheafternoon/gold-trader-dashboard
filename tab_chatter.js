@@ -25,7 +25,15 @@ async function initChatterTab() {
     _chatterLiveMode = true;
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage([], [], channels, [], [], true);
+    // Also load existing glossary/hotcopper/announcements from static file so
+    // the feed is populated immediately (server provides channel mgmt on top).
+    try {
+      const staticResp = await fetch(`./chatter_data.json?v=${_CV}`);
+      const staticData = staticResp.ok ? await staticResp.json() : {};
+      _buildChatterPage(staticData.glossary || [], staticData.broken_transcripts || [], channels, staticData.hotcopper || [], staticData.asx_announcements || [], true);
+    } catch (_e2) {
+      _buildChatterPage([], [], channels, [], [], true);
+    }
     return;
   } catch (_e) {}
 
