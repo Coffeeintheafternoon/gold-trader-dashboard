@@ -1509,16 +1509,38 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
 
 function _regimeBuildMomentumModels(container, models) {
 
-  const _MM_CFGS = [
-    { key:'1m',     label:'1M',     longLabel:'1-Month Model',              sub:'All features  ·  1989–present  ·  ~1 month blind spot',             note:'' },
-    { key:'3m',     label:'3M',     longLabel:'3-Month Model',              sub:'All features  ·  1989–present  ·  ~3 month blind spot',             note:'' },
-    { key:'6m',     label:'6M',     longLabel:'6-Month Model',              sub:'All features  ·  1989–present  ·  ~6 month blind spot',             note:'' },
-    { key:'1m_ext', label:'1M Ext', longLabel:'1-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-    { key:'3m_ext', label:'3M Ext', longLabel:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
-    { key:'6m_ext', label:'6M Ext', longLabel:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+  // Groups shown as labelled button clusters
+  const _MM_GROUPS = [
+    {
+      groupLabel: '3-Year Window',
+      tip: '3-year (756-day) training window. More stable coefficients, slower to adapt to new regimes.',
+      cfgs: [
+        { key:'1m',     label:'1M',     longLabel:'1-Month Model',              sub:'All features  ·  1989–present  ·  ~1 month blind spot',             note:'' },
+        { key:'3m',     label:'3M',     longLabel:'3-Month Model',              sub:'All features  ·  1989–present  ·  ~3 month blind spot',             note:'' },
+        { key:'6m',     label:'6M',     longLabel:'6-Month Model',              sub:'All features  ·  1989–present  ·  ~6 month blind spot',             note:'' },
+        { key:'1m_ext', label:'1M Ext', longLabel:'1-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+        { key:'3m_ext', label:'3M Ext', longLabel:'3-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+        { key:'6m_ext', label:'6M Ext', longLabel:'6-Month Model — Extended',   sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',   note:'Oil momentum and yield curve excluded to extend history back to the 1970s stagflation era.' },
+      ],
+    },
+    {
+      groupLabel: '1-Year Window',
+      tip: '1-year (252-day) training window. Faster regime adaptation — catches turning points earlier, but noisier coefficients.',
+      cfgs: [
+        { key:'1m_1y',     label:'1M',     longLabel:'1-Month Model  ·  1Y Window',              sub:'All features  ·  ~1986–present  ·  ~1 month blind spot',              note:'1-year training window. Faster to detect regime shifts than 3Y, more noise in coefficients.' },
+        { key:'3m_1y',     label:'3M',     longLabel:'3-Month Model  ·  1Y Window',              sub:'All features  ·  ~1986–present  ·  ~3 month blind spot',              note:'1-year training window. Faster to detect regime shifts than 3Y, more noise in coefficients.' },
+        { key:'6m_1y',     label:'6M',     longLabel:'6-Month Model  ·  1Y Window',              sub:'All features  ·  ~1986–present  ·  ~6 month blind spot',              note:'1-year training window. Faster to detect regime shifts than 3Y, more noise in coefficients.' },
+        { key:'1m_ext_1y', label:'1M Ext', longLabel:'1-Month Model — Extended  ·  1Y Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',    note:'1-year window + extended history (no oil / yield curve). Fastest regime detection across full 1974–present span.' },
+        { key:'3m_ext_1y', label:'3M Ext', longLabel:'3-Month Model — Extended  ·  1Y Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',    note:'1-year window + extended history (no oil / yield curve). Fastest regime detection across full 1974–present span.' },
+        { key:'6m_ext_1y', label:'6M Ext', longLabel:'6-Month Model — Extended  ·  1Y Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',    note:'1-year window + extended history (no oil / yield curve). Fastest regime detection across full 1974–present span.' },
+      ],
+    },
   ];
 
-  const DEFAULT_KEY = '6m_ext';
+  // Flat list for lookup
+  const _MM_CFGS = _MM_GROUPS.flatMap(g => g.cfgs);
+
+  const DEFAULT_KEY = '6m_ext_1y';
 
   // ── Section header ──────────────────────────────────────────────────────────
   const hdr = document.createElement('div');
@@ -1537,21 +1559,45 @@ function _regimeBuildMomentumModels(container, models) {
   `;
   container.appendChild(hdr);
 
-  // ── Model selector button bar ───────────────────────────────────────────────
+  // ── Model selector button bar (grouped) ────────────────────────────────────
   const btnBar = document.createElement('div');
-  btnBar.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px';
+  btnBar.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px';
   container.appendChild(btnBar);
 
   const btns = {};
-  _MM_CFGS.forEach(({ key, label, longLabel }) => {
-    const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.title = longLabel;
-    btn.dataset.key = key;
-    btn.style.cssText = 'padding:5px 14px;border-radius:4px;border:1px solid #333;background:#111;color:var(--muted);font-size:11px;letter-spacing:0.5px;cursor:pointer;transition:all 0.15s';
-    btn.onclick = () => showModel(key);
-    btnBar.appendChild(btn);
-    btns[key] = btn;
+  _MM_GROUPS.forEach(({ groupLabel, tip, cfgs }, gi) => {
+    if (gi > 0) {
+      // Divider
+      const sep = document.createElement('span');
+      sep.style.cssText = 'width:1px;height:22px;background:#2a2a2a;flex-shrink:0';
+      btnBar.appendChild(sep);
+    }
+    const grpWrap = document.createElement('div');
+    grpWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px';
+
+    const grpLbl = document.createElement('div');
+    grpLbl.className = 'tip';
+    grpLbl.setAttribute('data-tip', tip);
+    grpLbl.style.cssText = 'font-size:9px;color:#444;letter-spacing:0.8px;text-transform:uppercase;padding-left:2px';
+    grpLbl.textContent = groupLabel;
+    grpWrap.appendChild(grpLbl);
+
+    const grpBtns = document.createElement('div');
+    grpBtns.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+
+    cfgs.forEach(({ key, label, longLabel }) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.title = longLabel;
+      btn.dataset.key = key;
+      btn.style.cssText = 'padding:4px 12px;border-radius:4px;border:1px solid #333;background:#111;color:var(--muted);font-size:11px;letter-spacing:0.5px;cursor:pointer;transition:all 0.15s';
+      btn.onclick = () => showModel(key);
+      grpBtns.appendChild(btn);
+      btns[key] = btn;
+    });
+
+    grpWrap.appendChild(grpBtns);
+    btnBar.appendChild(grpWrap);
   });
 
   // ── Per-model content wrappers (lazy-rendered) ─────────────────────────────
