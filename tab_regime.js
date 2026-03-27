@@ -1535,6 +1535,18 @@ function _regimeBuildMomentumModels(container, models) {
         { key:'6m_ext_1y', label:'6M Ext', longLabel:'6-Month Model — Extended  ·  1Y Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',    note:'1-year window + extended history (no oil / yield curve). Fastest regime detection across full 1974–present span.' },
       ],
     },
+    {
+      groupLabel: '6-Month Window',
+      tip: '6-month (126-day) training window. Most agile — reacts to regime changes within weeks, but highest coefficient noise. Use for early warnings, not stable signals.',
+      cfgs: [
+        { key:'1m_6m',     label:'1M',     longLabel:'1-Month Model  ·  6M Window',              sub:'All features  ·  ~1986–present  ·  ~1 month blind spot',              note:'6-month training window. Most agile of all models — highest noise, earliest regime detection.' },
+        { key:'3m_6m',     label:'3M',     longLabel:'3-Month Model  ·  6M Window',              sub:'All features  ·  ~1986–present  ·  ~3 month blind spot',              note:'6-month training window. Most agile of all models — highest noise, earliest regime detection.' },
+        { key:'6m_6m',     label:'6M',     longLabel:'6-Month Model  ·  6M Window',              sub:'All features  ·  ~1986–present  ·  ~6 month blind spot',              note:'6-month training window. Note: training window = forecast horizon, so this model is fitting on just enough data to cover one forecast period.' },
+        { key:'1m_ext_6m', label:'1M Ext', longLabel:'1-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
+        { key:'3m_ext_6m', label:'3M Ext', longLabel:'3-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
+        { key:'6m_ext_6m', label:'6M Ext', longLabel:'6-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
+      ],
+    },
   ];
 
   // Flat list for lookup
