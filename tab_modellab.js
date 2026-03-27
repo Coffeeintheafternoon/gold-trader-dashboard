@@ -2091,8 +2091,9 @@ function buildDataTimeline(d) {
   // ── Row 2: Walk-forward windows (coloured by OOS Sharpe) ──
   const palette = ['#f59e0b','#00c832','#2dd4bf','#a78bfa','#f97316','#f87171','#22d3ee','#d97706','#60a5fa','#34d399'];
   const r2 = wh.map((w, i) => {
-    if (!w.window_start || !w.window_end) return '';
-    const l = left(w.window_start), ww = width(w.window_start, w.window_end);
+    const ws = w.window_start || w.train_start;
+    if (!ws || !w.window_end) return '';
+    const l = left(ws), ww = width(ws, w.window_end);
     const shr = w.oos_sharpe;
     const bg = shr == null ? '#333' : shr >= 0.5 ? 'rgba(0,200,50,0.55)' : shr >= 0 ? 'rgba(245,165,32,0.45)' : 'rgba(220,38,38,0.45)';
     return bar(l, ww, bg, `W${i+1}: ${fmtD(w.window_start)} → ${fmtD(w.window_end)}  OOS Shr=${shr != null ? shr.toFixed(2) : '—'}`);
@@ -2106,10 +2107,12 @@ function buildDataTimeline(d) {
 
   const featRows = showFeats.map(f => {
     const cells = wh.map((w, i) => {
+      const ws = w.window_start || w.train_start;
+      if (!ws || !w.window_end) return '';
       const wt = (w.weights || {})[f.name];
-      if (wt == null || wt === 0) return bar(left(w.window_start), width(w.window_start, w.window_end), '#1a1a1a', `${f.name} absent W${i+1}`);
+      if (wt == null || wt === 0) return bar(left(ws), width(ws, w.window_end), '#1a1a1a', `${f.name} absent W${i+1}`);
       const bg = wt > 0 ? 'rgba(0,200,50,0.55)' : 'rgba(220,38,38,0.50)';
-      return bar(left(w.window_start), width(w.window_start, w.window_end), bg, `${f.name} W${i+1}: ${wt>0?'+':''}${(wt*1000).toFixed(1)}×1k`);
+      return bar(left(ws), width(ws, w.window_end), bg, `${f.name} W${i+1}: ${wt>0?'+':''}${(wt*1000).toFixed(1)}×1k`);
     }).join('');
     const catColor = _ML_CAT_COLORS[f.category] || '#4b5563';
     const shortName = f.name.replace('ann_','★ ').replace('macro_','').replace('_mom','↑').replace('_chg','Δ');
@@ -2126,7 +2129,7 @@ function buildDataTimeline(d) {
   const tickHtml = `<div style="display:flex;align-items:center;margin-bottom:4px;gap:10px">
     <div style="width:110px;flex-shrink:0"></div>
     <div style="flex:1;position:relative;height:14px">` +
-    ticks.map(w => `<div style="position:absolute;left:${left(w.window_end)}%;transform:translateX(-50%);font-size:8px;color:#555;white-space:nowrap">${fmtD(w.window_end)}</div>`).join('') +
+    ticks.map(w => { const ws=w.window_start||w.train_start; return ws ? `<div style="position:absolute;left:${left(ws)}%;transform:translateX(-50%);font-size:8px;color:#555;white-space:nowrap">${fmtD(ws)}</div>` : ''; }).join('') +
     `</div></div>`;
 
   // ── Legend ──
