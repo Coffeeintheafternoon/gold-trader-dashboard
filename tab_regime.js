@@ -1064,12 +1064,13 @@ function _regimeBuildDetectionSection(container, d) {
   container.appendChild(macroGrid);
 
   const macroCfgs = [
-    { key:'gold',        label:'Gold (USD/oz)',          fmt: v=>'$'+Math.round(v),          color:'#fbbf24', log:true  },
-    { key:'spx',         label:'S&P 500',                fmt: v=>Math.round(v).toLocaleString(), color:'#22c55e', log:true  },
-    { key:'vix',         label:'VIX (stitched)',          fmt: v=>v.toFixed(1),               color:'#ef4444', log:false },
-    { key:'yield_curve', label:'Yield Curve (10yr−3mo)',  fmt: v=>v.toFixed(2)+'%',           color:'#34d399', log:false },
-    { key:'real_rate',   label:'Real Rate (10yr−CPI)',    fmt: v=>v.toFixed(2)+'%',           color:'#60a5fa', log:false },
-    { key:'cpi_yoy',     label:'CPI YoY %',              fmt: v=>v.toFixed(1)+'%',           color:'#f97316', log:false },
+    { key:'gold',        label:'Gold (USD/oz)',          fmt: v=>'$'+Math.round(v),               color:'#fbbf24', log:true  },
+    { key:'spx',         label:'S&P 500',                fmt: v=>Math.round(v).toLocaleString(),  color:'#22c55e', log:true  },
+    { key:'asx200',      label:'ASX 200',                fmt: v=>Math.round(v).toLocaleString(),  color:'#38bdf8', log:true  },
+    { key:'vix',         label:'VIX (stitched)',          fmt: v=>v.toFixed(1),                    color:'#ef4444', log:false },
+    { key:'yield_curve', label:'Yield Curve (10yr−3mo)',  fmt: v=>v.toFixed(2)+'%',               color:'#34d399', log:false },
+    { key:'real_rate',   label:'Real Rate (10yr−CPI)',    fmt: v=>v.toFixed(2)+'%',               color:'#60a5fa', log:false },
+    { key:'cpi_yoy',     label:'CPI YoY %',              fmt: v=>v.toFixed(1)+'%',               color:'#f97316', log:false },
   ];
 
   macroCfgs.forEach(cfg => {
