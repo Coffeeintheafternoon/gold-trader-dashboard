@@ -995,12 +995,16 @@ function _regimeBuildDetectionSection(container, d) {
   }).join('');
 
   const readingRows = Object.entries(readings).map(([k, v]) => {
-    const col = k === 'vol_regime_z' ? (v > 1.5 ? '#ef4444' : v > 0 ? '#f5c842' : '#22c55e')
-               : k === 'real_rate'   ? (v < 0 ? '#22c55e' : v > 2 ? '#ef4444' : '#f5c842')
-               : (v >= 0 ? '#22c55e' : '#ef4444');
     const lbl = { real_rate:'Real Rate', yield_curve:'Yield Curve', gold_mom_z:'Gold Mom (z)',
                   spx_mom_z:'SPX Mom (z)', vol_regime_z:'Vol/VIX (z)',
                   dxy_mom_z:'DXY Mom (z)', cpi_accel_z:'CPI Accel (z)' }[k] || k;
+    if (v == null) return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #111">
+      <span style="font-size:11px;color:var(--muted)">${lbl}</span>
+      <span style="font-size:11px;font-family:monospace;color:#444">—</span>
+    </div>`;
+    const col = k === 'vol_regime_z' ? (v > 1.5 ? '#ef4444' : v > 0 ? '#f5c842' : '#22c55e')
+               : k === 'real_rate'   ? (v < 0 ? '#22c55e' : v > 2 ? '#ef4444' : '#f5c842')
+               : (v >= 0 ? '#22c55e' : '#ef4444');
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #111">
       <span style="font-size:11px;color:var(--muted)">${lbl}</span>
       <span style="font-size:11px;font-family:monospace;color:${col}">${v >= 0 ? '+' : ''}${v.toFixed(2)}</span>
