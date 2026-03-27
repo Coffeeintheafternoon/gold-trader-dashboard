@@ -168,7 +168,12 @@ function _ptRenderHeader(portfolio, signals) {
   const stratDesc = strat.broker
     ? `${strat.broker}  ·  A$${strat.position_size}/trade  ·  max ${strat.max_open_positions} pos  ·  ${stop}`
     : '';
-  document.getElementById('pt-strategy-badge').textContent = stratDesc;
+  const stratTip = strat.broker
+    ? `Broker: ${strat.broker} | Position size: A$${strat.position_size} flat per trade | Max ${strat.max_open_positions} open at once | Stop-loss: ${stop} | Portfolio drawdown halt: ${strat.max_portfolio_drawdown_pct}%`
+    : '';
+  const stratBadge = document.getElementById('pt-strategy-badge');
+  stratBadge.textContent = stratDesc;
+  if (stratTip) { stratBadge.classList.add('tip'); stratBadge.setAttribute('data-tip', stratTip); }
 
   document.getElementById('pt-last-updated').textContent = ts
     ? 'Signals: ' + ts.slice(0, 16).replace('T', ' ') + ' UTC'
@@ -226,19 +231,19 @@ function _ptRenderHero(portfolio, signals) {
   const fmtAud = v => 'A$' + v.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   document.getElementById('pt-hero-row').innerHTML = `
-    <div class="hero-card"><div class="hero-label">Portfolio Equity</div><div class="hero-value color-gold">${fmtAud(equity)}</div><div style="font-size:10px;color:var(--muted)">started ${fmtAud(start)}</div></div>
-    <div class="hero-card"><div class="hero-label">Total Return</div><div class="hero-value" style="color:${pnlC}">${pnlSign}${pnlPct.toFixed(2)}%</div></div>
-    <div class="hero-card"><div class="hero-label">Cash</div><div class="hero-value" style="font-size:18px">${fmtAud(cash)}</div></div>
-    <div class="hero-card"><div class="hero-label">Drawdown</div><div class="hero-value" style="color:${ddC};font-size:20px">-${ddPct.toFixed(1)}%</div><div style="font-size:10px;color:var(--muted)">from peak</div></div>
-    <div class="hero-card"><div class="hero-label">Open / Closed</div><div class="hero-value" style="font-size:20px">${nOpen} / ${trades.length}</div></div>
-    <div class="hero-card"><div class="hero-label">Win Rate</div><div class="hero-value" style="color:var(--green);font-size:20px">${winRate}</div><div style="font-size:10px;color:var(--muted)">${trades.length} closed</div></div>
-    <div class="hero-card"><div class="hero-label">Realised P&L</div><div class="hero-value" style="color:${totalPnlC};font-size:18px">${totalPnl >= 0 ? '+' : ''}${fmtAud(totalPnl)}</div></div>
-    <div class="hero-card"><div class="hero-label">Profit Factor</div><div class="hero-value" style="color:${pfC};font-size:20px">${pfStr}</div><div style="font-size:10px;color:var(--muted)">gross win÷loss</div></div>
-    <div class="hero-card"><div class="hero-label">Avg Win / Avg Loss</div>
+    <div class="hero-card tip" data-tip="Cash + all open positions valued at current market price"><div class="hero-label">Portfolio Equity</div><div class="hero-value color-gold">${fmtAud(equity)}</div><div style="font-size:10px;color:var(--muted)">started ${fmtAud(start)}</div></div>
+    <div class="hero-card tip" data-tip="% gain or loss versus starting capital of ${fmtAud(start)}"><div class="hero-label">Total Return</div><div class="hero-value" style="color:${pnlC}">${pnlSign}${pnlPct.toFixed(2)}%</div></div>
+    <div class="hero-card tip" data-tip="Uninvested capital available for new positions. Each position costs A$500 + fees."><div class="hero-label">Cash</div><div class="hero-value" style="font-size:18px">${fmtAud(cash)}</div></div>
+    <div class="hero-card tip" data-tip="% decline from the highest equity ever reached. &gt; 5% = caution, &gt; 20% = engine halts new entries."><div class="hero-label">Drawdown</div><div class="hero-value" style="color:${ddC};font-size:20px">-${ddPct.toFixed(1)}%</div><div style="font-size:10px;color:var(--muted)">from peak</div></div>
+    <div class="hero-card tip" data-tip="Open: positions currently held · Closed: fully completed trades (wins + losses)"><div class="hero-label">Open / Closed</div><div class="hero-value" style="font-size:20px">${nOpen} / ${trades.length}</div></div>
+    <div class="hero-card tip" data-tip="% of closed trades that were profitable. 50%+ is good when profit factor &gt; 1."><div class="hero-label">Win Rate</div><div class="hero-value" style="color:var(--green);font-size:20px">${winRate}</div><div style="font-size:10px;color:var(--muted)">${trades.length} closed</div></div>
+    <div class="hero-card tip" data-tip="Total profit/loss from all completed trades after brokerage fees. Does not include unrealised open positions."><div class="hero-label">Realised P&amp;L</div><div class="hero-value" style="color:${totalPnlC};font-size:18px">${totalPnl >= 0 ? '+' : ''}${fmtAud(totalPnl)}</div></div>
+    <div class="hero-card tip" data-tip="Gross profit ÷ gross loss across all closed trades. &gt; 1.5 = strong edge, 1.0–1.5 = marginal, &lt; 1.0 = net losing strategy."><div class="hero-label">Profit Factor</div><div class="hero-value" style="color:${pfC};font-size:20px">${pfStr}</div><div style="font-size:10px;color:var(--muted)">gross win÷loss</div></div>
+    <div class="hero-card tip" data-tip="Mean dollar gain per winning trade (green) vs mean dollar loss per losing trade (red). Higher ratio = better risk/reward."><div class="hero-label">Avg Win / Avg Loss</div>
       <div style="font-size:14px;font-weight:700;color:var(--green);line-height:1.4">${avgWin  != null ? fmtAud(avgWin)  : '—'}</div>
       <div style="font-size:14px;font-weight:700;color:var(--red);  line-height:1.4">${avgLoss != null ? '-' + fmtAud(avgLoss) : '—'}</div>
     </div>
-    <div class="hero-card"><div class="hero-label">Best / Worst Trade</div>
+    <div class="hero-card tip" data-tip="Single largest profit (green) and single largest loss (red) across all closed trades"><div class="hero-label">Best / Worst Trade</div>
       <div style="font-size:14px;font-weight:700;color:var(--green);line-height:1.4">${bestPnl != null ? (bestPnl >= 0 ? '+' : '') + fmtAud(bestPnl) : '—'}</div>
       <div style="font-size:14px;font-weight:700;color:var(--red);  line-height:1.4">${wrstPnl != null ? (wrstPnl >= 0 ? '+' : '') + fmtAud(wrstPnl) : '—'}</div>
     </div>`;
@@ -255,7 +260,7 @@ function _ptRenderPositions(portfolio, signals) {
   const today   = Date.now();
 
   if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="padding:16px;color:var(--muted);text-align:center">No open positions</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="padding:16px;color:var(--muted);text-align:center">No open positions</td></tr>';
     return;
   }
 
@@ -275,16 +280,24 @@ function _ptRenderPositions(portfolio, signals) {
            title="Manually close this position">✕ CLOSE</button>`
       : '';
 
-    return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
-      <td style="padding:6px 10px;font-weight:700;color:#e5e7eb">${ticker}</td>
+    const bookVal = pos.entry_price * pos.shares;
+    const mktVal  = price * pos.shares;
+    const fmtQty  = pos.shares % 1 === 0 ? pos.shares.toLocaleString('en-AU') : pos.shares.toFixed(2);
+
+    const asxUrl = `https://www.asx.com.au/markets/company/${ticker.replace('.AX','').replace('.ax','')}`;
+    return `<tr style="border-bottom:1px solid #1a1a1a;white-space:nowrap;${bg}">
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${ticker}</a></td>
       <td style="padding:6px 10px"><span style="color:var(--green);font-weight:700">▲ LONG</span></td>
       <td style="padding:6px 10px;color:var(--muted)">${pos.entry_date}</td>
       <td style="padding:6px 10px;text-align:right;color:var(--muted)">${holdDays}d</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:var(--muted)">${fmtQty}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${pos.entry_price.toFixed(3)}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:var(--muted)">A$${bookVal.toFixed(2)}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${price.toFixed(3)}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${uC}">A$${mktVal.toFixed(2)}</td>
       <td style="padding:6px 10px;text-align:right;font-weight:700;color:${uC}">${unrPct >= 0 ? '+' : ''}${unrPct.toFixed(2)}%</td>
       <td style="padding:6px 10px;text-align:right;font-weight:700;color:${uC}">${unrAud >= 0 ? '+' : ''}A$${unrAud.toFixed(2)}</td>
-      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${noStop ? 'var(--muted)' : 'var(--red)'}">
+      <td class="tip" data-tip="${noStop ? 'No hard stop — this strategy exits on signal flip only' : `Stop-loss at ${stopLvl} (${stopPct}% below entry). Position exits automatically if price drops here.`}" style="padding:6px 10px;text-align:right;font-family:monospace;color:${noStop ? 'var(--muted)' : 'var(--red)'}">
         ${stopLvl}</td>
       <td style="padding:6px 10px;text-align:center">${closeBtn}</td>
     </tr>`;
@@ -452,16 +465,33 @@ function _ptRenderSignals(signals, portfolio) {
     // Row tint: HIGH overfit → faint red wash
     const rowBg = overfit === 'HIGH' ? 'rgba(255,32,32,0.03)' : (i % 2 ? 'background:#111' : '');
 
+    const ovfTip  = overfit === 'LOW'    ? 'LOW — model generalises well to unseen data' :
+                    overfit === 'MEDIUM' ? 'MEDIUM — moderate curve-fitting risk, trade with awareness' :
+                    overfit === 'HIGH'   ? 'HIGH — likely memorised training data. Signal unreliable.' :
+                    'Overfitting risk assessment';
+    const mcptTip = mcptP == null
+      ? 'MCPT p-value — requires local server to display'
+      : mcptP <= 0.05
+        ? `p=${mcptP.toFixed(3)} — statistically validated edge (< 0.05). Strategy beat random permutations.`
+        : mcptP <= 0.10
+          ? `p=${mcptP.toFixed(3)} — borderline edge (0.05–0.10). Some evidence but not fully validated.`
+          : `p=${mcptP.toFixed(3)} — not statistically significant. Edge may be random.`;
+    const statusTip = isOpen ? 'Position currently open in this portfolio' :
+                      eligible ? 'Signal qualifies for entry — waiting for engine to run' :
+                      dir === 'FLAT' ? 'No actionable signal from model this cycle' :
+                      dir === 'SKIP' ? 'Excluded — overfit HIGH or no trained model found' : '';
+
+    const asxUrl = `https://www.asx.com.au/markets/company/${s.ticker.replace('.AX','').replace('.ax','')}`;
     return `<tr style="border-bottom:1px solid #1a1a1a;${rowBg}">
-      <td style="padding:6px 10px;font-weight:700;color:#e5e7eb">${s.ticker}</td>
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${s.ticker}</a></td>
       <td style="padding:6px 10px;text-align:center;font-weight:700;color:${dirC}">${dir}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${predC}">${pred}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${score}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${shr}</td>
-      <td style="padding:6px 10px;text-align:center"><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${ovfBg};color:${ovfC}">${overfit}</span></td>
-      <td style="padding:6px 10px;text-align:right;font-family:monospace;color:${mcptC}">${mcptStr}</td>
+      <td style="padding:6px 10px;text-align:center"><span class="tip" data-tip="${ovfTip}" style="font-size:10px;padding:1px 6px;border-radius:3px;background:${ovfBg};color:${ovfC}">${overfit}</span></td>
+      <td style="padding:6px 10px;text-align:right;font-family:monospace"><span class="tip" data-tip="${mcptTip}" style="color:${mcptC}">${mcptStr}</span></td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace;color:var(--muted)">${price}</td>
-      <td style="padding:6px 10px;text-align:center"><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${statusBg};color:${statusCol}">${statusTxt}</span></td>
+      <td style="padding:6px 10px;text-align:center"><span class="tip" data-tip="${statusTip}" style="font-size:10px;padding:1px 6px;border-radius:3px;background:${statusBg};color:${statusCol}">${statusTxt}</span></td>
     </tr>`;
   }).join('');
 }
@@ -509,8 +539,9 @@ function _ptRenderTrades(portfolio) {
     const cum    = cumMap.get(t.entry_date + t.ticker + t.exit_date);
     const cumC   = cum == null ? 'var(--muted)' : cum >= 0 ? 'var(--green)' : 'var(--red)';
 
+    const asxUrl = `https://www.asx.com.au/markets/company/${t.ticker.replace('.AX','').replace('.ax','')}`;
     return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
-      <td style="padding:6px 10px;font-weight:700;color:#e5e7eb">${t.ticker}</td>
+      <td style="padding:6px 10px;font-weight:700"><a href="${asxUrl}" target="_blank" rel="noopener" style="color:#e5e7eb;text-decoration:none" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='#e5e7eb'">${t.ticker}</a></td>
       <td style="padding:6px 10px;color:var(--muted)">${t.entry_date}</td>
       <td style="padding:6px 10px;color:var(--muted)">${t.exit_date}</td>
       <td style="padding:6px 10px;text-align:right;font-family:monospace">${t.entry_price.toFixed(3)}</td>
@@ -518,7 +549,12 @@ function _ptRenderTrades(portfolio) {
       <td style="padding:6px 10px;text-align:right;font-weight:700;color:${pnlC}">${pnl >= 0 ? '+' : ''}A$${pnl.toFixed(2)}</td>
       <td style="padding:6px 10px;text-align:right;color:${pnlC}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</td>
       <td style="padding:6px 10px;text-align:right;font-weight:600;color:${cumC}">${cum != null ? (cum >= 0 ? '+' : '') + 'A$' + cum.toFixed(2) : '—'}</td>
-      <td style="padding:6px 10px"><span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${_exitBg(reason)};color:${_exitColor(reason)}">${reason}</span></td>
+      <td style="padding:6px 10px"><span class="tip" data-tip="${
+        reason.startsWith('STOP') ? 'Hard stop-loss triggered — price fell more than the configured stop % from entry' :
+        reason === 'SIGNAL_FLIP'  ? 'Model reversed direction — consecutive negative bars exceeded threshold' :
+        reason === 'MANUAL_CLOSE' ? 'Manually closed via the dashboard Close button' :
+        'Exit reason'
+      }" style="font-size:10px;padding:1px 6px;border-radius:3px;background:${_exitBg(reason)};color:${_exitColor(reason)}">${reason}</span></td>
     </tr>`;
   }).join('');
 }
@@ -592,12 +628,12 @@ function _ptRenderModelHealth(signals) {
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
             <th style="text-align:left;padding:7px 10px">Ticker</th>
-            <th style="text-align:center;padding:7px 10px">Status</th>
-            <th style="text-align:right;padding:7px 10px">HO Sharpe</th>
-            <th style="text-align:right;padding:7px 10px">HO PF</th>
-            <th style="text-align:right;padding:7px 10px">IS Sharpe</th>
-            <th style="text-align:center;padding:7px 10px">Overfit</th>
-            <th style="text-align:right;padding:7px 10px">MCPT p</th>
+            <th style="text-align:center;padding:7px 10px"><span class="tip" data-tip="OK = valid model / FAIL_DATA = insufficient price history to train">Status</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Holdout Sharpe — return on data the model never saw. &gt; 0.5 = strong, &lt; 0 = losing on unseen data.">HO Sharpe</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Holdout Profit Factor — gross win / gross loss on holdout data. &gt; 1.2 = good. Requires local server.">HO PF</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="In-sample Sharpe — fit on training data. Always higher than holdout. Use only to detect gross failure.">IS Sharpe</span></th>
+            <th style="text-align:center;padding:7px 10px"><span class="tip" data-tip="LOW = healthy generalisation / MEDIUM = moderate / HIGH = likely overfit to training data.">Overfit</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Monte Carlo p-value (500 permutations). p &lt; 0.05 = statistically validated. Requires local server.">MCPT p</span></th>
           </tr>
         </thead>
         <tbody>${tableRows}</tbody>

@@ -36,6 +36,37 @@
     .pt-wl-btn { padding:5px 14px;border-radius:3px;border:1px solid #2a2a2a;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:#0a0a0a;color:var(--muted);transition:border-color 0.15s,color 0.15s; }
     .pt-wl-active { background:rgba(245,165,32,0.12);border-color:rgba(245,165,32,0.5);color:var(--gold); }
     .pt-wl-btn:hover:not(.pt-wl-active) { border-color:var(--gold);color:var(--gold); }
+    /* Tooltip system */
+    .tip { position:relative; cursor:help; }
+    .tip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 7px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c1c1c;
+      border: 1px solid #2e2e2e;
+      color: #d4c9a8;
+      font-size: 11px;
+      line-height: 1.55;
+      padding: 7px 11px;
+      border-radius: 4px;
+      white-space: normal;
+      width: max-content;
+      max-width: 240px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.14s;
+      z-index: 9999;
+      font-weight: 400;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.7);
+    }
+    .tip:hover::after { opacity:1; }
+    .tip-r::after { left:auto; right:0; transform:none; }
+    .tip-l::after { left:0; transform:none; }
     /* Server status dot */
     .srv-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
     .srv-dot-live    { background:#00ff41;box-shadow:0 0 6px rgba(0,255,65,0.6); }
@@ -1553,18 +1584,21 @@
     <!-- Open positions -->
     <div class="section-divider"><span class="section-divider-label">Open Positions</span></div>
     <div style="overflow-x:auto;margin-bottom:24px">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <table style="min-width:100%;width:max-content;border-collapse:collapse;font-size:12px">
         <thead>
-          <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
+          <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted);white-space:nowrap">
             <th style="text-align:left;padding:7px 10px">Ticker</th>
-            <th style="text-align:left;padding:7px 10px">Dir</th>
-            <th style="text-align:left;padding:7px 10px">Entry Date</th>
-            <th style="text-align:right;padding:7px 10px">Days</th>
-            <th style="text-align:right;padding:7px 10px">Entry</th>
-            <th style="text-align:right;padding:7px 10px">Current</th>
-            <th style="text-align:right;padding:7px 10px">Unreal %</th>
-            <th style="text-align:right;padding:7px 10px">Unreal A$</th>
-            <th style="text-align:right;padding:7px 10px">Stop</th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Trade direction — LONG = bought expecting price to rise">Dir</span></th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date this position was opened">Entry Date</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Calendar days held since entry date">Days</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Number of shares held">Qty</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Purchase price per share at entry">Entry $</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Entry price x shares — what was paid to open this position (before fees)">Book Value</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Latest price from today's signal cycle">Current $</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Current price x shares — what the position is worth right now">Mkt Value</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Unrealised return as % of entry price — not yet locked in until position closes">Unreal %</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Unrealised profit/loss in AUD at current market price">Unreal A$</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Hard stop-loss price. Position exits automatically if price drops below this level.">Stop</span></th>
             <th style="text-align:center;padding:7px 10px"></th>
           </tr>
         </thead>
@@ -1585,14 +1619,14 @@
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
             <th style="text-align:left;padding:7px 10px">Ticker</th>
-            <th style="text-align:center;padding:7px 10px">Signal</th>
-            <th style="text-align:right;padding:7px 10px">Pred Ret %</th>
-            <th style="text-align:right;padding:7px 10px">Score</th>
-            <th style="text-align:right;padding:7px 10px">HO Sharpe</th>
-            <th style="text-align:center;padding:7px 10px">Overfit</th>
-            <th style="text-align:right;padding:7px 10px">MCPT p</th>
-            <th style="text-align:right;padding:7px 10px">Price</th>
-            <th style="text-align:center;padding:7px 10px">Status</th>
+            <th style="text-align:center;padding:7px 10px"><span class="tip" data-tip="LONG = buy signal / FLAT = no signal / SKIP = excluded (overfit or no model)">Signal</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Model's predicted return over the next 5 trading days">Pred Ret %</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Composite score: HO Sharpe (40%) + predicted return (30%) + Kelly (20%) + vol penalty (10%). Engine enters highest-scoring first.">Score</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Holdout Sharpe — risk-adjusted return on data the model was NOT trained on. &gt; 0.5 = strong, &lt; 0 = losing on unseen data.">HO Sharpe</span></th>
+            <th style="text-align:center;padding:7px 10px"><span class="tip" data-tip="Overfitting risk: LOW = generalises well / MEDIUM = some curve-fitting / HIGH = likely memorised training data.">Overfit</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Monte Carlo Permutation Test p-value (500 shuffles). p &lt; 0.05 = statistically significant edge, p &lt; 0.10 = borderline.">MCPT p</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Last traded share price">Price</span></th>
+            <th style="text-align:center;padding:7px 10px"><span class="tip" data-tip="OPEN = position held / ELIGIBLE = signal fires, capacity available / FLAT = no signal this cycle">Status</span></th>
           </tr>
         </thead>
         <tbody id="pt-signals-tbody"></tbody>
@@ -1609,14 +1643,14 @@
         <thead>
           <tr style="border-bottom:1px solid #2a2a2a;color:var(--muted)">
             <th style="text-align:left;padding:7px 10px">Ticker</th>
-            <th style="text-align:left;padding:7px 10px">Entry</th>
-            <th style="text-align:left;padding:7px 10px">Exit</th>
-            <th style="text-align:right;padding:7px 10px">Entry $</th>
-            <th style="text-align:right;padding:7px 10px">Exit $</th>
-            <th style="text-align:right;padding:7px 10px">P&amp;L</th>
-            <th style="text-align:right;padding:7px 10px">P&amp;L %</th>
-            <th style="text-align:right;padding:7px 10px">Cum P&amp;L</th>
-            <th style="text-align:left;padding:7px 10px">Reason</th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was opened">Entry</span></th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="Date position was closed">Exit</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Price paid per share at entry">Entry $</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Price received per share at exit">Exit $</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Profit or loss in AUD after brokerage fees">P&amp;L</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Return as % of entry position value">P&amp;L %</span></th>
+            <th style="text-align:right;padding:7px 10px"><span class="tip" data-tip="Running total of all trade P&amp;L from first trade to this row (chronological order)">Cum P&amp;L</span></th>
+            <th style="text-align:left;padding:7px 10px"><span class="tip" data-tip="STOP_LOSS = hard stop triggered / SIGNAL_FLIP = model reversed / MANUAL_CLOSE = closed via dashboard">Reason</span></th>
           </tr>
         </thead>
         <tbody id="pt-trades-tbody"></tbody>
@@ -1836,7 +1870,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_meta.js?v=20260326d"></script>
 <script src="tab_signal.js?v=20260325"></script>
 <script src="tab_regime.js?v=20260325"></script>
-<script src="tab_papertrade.js?v=20260326i"></script>
+<script src="tab_papertrade.js?v=20260326n"></script>
 <script src="tab_chatter.js?v=20260325"></script>
 <script src="tab_sow.js?v=20260325"></script>
 
