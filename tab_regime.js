@@ -1378,6 +1378,17 @@ const _MM_LABELS = {
   ff_chg:      'Fed Funds Δ',
 };
 
+const _MM_TIPS = {
+  gold_mom:    'Gold Momentum — N-month % change in gold spot price (USD). Positive = gold has been rising. A positive coefficient means gold momentum was predicting S&P gains at that window.',
+  dxy_mom:     'DXY Momentum — N-month % change in the US Dollar Index. Positive DXY = USD strengthening vs basket of major currencies. A negative coefficient typically means strong USD predicts weaker S&P (risk-off).',
+  oil_mom:     'Oil Momentum — N-month % change in WTI crude oil price. Rising oil can signal inflation (bad for equities) or strong global demand (good). Excluded in extended models (data only from 1986).',
+  vix:         'VIX Level — CBOE Volatility Index (fear gauge). High VIX = market expects large swings. Synthetic VIX used pre-1990 (Parkinson vol × calibration factor). A positive coefficient = high fear predicts S&P gains next quarter (contrarian buy signal).',
+  yield_curve: 'Yield Curve — US 10yr Treasury yield minus US 3-month T-bill yield (%). Positive = normal (long rates > short rates, growth expected). Negative / inverted = recession warning. Excluded in extended models (3mo data only from 1982).',
+  real_rate:   'Real Rate — US 10yr yield minus CPI YoY inflation rate (%). Negative real rates = money losing purchasing power, tends to support gold and equities. Positive = bonds competitive vs equities.',
+  cpi_yoy:     'CPI YoY — US Consumer Price Index, year-over-year % change. Measures inflation. High/rising CPI can trigger Fed tightening (bad for equities) or reflect strong nominal growth (mixed).',
+  ff_chg:      'Fed Funds Change — Absolute 3-month change in the US Federal Funds Rate (%). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace and direction of monetary policy shifts.',
+};
+
 function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents) {
   const togglesId = id + '-togs';
   const wrap = document.createElement('div');
@@ -1478,6 +1489,8 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
         const c = _MM_COLORS[f] || '#888';
         const btn = document.createElement('button');
         btn.dataset.active = 'true';
+        btn.className = 'tip';
+        btn.setAttribute('data-tip', _MM_TIPS[f] || f);
         btn.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;border:1px solid ${c};background:${c}22;color:${c};font-size:10px;font-family:monospace;cursor:pointer;transition:opacity 0.15s`;
         btn.innerHTML = `<span style="display:inline-block;width:10px;height:1.5px;background:${c};flex-shrink:0"></span>${_MM_LABELS[f]||f}`;
         btn.onclick = () => {
