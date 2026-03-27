@@ -1692,6 +1692,171 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
   });
 }
 
+// ── Pairwise coefficient spread (coef_A − coef_B) ─────────────────────────────
+// All standardised coefficients are on the same scale (per 1σ of each feature),
+// so coef_A − coef_B directly shows which feature the model is weighting more at
+// each point in time — and how dramatically that balance shifts across regimes.
+// Pairs auto-selected by std-dev of the spread: highest variance = most informative.
+function _mmMakeSpreadChart(container, id, dates, feats, coefs) {
+  const SMOOTH_DAYS = 42;   // trailing mean to surface regime-level moves, not daily noise
+  const TOP_N       = 6;
+  const PALETTE     = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171'];
+
+  function pairLabel(a, b) { return `${_MM_LABELS[a]||a} − ${_MM_LABELS[b]||b}`; }
+
+  // Point-in-time spread: coef_A[t] − coef_B[t]
+  function spread(a, b) {
+    const ca = coefs[a] || [], cb = coefs[b] || [];
+    const n = Math.min(ca.length, cb.length);
+    const out = new Array(n).fill(null);
+    for (let i = 0; i < n; i++) {
+      if (ca[i] != null && cb[i] != null) out[i] = ca[i] - cb[i];
+    }
+    return out;
+  }
+
+  // Trailing rolling mean
+  function smooth(arr, w) {
+    return arr.map((v, i) => {
+      if (v == null) return null;
+      const slice = arr.slice(Math.max(0, i - w + 1), i + 1).filter(x => x != null);
+      return slice.length ? slice.reduce((s, x) => s + x, 0) / slice.length : null;
+    });
+  }
+
+  function stdDev(arr) {
+    const vals = arr.filter(v => v != null);
+    if (vals.length < 2) return 0;
+    const m = vals.reduce((s, v) => s + v, 0) / vals.length;
+    return Math.sqrt(vals.reduce((s, v) => s + (v - m) ** 2, 0) / vals.length);
+  }
+
+  // Build all pairs, rank by std-dev of raw spread
+  const allPairs = [];
+  for (let i = 0; i < feats.length; i++) {
+    for (let j = i + 1; j < feats.length; j++) {
+      const raw  = spread(feats[i], feats[j]);
+      const data = smooth(raw, SMOOTH_DAYS);
+      allPairs.push({ a: feats[i], b: feats[j], data, std: stdDev(raw) });
+    }
+  }
+  allPairs.sort((x, y) => y.std - x.std);
+  const pairs = allPairs.slice(0, TOP_N);
+  if (!pairs.length) return;
+
+  const togglesId = id + '-togs';
+  const wrap = document.createElement('div');
+  wrap.style.marginBottom = '20px';
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+      <span class="tip" style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase"
+            data-tip="Coefficient spread = coef_A minus coef_B at each date. Because all features are StandardScaled before fitting, coefficients are directly comparable — the spread tells you which feature the model is currently weighting more. Zero = equal weight. Positive = A dominates. Negative = B dominates. Pairs auto-selected by highest spread variance across history — the most unstable relationships are the most regime-sensitive. A spread accelerating away from zero is an early regime-formation signal.">
+        Coefficient Spread  ·  Top ${TOP_N} Most Unstable Pairs
+      </span>
+      <span style="font-size:9px;color:#444">coef_A − coef_B  ·  ${SMOOTH_DAYS}d smoothed  ·  ranked by spread variance  ·  ★ = most unstable</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px" id="${togglesId}"></div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="chart-wrap" style="height:300px;cursor:crosshair"><canvas id="${id}"></canvas></div>
+    </div>
+  `;
+  container.appendChild(wrap);
+
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById(id);
+    const togsEl = document.getElementById(togglesId);
+    if (!canvas) return;
+
+    const datasets = pairs.map((p, i) => ({
+      label: pairLabel(p.a, p.b),
+      data:  p.data,
+      borderColor:     PALETTE[i % PALETTE.length],
+      backgroundColor: 'transparent',
+      borderWidth: 1.8,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.35,
+      spanGaps: true,
+    }));
+
+    // Zero reference line
+    datasets.push({ label:'_ref', data: dates.map(() => 0),
+      borderColor:'#2a2a2a', borderWidth:1, borderDash:[3,3], pointRadius:0, order:99 });
+
+    // Event annotations
+    const annotations = {};
+    const dateStart = dates.length ? new Date(dates[0]).getTime() : 0;
+    const dateEnd   = dates.length ? new Date(dates[dates.length-1]).getTime() : Infinity;
+    _MM_EVENTS.forEach((ev, i) => {
+      const evT = new Date(ev.date).getTime();
+      if (evT < dateStart || evT > dateEnd) return;
+      const nearest = _mmNearestDate(dates, ev.date);
+      annotations[`evs${i}`] = {
+        type:'line', xMin: nearest, xMax: nearest,
+        borderColor: ev.color + '55', borderWidth:1, borderDash:[3,3],
+        label:{ display:true, content: ev.label, position:'start',
+          color: ev.color+'aa', font:{size:8}, rotation:-90,
+          backgroundColor:'transparent', padding:2, yAdjust:4 }
+      };
+    });
+
+    new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: { labels: dates, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { display: false },
+          annotation: { annotations },
+          tooltip: {
+            mode:'index', intersect:false,
+            filter: item => item.dataset.label !== '_ref',
+            callbacks: {
+              title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); },
+              label: item => {
+                if (item.dataset.label === '_ref') return null;
+                const v = item.raw;
+                return `  ${item.dataset.label}: ${v != null ? (v >= 0 ? '+' : '') + v.toFixed(4) : '—'}`;
+              },
+            },
+          },
+          zoom: { pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'} },
+        },
+        scales: {
+          x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
+                       callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
+               grid:{color:'#111'} },
+          y: { grid:{color:'#1a1a1a'},
+               ticks:{ font:{size:9}, maxTicksLimit:7,
+                       callback: v => (v >= 0 ? '+' : '') + v.toFixed(4) } },
+        },
+      },
+    });
+
+    if (togsEl) {
+      pairs.forEach((p, i) => {
+        const c = PALETTE[i % PALETTE.length];
+        const btn = document.createElement('button');
+        btn.dataset.active = 'true';
+        btn.title = `Rank #${i+1} most spread-variable  ·  σ=${p.std.toFixed(4)}`;
+        btn.style.cssText = `display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;border:1px solid ${c};background:${c}22;color:${c};font-size:10px;font-family:monospace;cursor:pointer;transition:opacity 0.15s`;
+        btn.innerHTML = `<span style="display:inline-block;width:10px;height:1.5px;background:${c};flex-shrink:0"></span>${pairLabel(p.a, p.b)}${i===0?' ★':''}`;
+        btn.onclick = () => {
+          const next = btn.dataset.active !== 'true';
+          btn.dataset.active = String(next);
+          btn.style.background = next ? `${c}22` : 'transparent';
+          btn.style.opacity = next ? '1' : '0.35';
+          // find chart and toggle dataset
+          const chart = Chart.getChart(document.getElementById(id));
+          if (chart) { chart.setDatasetVisibility(i, next); chart.update(); }
+        };
+        togsEl.appendChild(btn);
+      });
+    }
+  });
+}
+
 function _regimeBuildMomentumModels(container, models) {
 
   // Groups shown as labelled button clusters
@@ -1885,9 +2050,17 @@ function _regimeBuildMomentumModels(container, models) {
     _mmMakeCorrChart(wrap, `rd-mm-corr-${key}`, dates, feats, coefs);
 
     const corrNote = document.createElement('div');
-    corrNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
+    corrNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:12px';
     corrNote.textContent = 'Pairs auto-ranked by correlation variance  ·  126d window  ·  21d smoothed  ·  ★ = most regime-sensitive pair';
     wrap.appendChild(corrNote);
+
+    // Chart 5: Coefficient spread (coef_A − coef_B), auto-ranked pairs
+    _mmMakeSpreadChart(wrap, `rd-mm-spread-${key}`, dates, feats, coefs);
+
+    const spreadNote = document.createElement('div');
+    spreadNote.style.cssText = 'font-size:10px;color:#444;text-align:right;margin-bottom:28px';
+    spreadNote.textContent = 'Positive = first feature dominates  ·  Negative = second feature dominates  ·  Zero = equal model weight  ·  ★ = most historically unstable pair';
+    wrap.appendChild(spreadNote);
   }
 
   function showModel(key) {
