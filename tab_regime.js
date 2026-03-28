@@ -1529,8 +1529,8 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
 function _mmMakeCorrChart(container, id, dates, feats, coefs) {
   const CORR_WINDOW  = 126;  // 6-month rolling window for correlation
   const SMOOTH_DAYS  = 21;   // 21-day trailing mean to remove micro-noise
-  const TOP_N        = 6;    // show the top-N most regime-sensitive pairs
-  const PALETTE      = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171'];
+  const TOP_N        = 10;   // show the top-N most regime-sensitive pairs
+  const PALETTE      = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171','#e879f9','#2dd4bf'];
 
   // Pretty label from feature key
   function pairLabel(a, b) {
@@ -1652,7 +1652,18 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
       };
     });
 
-    new Chart(canvas.getContext('2d'), {
+    // Interpretation helper for tooltip
+    function corrInterpret(v) {
+      if (v == null) return '—';
+      const a = Math.abs(v);
+      const dir = v >= 0 ? 'co-moving' : 'opposing';
+      if (a >= 0.8) return `Strong ${dir} (${v >= 0 ? '+' : ''}${v.toFixed(2)}) — features locked`;
+      if (a >= 0.5) return `Moderate ${dir} (${v >= 0 ? '+' : ''}${v.toFixed(2)}) — regime signal`;
+      if (a >= 0.25) return `Weak ${dir} (${v >= 0 ? '+' : ''}${v.toFixed(2)}) — noisy`;
+      return `Decorrelated (${v >= 0 ? '+' : ''}${v.toFixed(2)}) — near zero`;
+    }
+
+    const chart = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: { labels: dates, datasets },
       options: {
@@ -1665,11 +1676,38 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
             mode:'index', intersect:false,
             filter: item => item.dataset.label !== '_ref',
             callbacks: {
-              title: items => { const d = new Date(items[0].label); return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); },
+              title: items => {
+                const d = new Date(items[0].label);
+                return isNaN(d) ? items[0].label : d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+              },
               label: item => {
                 if (item.dataset.label === '_ref') return null;
                 const v = item.raw;
-                return `  ${item.dataset.label}: ${v != null ? (v >= 0 ? '+' : '') + v.toFixed(3) : '—'}`;
+                if (v == null) return `  ${item.dataset.label}: —`;
+                // Find the pair to get rank + std
+                const pi = datasets.findIndex(ds => ds.label === item.dataset.label);
+                const p  = pi >= 0 && pi < pairs.length ? pairs[pi] : null;
+                const rankStr = p ? `  #${pi+1} of ${TOP_N}  ·  σ=${p.std.toFixed(3)}` : '';
+                return [
+                  `  ${item.dataset.label}`,
+                  `    ${corrInterpret(v)}`,
+                  `    Math: ρ = Σ[(Ci−C̄)(Cj−C̄)] / (σCi·σCj)  over ${CORR_WINDOW}d window`,
+                  rankStr ? `    Regime sensitivity rank:${rankStr}` : '',
+                ].filter(Boolean);
+              },
+              afterBody: items => {
+                const visible = items.filter(it => it.dataset.label !== '_ref' && it.raw != null);
+                if (!visible.length) return [];
+                const vals = visible.map(it => it.raw);
+                const spread = Math.max(...vals) - Math.min(...vals);
+                const allPos = vals.every(v => v > 0.3);
+                const allNeg = vals.every(v => v < -0.3);
+                let note = '';
+                if (allPos) note = '  → All pairs co-moving: unified regime, single macro driver dominant';
+                else if (allNeg) note = '  → All pairs opposing: market fragmented, multiple conflicting drivers';
+                else if (spread > 1.0) note = '  → High spread between pairs: regime transition likely underway';
+                else note = '  → Mixed coupling: normal decorrelated state';
+                return ['', note];
               },
             },
           },
@@ -1695,9 +1733,10 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
         btn.title = `Rank #${i+1} most regime-sensitive  ·  σ=${p.std.toFixed(3)}`;
         btn.innerHTML = `<span style="display:inline-block;width:10px;height:1.5px;background:${c};flex-shrink:0"></span>${pairLabel(p.a, p.b)}${rankNote}`;
         btn.onclick = () => {
-          const next = btn.dataset.active !== 'true';
+          const isActive = btn.dataset.active === 'true';
+          const next = !isActive;
           btn.dataset.active = String(next);
-          btn.style.background = next ? `${p.color}22` : 'transparent';
+          btn.style.background = next ? `${c}22` : 'transparent';
           btn.style.opacity = next ? '1' : '0.35';
           chart.setDatasetVisibility(i, next);
           chart.update();
@@ -1715,8 +1754,8 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
 // Pairs auto-selected by std-dev of the spread: highest variance = most informative.
 function _mmMakeSpreadChart(container, id, dates, feats, coefs) {
   const SMOOTH_DAYS = 42;   // trailing mean to surface regime-level moves, not daily noise
-  const TOP_N       = 6;
-  const PALETTE     = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171'];
+  const TOP_N       = 10;
+  const PALETTE     = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171','#e879f9','#2dd4bf'];
 
   function pairLabel(a, b) { return `${_MM_LABELS[a]||a} − ${_MM_LABELS[b]||b}`; }
 
