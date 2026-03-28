@@ -2128,20 +2128,23 @@ function buildWeightCorrPanel(features, wh) {
     if(toggles) {
       toggles.innerHTML='<span style="font-size:10px;color:var(--muted)">Pairs:</span>';
       topPairs.forEach((p,i)=>{
+        const color=COLORS[i%COLORS.length];
         const btn=document.createElement('button');
-        btn.className='ml-sort-btn ml-sort-active';
-        btn.style.cssText=`font-size:10px;padding:2px 8px;border-color:${COLORS[i%COLORS.length]};color:${COLORS[i%COLORS.length]}`;
-        btn.textContent=`${fmtShort(p.a.name)} ↔ ${fmtShort(p.b.name)}`;
+        btn.dataset.active='true';
+        btn.style.cssText=`display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;border:1px solid ${color};background:${color}22;color:${color};font-size:10px;font-family:monospace;font-weight:600;cursor:pointer;transition:opacity 0.15s,background 0.15s;`;
+        btn.innerHTML=`<span style="display:inline-block;width:12px;height:1.5px;background:${color};flex-shrink:0"></span>${fmtShort(p.a.name)} ↔ ${fmtShort(p.b.name)}`;
         btn.onclick=()=>{
-          const ds=_mlWeightCorrChart.data.datasets[i];
-          const hidden=!_mlWeightCorrChart.getDatasetMeta(i).hidden;
-          _mlWeightCorrChart.setDatasetVisibility(i,!hidden);
-          btn.style.opacity=hidden?'0.35':'1';
+          const active=btn.dataset.active==='true';
+          const next=!active;
+          btn.dataset.active=String(next);
+          btn.style.background=next?`${color}22`:'transparent';
+          btn.style.opacity=next?'1':'0.35';
+          _mlWeightCorrChart.setDatasetVisibility(i,next);
           _mlWeightCorrChart.update();
         };
         toggles.appendChild(btn);
       });
-      // Add total correlation history note
+      // Add rolling window note
       const note=document.createElement('span');
       note.style.cssText='font-size:9px;color:#555;align-self:center;margin-left:6px';
       note.textContent=`rolling ${ROLL}-window`;
