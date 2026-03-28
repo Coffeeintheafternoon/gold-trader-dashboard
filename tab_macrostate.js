@@ -8,42 +8,44 @@
 // ── Regime definitions ─────────────────────────────────────────────────────
 // k=4, 3m_ext_1y model. Cluster IDs stable via n_init=15, random_state=42.
 // Profiles derived directly from coefficient space — no PCA inversion needed.
-const _MS_K4 = {
-  0: { name: 'Gold Bull / Dollar Momentum', short: 'Gold Bull',
-       color: '#22c55e',
-       desc:  'Dollar strength and gold momentum both positive simultaneously — a relatively rare alignment where macro uncertainty is driving both safe-haven and dollar demand. Historical: early gold bull runs, 2024 gold rally.',
-       sig:   'dxy_mom ↑  gold_mom ↑  vix moderate' },
-  1: { name: 'Disinflationary Fear',        short: 'Dis-inflation',
-       color: '#2dd4bf',
-       desc:  'Fear is the dominant driver but inflation is a headwind — the Fed is winning the inflation fight so CPI no longer supports gold. Gold is a pure fear asset here, not an inflation hedge. Current regime.',
-       sig:   'vix ↑↑  cpi_yoy ↓  gold_mom ↓' },
-  2: { name: 'Risk-Off Baseline',           short: 'Baseline',
-       color: '#60a5fa',
-       desc:  'The normal state — moderate fear premium, mild inflation tailwind, Fed policy in the background. No single driver dominates. The market is running with background anxiety but no acute stress.',
-       sig:   'vix moderate  cpi_yoy +  ff_chg +' },
-  3: { name: 'Stagflation',                 short: 'Stagflation',
+const _MS_K5 = {
+  0: { name: 'Stagflation',              short: 'Stagflation',
        color: '#f59e0b',
-       desc:  'The rarest and most dangerous regime. Real rates and CPI both strongly positive (inflation entrenched), but Fed Funds is falling — the Fed is behind the curve or cutting into inflation. Historical: 1970s oil shocks, early 1980s pre-Volcker.',
-       sig:   'real_rate ↑↑  cpi_yoy ↑↑  ff_chg ↓↓' },
+       desc:  'The rarest and most dangerous regime (6% of history). Real rates and CPI both strongly positive — inflation is entrenched — but Fed Funds is falling hard. The Fed is behind the curve or cutting into inflation. Historical: 1970s oil shocks, early 1980s pre-Volcker.',
+       sig:   'real_rate ↑↑  ff_chg ↓↓  cpi_yoy ↑↑' },
+  1: { name: 'Risk-Off Baseline',        short: 'Baseline',
+       color: '#60a5fa',
+       desc:  'The most common regime (35% of history). Moderate fear premium, mild inflation tailwind, Fed policy ticking along. No single driver dominates. The market is running with background anxiety but no acute stress.',
+       sig:   'vix moderate  cpi_yoy +  ff_chg +' },
+  2: { name: 'Gold Bull / Dollar Run',   short: 'Gold Bull',
+       color: '#22c55e',
+       desc:  'Dollar strength and gold momentum both rising simultaneously — a relatively rare alignment (11% of history). Macro uncertainty driving both safe-haven demand and dollar strength at once. Historical: 2024 gold rally, some early bull runs.',
+       sig:   'dxy_mom ↑↑  gold_mom ↑↑  real_rate +' },
+  3: { name: 'Disinflationary Fear',     short: 'Dis-inflation',
+       color: '#2dd4bf',
+       desc:  'The second most common regime (39% of history). Fear is the dominant driver but inflation is a headwind — the Fed is winning the inflation fight. Gold is a pure fear asset here, not an inflation hedge. Current regime.',
+       sig:   'vix ↑↑  cpi_yoy ↓  ff_chg ↓' },
+  4: { name: 'Policy Tightening',        short: 'Tightening',
+       color: '#e879f9',
+       desc:  'Aggressive policy tightening regime (8% of history). VIX elevated AND Fed Funds rising fast AND real rates climbing together. The Fed is actively hiking into a stressed market. Historical: 2022 rate hike cycle.',
+       sig:   'ff_chg ↑↑  vix ↑↑  real_rate ↑' },
+};
+
+const _MS_K4 = {
+  0: { name: 'Gold Bull / Dollar Momentum', short: 'Gold Bull',   color: '#22c55e', desc: 'Dollar and gold momentum both positive — macro uncertainty driving safe-haven and dollar demand simultaneously.', sig: 'dxy_mom ↑  gold_mom ↑  vix moderate' },
+  1: { name: 'Disinflationary Fear',        short: 'Dis-inflation',color: '#2dd4bf', desc: 'Fear dominant, inflation a headwind — Fed winning the inflation fight. Gold is a fear asset not an inflation hedge.', sig: 'vix ↑↑  cpi_yoy ↓  gold_mom ↓' },
+  2: { name: 'Risk-Off Baseline',           short: 'Baseline',    color: '#60a5fa', desc: 'Normal state — moderate fear, mild inflation, Fed policy background. No single driver dominates.', sig: 'vix moderate  cpi_yoy +  ff_chg +' },
+  3: { name: 'Stagflation',                 short: 'Stagflation', color: '#f59e0b', desc: 'Real rates and CPI strongly positive, Fed Funds falling — the Fed is behind the curve.', sig: 'real_rate ↑↑  cpi_yoy ↑↑  ff_chg ↓↓' },
 };
 
 const _MS_K3 = {
-  0: { name: 'Risk-Off / VIX Dominant', short: 'Risk-Off',
-       color: '#60a5fa',
-       desc:  'Fear premium dominant, real rates secondary. The broad "market is nervous" state.',
-       sig:   'vix ↑↑  real_rate +  gold_mom -' },
-  1: { name: 'Hard Money / Real Assets', short: 'Real Assets',
-       color: '#22c55e',
-       desc:  'Real rates dominate, gold momentum positive. Real assets and hard money era.',
-       sig:   'real_rate ↑↑  gold_mom ↑  ff_chg ↓' },
-  2: { name: 'Steady / Policy Driven', short: 'Steady',
-       color: '#a78bfa',
-       desc:  'VIX moderate, Fed policy and mild inflation in the background. Calmer markets.',
-       sig:   'vix moderate  ff_chg +  cpi_yoy +' },
+  0: { name: 'Risk-Off / VIX Dominant',  short: 'Risk-Off',    color: '#60a5fa', desc: 'Fear premium dominant, real rates secondary.', sig: 'vix ↑↑  real_rate +  gold_mom -' },
+  1: { name: 'Hard Money / Real Assets', short: 'Real Assets', color: '#22c55e', desc: 'Real rates dominate, gold momentum positive. Real assets era.', sig: 'real_rate ↑↑  gold_mom ↑  ff_chg ↓' },
+  2: { name: 'Steady / Policy Driven',   short: 'Steady',      color: '#a78bfa', desc: 'VIX moderate, Fed policy and mild inflation in background.', sig: 'vix moderate  ff_chg +  cpi_yoy +' },
 };
 
 // Stagflation cluster index per k
-const _MS_STAG_IDX = { 4: 3, 3: null };
+const _MS_STAG_IDX = { 5: 0, 4: 3, 3: null };
 
 // ── Init ───────────────────────────────────────────────────────────────────
 let _msInitialised = false;
@@ -69,7 +71,7 @@ function _msBuild(container, data) {
   const m1y = data['3m_ext_1y'];
   if (!m1y) { container.innerHTML = '<p style="color:#ef4444;padding:20px">3m_ext_1y model not found.</p>'; return; }
 
-  let activeK     = 4;
+  let activeK     = 5;
   let activeModel = '3m_ext_1y';
   const charts    = {};
 
@@ -111,6 +113,15 @@ function _msBuild(container, data) {
         <div class="chart-wrap" style="height:300px"><canvas id="ms-profiles"></canvas></div>
       </div>
 
+      <div class="chart-card" style="margin-bottom:16px">
+        <div class="chart-title">Feature View — Which Regimes Drive Each Feature?</div>
+        <div class="chart-subtitle">
+          Inverted view of the fingerprint chart. Each group = one macro feature. Each bar = one regime's mean coefficient for that feature.
+          Shows at a glance which regimes are responsible for each feature being a tailwind or headwind — and which features cleanly separate regimes from each other.
+        </div>
+        <div class="chart-wrap" style="height:300px"><canvas id="ms-feature-view"></canvas></div>
+      </div>
+
       <div id="ms-stag-section" class="chart-card" style="border:1px solid #f59e0b44;margin-bottom:16px">
         <div class="chart-title" style="color:#f59e0b">Stagflation Watch</div>
         <div id="ms-stag-body"></div>
@@ -126,7 +137,7 @@ function _msBuild(container, data) {
   `;
 
   // k buttons
-  [3,4].forEach(k => {
+  [3,4,5].forEach(k => {
     const btn = document.createElement('button');
     btn.id = `ms-k-${k}`; btn.textContent = k;
     btn.style.cssText = `padding:3px 12px;border-radius:3px;border:1px solid #2a2a2a;background:#0a0a0a;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s`;
@@ -156,13 +167,13 @@ function _msRender(data, modelKey, k, charts) {
   const assigns = kData.assigns;
   const probs   = kData.probs;
   const profiles= kData.profiles;
-  const regimes = k === 4 ? _MS_K4 : _MS_K3;
+  const regimes = k === 5 ? _MS_K5 : k === 4 ? _MS_K4 : _MS_K3;
   const curClust= assigns[assigns.length - 1];
   const curProbs= probs[probs.length - 1];
   const curReg  = regimes[curClust];
 
   // Button states
-  [3,4].forEach(kk => {
+  [3,4,5].forEach(kk => {
     const b = document.getElementById(`ms-k-${kk}`);
     if (b) { b.style.background = kk===k ? 'var(--gold)' : '#0a0a0a'; b.style.color = kk===k ? '#000' : 'var(--muted)'; b.style.borderColor = kk===k ? 'var(--gold)' : '#2a2a2a'; }
   });
@@ -286,6 +297,53 @@ function _msRender(data, modelKey, k, charts) {
         scales: {
           x: { ticks:{ color:'#888', font:{size:9} }, grid:{color:'#111'} },
           y: { ticks:{ color:'#555', font:{size:8}, callback: v=>(v>=0?'+':'')+v.toFixed(4) }, grid:{color:'#1a1a1a'} },
+        },
+      },
+    });
+  }
+
+  // ── Feature View (inverted fingerprint) ────────────────────────────────
+  if (charts.fv) { charts.fv.destroy(); charts.fv = null; }
+  const fvCanvas = document.getElementById('ms-feature-view');
+  if (fvCanvas) {
+    // Rows = features, bars per group = regimes
+    charts.fv = new Chart(fvCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({length: k}, (_,c) => regimes[c].short),
+        datasets: feats.map(f => ({
+          label: f,
+          data:  Array.from({length: k}, (_,c) => { const v=profiles[c]?.[f]; return v!=null?parseFloat(v.toFixed(5)):0; }),
+          backgroundColor: `hsl(${feats.indexOf(f)*47 % 360},60%,55%)55`,
+          borderColor:     `hsl(${feats.indexOf(f)*47 % 360},60%,55%)`,
+          borderWidth: 1,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display:true, position:'bottom', labels:{ color:'#888', font:{size:9}, boxWidth:10, padding:8 } },
+          tooltip: {
+            callbacks: {
+              title: items => `Regime: ${items[0].label}`,
+              label: item => {
+                const v = item.raw;
+                return `  ${item.dataset.label}: ${v>=0?'+':''}${v.toFixed(5)}  [${v>0?'TAILWIND':'HEADWIND'}]`;
+              },
+              afterBody: items => {
+                const pos = items.filter(i=>i.raw>0.005).map(i=>i.dataset.label);
+                const neg = items.filter(i=>i.raw<-0.005).map(i=>i.dataset.label);
+                const out = [];
+                if (pos.length) out.push(``, `  Tailwinds: ${pos.join(', ')}`);
+                if (neg.length) out.push(`  Headwinds: ${neg.join(', ')}`);
+                return out;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { ticks:{ color:'#888', font:{size:10} }, grid:{ color:'#111' } },
+          y: { ticks:{ color:'#555', font:{size:8}, callback: v=>(v>=0?'+':'')+v.toFixed(4) }, grid:{ color:'#1a1a1a' } },
         },
       },
     });
