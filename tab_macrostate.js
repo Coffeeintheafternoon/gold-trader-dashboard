@@ -22,18 +22,18 @@ const _MS_K5 = {
        desc:  'Dollar strength and gold momentum both rising simultaneously — a relatively rare alignment (11% of history). Macro uncertainty driving both safe-haven demand and dollar strength at once. Historical: 2024 gold rally, some early bull runs.',
        sig:   'dxy_mom ↑↑  gold_mom ↑↑  real_rate +' },
   3: { name: 'Disinflationary Fear',     short: 'Dis-inflation',
-       color: '#2dd4bf',
+       color: '#f87171',
        desc:  'The second most common regime (39% of history). Fear is the dominant driver but inflation is a headwind — the Fed is winning the inflation fight. Gold is a pure fear asset here, not an inflation hedge. Current regime.',
        sig:   'vix ↑↑  cpi_yoy ↓  ff_chg ↓' },
   4: { name: 'Policy Tightening',        short: 'Tightening',
-       color: '#e879f9',
+       color: '#a78bfa',
        desc:  'Aggressive policy tightening regime (8% of history). VIX elevated AND Fed Funds rising fast AND real rates climbing together. The Fed is actively hiking into a stressed market. Historical: 2022 rate hike cycle.',
        sig:   'ff_chg ↑↑  vix ↑↑  real_rate ↑' },
 };
 
 const _MS_K4 = {
   0: { name: 'Gold Bull / Dollar Momentum', short: 'Gold Bull',   color: '#22c55e', desc: 'Dollar and gold momentum both positive — macro uncertainty driving safe-haven and dollar demand simultaneously.', sig: 'dxy_mom ↑  gold_mom ↑  vix moderate' },
-  1: { name: 'Disinflationary Fear',        short: 'Dis-inflation',color: '#2dd4bf', desc: 'Fear dominant, inflation a headwind — Fed winning the inflation fight. Gold is a fear asset not an inflation hedge.', sig: 'vix ↑↑  cpi_yoy ↓  gold_mom ↓' },
+  1: { name: 'Disinflationary Fear',        short: 'Dis-inflation',color: '#f87171', desc: 'Fear dominant, inflation a headwind — Fed winning the inflation fight. Gold is a fear asset not an inflation hedge.', sig: 'vix ↑↑  cpi_yoy ↓  gold_mom ↓' },
   2: { name: 'Risk-Off Baseline',           short: 'Baseline',    color: '#60a5fa', desc: 'Normal state — moderate fear, mild inflation, Fed policy background. No single driver dominates.', sig: 'vix moderate  cpi_yoy +  ff_chg +' },
   3: { name: 'Stagflation',                 short: 'Stagflation', color: '#f59e0b', desc: 'Real rates and CPI strongly positive, Fed Funds falling — the Fed is behind the curve.', sig: 'real_rate ↑↑  cpi_yoy ↑↑  ff_chg ↓↓' },
 };
