@@ -1358,24 +1358,35 @@ function _mmNearestDate(dates, target) {
 }
 
 const _MM_COLORS = {
-  gold_mom:    '#22c55e',   // green
-  dxy_mom:     '#60a5fa',   // blue
-  oil_mom:     '#f97316',   // orange
-  vix:         '#ef4444',   // red
-  yield_curve: '#e879f9',   // fuchsia
-  real_rate:   '#a78bfa',   // purple
-  cpi_yoy:     '#fbbf24',   // amber
-  ff_chg:      '#2dd4bf',   // teal
+  gold_mom:      '#22c55e',   // green
+  dxy_mom:       '#60a5fa',   // blue
+  oil_mom:       '#f97316',   // orange
+  vix:           '#ef4444',   // red
+  yield_curve:   '#e879f9',   // fuchsia
+  real_rate:     '#a78bfa',   // purple
+  cpi_yoy:       '#fbbf24',   // amber
+  ff_chg:        '#2dd4bf',   // teal
+  // V2 enhanced features
+  cape:          '#d8b4fe',   // lavender
+  hy_spread_chg: '#fda4af',   // rose
+  copper_mom:    '#d97706',   // copper/brown
+  m2_yoy:        '#7dd3fc',   // sky blue
+  ism_chg:       '#bef264',   // lime
 };
 const _MM_LABELS = {
-  gold_mom:    'Gold Mom',
-  dxy_mom:     'DXY Mom',
-  oil_mom:     'Oil Mom',
-  vix:         'VIX',
-  yield_curve: 'Yield Curve',
-  real_rate:   'Real Rate',
-  cpi_yoy:     'CPI YoY',
-  ff_chg:      'Fed Funds Δ',
+  gold_mom:      'Gold Mom',
+  dxy_mom:       'DXY Mom',
+  oil_mom:       'Oil Mom',
+  vix:           'VIX',
+  yield_curve:   'Yield Curve',
+  real_rate:     'Real Rate',
+  cpi_yoy:       'CPI YoY',
+  ff_chg:        'Fed Funds Δ',
+  cape:          'PE Ratio',
+  hy_spread_chg: 'Credit Spread Δ',
+  copper_mom:    'Copper Mom',
+  m2_yoy:        'M2 Growth',
+  ism_chg:       'ISM Δ',
 };
 
 const _MM_TIPS = {
@@ -1386,7 +1397,12 @@ const _MM_TIPS = {
   yield_curve: 'Yield Curve — US 10yr Treasury yield minus US 3-month T-bill yield (%). Positive = normal (long rates > short rates, growth expected). Negative / inverted = recession warning. Excluded in extended models (3mo data only from 1982).',
   real_rate:   'Real Rate — US 10yr yield minus CPI YoY inflation rate (%). Negative real rates = money losing purchasing power, tends to support gold and equities. Positive = bonds competitive vs equities.',
   cpi_yoy:     'CPI YoY — US Consumer Price Index, year-over-year % change. Measures inflation. High/rising CPI can trigger Fed tightening (bad for equities) or reflect strong nominal growth (mixed).',
-  ff_chg:      'Fed Funds Change — Absolute 3-month change in the US Federal Funds Rate (%). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace and direction of monetary policy shifts.',
+  ff_chg:        'Fed Funds Change — Absolute 3-month change in the US Federal Funds Rate (%). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace and direction of monetary policy shifts.',
+  cape:          'PE Ratio — S&P 500 trailing Price-to-Earnings ratio. High PE = expensive stocks relative to earnings. Historically a negative predictor of forward returns (high PE → lower future gains), but this relationship breaks down in QE/zero-rate eras.',
+  hy_spread_chg: 'Credit Spread Change — 3-month change in the US High-Yield bond spread (ICE BofA index). Rising = credit markets pricing more default risk, financial stress building. One of the best leading indicators of recessions — typically widens 3–6 months before equity stress.',
+  copper_mom:    'Copper Momentum — N-month % change in COMEX copper futures. Rising copper = global industrial demand expanding = growth regime. Divergence from gold (copper up, gold flat) = growth story. Both falling together = crisis.',
+  m2_yoy:        'M2 Money Supply Growth — US M2 YoY % change. M2 = cash + deposits + money market funds. High M2 growth = abundant liquidity, historically bullish for risk assets (2020–21 rally was largely M2-driven). Contraction = liquidity withdrawal.',
+  ism_chg:       'ISM PMI Change — 3-month change in the ISM Manufacturing Purchasing Managers Index. PMI > 50 = manufacturing expanding. Rising ISM = growth accelerating. A strong leading indicator of economic direction, surveying actual purchasing managers.',
 };
 
 function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents) {
@@ -1895,6 +1911,18 @@ function _regimeBuildMomentumModels(container, models) {
         { key:'1m_ext_6m', label:'1M Ext', longLabel:'1-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~1 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
         { key:'3m_ext_6m', label:'3M Ext', longLabel:'3-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~3 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
         { key:'6m_ext_6m', label:'6M Ext', longLabel:'6-Month Model — Extended  ·  6M Window',  sub:'No oil / yield curve  ·  ~1974–present  ·  ~6 month blind spot',    note:'6-month window + extended history (no oil / yield curve). Most agile across full 1974–present span.' },
+      ],
+    },
+    {
+      groupLabel: 'V2 — Enhanced',
+      tip: 'V2 models add PE ratio, HY credit spreads (3m change), copper momentum, M2 money supply growth, and ISM PMI change on top of the original feature set. 1-year window. Limited to ~1997+ by HY spread data availability. Weekly step to keep file size manageable.',
+      cfgs: [
+        { key:'1m_v2',     label:'1M',     longLabel:'1-Month Model  ·  V2 Enhanced  ·  1Y Window',     sub:'+ PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present  ·  ~1 month blind spot',  note:'Enhanced feature set adds valuation (PE), credit stress (HY spread), growth (copper, ISM) and liquidity (M2) dimensions.' },
+        { key:'3m_v2',     label:'3M',     longLabel:'3-Month Model  ·  V2 Enhanced  ·  1Y Window',     sub:'+ PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present  ·  ~3 month blind spot',  note:'Enhanced feature set adds valuation (PE), credit stress (HY spread), growth (copper, ISM) and liquidity (M2) dimensions.' },
+        { key:'6m_v2',     label:'6M',     longLabel:'6-Month Model  ·  V2 Enhanced  ·  1Y Window',     sub:'+ PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present  ·  ~6 month blind spot',  note:'Enhanced feature set adds valuation (PE), credit stress (HY spread), growth (copper, ISM) and liquidity (M2) dimensions.' },
+        { key:'1m_ext_v2', label:'1M Ext', longLabel:'1-Month Model — Extended  ·  V2 Enhanced  ·  1Y Window',  sub:'No oil / yield curve  ·  + PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present',  note:'Extended (no oil/yield curve) + enhanced features. Best balance of feature richness and coefficient stability.' },
+        { key:'3m_ext_v2', label:'3M Ext', longLabel:'3-Month Model — Extended  ·  V2 Enhanced  ·  1Y Window',  sub:'No oil / yield curve  ·  + PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present',  note:'Extended (no oil/yield curve) + enhanced features. Best balance of feature richness and coefficient stability.' },
+        { key:'6m_ext_v2', label:'6M Ext', longLabel:'6-Month Model — Extended  ·  V2 Enhanced  ·  1Y Window',  sub:'No oil / yield curve  ·  + PE · Credit Spread · Copper · M2 · ISM  ·  ~1997–present',  note:'Extended (no oil/yield curve) + enhanced features. Best balance of feature richness and coefficient stability.' },
       ],
     },
   ];
