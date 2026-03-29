@@ -59,23 +59,23 @@ function _regimeZone(key, value) {
   if (value == null) return { label: '—', color: 'var(--muted)' };
   if (key === 'vix') {
     if (value < 15)  return { label: 'CALM',     color: 'var(--green)' };
-    if (value < 25)  return { label: 'ELEVATED', color: '#f5c842' };
+    if (value < 25)  return { label: 'ELEVATED', color: SQ.amber };
     return                  { label: 'STRESS',   color: 'var(--red)' };
   }
   if (key === 'yield_curve') {
     if (value > 0.5)  return { label: 'NORMAL',        color: 'var(--green)' };
-    if (value >= -0.5) return { label: 'FLAT',          color: '#f5c842' };
+    if (value >= -0.5) return { label: 'FLAT',          color: SQ.amber };
     return                   { label: 'INVERTED',       color: 'var(--red)' };
   }
   if (key === 'dxy') {
     if (value > 106) return { label: 'STRONG USD', color: 'var(--red)' };
-    if (value > 98)  return { label: 'NEUTRAL',    color: '#f5c842' };
+    if (value > 98)  return { label: 'NEUTRAL',    color: SQ.amber };
     return                  { label: 'WEAK USD',   color: 'var(--green)' };
   }
   if (key === 'commodity_regime') {
     if (value >= 2)  return { label: 'TAILWIND',   color: 'var(--green)' };
-    if (value >= 0)  return { label: 'MIXED',      color: '#f5c842' };
-    if (value >= -2) return { label: 'HEADWIND',   color: '#f5a53a' };
+    if (value >= 0)  return { label: 'MIXED',      color: SQ.amber };
+    if (value >= -2) return { label: 'HEADWIND',   color: SQ.orange };
     return                  { label: 'FULL DRAG',  color: 'var(--red)' };
   }
   // fallback: colour by percentile rank
@@ -92,7 +92,7 @@ function _regimeZoneTip(key) {
 
 function _regimePctPill(pct) {
   if (pct == null) return '';
-  const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
+  const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : SQ.amber;
   return `<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(0,0,0,0.4);border:1px solid ${color};color:${color};margin-left:8px">${Math.round(pct)}th pct</span>`;
 }
 
@@ -136,7 +136,7 @@ function _regimeUpdatePct(key, minIdx, n) {
   const cur = raw.current;
   const below = windowVals.filter(v => v <= cur).length;
   const pct = Math.round(below / windowVals.length * 100);
-  const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
+  const color = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : SQ.amber;
   const el = document.getElementById(`regime-pct-${key}`);
   if (el) {
     el.style.borderColor = color;
@@ -263,10 +263,10 @@ function _regimeBuildMultiLineCard(grid, cfg, series, fullWidth) {
                 return isNaN(d) ? label : d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
               },
             },
-            grid: { color: '#1a1a1a' },
+            grid: { color: SQ.grid },
           },
           y: {
-            grid: { color: '#1a1a1a' },
+            grid: { color: SQ.grid },
             ticks: { font: { size: 10 }, maxTicksLimit: 6, callback: v => cfg.fmt ? cfg.fmt(v) : v },
           },
           ...(cfg.dualAxis ? {
@@ -398,7 +398,7 @@ function _regimeBuildMacroSection(container, macroData) {
       zoneHtml = `<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,0,0,0.4);border:1px solid ${zone.color};color:${zone.color};margin-left:8px;letter-spacing:0.5px">${zone.label}</span>`;
     } else if (pct != null) {
       // pct bar for series without zone labels
-      const barColor = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
+      const barColor = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : SQ.amber;
       zoneHtml = `<div style="margin-top:6px;display:flex;align-items:center;gap:8px">
         <div style="flex:1;height:4px;background:#222;border-radius:2px;overflow:hidden">
           <div style="width:${pct}%;height:100%;background:${barColor};border-radius:2px"></div>
@@ -415,7 +415,7 @@ function _regimeBuildMacroSection(container, macroData) {
     const resetId  = `regime-reset-${cfg.key}`;
     const pctTip = 'Percentile rank dynamically updates to reflect the currently selected time window. Green = historically low (<20th), yellow = mid-range, red = historically elevated (>80th) — all relative to the visible period.';
     const rangeTip = 'Min and max reading over the full 10-year history. Fixed reference regardless of zoom level.';
-    const pctColor = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : '#f5c842';
+    const pctColor = pct > 80 ? 'var(--red)' : pct < 20 ? 'var(--green)' : SQ.amber;
     card.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px;flex-wrap:wrap">
         <span class="chart-title tip" style="margin-bottom:0" data-tip="${cfg.tip}">${cfg.title}</span>
@@ -513,10 +513,10 @@ function _regimeBuildMacroSection(container, macroData) {
                   return d.toLocaleDateString('en-AU', { month: 'short', year: '2-digit' });
                 },
               },
-              grid: { color: '#1a1a1a' },
+              grid: { color: SQ.grid },
             },
             y: {
-              grid: { color: '#1a1a1a' },
+              grid: { color: SQ.grid },
               ticks: { font: { size: 10 }, maxTicksLimit: 6, callback: v => cfg.fmt ? cfg.fmt(v) : v },
             },
           },
@@ -594,13 +594,13 @@ function _regimeBuildModelSection(container, model3m, model1y) {
   const tbody = document.getElementById('regime-feat-tbody');
   tbody.innerHTML = top15.map((f, i) => {
     const bg = i % 2 === 0 ? '' : 'background:#0d0d0d';
-    const pColor = p => p == null ? 'var(--muted)' : p < 0.05 ? 'var(--green)' : p < 0.20 ? '#f5c842' : 'var(--muted)';
+    const pColor = p => p == null ? 'var(--muted)' : p < 0.05 ? 'var(--green)' : p < 0.20 ? SQ.amber : 'var(--muted)';
     const pFmt   = p => p == null ? '—' : p.toFixed(3);
     const dFmt   = d => d == null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(3);
     const catColor = {
       macro: '#60a5fa', momentum: '#c084fc', volume: '#34d399',
       volatility: '#fb923c', trend: '#f472b6', candle: '#a8a29e',
-      interaction: '#818cf8', announcement: '#fbbf24',
+      interaction: '#818cf8', announcement: SQ.amber,
     };
     const catC = catColor[f.category] || 'var(--muted)';
     return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
@@ -658,7 +658,7 @@ function _regimeBuildModelSection(container, model3m, model1y) {
           tooltip: { callbacks: { label: item => `p_delta: +${item.raw.toFixed(4)}` } },
         },
         scales: {
-          x: { beginAtZero: true, grid: { color: '#1a1a1a' }, ticks: { font: { size: 10 } } },
+          x: { beginAtZero: true, grid: { color: SQ.grid }, ticks: { font: { size: 10 } } },
           y: { grid: { display: false }, ticks: { font: { size: 11, family: 'monospace' } } },
         },
       },
@@ -699,7 +699,7 @@ function _regimeBuildModelSection(container, model3m, model1y) {
     const sig3m = f.p_value != null && f.p_value < 0.05;
     const sig1y = f.p_value_1y != null && f.p_value_1y < 0.05;
     const both  = sig3m && sig1y;
-    const agreeColor = both ? 'var(--green)' : '#f5c842';
+    const agreeColor = both ? 'var(--green)' : SQ.amber;
     const agreeLabel = both ? 'AGREE' : sig3m ? '3M only' : '1Y only';
     const check = v => v ? `<span style="color:var(--green)">✓</span>` : `<span style="color:#333">—</span>`;
     return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
@@ -854,7 +854,7 @@ function _regimeBuildSimilaritySection(container, model1y) {
           },
           scales: {
             x: { ticks: { font: { size: 9 }, color: '#666', maxRotation: 45 }, grid: { display: false } },
-            y: { ticks: { font: { size: 9 }, color: '#666', callback: function(v) { return v.toFixed(0)+'%'; } }, grid: { color: '#1a1a1a' } }
+            y: { ticks: { font: { size: 9 }, color: '#666', callback: function(v) { return v.toFixed(0)+'%'; } }, grid: { color: SQ.grid } }
           }
         }
       });
@@ -930,7 +930,7 @@ function _regimeBuildSimilaritySection(container, model1y) {
 
 const _RD_COLORS = {
   STAGFLATION:  '#f97316',
-  GOLD_BULL:    '#fbbf24',
+  GOLD_BULL:    SQ.amber,
   CRISIS:       '#ef4444',
   RISK_ON:      '#22c55e',
   TIGHTENING:   '#3b82f6',
@@ -1005,8 +1005,8 @@ function _regimeBuildDetectionSection(container, d) {
       <span style="font-size:11px;color:var(--muted)">${lbl}</span>
       <span style="font-size:11px;font-family:monospace;color:#444">—</span>
     </div>`;
-    const col = k === 'vol_regime_z' ? (v > 1.5 ? '#ef4444' : v > 0 ? '#f5c842' : '#22c55e')
-               : k === 'real_rate'   ? (v < 0 ? '#22c55e' : v > 2 ? '#ef4444' : '#f5c842')
+    const col = k === 'vol_regime_z' ? (v > 1.5 ? '#ef4444' : v > 0 ? SQ.amber : '#22c55e')
+               : k === 'real_rate'   ? (v < 0 ? '#22c55e' : v > 2 ? '#ef4444' : SQ.amber)
                : (v >= 0 ? '#22c55e' : '#ef4444');
     return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #111">
       <span style="font-size:11px;color:var(--muted)">${lbl}</span>
@@ -1071,7 +1071,7 @@ function _regimeBuildDetectionSection(container, d) {
   container.appendChild(macroGrid);
 
   const macroCfgs = [
-    { key:'gold',        label:'Gold (USD/oz)',          fmt: v=>'$'+Math.round(v),               color:'#fbbf24', log:true  },
+    { key:'gold',        label:'Gold (USD/oz)',          fmt: v=>'$'+Math.round(v),               color:SQ.amber, log:true  },
     { key:'spx',         label:'S&P 500',                fmt: v=>Math.round(v).toLocaleString(),  color:'#22c55e', log:true  },
     { key:'asx200',      label:'ASX 200',                fmt: v=>Math.round(v).toLocaleString(),  color:'#38bdf8', log:true  },
     { key:'vix',         label:'VIX (stitched)',          fmt: v=>v.toFixed(1),                    color:'#ef4444', log:false },
@@ -1242,9 +1242,9 @@ function _regimeBuildDetectionSection(container, d) {
           scales: {
             x: {
               ticks: { maxTicksLimit:12, maxRotation:0, font:{size:10}, callback: function(val) { const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.toLocaleDateString('en-AU',{month:'short',year:'2-digit'}); } },
-              grid: { color:'#1a1a1a' },
+              grid: { color:SQ.grid },
             },
-            y: { min:0, max:1, grid:{color:'#1a1a1a'}, ticks:{font:{size:10},maxTicksLimit:5} },
+            y: { min:0, max:1, grid:{color:SQ.grid}, ticks:{font:{size:10},maxTicksLimit:5} },
           },
         },
       });
@@ -1364,7 +1364,7 @@ const _MM_COLORS = {
   vix_chg:          '#ef4444',   // red
   yield_curve_chg:  '#e879f9',   // fuchsia
   real_rate_chg:    '#a78bfa',   // purple
-  cpi_accel:        '#fbbf24',   // amber
+  cpi_accel:        SQ.amber,   // amber
   ff_chg:           '#2dd4bf',   // teal
   unemp_chg:        '#fb923c',   // light orange
   // V2 enhanced features
@@ -1377,7 +1377,7 @@ const _MM_COLORS = {
   vix:              '#ef4444',
   yield_curve:      '#e879f9',
   real_rate:        '#a78bfa',
-  cpi_yoy:          '#fbbf24',
+  cpi_yoy:          SQ.amber,
   cape:             '#d8b4fe',
   m2_yoy:           '#7dd3fc',
 };
@@ -1522,7 +1522,7 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
           x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
                        callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
                grid:{color:'#111'} },
-          y: { grid:{color:'#1a1a1a'}, ticks:{ font:{size:9}, maxTicksLimit:7, callback: v => yFmt(v) } },
+          y: { grid:{color:SQ.grid}, ticks:{ font:{size:9}, maxTicksLimit:7, callback: v => yFmt(v) } },
         },
       },
     });
@@ -1557,7 +1557,7 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
   const CORR_WINDOW  = 126;  // 6-month rolling window for correlation
   const SMOOTH_DAYS  = 21;   // 21-day trailing mean to remove micro-noise
   const TOP_N        = 10;   // show the top-N most regime-sensitive pairs
-  const PALETTE      = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171','#e879f9','#2dd4bf'];
+  const PALETTE      = Array.from({length:10},(_,i)=>sqColor(i));
 
   // Pretty label from feature key
   function pairLabel(a, b) {
@@ -1744,7 +1744,7 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
           x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
                        callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
                grid:{color:'#111'} },
-          y: { min:-1, max:1, grid:{color:'#1a1a1a'},
+          y: { min:-1, max:1, grid:{color:SQ.grid},
                ticks:{ font:{size:9}, maxTicksLimit:9, callback: v => (v>=0?'+':'')+v.toFixed(1) } },
         },
       },
@@ -1782,7 +1782,7 @@ function _mmMakeCorrChart(container, id, dates, feats, coefs) {
 function _mmMakeSpreadChart(container, id, dates, feats, coefs) {
   const SMOOTH_DAYS = 42;   // trailing mean to surface regime-level moves, not daily noise
   const TOP_N       = 10;
-  const PALETTE     = ['#f472b6','#facc15','#4ade80','#818cf8','#fb923c','#38bdf8','#a3e635','#f87171','#e879f9','#2dd4bf'];
+  const PALETTE     = Array.from({length:10},(_,i)=>sqColor(i));
 
   function pairLabel(a, b) { return `${_MM_LABELS[a]||a} − ${_MM_LABELS[b]||b}`; }
 
@@ -1909,7 +1909,7 @@ function _mmMakeSpreadChart(container, id, dates, feats, coefs) {
           x: { ticks:{ maxTicksLimit:12, maxRotation:0, font:{size:9},
                        callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
                grid:{color:'#111'} },
-          y: { grid:{color:'#1a1a1a'},
+          y: { grid:{color:SQ.grid},
                ticks:{ font:{size:9}, maxTicksLimit:7,
                        callback: v => (v >= 0 ? '+' : '') + v.toFixed(4) } },
         },

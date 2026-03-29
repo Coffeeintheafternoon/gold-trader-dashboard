@@ -73,9 +73,9 @@ function _ptShowModelTip(ticker, event) {
       return;
     }
     const c = v => v == null ? '—' : v;
-    const pf  = v => v == null ? '—' : `<span style="color:${v>=1.2?'var(--green)':v>=1?'#fcd34d':'var(--red)'}">${v.toFixed(3)}</span>`;
-    const shr = v => v == null ? '—' : `<span style="color:${v>=0.5?'var(--green)':v>=0?'#fcd34d':'var(--red)'}">${v.toFixed(3)}</span>`;
-    const ovC = o => o === 'LOW' ? 'var(--green)' : o === 'HIGH' ? 'var(--red)' : '#fcd34d';
+    const pf  = v => v == null ? '—' : `<span style="color:${v>=1.2?'var(--green)':v>=1?SQ.amber:'var(--red)'}">${v.toFixed(3)}</span>`;
+    const shr = v => v == null ? '—' : `<span style="color:${v>=0.5?'var(--green)':v>=0?SQ.amber:'var(--red)'}">${v.toFixed(3)}</span>`;
+    const ovC = o => o === 'LOW' ? 'var(--green)' : o === 'HIGH' ? 'var(--red)' : SQ.amber;
     tip.innerHTML = `
       <div class="mt-head">${ticker} <span style="font-size:10px;font-weight:400;color:var(--muted)">${s.label}</span></div>
       <div class="mt-row"><span class="mt-label">IS Profit Factor</span>  <span class="mt-val">${pf(s.is_pf)}</span></div>
@@ -568,23 +568,23 @@ function _ptRenderSignals(signals, portfolio) {
     const price  = s.current_price != null ? s.current_price.toFixed(3) : '—';
 
     const eligible  = dir === 'LONG' || dir === 'SHORT';
-    const statusBg  = isOpen ? 'rgba(245,165,32,0.12)' : eligible ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)';
+    const statusBg  = isOpen ? 'rgba(245,165,32,0.12)' : eligible ? GREEN_08 : 'rgba(255,255,255,0.04)';
     const statusCol = isOpen ? 'var(--gold)' : eligible ? 'var(--green)' : 'var(--muted)';
     const statusTxt = isOpen ? 'OPEN' : eligible ? 'ELIGIBLE' : dir;
 
     // Overfit badge (from signal, enriched by health data)
     const overfit = s.overfit_signal || (healthMap[s.ticker] || {}).overfit_signal || '—';
     const ovfC    = overfit === 'LOW' ? 'var(--green)' : overfit === 'MEDIUM' ? 'var(--gold)' : overfit === 'HIGH' ? 'var(--red)' : 'var(--muted)';
-    const ovfBg   = overfit === 'LOW'  ? 'rgba(34,197,94,0.08)'  :
-                    overfit === 'MEDIUM'? 'rgba(245,165,32,0.08)' :
-                    overfit === 'HIGH'  ? 'rgba(255,32,32,0.08)'  : 'transparent';
+    const ovfBg   = overfit === 'LOW'  ? GREEN_08  :
+                    overfit === 'MEDIUM'? hexA(SQ.amber,0.08) :
+                    overfit === 'HIGH'  ? RED_08  : 'transparent';
 
     // MCPT p-value — only available from server health data
     const mcptP   = (healthMap[s.ticker] || {}).mcpt_p_value;
     const mcptStr = mcptP != null ? mcptP.toFixed(3) : (_ptHealthData ? '—' : 'n/a');
     const mcptC   = mcptP == null ? 'var(--muted)' :
                     mcptP <= 0.01 ? 'var(--green)' :
-                    mcptP <= 0.05 ? '#86efac' :
+                    mcptP <= 0.05 ? hexA(SQ.green,0.75) :
                     mcptP <= 0.10 ? 'var(--gold)' : 'var(--muted)';
 
     // Row tint: HIGH overfit → faint red wash
@@ -685,8 +685,8 @@ function _ptRenderTradeLogRows(allRows) {
   const _reasonColor = r => {
     if (r === 'OPEN')          return 'var(--green)';
     if (!r || r === '—')       return 'var(--muted)';
-    if (r.startsWith('STOP'))  return '#f87171';
-    if (r === 'SIGNAL_FLIP')   return '#fcd34d';
+    if (r.startsWith('STOP'))  return SQ.red;
+    if (r === 'SIGNAL_FLIP')   return SQ.amber;
     if (r === 'MANUAL_CLOSE')  return '#93c5fd';
     return 'var(--muted)';
   };
@@ -750,10 +750,10 @@ function _ptRenderModelHealth(signals) {
     };
   });
 
-  const _ovfC = v => v === 'LOW' ? '#4ade80' : v === 'MEDIUM' ? '#fcd34d' : v === 'HIGH' ? '#f87171' : '#555';
-  const _mcptC = v => v == null ? '#555' : v <= 0.01 ? '#4ade80' : v <= 0.05 ? '#86efac' : v <= 0.10 ? '#fcd34d' : '#555';
-  const _shrC  = v => v == null ? '#555' : v >= 0.5 ? '#4ade80' : v >= 0 ? '#fcd34d' : '#f87171';
-  const _pfC   = v => v == null ? '#555' : v >= 1.2 ? '#4ade80' : v >= 1.0 ? '#fcd34d' : '#f87171';
+  const _ovfC = v => v === 'LOW' ? SQ.green : v === 'MEDIUM' ? SQ.amber : v === 'HIGH' ? SQ.red : '#555';
+  const _mcptC = v => v == null ? '#555' : v <= 0.01 ? SQ.green : v <= 0.05 ? hexA(SQ.green,0.75) : v <= 0.10 ? SQ.amber : '#555';
+  const _shrC  = v => v == null ? '#555' : v >= 0.5 ? SQ.green : v >= 0 ? SQ.amber : SQ.red;
+  const _pfC   = v => v == null ? '#555' : v >= 1.2 ? SQ.green : v >= 1.0 ? SQ.amber : SQ.red;
 
   const serverNote = !_ptHealthData
     ? '<span style="font-size:10px;color:var(--muted);margin-left:10px;font-weight:400">HO PF and MCPT p require local server</span>'
@@ -765,7 +765,7 @@ function _ptRenderModelHealth(signals) {
     const pf     = r.ho_pf       != null ? r.ho_pf.toFixed(2)       : (_ptHealthData ? '—' : 'n/a');
     const isShr  = r.is_sharpe   != null ? r.is_sharpe.toFixed(2)   : '—';
     const mcpt   = r.mcpt_p_value != null ? r.mcpt_p_value.toFixed(3) : (_ptHealthData ? '—' : 'n/a');
-    const statC  = r.status === 'OK' ? '#4ade80' : '#f87171';
+    const statC  = r.status === 'OK' ? SQ.green : SQ.red;
 
     return `<tr style="border-bottom:1px solid #1a1a1a;${bg}">
       <td style="padding:5px 10px;font-weight:700;color:#e5e7eb">${r.ticker}</td>
@@ -841,12 +841,12 @@ function _ptShowRerunModal(lines, isError) {
   const existing = document.getElementById('pt-rerun-modal');
   if (existing) existing.remove();
 
-  const borderCol = isError ? '#f87171' : '#a78bfa';
+  const borderCol = isError ? SQ.red : '#a78bfa';
   const _lineColor = l => {
-    if (l.includes('LONG'))   return '#4ade80';
+    if (l.includes('LONG'))   return SQ.green;
     if (l.includes('FLAT'))   return '#888';
-    if (l.includes('SKIP'))   return '#fcd34d';
-    if (l.includes('ERROR'))  return '#f87171';
+    if (l.includes('SKIP'))   return SQ.amber;
+    if (l.includes('ERROR'))  return SQ.red;
     if (l.startsWith('  '))   return '#e5e7eb';
     return '#aaa';
   };

@@ -60,9 +60,9 @@ async function openTickerInModelLab(ticker, data, safeName) {
   statsDiv.style.display='block';
   document.getElementById('ml-stats-title').textContent=`${ticker} — Screener Results (no full backtest yet)`;
   const pf=data.pf,sh=data.sharpe,ret=data.mean_ann_pct,ci=data.ci95_lower,oos=data.oos_bars;
-  const pfC=pf===null?'var(--muted)':pf>=1.10?'var(--green)':pf>=1.05?'#fbbf24':'var(--muted)';
-  const shC=sh===null?'var(--muted)':sh>=0.5?'var(--green)':sh>=0.25?'#fbbf24':'var(--muted)';
-  const retC=ret===null?'var(--muted)':ret>=20?'var(--green)':ret>=10?'#fbbf24':'var(--muted)';
+  const pfC=pf===null?'var(--muted)':pf>=1.10?'var(--green)':pf>=1.05?SQ.amber:'var(--muted)';
+  const shC=sh===null?'var(--muted)':sh>=0.5?'var(--green)':sh>=0.25?SQ.amber:'var(--muted)';
+  const retC=ret===null?'var(--muted)':ret>=20?'var(--green)':ret>=10?SQ.amber:'var(--muted)';
   const ciC=ci===null?'var(--muted)':ci>0?'var(--green)':'var(--red)';
   document.getElementById('ml-stats-heroes').innerHTML=`
     <div class="hero-card" style="min-width:140px"><div class="hero-label">Sector</div><div class="hero-value color-gold" style="font-size:16px">${data.sector||'—'}</div></div>
@@ -98,23 +98,23 @@ let _mlStabShow     = { weight: true, cum_avg: true, cum_pval: true }; // which 
 let _mlStabAdded    = [];       // [{name,slotIdx}] — user-added features beyond top 6
 
 const _ML_CAT_COLORS = {
-  momentum:      '#f59e0b',   // warm amber
-  volume:        '#00c832',   // retro green
-  volatility:    '#f97316',   // orange
-  trend:         '#2dd4bf',   // teal
-  macro:         '#d97706',   // darker amber
-  announcement:  '#f5a520',   // gold
-  candle:        '#a78bfa',   // soft purple
+  momentum:      SQ.cat.momentum,   // warm amber
+  volume:        SQ.cat.volume,   // retro green
+  volatility:    SQ.cat.volatility,   // orange
+  trend:         SQ.cat.trend,   // teal
+  macro:         SQ.cat.macro,   // darker amber
+  announcement:  SQ.cat.announcement,   // gold
+  candle:        SQ.cat.candle,   // soft purple
   short_interest:'#f87171',   // coral red
-  interaction:   '#22d3ee',   // cyan — cross-asset products
-  other:         '#4b5563',   // muted grey
+  interaction:   SQ.cat.interaction,   // cyan — cross-asset products
+  other:         SQ.neutral,   // muted grey
 };
 const _ML_OVERFIT_LABELS = {
   LOW:           { color:'#00ff41', text:'LOW — consistent edge IS + holdout' },
-  MEDIUM:        { color:'#f5a520', text:'MEDIUM — some degradation on holdout' },
+  MEDIUM:        { color:SQ.green, text:'MEDIUM — some degradation on holdout' },
   HIGH:          { color:'#ff2020', text:'HIGH — IS good, holdout fails (overfit)' },
   NO_EDGE:       { color:'#4b5563', text:'NO EDGE — weak across both periods' },
-  REGIME_CHANGE: { color:'#f59e0b', text:'REGIME SHIFT — holdout beats IS' },
+  REGIME_CHANGE: { color:SQ.amber, text:'REGIME SHIFT — holdout beats IS' },
   UNKNOWN:       { color:'#4b5563', text:'UNKNOWN' },
 };
 
@@ -158,8 +158,8 @@ function buildScreenerGrid(tickers) {
     const isSh = t.sharpe != null ? (t.sharpe >= 0 ? '+' : '') + t.sharpe.toFixed(2) : '—';
     const hoSh = t.ho_sharpe != null ? (t.ho_sharpe >= 0 ? '+' : '') + t.ho_sharpe.toFixed(2) : '—';
     const hoPF = t.ho_pf != null ? t.ho_pf.toFixed(3) : '—';
-    const isSc = t.sharpe >= 0.5 ? 'var(--green)' : t.sharpe > 0 ? '#fbbf24' : 'var(--red)';
-    const hoSc = (t.ho_sharpe||0) >= 0.5 ? 'var(--green)' : (t.ho_sharpe||0) > 0 ? '#fbbf24' : 'var(--red)';
+    const isSc = t.sharpe >= 0.5 ? 'var(--green)' : t.sharpe > 0 ? SQ.amber : 'var(--red)';
+    const hoSc = (t.ho_sharpe||0) >= 0.5 ? 'var(--green)' : (t.ho_sharpe||0) > 0 ? SQ.amber : 'var(--red)';
     const safe = (t.models && t.models[0]) ? t.models[0].safe_name : t.ticker.toLowerCase().replace(/\./g,'_');
     const ovLabel = { LOW:'✓ LOW', MEDIUM:'~ MED', HIGH:'⚠ HIGH', NO_EDGE:'✕ NONE', REGIME_CHANGE:'↑ SHIFT', UNKNOWN:'? UNK' }[ov] || ov;
     const ovColor = (_ML_OVERFIT_LABELS[ov]||{}).color || '#4b5563';
@@ -276,8 +276,8 @@ function renderTickerDetail(d) {
   const ovInfo = _ML_OVERFIT_LABELS[ov] || _ML_OVERFIT_LABELS.UNKNOWN;
 
   function fmt(v, decimals=3) { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(decimals) : '—'; }
-  function pfColor(v)  { return v > 1.1 ? 'var(--green)' : v > 1.0 ? '#fbbf24' : 'var(--red)'; }
-  function shrColor(v) { return v > 0.5 ? 'var(--green)' : v > 0 ? '#fbbf24' : 'var(--red)'; }
+  function pfColor(v)  { return v > 1.1 ? 'var(--green)' : v > 1.0 ? SQ.amber : 'var(--red)'; }
+  function shrColor(v) { return v > 0.5 ? 'var(--green)' : v > 0 ? SQ.amber : 'var(--red)'; }
 
   document.getElementById('ml-is-pf').innerHTML    = `<span style="color:${pfColor(isM.pf||0)}">${(isM.pf||0).toFixed(3)}</span>`;
   document.getElementById('ml-is-sharpe').innerHTML = `<span style="color:${shrColor(isM.sharpe||0)}">${fmt(isM.sharpe)}</span>`;
@@ -402,7 +402,7 @@ function buildMLEquityChart(equityIS, equityHO, hoStart) {
     data: {
       labels: allDates,
       datasets: [
-        { label: 'IS Walk-Forward',      data: isVals, borderColor: '#60a5fa', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false, yAxisID: 'yIS' },
+        { label: 'IS Walk-Forward',      data: isVals, borderColor: SQ.cyan, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: false, yAxisID: 'yIS' },
         { label: 'Holdout (never seen)', data: hoVals, borderColor: '#f5a520', backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0.2, borderDash: [5,3], spanGaps: false, yAxisID: 'yHO' },
       ]
     },
@@ -419,10 +419,10 @@ function buildMLEquityChart(equityIS, equityHO, hoStart) {
         }
       },
       scales: {
-        x:   { grid: {color:'#1a1a1a'}, ticks: {color:'#555', maxTicksLimit:8, font:{size:10}} },
-        yIS: { position: 'left',  grid: {color:'#1a1a1a'}, ticks: {color:'#60a5fa', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
-               title: { display: true, text: 'IS %', color: '#60a5fa', font:{size:10} } },
-        yHO: { position: 'right', grid: {drawOnChartArea: false}, ticks: {color:'#f5a520', font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
+        x:   { grid: {color:SQ.grid}, ticks: {color:SQ.muted, maxTicksLimit:8, font:{size:10}} },
+        yIS: { position: 'left',  grid: {color:SQ.grid}, ticks: {color:SQ.cyan, font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
+               title: { display: true, text: 'IS %', color: SQ.cyan, font:{size:10} } },
+        yHO: { position: 'right', grid: {drawOnChartArea: false}, ticks: {color:SQ.green, font:{size:10}, callback: v => (v>=0?'+':'')+v.toFixed(0)+'%'},
                title: { display: hasHO, text: 'HO %', color: '#f5a520', font:{size:10} },
                display: hasHO },
       }
@@ -465,13 +465,13 @@ function buildMLRollingPerf(equityIS) {
       { label: 'Rolling 90d Sharpe', data: sharpes, borderColor: '#f5a520', borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'ySharpe' },
       { label: 'Drawdown %',         data: dds,     borderColor: '#ff2020', borderWidth: 1.5, pointRadius: 0, tension: 0.1,
         fill: { target: 'origin', above: 'transparent', below: 'rgba(255,32,32,0.15)' }, yAxisID: 'yDD' },
-      { label: '_zero', data: labels.map(()=>0), borderColor:'#2a2a2a', borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false, yAxisID:'ySharpe' }
+      { label: '_zero', data: labels.map(()=>0), borderColor:SQ.grid, borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false, yAxisID:'ySharpe' }
     ]},
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true, labels: { filter: item => !item.text.startsWith('_'), boxWidth:14, font:{size:11}, color:'#9ca3af' } },
+        legend: { display: true, labels: { filter: item => !item.text.startsWith('_'), boxWidth:14, font:{size:11}, color:SQ.muted } },
         tooltip: { callbacks: { label: item => {
           if (item.datasetIndex===0) return ` Sharpe (90d): ${(item.raw||0).toFixed(2)}`;
           if (item.datasetIndex===1) return ` Drawdown: ${(item.raw||0).toFixed(2)}%`;
@@ -479,9 +479,9 @@ function buildMLRollingPerf(equityIS) {
         }, filter: item => item.datasetIndex < 2 } }
       },
       scales: {
-        x:       { ticks:{maxTicksLimit:10,color:'#555',font:{size:10}}, grid:{color:'#1a1a1a'} },
-        ySharpe: { position:'left',  grid:{color:'#1a1a1a'}, ticks:{color:'#555',font:{size:10}}, title:{display:true,text:'Sharpe (90d)',font:{size:10},color:'#f5a520'} },
-        yDD:     { position:'right', grid:{drawOnChartArea:false}, ticks:{color:'#555',font:{size:10},callback:v=>v+'%'}, title:{display:true,text:'Drawdown %',font:{size:10},color:'#ff2020'} }
+        x:       { ticks:{maxTicksLimit:10,color:'#555',font:{size:10}}, grid:{color:SQ.grid} },
+        ySharpe: { position:'left',  grid:{color:SQ.grid}, ticks:{color:SQ.muted,font:{size:10}}, title:{display:true,text:'Sharpe (90d)',font:{size:10},color:SQ.green} },
+        yDD:     { position:'right', grid:{drawOnChartArea:false}, ticks:{color:SQ.muted,font:{size:10},callback:v=>v+'%'}, title:{display:true,text:'Drawdown %',font:{size:10},color:'#ff2020'} }
       }
     }
   });
@@ -584,9 +584,9 @@ function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO, isPF, hoPF) {
       const tipAttr = tip ? `data-tip="${tip.replace(/"/g,"'")}"` : '';
       const cursor  = tip ? 'cursor:help;' : '';
       const bg = i%2 ? '#0d0d0d' : '#111';
-      const TD = `padding:5px 8px;font-size:12px;border-bottom:1px solid #1a1a1a;text-align:right;font-family:monospace;font-weight:700`;
+      const TD = `padding:5px 8px;font-size:12px;border-bottom:1px solid rgba(0,255,136,0.08);text-align:right;font-family:monospace;font-weight:700`;
       return `<tr style="background:${bg}">
-        <td style="padding:5px 12px;font-size:12px;border-bottom:1px solid #1a1a1a;color:#6b7280;${cursor}" ${tipAttr}>${lbl}${tip?` <span style="color:#333;font-size:10px">ⓘ</span>`:''}</td>
+        <td style="padding:5px 12px;font-size:12px;border-bottom:1px solid rgba(0,255,136,0.08);color:#6b7280;${cursor}" ${tipAttr}>${lbl}${tip?` <span style="color:#333;font-size:10px">ⓘ</span>`:''}</td>
         <td style="${TD};color:${isC||'var(--gold)'}">${isV}</td>
         ${hasHO ? `<td style="${TD};color:${hoC||'#9ca3af'}">${hoV??na}</td>` : ''}
       </tr>`;
@@ -594,7 +594,7 @@ function buildMLMetrics(equityIS, tradesIS, equityHO, tradesHO, isPF, hoPF) {
     const cols = hasHO ? 3 : 2;
     return `<table style="width:100%;border-collapse:collapse;border:1px solid #222;border-radius:6px;overflow:hidden;margin-bottom:0">
       <thead>
-        <tr style="background:#1c1c1c"><th colspan="${cols}" style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);border-bottom:1px solid #2a2a2a;font-weight:600">${title}</th></tr>
+        <tr style="background:#001a0a"><th colspan="${cols}" style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);border-bottom:1px solid rgba(0,255,136,0.15);font-weight:600">${title}</th></tr>
         ${subHdr}
       </thead>
       <tbody>${body}</tbody></table>`;
@@ -841,7 +841,7 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels: { color: '#9ca3af', font: {size:11}, boxWidth: 12 } },
+        legend: { labels: { color: SQ.muted, font: {size:11}, boxWidth: 12 } },
         tooltip: { callbacks: { label: c => {
           if (c.datasetIndex === 0) return ` IS: $${(c.parsed.y||0).toFixed(3)}`;
           if (c.datasetIndex === 1) return ` HO: $${(c.parsed.y||0).toFixed(3)}`;
@@ -853,8 +853,8 @@ function buildMLPriceChart(priceIS, priceHO, tradesIS, tradesHO) {
         }
       },
       scales: {
-        x: { ticks: {maxTicksLimit:12, color:'#555', font:{size:10}}, grid: {color:'#1a1a1a'} },
-        y: { ticks: {color:'#555', font:{size:10}, callback: v => '$'+v.toFixed(2)}, grid: {color:'#1a1a1a'} }
+        x: { ticks: {maxTicksLimit:12, color:'#555', font:{size:10}}, grid: {color:SQ.grid} },
+        y: { ticks: {color:SQ.muted, font:{size:10}, callback: v => '$'+v.toFixed(2)}, grid: {color:SQ.grid} }
       }
     }
   });
@@ -1064,7 +1064,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
-        legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:5 } },
+        legend: { display: true, position: 'top', labels: { color:SQ.muted, font:{size:9}, boxWidth:8, padding:5 } },
         tooltip: { callbacks: { label: ctx => `IS ${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
       },
       scales: durRetScales
@@ -1082,7 +1082,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: {
-          legend: { display: true, position: 'top', labels: { color:'#9ca3af', font:{size:9}, boxWidth:8, padding:5 } },
+          legend: { display: true, position: 'top', labels: { color:SQ.muted, font:{size:9}, boxWidth:8, padding:5 } },
           tooltip: { callbacks: { label: ctx => `HO ${ctx.dataset.label}: ${ctx.raw.x} bars, ${ctx.raw.y>=0?'+':''}${ctx.raw.y.toFixed(2)}%` }}
         },
         scales: durRetScales
@@ -1140,7 +1140,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
       plugins: {
-        legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 6 } },
+        legend: { display: true, position: 'top', labels: { color: SQ.muted, font: { size: 10 }, boxWidth: 10, padding: 6 } },
         tooltip: { callbacks: { label: ctx => {
           const allIdx = ctx.dataset.label === 'Win' ? winIdxs[ctx.dataIndex] : lossIdxs[ctx.dataIndex];
           const t = tradesIS[allIdx];
@@ -1201,7 +1201,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: {
-          legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          legend: { display: true, position: 'top', labels: { color: SQ.muted, font: { size: 10 }, boxWidth: 10, padding: 8 } },
           tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}` } }
         },
         scales: {
@@ -1226,7 +1226,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         plugins: {
-          legend: { display: true, position: 'top', labels: { color: '#9ca3af', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          legend: { display: true, position: 'top', labels: { color: SQ.muted, font: { size: 10 }, boxWidth: 10, padding: 8 } },
           tooltip: { callbacks: { label: ctx => {
             const arr = ctx.dataset.label.includes('Long') ? longs : shorts;
             const t = arr[ctx.dataIndex];
@@ -1858,10 +1858,10 @@ function buildAnnTable(features) {
   if (!annFeats.length) { wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px">No announcement features in model (no announcement data for this ticker).</div>'; return; }
   const rows = annFeats.map(f => {
     const wc = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
-    const rc = f.rank <= 20 ? 'var(--green)' : f.rank <= 35 ? '#fbbf24' : 'var(--muted)';
-    const instC = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? '#fbbf24' : 'var(--red)';
+    const rc = f.rank <= 20 ? 'var(--green)' : f.rank <= 35 ? SQ.amber : 'var(--muted)';
+    const instC = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? SQ.amber : 'var(--red)';
     const nameClean = f.name.replace('ann_','').replace(/_/g,' ');
-    return `<tr style="border-bottom:1px solid #1a1a1a">
+    return `<tr style="border-bottom:1px solid rgba(0,255,136,0.08)">
       <td style="padding:7px 10px;font-weight:600;color:var(--gold)">${f.name}</td>
       <td style="padding:7px 10px;font-size:12px;color:#9ca3af">${nameClean}</td>
       <td style="padding:7px 10px;text-align:right;font-family:monospace;color:${rc};font-weight:600">#${f.rank}</td>
@@ -1917,7 +1917,7 @@ function _tPval(vals) {
 }
 
 // Extended palette: 6 fixed + 6 extras for user-added features
-const _STAB_PALETTE = ['#00ff41','#00c832','#f59e0b','#fbbf24','#ff2020','#ff6b6b',
+const _STAB_PALETTE = ['#00ff41','#00c832',SQ.amber,SQ.amber,'#ff2020','#ff6b6b',
                        '#38bdf8','#7dd3fc','#c084fc','#e879f9','#fb923c','#a3e635'];
 
 function _mlStabSyncButtons() {
@@ -1926,8 +1926,8 @@ function _mlStabSyncButtons() {
     if (!b) return;
     const on = _mlStabShow[k];
     b.style.background  = on ? '#f59e0b22' : 'transparent';
-    b.style.color       = on ? '#f59e0b'   : '#6b7280';
-    b.style.borderColor = on ? '#f59e0b'   : '#374151';
+    b.style.color       = on ? SQ.amber   : '#6b7280';
+    b.style.borderColor = on ? SQ.amber   : '#374151';
     b.style.opacity     = on ? '1'         : '0.45';
   });
 }
@@ -2080,7 +2080,7 @@ function buildWeightCorrPanel(features, wh) {
 
   // ── Line chart — rolling correlation per pair ─────────────────────────────
   const ROLL   = Math.max(6, Math.floor(n/8));
-  const COLORS = ['#f87171','#34d399','#60a5fa','#f59e0b','#a78bfa','#22d3ee'];
+  const COLORS = Array.from({length:6},(_,i)=>sqColor(i));
 
   if (ctxEl && topPairs.length) {
     function fmtShort(name){ return name.replace('macro_','').replace('ann_','★').replace(/_z$/,'ᶻ').replace('_mom','↑'); }
@@ -2117,8 +2117,8 @@ function buildWeightCorrPanel(features, wh) {
           }}}
         },
         scales:{
-          x:{grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{size:9},maxTicksLimit:8}},
-          y:{min:-1,max:1,grid:{color:'#1a1a1a'},ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(1)},
+          x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9},maxTicksLimit:8}},
+          y:{min:-1,max:1,grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9},callback:v=>v.toFixed(1)},
              title:{display:true,text:'Weight correlation (rolling)',color:'#555',font:{size:9}}},
         }
       }
@@ -2221,7 +2221,7 @@ function buildDataTimeline(d) {
            + (hoStart ? bar(hoL, hoW, 'rgba(0,200,50,0.35)', `Holdout: ${fmtD(hoStart)} → ${fmtD(hoEnd)}`) : '');
 
   // ── Row 2: Walk-forward windows (coloured by OOS Sharpe) ──
-  const palette = ['#f59e0b','#00c832','#2dd4bf','#a78bfa','#f97316','#f87171','#22d3ee','#d97706','#60a5fa','#34d399'];
+  const palette = [SQ.amber,'#00c832','#2dd4bf','#a78bfa','#f97316','#f87171','#22d3ee','#d97706','#60a5fa','#34d399'];
   const r2 = wh.map((w, i) => {
     const ws = w.window_start || w.train_start;
     if (!ws || !w.window_end) return '';
@@ -2373,9 +2373,9 @@ function buildMLStabilityChart(features, weightHistory) {
         }
       },
       scales: {
-        x:     { grid:{color:'#1a1a1a'}, ticks:{color:'#555', font:{size:9}, maxTicksLimit:8} },
-        y:     { position:'left',  grid:{color:'#1a1a1a'}, ticks:{color:'#555',font:{size:9}}, title:{display:true,text:'Weight ×1000',color:'#555',font:{size:9}} },
-        yPval: { position:'right', grid:{drawOnChartArea:false}, min:0, max:1, ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(2)}, title:{display:true,text:'p-value',color:'#555',font:{size:9}} },
+        x:     { grid:{color:SQ.grid}, ticks:{color:SQ.muted, font:{size:9}, maxTicksLimit:8} },
+        y:     { position:'left',  grid:{color:SQ.grid}, ticks:{color:SQ.muted,font:{size:9}}, title:{display:true,text:'Weight ×1000',color:'#555',font:{size:9}} },
+        yPval: { position:'right', grid:{drawOnChartArea:false}, min:0, max:1, ticks:{color:SQ.muted,font:{size:9},callback:v=>v.toFixed(2)}, title:{display:true,text:'p-value',color:'#555',font:{size:9}} },
       }
     }
   });
@@ -2658,8 +2658,8 @@ function mlRenderFeatTable() {
   const totalFeats = _mlCurrentFeatures.length;
   tbody.innerHTML = feats.map((f, idx) => {
     const catColor   = _ML_CAT_COLORS[f.category] || '#6b7280';
-    const rankColor  = f.rank <= 10 ? 'var(--green)' : f.rank <= 25 ? '#fbbf24' : 'var(--muted)';
-    const instColor  = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? '#fbbf24' : 'var(--red)';
+    const rankColor  = f.rank <= 10 ? 'var(--green)' : f.rank <= 25 ? SQ.amber : 'var(--muted)';
+    const instColor  = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? SQ.amber : 'var(--red)';
     const signColor  = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
     const isAnn      = f.category === 'announcement';
     const nameColor  = isAnn ? 'var(--gold)' : '#e5e7eb';
@@ -2667,15 +2667,15 @@ function mlRenderFeatTable() {
     const rowBg      = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
     // p-value colour: <0.05 green, <0.20 amber, else red
     const pv         = f.p_value != null ? f.p_value : 1.0;
-    const pvColor    = pv < 0.05 ? 'var(--green)' : pv < 0.20 ? '#f59e0b' : 'var(--red)';
+    const pvColor    = pv < 0.05 ? 'var(--green)' : pv < 0.20 ? SQ.amber : 'var(--red)';
     const pvStr      = f.p_value != null ? pv.toFixed(3) : '—';
     // active windows
     const nActive    = f.n_windows_active ?? f.n_windows ?? '?';
     const nTotal     = f.n_windows_total  ?? f.n_windows ?? '?';
-    const activeColor= (nActive / nTotal) >= 0.75 ? '#e5e7eb' : (nActive / nTotal) >= 0.5 ? '#f59e0b' : 'var(--red)';
+    const activeColor= (nActive / nTotal) >= 0.75 ? '#e5e7eb' : (nActive / nTotal) >= 0.5 ? SQ.amber : 'var(--red)';
     // sign consistency
     const sp         = f.sign_pct != null ? f.sign_pct : null;
-    const spColor    = sp == null ? 'var(--muted)' : sp >= 80 ? 'var(--green)' : sp >= 60 ? '#f59e0b' : 'var(--red)';
+    const spColor    = sp == null ? 'var(--muted)' : sp >= 80 ? 'var(--green)' : sp >= 60 ? SQ.amber : 'var(--red)';
     const spStr      = sp != null ? sp + '%' : '—';
     const _p = 'padding:5px 8px;overflow:hidden;white-space:nowrap;';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
@@ -2715,8 +2715,8 @@ function mlCorrTab(name) {
     if (btn) {
       const on = t === name;
       btn.style.background   = on ? '#f59e0b22' : 'transparent';
-      btn.style.color        = on ? '#f59e0b'   : '#6b7280';
-      btn.style.borderColor  = on ? '#f59e0b'   : '#374151';
+      btn.style.color        = on ? SQ.amber   : '#6b7280';
+      btn.style.borderColor  = on ? SQ.amber   : '#374151';
     }
   });
   // Threshold slider only relevant for force graph
@@ -2842,7 +2842,7 @@ function buildMLHeatmap(cd) {
   if (!tipDiv) {
     tipDiv = document.createElement('div');
     tipDiv.id = 'ml-heatmap-tip';
-    tipDiv.style.cssText = 'position:fixed;background:#1c1c1c;border:1px solid #333;border-radius:5px;padding:7px 11px;font-size:11px;color:#e5e7eb;pointer-events:none;z-index:9999;display:none;line-height:1.6;box-shadow:0 4px 12px #000a';
+    tipDiv.style.cssText = 'position:fixed;background:#001a0a;border:1px solid #333;border-radius:5px;padding:7px 11px;font-size:11px;color:#e5e7eb;pointer-events:none;z-index:9999;display:none;line-height:1.6;box-shadow:0 4px 12px #000a';
     document.body.appendChild(tipDiv);
   }
 
@@ -2921,7 +2921,7 @@ function buildMLDendro(cd) {
 
     // Color: green for close clusters (correlated), amber/red for far (independent)
     const t = dist / maxDist;
-    ctx.strokeStyle = t < 0.33 ? '#00c832' : t < 0.66 ? '#f59e0b' : '#ff6b6b';
+    ctx.strokeStyle = t < 0.33 ? '#00c832' : t < 0.66 ? SQ.amber : '#ff6b6b';
     ctx.lineWidth   = 1;
 
     ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, ly); ctx.stroke();  // left arm
@@ -3171,7 +3171,7 @@ async function loadFeaturePanel(ticker='waf_ax') {
   _featContribChart=new Chart(ctx,{type:'bar',data:{labels:flabels,datasets:[{data:values,backgroundColor:colors,borderColor:borderC,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const f=top15[ctx.dataIndex];return[` Contribution: ${ctx.raw>=0?'+':''}${ctx.raw.toFixed(4)}%`,` Ridge weight: ${f.ridge_weight>=0?'+':''}${f.ridge_weight.toFixed(4)}`,` Std value: ${f.standardized>=0?'+':''}${f.standardized.toFixed(4)}`,` Spearman r: ${f.spearman_r>=0?'+':''}${f.spearman_r.toFixed(4)}  p=${f.p_value.toFixed(4)}`];}}}},scales:{x:{grid:{color:'#222'},ticks:{callback:v=>(v>=0?'+':'')+v.toFixed(2)+'%'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
   let allFeatures=[...(data.features||[])];let sortCol='contribution_pct';let sortDir=-1;let sigOnly=false;
   function renderTable(){const rows=allFeatures.filter(f=>!sigOnly||f.significant).sort((a,b)=>{const av=a[sortCol],bv=b[sortCol];if(typeof av==='boolean')return sortDir*(av===bv?0:av?-1:1);if(av==null)return 1;if(bv==null)return -1;return sortDir*(typeof av==='string'?av.localeCompare(bv):av-bv);});
-  const tbody=document.getElementById('feat-tbody');tbody.innerHTML=rows.map(f=>{const cColor=f.contribution_pct>=0?'var(--green)':'var(--red)';const rColor=f.spearman_r>=0?'var(--green)':'var(--red)';const pColor=f.p_value<0.01?'var(--green)':f.p_value<0.05?'#86efac':f.p_value<0.10?'#fbbf24':'var(--muted)';const sigBadge=f.significant?'<span style="color:var(--green);font-size:13px" title="p < 0.05">✓</span>':'<span style="color:#374151;font-size:13px">—</span>';const rawFmt=f.raw_value!=null?f.raw_value.toFixed(4):'—';const stdFmt=f.standardized!=null?(f.standardized>=0?'+':'')+f.standardized.toFixed(4):'—';const contFmt=(f.contribution_pct>=0?'+':'')+f.contribution_pct.toFixed(4)+'%';const wFmt=(f.ridge_weight>=0?'+':'')+f.ridge_weight.toFixed(5);const rFmt=(f.spearman_r>=0?'+':'')+f.spearman_r.toFixed(4);const pFmt=f.p_value.toFixed(4);return`<tr style="border-bottom:1px solid #1a1a1a" title="${f.tip}"><td style="padding:6px 10px;font-family:monospace;font-size:11px;color:#e5e7eb">${f.name}</td><td style="padding:6px 10px;font-size:11px;color:var(--muted)">${f.group}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${rawFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${stdFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${wFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${cColor}">${contFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${rColor}">${rFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${pColor}">${pFmt}</td><td style="padding:6px 10px;text-align:center">${sigBadge}</td></tr>`;}).join('');}
+  const tbody=document.getElementById('feat-tbody');tbody.innerHTML=rows.map(f=>{const cColor=f.contribution_pct>=0?'var(--green)':'var(--red)';const rColor=f.spearman_r>=0?'var(--green)':'var(--red)';const pColor=f.p_value<0.01?'var(--green)':f.p_value<0.05?'#86efac':f.p_value<0.10?SQ.amber:'var(--muted)';const sigBadge=f.significant?'<span style="color:var(--green);font-size:13px" title="p < 0.05">✓</span>':'<span style="color:#374151;font-size:13px">—</span>';const rawFmt=f.raw_value!=null?f.raw_value.toFixed(4):'—';const stdFmt=f.standardized!=null?(f.standardized>=0?'+':'')+f.standardized.toFixed(4):'—';const contFmt=(f.contribution_pct>=0?'+':'')+f.contribution_pct.toFixed(4)+'%';const wFmt=(f.ridge_weight>=0?'+':'')+f.ridge_weight.toFixed(5);const rFmt=(f.spearman_r>=0?'+':'')+f.spearman_r.toFixed(4);const pFmt=f.p_value.toFixed(4);return`<tr style="border-bottom:1px solid rgba(0,255,136,0.08)" title="${f.tip}"><td style="padding:6px 10px;font-family:monospace;font-size:11px;color:#e5e7eb">${f.name}</td><td style="padding:6px 10px;font-size:11px;color:var(--muted)">${f.group}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${rawFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${stdFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px">${wFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${cColor}">${contFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${rColor}">${rFmt}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;font-size:11px;color:${pColor}">${pFmt}</td><td style="padding:6px 10px;text-align:center">${sigBadge}</td></tr>`;}).join('');}
   document.querySelectorAll('#feat-table thead th[data-col]').forEach(th=>{th.addEventListener('click',()=>{const col=th.getAttribute('data-col');if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=col==='contribution_pct'?-1:(col==='p_value'?1:-1);}document.querySelectorAll('#feat-table thead th[data-col]').forEach(h=>{const base=h.textContent.replace(/ [↑↓]$/,'').replace(/ ↕$/,'');h.textContent=base+(h.getAttribute('data-col')===sortCol?(sortDir===-1?' ↓':' ↑'):' ↕');});renderTable();});});
   document.getElementById('feat-sig-only').addEventListener('change',e=>{sigOnly=e.target.checked;renderTable();});
   renderTable();
@@ -3220,7 +3220,7 @@ const _FEAT_CAT_MAP = {
 
 const _CAT_ORDER   = ['momentum','volume','volatility','trend','candle','short_interest','macro','interaction','announcement'];
 const _CAT_COLOURS = {
-  momentum:'#f59e0b', volume:'#00c832', volatility:'#f97316', trend:'#2dd4bf',
+  momentum:SQ.amber, volume:'#00c832', volatility:'#f97316', trend:'#2dd4bf',
   candle:'#a78bfa', short_interest:'#f472b6', macro:'#d97706', interaction:'#60a5fa', announcement:'#f5a520',
 };
 
@@ -3486,7 +3486,7 @@ async function renderPruningRoadmap(ticker) {
       prunedHtml = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Baseline — all ${baseFeats} features</div>`;
     } else if (pruned.length) {
       prunedHtml = pruned.map(p => {
-        const pColor = p.p_value > 0.5 ? 'var(--red)' : p.p_value > 0.2 ? '#f59e0b' : 'var(--muted)';
+        const pColor = p.p_value > 0.5 ? 'var(--red)' : p.p_value > 0.2 ? SQ.amber : 'var(--muted)';
         return `<div style="display:flex;align-items:baseline;gap:6px;font-size:11px;margin-bottom:3px">
           <span style="color:#f87171">✂</span>
           <span style="color:#e5e7eb;font-family:monospace">${p.name}</span>
@@ -3496,8 +3496,8 @@ async function renderPruningRoadmap(ticker) {
     }
 
     const h = r.feature_health || {};
-    const pctSigColor = (h.pct_significant > 60) ? 'var(--green)' : (h.pct_significant > 40) ? '#fbbf24' : 'var(--red)';
-    const avgPvalColor = (h.avg_pval < 0.2) ? 'var(--green)' : (h.avg_pval < 0.4) ? '#fbbf24' : 'var(--red)';
+    const pctSigColor = (h.pct_significant > 60) ? 'var(--green)' : (h.pct_significant > 40) ? SQ.amber : 'var(--red)';
+    const avgPvalColor = (h.avg_pval < 0.2) ? 'var(--green)' : (h.avg_pval < 0.4) ? SQ.amber : 'var(--red)';
     const isBestShr = !isBaseline && idx === bestShrIdx;
 
     const metricsHtml = `

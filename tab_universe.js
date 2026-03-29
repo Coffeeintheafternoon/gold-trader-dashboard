@@ -45,7 +45,7 @@ function _notesBadge(note) {
   const cfg = {
     'BANKRUPT':   { bg:'rgba(220,38,38,0.15)',  border:'rgba(220,38,38,0.5)',  color:'#f87171' },
     'DO NOT USE': { bg:'rgba(234,88,12,0.15)',  border:'rgba(234,88,12,0.5)',  color:'#fb923c' },
-    'DELIST RISK':{ bg:'rgba(234,179,8,0.12)',  border:'rgba(234,179,8,0.4)', color:'#fbbf24' },
+    'DELIST RISK':{ bg:'rgba(234,179,8,0.12)',  border:'rgba(234,179,8,0.4)', color:SQ.amber },
     'ILLIQUID':   { bg:'rgba(139,92,246,0.12)', border:'rgba(139,92,246,0.4)',color:'#a78bfa' },
     'MERGED':     { bg:'rgba(75,85,99,0.15)',   border:'rgba(75,85,99,0.5)',  color:'#9ca3af' },
     'NOTE':       { bg:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.4)',color:'#60a5fa' },
@@ -102,11 +102,11 @@ function _phaseBadge(t) {
   const phase = t.phase;
   if (!phase) return '';
   const styles = {
-    'Explorer':  'color:#60a5fa;border-color:#1d4ed8;background:rgba(29,78,216,0.12)',
-    'Developer': 'color:#fbbf24;border-color:#b45309;background:rgba(180,83,9,0.12)',
-    'Producer':  'color:#34d399;border-color:#065f46;background:rgba(6,95,70,0.12)',
+    'Explorer':  `color:${SQ.cyan};border-color:${hexA(SQ.cyan,0.4)};background:${hexA(SQ.cyan,0.10)}`,
+    'Developer': `color:${SQ.amber};border-color:${hexA(SQ.amber,0.4)};background:${hexA(SQ.amber,0.10)}`,
+    'Producer':  `color:${SQ.green};border-color:${hexA(SQ.green,0.4)};background:${hexA(SQ.green,0.10)}`,
   };
-  const s = styles[phase] || 'color:#9ca3af;border-color:#374151;background:transparent';
+  const s = styles[phase] || `color:${SQ.neutral};border-color:${hexA(SQ.neutral,0.3)};background:transparent`;
   return `<span style="display:inline-block;margin-top:2px;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid;letter-spacing:0.04em;${s}">${phase.toUpperCase()}</span>`;
 }
 
@@ -129,9 +129,9 @@ function _renderScreenerPage() {
     const phase=_phaseBadge(t);
     const sectorCell=`<td style="padding:6px 10px;font-size:11px"><div style="color:var(--muted)">${t.sector||'—'}</div>${phase}</td>`;
     if(t.error)return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;color:#6b7280;font-size:12px">${t.ticker}</td>${sectorCell}<td colspan="5" style="padding:6px 10px;color:#4b5563;font-size:11px">No data</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
-    const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?'#fbbf24':'var(--muted)';
-    const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?'#fbbf24':'var(--muted)';
-    const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?'#fbbf24':'var(--muted)';
+    const pfC=t.pf===null?'var(--muted)':t.pf>=1.10?'var(--green)':t.pf>=1.05?SQ.amber:'var(--muted)';
+    const shC=t.sharpe===null?'var(--muted)':t.sharpe>=0.5?'var(--green)':t.sharpe>=0.25?SQ.amber:'var(--muted)';
+    const retC=t.mean_ann_pct===null?'var(--muted)':t.mean_ann_pct>=20?'var(--green)':t.mean_ann_pct>=10?SQ.amber:'var(--muted)';
     const ciC=t.ci95_lower===null?'var(--muted)':t.ci95_lower>0?'var(--green)':'var(--red)';
     return`<tr ${clickable} style="border-bottom:1px solid #1a1a1a;${rowBg};cursor:pointer"><td style="padding:6px 10px;font-weight:600;color:#e5e7eb;font-size:12px">${t.ticker} <span style="font-size:10px;color:#444">→</span></td>${sectorCell}<td style="padding:6px 10px;text-align:right;font-family:monospace;color:${pfC}">${t.pf!=null?t.pf.toFixed(3):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${shC}">${t.sharpe!=null?t.sharpe.toFixed(2):'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${retC}">${t.mean_ann_pct!=null?(t.mean_ann_pct>=0?'+':'')+t.mean_ann_pct.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;font-family:monospace;color:${ciC}">${t.ci95_lower!=null?(t.ci95_lower>=0?'+':'')+t.ci95_lower.toFixed(1)+'%':'—'}</td><td style="padding:6px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:6px 10px">${badges}</td><td style="padding:6px 10px">${noteBadge}</td></tr>`;
   }).join('');
@@ -181,7 +181,7 @@ function _populateModelFilter() {
   sel.innerHTML = '<option value="">All Models</option>' + labels.map(l => `<option value="${l}">${l}</option>`).join('');
 }
 
-const _MVM_PALETTE = ['#f5a520','#10b981','#a78bfa','#60a5fa','#fb923c','#f472b6','#34d399','#fbbf24'];
+const _MVM_PALETTE = ['#f5a520','#10b981','#a78bfa','#60a5fa','#fb923c','#f472b6','#34d399',SQ.amber];
 const _mvmColFor = label => _MVM_PALETTE[_mvmAllLabels.indexOf(label) % _MVM_PALETTE.length];
 
 function _buildModelVsModel() {
@@ -262,7 +262,7 @@ function _renderMvmCharts() {
       const avgSh = valid.length ? valid.reduce((s, m) => s + m.ho_sharpe, 0) / valid.length : null;
       const edgePct = valid.length ? Math.round(valid.filter(m => m.ho_pf >= 1.10).length / valid.length * 100) : null;
       const col = _mvmColFor(label);
-      const shC = !on ? '#333' : avgSh == null ? 'var(--muted)' : avgSh >= 0.5 ? 'var(--green)' : avgSh >= 0 ? '#fbbf24' : 'var(--red)';
+      const shC = !on ? '#333' : avgSh == null ? 'var(--muted)' : avgSh >= 0.5 ? 'var(--green)' : avgSh >= 0 ? SQ.amber : 'var(--red)';
       return `<div class="hero-card" onclick="_toggleMvmModel('${label.replace(/'/g,"&#39;")}')" style="min-width:150px;border-top:2px solid ${on?col:'#222'};cursor:pointer;opacity:${on?1:0.4}">
         <div class="hero-label" style="color:${on?col:'#444'}">${label}</div>
         <div class="hero-value" style="color:${shC};font-size:22px">${avgSh != null ? avgSh.toFixed(2) : '—'}</div>
@@ -353,21 +353,21 @@ async function loadScreenerPanel() {
   const chartTickers=tickers.filter(t=>t.lr_p!==null&&t.lr_p!==undefined);
   const labels=chartTickers.map(t=>t.ticker),pvals=chartTickers.map(t=>t.lr_p),pfs=chartTickers.map(t=>t.lr_pf);
   const barColors=chartTickers.map(t=>t.verdict==='ACCEPT'?GREEN_75:t.verdict==='BORDERLINE'?'rgba(251,191,36,0.75)':RED_65);
-  const borderColors=chartTickers.map(t=>t.verdict==='ACCEPT'?GREEN:t.verdict==='BORDERLINE'?'#fbbf24':RED);
+  const borderColors=chartTickers.map(t=>t.verdict==='ACCEPT'?GREEN:t.verdict==='BORDERLINE'?SQ.amber:RED);
   const pCtx=document.getElementById('screener-pval-chart').getContext('2d');
   if(_screenerPvalChart)_screenerPvalChart.destroy();
   _screenerPvalChart=new Chart(pCtx,{type:'bar',data:{labels,datasets:[{data:pvals,backgroundColor:barColors,borderColor:borderColors,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const t=chartTickers[ctx.dataIndex];return[` p = ${ctx.raw.toFixed(3)}  →  ${t.verdict}`,` PF = ${t.lr_pf?.toFixed(3)??'—'}`,` ${t.note}`];}}},annotation:{annotations:{threshold:{type:'line',value:0.05,scaleID:'x',borderColor:'rgba(212,160,23,0.7)',borderWidth:2,borderDash:[5,4],label:{content:'p=0.05',display:true,position:'start',color:'#d4a017',font:{size:10}}}}}},scales:{x:{min:0,max:1,grid:{color:'#222'},ticks:{callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
   const pfCtx=document.getElementById('screener-pf-chart').getContext('2d');
   if(_screenerPfChart)_screenerPfChart.destroy();
   _screenerPfChart=new Chart(pfCtx,{type:'bar',data:{labels,datasets:[{data:pfs,backgroundColor:barColors,borderColor:borderColors,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const t=chartTickers[ctx.dataIndex];return[` PF = ${ctx.raw?.toFixed(3)}`,` p = ${t.lr_p?.toFixed(3)??'—'}`,` ${t.note}`];}}}},scales:{x:{min:0.9,grid:{color:'#222'},ticks:{callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
-  const VERDICT_STYLE={'ACCEPT':{bg:GREEN_12,border:GREEN_4,color:GREEN,label:'ACCEPT ✓'},'BORDERLINE':{bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.4)',color:'#fbbf24',label:'BORDERLINE ~'},'REJECT':{bg:RED_08,border:RED_3,color:RED,label:'REJECT ✗'},'ERROR':{bg:'rgba(107,114,128,0.08)',border:'rgba(107,114,128,0.3)',color:'#6b7280',label:'NO DATA'}};
+  const VERDICT_STYLE={'ACCEPT':{bg:GREEN_12,border:GREEN_4,color:GREEN,label:'ACCEPT ✓'},'BORDERLINE':{bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.4)',color:SQ.amber,label:'BORDERLINE ~'},'REJECT':{bg:RED_08,border:RED_3,color:RED,label:'REJECT ✗'},'ERROR':{bg:'rgba(107,114,128,0.08)',border:'rgba(107,114,128,0.3)',color:'#6b7280',label:'NO DATA'}};
   document.getElementById('screener-tbody').innerHTML=tickers.map((t,i)=>{
     const vs=VERDICT_STYLE[t.verdict]||VERDICT_STYLE.REJECT;
-    const pvalC=t.lr_p!==null?(t.lr_p<0.01?'var(--green)':t.lr_p<0.05?'#86efac':t.lr_p<0.10?'#fbbf24':'var(--muted)'):'var(--muted)';
+    const pvalC=t.lr_p!==null?(t.lr_p<0.01?'var(--green)':t.lr_p<0.05?hexA(SQ.green,0.75):t.lr_p<0.10?SQ.amber:'var(--muted)'):'var(--muted)';
     const rowBg=i%2===0?'':'background:#111';
-    const se=t.lr_se_ann,seC=se===null?'var(--muted)':se<2?'var(--green)':se<5?'#fbbf24':'var(--red)',seStr=se!==null?se.toFixed(2)+'%':'—';
+    const se=t.lr_se_ann,seC=se===null?'var(--muted)':se<2?'var(--green)':se<5?SQ.amber:'var(--red)',seStr=se!==null?se.toFixed(2)+'%':'—';
     const ci=t.lr_ci95_lower,ciC=ci===null?'var(--muted)':ci>0?'var(--green)':'var(--red)',ciStr=ci!==null?(ci>=0?'+':'')+ci.toFixed(2)+'%':'—';
-    const sharpe=t.lr_sharpe,sharpeStr=sharpe!==null?sharpe.toFixed(2):'—',sharpeC=sharpe===null?'var(--muted)':sharpe>0.5?'var(--green)':sharpe>0.25?'#fbbf24':'var(--muted)';
+    const sharpe=t.lr_sharpe,sharpeStr=sharpe!==null?sharpe.toFixed(2):'—',sharpeC=sharpe===null?'var(--muted)':sharpe>0.5?'var(--green)':sharpe>0.25?SQ.amber:'var(--muted)';
     return`<tr style="border-bottom:1px solid #1a1a1a;${rowBg}"><td style="padding:7px 10px;font-weight:600;color:#e5e7eb;font-size:13px">${t.ticker}</td><td style="padding:7px 10px;color:var(--muted);font-size:11px;white-space:nowrap">${t.sector}</td><td style="padding:7px 10px;text-align:center"><span style="font-size:11px;font-weight:700;color:${vs.color};background:${vs.bg};border:1px solid ${vs.border};padding:2px 8px;border-radius:4px;white-space:nowrap">${vs.label}</span></td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pvalC}">${t.lr_p!==null?t.lr_p.toFixed(3):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace">${t.lr_pf!==null?t.lr_pf?.toFixed(3):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${sharpeC}">${sharpeStr}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${seC}">${seStr}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${ciC}">${ciStr}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:var(--muted)">${t.don_p!==null?t.don_p?.toFixed(3):'—'}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:var(--muted)">${t.don_pf!==null?t.don_pf?.toFixed(3):'—'}</td><td style="padding:7px 10px;text-align:right;color:var(--muted)">${t.oos_bars?.toLocaleString()??'—'}</td><td style="padding:7px 10px;color:#4b5563;font-size:11px">${t.note}</td></tr>`;
   }).join('');
 }
@@ -405,7 +405,7 @@ async function loadComparisonPanel() {
   document.getElementById('comp-tbody').innerHTML=tickers.map(t=>{
     const isBuy=t.signal===1,sc=isBuy?'var(--green)':'var(--red)';
     const pc=t.predicted_5bar_pct>=0?'var(--green)':'var(--red)';
-    const pvalC=t.mcpt_p<0.01?'var(--green)':t.mcpt_p<0.05?'#86efac':'#fbbf24';
+    const pvalC=t.mcpt_p<0.01?'var(--green)':t.mcpt_p<0.05?hexA(SQ.green,0.75):SQ.amber;
     const top=t.top_features?.[0];
     const topStr=top?`<span style="font-size:11px;font-family:monospace">${top.name}</span> <span style="color:${top.contribution_pct>=0?'var(--green)':'var(--red)'}">${top.contribution_pct>=0?'+':''}${top.contribution_pct.toFixed(3)}%</span>`:'—';
     const safe=t.ticker.replace(/\./g,'_').toLowerCase();
@@ -449,7 +449,7 @@ function _renderModelGlossary() {
       tools: ['fetcher', 'macro_fetcher', 'feature_builder', 'asic_short_fetcher', 'announcement_store'],
       validation: 'MCPT p < 0.05',
       status: 'EXPERIMENTAL',
-      statusColor: '#fbbf24',
+      statusColor: SQ.amber,
       notes: 'Improved prune formula. sign_pct removed — a feature predicting UP in bull and DOWN in bear is valid, not a sign-flipper.',
     },
     {
@@ -460,7 +460,7 @@ function _renderModelGlossary() {
       tools: ['fetcher', 'macro_fetcher', 'feature_builder', 'asic_short_fetcher', 'announcement_store'],
       validation: 'MCPT p < 0.05',
       status: 'EXPERIMENTAL',
-      statusColor: '#fbbf24',
+      statusColor: SQ.amber,
       notes: 'Best pruning strategy. Run via: python scripts/run_ridge_v3.py --tickers TICKER.AX',
     },
     // ── Regime-weighted ───────────────────────────────────────────────────
@@ -562,7 +562,7 @@ function _renderModelGlossary() {
       tools: ['fetcher (OHLCV only)'],
       validation: 'MCPT p < 0.05',
       status: 'ACTIVE — REGIME CONDITIONAL',
-      statusColor: '#fbbf24',
+      statusColor: SQ.amber,
       notes: 'Bollinger-band mean reversion. Best in QUIET_RANGE (PF=1.397). Bad in VOLATILE_CHOP (PF=0.459). Use regime-conditional weighting.',
     },
     {

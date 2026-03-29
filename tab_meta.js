@@ -1,32 +1,13 @@
 // tab_meta.js — Rich meta analysis: screener_full.json + meta_features.json
 
-const _CAT_COLOR={
-  'macro':        'rgba(167,139,250,0.85)',
-  'momentum':     'rgba(245,165,32,0.85)',
-  'interaction':  'rgba(59,130,246,0.85)',
-  'volume':       'rgba(52,211,153,0.85)',
-  'announcement': 'rgba(248,113,113,0.80)',
-  'volatility':   'rgba(251,191,36,0.75)',
-  'candle':       'rgba(156,163,175,0.70)',
-  'trend':        'rgba(110,231,183,0.75)',
-  'other':        'rgba(107,114,128,0.60)',
-};
+const _CAT_COLOR=Object.fromEntries(
+  Object.entries(SQ.cat).map(([k,v])=>[k,hexA(v,0.85)])
+);
 
-const _MT_COLOR={
-  'Ridge (v5)':         'rgba(245,165,32,0.90)',
-  'Ridge (v4)':         'rgba(16,185,129,0.85)',
-  'Ridge (1yr)':        'rgba(245,165,32,0.75)',
-  'Ridge (6mo)':        'rgba(251,191,36,0.55)',
-  'Ridge (v2)':         'rgba(59,130,246,0.80)',
-  'Ridge (v3)':         'rgba(96,165,250,0.80)',
-  'Regime-Weighted 3M': 'rgba(167,139,250,0.85)',
-  'Regime-Weighted 6M': 'rgba(139,92,246,0.85)',
-  'Regime-Weighted 1Y': 'rgba(109,40,217,0.85)',
-  '18yr · 1yr window':  'rgba(239,68,68,0.75)',
-  '18yr · 6mo window':  'rgba(252,165,165,0.65)',
-  '18yr · 2yr window':  'rgba(185,28,28,0.75)',
-};
-const _SEC_PAL=['rgba(245,165,32,0.75)','rgba(59,130,246,0.75)','rgba(16,185,129,0.75)','rgba(239,68,68,0.75)','rgba(167,139,250,0.8)','rgba(251,191,36,0.6)','rgba(52,211,153,0.75)','rgba(248,113,113,0.7)','rgba(196,181,253,0.7)','rgba(134,239,172,0.7)','rgba(253,186,116,0.7)','rgba(147,197,253,0.7)','rgba(216,180,254,0.7)','rgba(252,211,77,0.7)','rgba(110,231,183,0.7)'];
+const _MT_COLOR=Object.fromEntries(
+  Object.entries(SQ.model).map(([k,v])=>[k,hexA(v,0.88)])
+);
+const _SEC_PAL=Array.from({length:15},(_,i)=>sqColorA(i,0.80));
 
 // Hard-coded market caps (USD) from yfinance — avoids a JSON fetch
 const _MC={
@@ -222,13 +203,13 @@ function _buildMetaTab(){
       data:{datasets:scDatasets},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{
-          legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:7}},
+          legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:7}},
           tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(p?.ticker)return[`${p.ticker} · ${p.mt||p.sec}`,`IS: ${p.x?.toFixed(3)} → HO: ${p.y?.toFixed(3)}`];return'IS = HO line';}}},
           zoom:_zoom('xy'),
         },
         scales:{
-          x:{title:{display:true,text:'IS Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}}},
-          y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}}},
+          x:{title:{display:true,text:'IS Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:10}}},
+          y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:10}}},
         }
       }
     });
@@ -270,14 +251,14 @@ function _buildMetaTab(){
   const pfHist=pfBins.map(b=>valid.filter(r=>r.ho_pf>=b&&r.ho_pf<b+0.05).length);
   const pfHC=pfBins.map(b=>b>=1.10?GREEN_7:b>=1.00?'rgba(251,191,36,0.6)':RED_6);
   const hCtx=el('meta-pf-hist-chart')?.getContext('2d');
-  if(hCtx){if(_metaPfHistChart)_metaPfHistChart.destroy();_metaPfHistChart=new Chart(hCtx,{type:'bar',data:{labels:pfBins.map(b=>b.toFixed(2)),datasets:[{data:pfHist,backgroundColor:pfHC,borderColor:pfHC,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} models`}}},scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:9}},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:10}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>Math.round(v)}}}}});}
+  if(hCtx){if(_metaPfHistChart)_metaPfHistChart.destroy();_metaPfHistChart=new Chart(hCtx,{type:'bar',data:{labels:pfBins.map(b=>b.toFixed(2)),datasets:[{data:pfHist,backgroundColor:pfHC,borderColor:pfHC,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} models`}}},scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9}},title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:10}}},y:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>Math.round(v)}}}}});}
 
   // ── HO Sharpe Histogram ───────────────────────────────────────────────────
   const shrBins=[];for(let b=-2.0;b<3.5;b+=0.25)shrBins.push(b);
   const shrHist=shrBins.map(b=>shrArr.filter(r=>r.ho_sharpe>=b&&r.ho_sharpe<b+0.25).length);
   const shrHC=shrBins.map(b=>b>=0.5?GREEN_7:b>=0.0?'rgba(251,191,36,0.6)':RED_6);
   const shCtx=el('meta-sharpe-hist-chart')?.getContext('2d');
-  if(shCtx){if(_metaSharpeChart)_metaSharpeChart.destroy();_metaSharpeChart=new Chart(shCtx,{type:'bar',data:{labels:shrBins.map(b=>b.toFixed(2)),datasets:[{data:shrHist,backgroundColor:shrHC,borderColor:shrHC,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} models`}}},scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:9}},title:{display:true,text:'HO Sharpe',color:'#6b7280',font:{size:10}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>Math.round(v)}}}}}); }
+  if(shCtx){if(_metaSharpeChart)_metaSharpeChart.destroy();_metaSharpeChart=new Chart(shCtx,{type:'bar',data:{labels:shrBins.map(b=>b.toFixed(2)),datasets:[{data:shrHist,backgroundColor:shrHC,borderColor:shrHC,borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} models`}}},scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9}},title:{display:true,text:'HO Sharpe',color:SQ.muted,font:{size:10}}},y:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>Math.round(v)}}}}}); }
 
   // ── Sector avg HO PF chart ────────────────────────────────────────────────
   const secMap={};
@@ -292,7 +273,7 @@ function _buildMetaTab(){
   const secAvgPF=secEntries.map(([,d])=>d.valid?+(d.pfSum/d.valid).toFixed(3):0);
   const secBC=secAvgPF.map(v=>v>=1.10?GREEN_7:v>=1.05?'rgba(251,191,36,0.7)':RED_55);
   const scSecCtx=el('meta-sector-pf-chart')?.getContext('2d');
-  if(scSecCtx){if(_metaSectorChart)_metaSectorChart.destroy();_metaSectorChart=new Chart(scSecCtx,{type:'bar',data:{labels:secLabels,datasets:[{data:secAvgPF,backgroundColor:secBC,borderColor:secBC,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>[` Avg HO PF: ${ctx.raw.toFixed(3)}`,` ${secEntries[ctx.dataIndex][1].edge}/${secEntries[ctx.dataIndex][1].valid} with HO PF≥1.10`]}}},scales:{x:{min:0.90,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}}); }
+  if(scSecCtx){if(_metaSectorChart)_metaSectorChart.destroy();_metaSectorChart=new Chart(scSecCtx,{type:'bar',data:{labels:secLabels,datasets:[{data:secAvgPF,backgroundColor:secBC,borderColor:secBC,borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>[` Avg HO PF: ${ctx.raw.toFixed(3)}`,` ${secEntries[ctx.dataIndex][1].edge}/${secEntries[ctx.dataIndex][1].valid} with HO PF≥1.10`]}}},scales:{x:{min:0.90,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v.toFixed(2)}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}}); }
 
   // ── Sector pass rate table ────────────────────────────────────────────────
   el('meta-sector-tbody').innerHTML=secEntries.map(([name,d])=>{
@@ -415,13 +396,13 @@ function _buildDistChart(canvasId, groups, order){
     {type:'line',label:'_edge',data:[{x:-0.5,y:1.10},{x:order.length-0.5,y:1.10}],borderColor:'rgba(16,185,129,0.20)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0},
   ]},options:{responsive:true,maintainAspectRatio:false,
     plugins:{
-      legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+      legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
       tooltip:{callbacks:{label:ctx=>{const p=ctx.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`HO PF: ${p.y?.toFixed(3)}`];if(p?.grp&&p.n)return[`${p.grp} mean`,`Avg HO PF: ${p.y?.toFixed(3)} (n=${p.n})`];return[];}}},
       zoom:_zoom('xy'),
     },
     scales:{
-      x:{min:-0.5,max:order.length-0.5,grid:{color:'#1a1a1a'},ticks:{color:'#9ca3af',font:{size:9},maxRotation:40,callback:(v)=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
-      y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},
+      x:{min:-0.5,max:order.length-0.5,grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9},maxRotation:40,callback:(v)=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
+      y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},
     },
   }});
   _addResetZoom(_dc.canvas,_dc);
@@ -495,8 +476,8 @@ function _buildFeatureCharts(filtered){
     const _cc=new Chart(ctx,{type:'bar',
       data:{labels:[],datasets:[]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`}}},
-        scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`}}},
+        scales:{x:{stacked:true,max:100,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}
     });
     return _cc;
   }
@@ -600,7 +581,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
   if(c1) _advCharts[0]=new Chart(c1,{type:'bar',
     data:{labels:decayE.map(e=>e.s),datasets:[{data:decayE.map(e=>+e.avg.toFixed(1)),backgroundColor:decayE.map(e=>e.avg>25?RED_55:e.avg>15?'rgba(251,191,36,0.65)':GREEN_7),borderWidth:0,borderRadius:3}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`IS→HO decay: ${c.raw.toFixed(1)}%`}}},
-      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+      scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
 
   // ── 2. Cumulative Pass Rate by PF threshold ────────────────────────────────
   D(1);
@@ -611,7 +592,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
   if(c2) _advCharts[1]=new Chart(c2,{type:'line',
     data:{labels:thresholds.map(t=>t.toFixed(2)),datasets:[{label:'% models ≥ threshold',data:cumPass,borderColor:'rgba(245,165,32,0.85)',backgroundColor:'rgba(245,165,32,0.07)',borderWidth:2,fill:true,tension:0.3,pointRadius:5,pointHoverRadius:8,pointBackgroundColor:thresholds.map(t=>t>=1.10?GREEN_7:'rgba(245,165,32,0.85)')}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}% of models pass HO PF ≥ ${thresholds[c.dataIndex].toFixed(2)}`}},zoom:_zoom('xy')},
-      scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',font:{size:10}},title:{display:true,text:'HO PF Threshold',color:'#6b7280',font:{size:11}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:'#6b7280',font:{size:11}}}}}});
+      scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:10}},title:{display:true,text:'HO PF Threshold',color:SQ.muted,font:{size:11}}},y:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:SQ.muted,font:{size:11}}}}}});
   _addResetZoom(_advCharts[1].canvas,_advCharts[1]);
 
   // ── 3. HO Sharpe vs HO PF scatter ─────────────────────────────────────────
@@ -625,7 +606,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     ds3.push({type:'line',label:'_v',data:[{x:0.5,y:0.4},{x:0.5,y:2.8}],borderColor:'rgba(245,165,32,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
     _advCharts[2]=new Chart(c3,{data:{datasets:ds3},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Sharpe: ${p.x?.toFixed(2)} · PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:'HO Sharpe',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{title:{display:true,text:'HO Sharpe',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
   _addResetZoom(_advCharts[2].canvas,_advCharts[2]);
   }
 
@@ -638,8 +619,8 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     const ds4=mt4.map(mt=>({type:'scatter',label:mt,data:fcV.filter(r=>r.model_type===mt).map(r=>({x:r.feature_count,y:r.ho_pf,ticker:r.ticker,mt})),backgroundColor:_MT_COLOR[mt]||'rgba(107,114,128,0.55)',pointRadius:4,pointHoverRadius:7}));
     ds4.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:120,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
     _advCharts[3]=new Chart(c4,{data:{datasets:ds4},options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.mt})`,`${p.x} features · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:'Final feature count after pruning',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.mt})`,`${p.x} features · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
+      scales:{x:{title:{display:true,text:'Final feature count after pruning',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
   _addResetZoom(_advCharts[3].canvas,_advCharts[3]);
   }
 
@@ -654,7 +635,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     ds5.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:1,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
     _advCharts[4]=new Chart(c5,{data:{datasets:ds5},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Stability: ${p.x?.toFixed(3)} · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{min:0,max:1,title:{display:true,text:'Avg feature stability (0=random · 1=always same direction)',color:'#6b7280',font:{size:10}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{min:0,max:1,title:{display:true,text:'Avg feature stability (0=random · 1=always same direction)',color:SQ.muted,font:{size:10}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
   _addResetZoom(_advCharts[4].canvas,_advCharts[4]);
   }
 
@@ -669,7 +650,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     ds6.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:1,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
     _advCharts[5]=new Chart(c6,{data:{datasets:ds6},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Sign consistency: ${(p.x*100).toFixed(1)}% · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{min:0,max:1,title:{display:true,text:'Avg sign consistency % (features pointing same direction)',color:'#6b7280',font:{size:10}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>(v*100).toFixed(0)+'%'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{min:0,max:1,title:{display:true,text:'Avg sign consistency % (features pointing same direction)',color:SQ.muted,font:{size:10}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>(v*100).toFixed(0)+'%'}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
   _addResetZoom(_advCharts[5].canvas,_advCharts[5]);
   }
 
@@ -685,8 +666,8 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
       {label:'MEDIUM',data:ofSecs.map(s=>ofPct(s,'MEDIUM')),backgroundColor:'rgba(251,191,36,0.70)',borderWidth:0},
       {label:'HIGH',data:ofSecs.map(s=>ofPct(s,'HIGH')),backgroundColor:RED_55,borderWidth:0},
     ]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models`}}},
-      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models`}}},
+      scales:{x:{stacked:true,max:100,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
 
   // ── 8. Feature category directional bias — boxplots ───────────────────────
   D(7);
@@ -731,8 +712,8 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
           }}},
         },
         scales:{
-          x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'‰'},title:{display:true,text:'Signed weight ‰  (+  bullish · −  bearish)',color:'#6b7280',font:{size:10}}},
-          y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+          x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'‰'},title:{display:true,text:'Signed weight ‰  (+  bullish · −  bearish)',color:SQ.muted,font:{size:10}}},
+          y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}
         }
       }
     });
@@ -760,8 +741,8 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
       data:top10.map(feat=>{const models=joined.filter(m=>m.features.some(f=>f.name===feat));if(!models.length)return 0;const cnt=models.filter(m=>m.features.some(f=>f.name===feat&&f.rank>lo&&f.rank<=hi)).length;return+(cnt/models.length*100).toFixed(1);}),
       backgroundColor:col,borderWidth:0,
     }))},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models using this feature`}}},
-      scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}% of models using this feature`}}},
+      scales:{x:{stacked:true,max:100,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}},y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -810,10 +791,10 @@ function _buildTradeCharts(filtered,joined){
       {type:'scatter',label:'Mean',data:mPts,backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:12,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
       {type:'line',label:'_thr',data:[{x:-0.5,y:50},{x:order.length-0.5,y:50}],borderColor:'rgba(245,165,32,0.35)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0},
     ]},options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
         tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`Win rate: ${p.y?.toFixed(1)}% · ${p.n} trades`];if(p?.grp&&p.n)return[`${p.grp} mean`,`${p.y?.toFixed(1)}%`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{min:-0.5,max:order.length-0.5,grid:{color:'#1a1a1a'},ticks:{color:'#9ca3af',font:{size:9},maxRotation:40,callback:v=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
-        y:{min:0,max:100,title:{display:true,text:'Win Rate %',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}}}}});
+      scales:{x:{min:-0.5,max:order.length-0.5,grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:9},maxRotation:40,callback:v=>{const i=Math.round(v);return(Math.abs(v-i)<0.01&&i>=0&&i<order.length)?order[i]:null;}}},
+        y:{min:0,max:100,title:{display:true,text:'Win Rate %',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}}}}});
     const thr=el(thrId),thrv=el(thrId+'-val');
     if(thr){thr.addEventListener('input',()=>{const v=+thr.value;if(thrv)thrv.textContent=v+'%';chart.data.datasets[4].data=[{x:-0.5,y:v},{x:order.length-0.5,y:v}];chart.update('none');});}
     _addResetZoom(chart.canvas,chart);
@@ -838,7 +819,7 @@ function _buildTradeCharts(filtered,joined){
       data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(2)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Payoff: ${c.raw?.toFixed(2)}x`,`avg win ÷ avg |loss| · n=${entries[c.dataIndex].n} models`]}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'},title:{display:true,text:'Payoff ratio (avg win ÷ avg |loss|)  ·  >1.0 = wins bigger than losses',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'x'},title:{display:true,text:'Payoff ratio (avg win ÷ avg |loss|)  ·  >1.0 = wins bigger than losses',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _pb;
   }
   _GBfn['tr2']=function(gb){
@@ -858,8 +839,8 @@ function _buildTradeCharts(filtered,joined){
     const _db=new Chart(ctx,{type:'bar',
       data:{labels:order,datasets:[{label:'Long',data:lp,backgroundColor:'rgba(16,185,129,0.65)',borderWidth:0},{label:'Short',data:lp.map(v=>+(100-v).toFixed(1)),backgroundColor:'rgba(239,68,68,0.55)',borderWidth:0}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}%`}}},
-        scales:{x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of HO trades by direction',color:'#6b7280',font:{size:10}}},y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(1)}%`}}},
+        scales:{x:{stacked:true,max:100,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'% of HO trades by direction',color:SQ.muted,font:{size:10}}},y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _db;
   }
   _GBfn['tr3']=function(gb){
@@ -881,7 +862,7 @@ function _buildTradeCharts(filtered,joined){
       data:{labels:entries.map(e=>e.g),datasets:[{data:entries.map(e=>+e.avg.toFixed(3)),backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[`Avg trade: ${c.raw.toFixed(3)}%`,`n=${entries[c.dataIndex].n} models`]}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'Avg return per HO trade  ·  positive = net profitable per trade',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'Avg return per HO trade  ·  positive = net profitable per trade',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _ar;
   }
   _GBfn['tr4']=function(gb){
@@ -909,7 +890,7 @@ function _buildTradeCharts(filtered,joined){
     datasets.push({type:'line',label:'_r',data:[{x:15,y:0.4},{x:15,y:2.8}],borderColor:'rgba(245,165,32,0.18)',borderDash:[3,4],borderWidth:1,pointRadius:0,fill:false,tension:0,order:0});
     const chart=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.grp})`,`${p.x} trades · HO PF: ${p.y?.toFixed(3)}`,`Win rate: ${p.wr!=null?(p.wr*100).toFixed(1)+'%':'n/a'}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:'HO trade count',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{title:{display:true,text:'HO trade count',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
     if(minEl){minEl.addEventListener('input',()=>{const minN=+minEl.value;if(minVEl)minVEl.textContent='≥ '+minN;const nd=makeDS(minN);for(let i=0;i<order.length;i++)chart.data.datasets[i].data=nd[i].data;chart.update('none');});}
     _addResetZoom(chart.canvas,chart);
     return chart;
@@ -945,10 +926,10 @@ function _buildTradeCharts(filtered,joined){
     // Breakeven curve: win% * payoff = 100
     datasets.push({type:'line',label:'_be',data:[30,35,40,45,50,55,60,65,70,75,80].map(x=>({x,y:+(100/x).toFixed(2)})),borderColor:'rgba(255,255,255,0.12)',borderDash:[3,3],borderWidth:1,pointRadius:0,fill:false,tension:0.3,order:0});
     const _m1=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
         tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Win: ${p.x?.toFixed(1)}% · Payoff: ${p.y?.toFixed(2)}x`,`HO PF: ${p.pf?.toFixed(3)} · ${p.n} trades`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{min:20,max:90,title:{display:true,text:'Win Rate % (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},
-        y:{min:0,title:{display:true,text:'Payoff Ratio',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'}}}}});
+      scales:{x:{min:20,max:90,title:{display:true,text:'Win Rate % (HO)',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}},
+        y:{min:0,title:{display:true,text:'Payoff Ratio',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'x'}}}}});
     _addResetZoom(_m1.canvas,_m1);
     return _m1;
   }
@@ -978,7 +959,7 @@ function _buildTradeCharts(filtered,joined){
     datasets.push({type:'line',label:'_e',data:[{x:0,y:1.10},{x:60,y:1.10}],borderColor:'rgba(16,185,129,0.18)',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false,tension:0,order:0});
     const _hc=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Avg hold: ${p.x?.toFixed(1)} bars · HO PF: ${p.y?.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:'Avg holding period (bars per trade)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{title:{display:true,text:'Avg holding period (bars per trade)',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
     _addResetZoom(_hc.canvas,_hc);
     return _hc;
   }
@@ -999,8 +980,8 @@ function _buildTradeCharts(filtered,joined){
         {label:'Avg Best Trade',data:entries.map(e=>e.best),backgroundColor:'rgba(16,185,129,0.55)',borderColor:'rgba(16,185,129,0.7)',borderWidth:1,borderRadius:2},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw?.toFixed(2)}%`,`n=${entries[c.dataIndex].n} models`]}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:`Avg ${mode==='ho'?'HO (holdout)':'IS (in-sample)'} trade extremes by group`,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw?.toFixed(2)}%`,`n=${entries[c.dataIndex].n} models`]}}},
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:`Avg ${mode==='ho'?'HO (holdout)':'IS (in-sample)'} trade extremes by group`,color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _rb;
   }
   let _m3HoIsMode='ho';
@@ -1033,8 +1014,8 @@ function _buildTradeCharts(filtered,joined){
         {label:'HO avg trades',data:hoAvg,backgroundColor:'rgba(245,165,32,0.70)',borderWidth:0,borderRadius:2},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw.toFixed(1)}`,`HO/IS ratio: ${ratio[c.dataIndex]!=null?ratio[c.dataIndex].toFixed(2)+'×':'n/a'}`]}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg trade count  ·  tooltip shows HO÷IS ratio',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>[`${c.dataset.label}: ${c.raw.toFixed(1)}`,`HO/IS ratio: ${ratio[c.dataIndex]!=null?ratio[c.dataIndex].toFixed(2)+'×':'n/a'}`]}}},
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'Avg trade count  ·  tooltip shows HO÷IS ratio',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _tf;
   }
   _GBfn['m4']=function(gb){
@@ -1066,8 +1047,8 @@ function _buildTradeCharts(filtered,joined){
         {label:'Short',data:sv,backgroundColor:'rgba(59,130,246,0.65)',borderWidth:0,borderRadius:2},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(mode==='wr'?1:3)+'%':'n/a'}`}}},
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:xl,color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}}});
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(mode==='wr'?1:3)+'%':'n/a'}`}}},
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:xl,color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
     return _ls;
   }
   let _m5MetricMode='wr';
@@ -1170,10 +1151,10 @@ function _buildEdgeIntelCharts(joined){
         {label:'Avg HO PF when excluded',data:show.map(e=>+e.excAvg.toFixed(4)),backgroundColor:'rgba(107,114,128,0.38)',borderWidth:0,borderRadius:3},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},
           tooltip:{callbacks:{label:c=>{const e=show[c.dataIndex];return c.datasetIndex===0?[`Included (n=${e.n}): ${c.raw?.toFixed(4)}`,`Δ vs excluded: ${e.diff>=0?'+':''}${e.diff.toFixed(4)}`]:[`Excluded: ${c.raw?.toFixed(4)}`];}}}},
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO Profit Factor  ·  gap = alpha contribution of this feature',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}}});
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'Avg HO Profit Factor  ·  gap = alpha contribution of this feature',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}});
   })();
 
   // ── C: Win Rate → HO PF + Payoff → HO PF scatter ─────────────────────────
@@ -1188,7 +1169,7 @@ function _buildEdgeIntelCharts(joined){
     const _eiC=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker}`,mode==='wr'?`Win rate: ${p.x.toFixed(1)}%`:`Payoff: ${p.x.toFixed(2)}x`,`HO PF: ${p.y.toFixed(3)}`];return[];}}},zoom:_zoom('xy')},
-      scales:{x:{title:{display:true,text:mode==='wr'?'Win Rate % (HO)':'Payoff Ratio (HO)',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>mode==='wr'?v+'%':v+'x'}},y:{title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'}}}}});
+      scales:{x:{title:{display:true,text:mode==='wr'?'Win Rate % (HO)':'Payoff Ratio (HO)',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>mode==='wr'?v+'%':v+'x'}},y:{title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted}}}}});
     _addResetZoom(_eiC.canvas,_eiC);
   });
 
@@ -1210,10 +1191,10 @@ function _buildEdgeIntelCharts(joined){
         {type:'scatter',label:'Avg HO PF',data:entries.map((e,i)=>({x:i,y:e.avg,n:e.n,ticker:e.ticker})),backgroundColor:'rgba(245,165,32,0.95)',pointStyle:'crossRot',pointRadius:9,borderColor:'rgba(245,165,32,0.95)',borderWidth:2.5},
       ]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},
           tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0){const e=entries[c.dataIndex];return[`${e.ticker} · ${e.n} variants`,`Range: ${e.min.toFixed(3)} → ${e.max.toFixed(3)}`,`Avg: ${e.avg.toFixed(3)} · ${e.allGood?'✓ all pass':e.someGood?'~ mixed':'✗ none pass'}`];}const p=c.raw;return[`Avg HO PF: ${p.y?.toFixed(3)}`];}}}},
         },
-        scales:{x:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9},maxRotation:45}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'HO Profit Factor',color:'#6b7280',font:{size:11}}}}});
+        scales:{x:{grid:{display:false},ticks:{color:SQ.muted,font:{size:9},maxRotation:45}},y:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'HO Profit Factor',color:SQ.muted,font:{size:11}}}}});
   })();
 }
 
@@ -1301,10 +1282,10 @@ function _buildFeatureInteractionCharts(joined,topFeats){
         {label:'Avg HO PF (pair absent)',data:top20.map(p=>p.avgOut!=null?+p.avgOut.toFixed(4):null),backgroundColor:'rgba(107,114,128,0.35)',borderWidth:0,borderRadius:3},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},
           tooltip:{callbacks:{label:c=>{const p=top20[c.dataIndex];return c.datasetIndex===0?[`n=${p.n} models · avg HO PF: ${p.avg.toFixed(4)}`,`Δ vs without pair: ${p.diff>=0?'+':''}${p.diff.toFixed(4)}`]:[`Without this pair: ${c.raw?.toFixed(4)}`];}}}},
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when both features appear in the same model',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}});
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'Avg HO PF when both features appear in the same model',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:9}}}}});
   })();
 
   // ── FI-3: Category co-occurrence avg HO PF ────────────────────────────────
@@ -1335,7 +1316,7 @@ function _buildFeatureInteractionCharts(joined,topFeats){
         plugins:{legend:{display:false},
           tooltip:{callbacks:{label:c=>{const p=pairs[c.dataIndex];return[`${p.a} + ${p.b}`,`Avg HO PF: ${p.avg.toFixed(4)} · n=${p.n} models`,`Pass rate: ${(p.passRate*100).toFixed(0)}% above 1.10`];}}}},
         },
-        scales:{x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'Avg HO PF when model has features from both categories',color:'#6b7280',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:9}}}}});
+        scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'Avg HO PF when model has features from both categories',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:9}}}}});
   })();
 }
 
@@ -1381,8 +1362,8 @@ function _buildTradeMechanicsCharts(joined){
           ];}}}},
         },
         scales:{
-          x:{grid:{color:'#1a1a1a'},ticks:{color:'#6b7280'},title:{display:true,text:'EV = (win_rate × payoff) − (1 − win_rate)  ·  >0 = profitable · <0 = guaranteed losing',color:'#6b7280',font:{size:10}}},
-          y:{grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+          x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'EV = (win_rate × payoff) − (1 − win_rate)  ·  >0 = profitable · <0 = guaranteed losing',color:SQ.muted,font:{size:10}}},
+          y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}
         }});
   }
   const secGrp={},mcGrp={};
@@ -1429,11 +1410,11 @@ function _buildTradeMechanicsCharts(joined){
     // Breakeven curve
     datasets.push({type:'line',label:'_be',data:[30,35,40,45,50,55,60,65,70,75,80].map(x=>({x,y:+(1/( x/100)).toFixed(2)})),borderColor:'rgba(245,165,32,0.20)',borderDash:[2,4],borderWidth:1.5,pointRadius:0,fill:false,tension:0.3,order:0});
     const _tm3=new Chart(ctx,{data:{datasets},options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6,filter:i=>!i.text.startsWith('_')}},
         tooltip:{callbacks:{label:c=>{const p=c.raw;if(p?.ticker)return[`${p.ticker} (${p.sec})`,`Win: ${p.x?.toFixed(1)}% · Payoff: ${p.y?.toFixed(2)}x`,`HO PF: ${p.pf?.toFixed(3)} · ${p.n} trades`];return[];}}},zoom:_zoom('xy')},
       scales:{
-        x:{min:20,max:85,title:{display:true,text:'Win Rate % (HO)  ·  dashed lines = quadrant boundaries',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'}},
-        y:{min:0.3,title:{display:true,text:'Payoff Ratio  ·  gold dashed curve = breakeven EV',color:'#6b7280',font:{size:11}},grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'x'}},
+        x:{min:20,max:85,title:{display:true,text:'Win Rate % (HO)  ·  dashed lines = quadrant boundaries',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'}},
+        y:{min:0.3,title:{display:true,text:'Payoff Ratio  ·  gold dashed curve = breakeven EV',color:SQ.muted,font:{size:11}},grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'x'}},
       }}});
     _addResetZoom(_tm3.canvas,_tm3);
   })();
@@ -1457,12 +1438,12 @@ function _buildTradeMechanicsCharts(joined){
         {label:'Short-dominant (<40% long)',data:results.map(r=>+(r.shortDom/r.n*100).toFixed(1)),backgroundColor:'rgba(239,68,68,0.55)',borderWidth:0,borderRadius:0},
       ]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:6}},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:SQ.muted,font:{size:10},boxWidth:10,padding:6}},
           tooltip:{callbacks:{label:c=>{const r=results[c.dataIndex];return`${c.dataset.label}: ${c.raw.toFixed(1)}% (${Math.round(c.raw/100*r.n)} of ${r.n} models)`;}}}},
         },
         scales:{
-          x:{stacked:true,max:100,grid:{color:'#1a1a1a'},ticks:{color:'#6b7280',callback:v=>v+'%'},title:{display:true,text:'% of models by trade direction dominance  ·  green = long-heavy = directional risk in bear markets',color:'#6b7280',font:{size:10}}},
-          y:{stacked:true,grid:{display:false},ticks:{color:'#9ca3af',font:{size:10}}}
+          x:{stacked:true,max:100,grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'% of models by trade direction dominance  ·  green = long-heavy = directional risk in bear markets',color:SQ.muted,font:{size:10}}},
+          y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}
         }});
   })();
 }
