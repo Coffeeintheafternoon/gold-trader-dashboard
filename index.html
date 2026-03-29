@@ -248,72 +248,145 @@
     #tab-papertrade .color-gold  { color: #60a5fa; }
     body[data-tab="papertrade"] #tabnav-papertrade.active { background:#60a5fa; border-color:#60a5fa; color:#000; }
 
-    /* ── 3. REGIME  ─  Blueprint / Engineering Schematic ────────
-       Dark indigo + dot-grid texture, cards stripped to a
-       single 3 px LEFT BORDER only (no top/right/bottom),
-       flat data-sheet technical aesthetic.
+    /* ── 3. REGIME  ─  Terminal v2: Electric Violet ─────────────
+       Exact Signal DNA — transparent neon outline cards,
+       horizontal scanlines, monospace.
+       Color: electric violet #bf5fff
     ──────────────────────────────────────────────────────────── */
     #tab-regime {
-      --gold: #a78bfa;  --gold-dim: #7c5fd4;
-      --text: #e4deff;  --muted: #60508a;
-      --card: #09071a;  --card2: #0c0a1e;
+      --gold: #bf5fff;  --gold-dim: #9933dd;
+      --text: #eed8ff;  --muted: #5a3a7a;
+      --card: transparent; --card2: transparent;
     }
-    body[data-tab="regime"] { background: #060415; }
-    body[data-tab="regime"] main {
-      background: radial-gradient(circle, rgba(167,139,250,0.09) 1px, transparent 1px);
-      background-size: 24px 24px;
+    body[data-tab="regime"] { background: #000000; }
+    body[data-tab="regime"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
     }
-    /* Left-rail only — blueprint look */
+    #tab-regime,
+    #tab-regime .hero-label, #tab-regime .hero-value, #tab-regime .hero-sub,
+    #tab-regime .chart-title, #tab-regime .chart-subtitle,
+    #tab-regime .section-divider-label,
+    #tab-regime .metrics-section-header, #tab-regime .metrics-label,
+    #tab-regime .metrics-value, #tab-regime td, #tab-regime th {
+      font-family: 'Courier New', Courier, monospace;
+    }
     #tab-regime .chart-card, #tab-regime .hero-card {
-      background: var(--card);
-      border: none;
-      border-left: 3px solid rgba(167,139,250,0.55);
+      background: rgba(191,95,255,0.022);
+      border: 1px solid rgba(191,95,255,0.38);
       border-radius: 0;
-      padding-left: 22px;
-      box-shadow: none;
+      box-shadow: 0 0 18px rgba(191,95,255,0.09), inset 0 0 14px rgba(191,95,255,0.025);
     }
-    #tab-regime .chart-card:hover { border-left-color: rgba(167,139,250,0.95); }
-    #tab-regime .hero-card        { border-left-color: rgba(167,139,250,0.80); }
-    #tab-regime .metrics-grid   { border: 1px solid rgba(167,139,250,0.15); border-radius: 0; }
-    #tab-regime .metrics-section { border-right-color: rgba(167,139,250,0.12); }
-    #tab-regime .metrics-section-header { background: rgba(167,139,250,0.07); border-bottom-color: rgba(167,139,250,0.15); }
-    #tab-regime .metrics-row    { border-bottom-color: rgba(167,139,250,0.08); }
-    #tab-regime .metrics-row:nth-child(even) { background: rgba(167,139,250,0.028); }
-    #tab-regime .section-divider-line  { background: rgba(167,139,250,0.28); }
-    #tab-regime .section-divider-label { color: #a78bfa; letter-spacing: 3px; font-size: 9px; }
-    #tab-regime .color-gold  { color: #a78bfa; }
-    body[data-tab="regime"] #tabnav-regime.active { background:#a78bfa; border-color:#a78bfa; color:#000; }
+    #tab-regime .chart-card:hover, #tab-regime .hero-card:hover {
+      border-color: rgba(191,95,255,0.70);
+      box-shadow: 0 0 28px rgba(191,95,255,0.18), inset 0 0 14px rgba(191,95,255,0.04);
+    }
+    #tab-regime .metrics-grid   { border: 1px solid rgba(191,95,255,0.25); border-radius: 0; }
+    #tab-regime .metrics-section { border-right-color: rgba(191,95,255,0.15); }
+    #tab-regime .metrics-section-header { background: #0e0020; border-bottom-color: rgba(191,95,255,0.22); }
+    #tab-regime .metrics-row    { border-bottom-color: rgba(191,95,255,0.08); }
+    #tab-regime .metrics-row:nth-child(even) { background: rgba(191,95,255,0.028); }
+    #tab-regime .section-divider-line  { background: rgba(191,95,255,0.22); }
+    #tab-regime .section-divider-label { color: #bf5fff; letter-spacing: 4px; }
+    #tab-regime .color-gold { color: #bf5fff; text-shadow: 0 0 18px rgba(191,95,255,0.75), 0 0 36px rgba(191,95,255,0.30); }
+    body[data-tab="regime"] #tabnav-regime.active { background:#bf5fff; border-color:#bf5fff; color:#000; }
 
-    /* ── 4. CHATTER  ─  Bold Editorial / Magazine ───────────────
-       Warm near-black, cards with thick 3 px TOP BORDER accent
-       bar (no left/right/bottom), editorial header-card style,
-       slightly warmer text tone, news magazine feel.
+    /* ── 4. CHATTER  ─  Terminal v3: Amber + Diagonal Scanlines ─
+       Same transparent neon outline cards + monospace,
+       but scanlines run at 45° (diagonal), thicker border,
+       stronger outer glow.  Color: amber #ffaa00
     ──────────────────────────────────────────────────────────── */
     #tab-chatter {
-      --gold: #fb923c;  --gold-dim: #c2691e;
-      --text: #f5e8d8;  --muted: #8a6840;
-      --card: #110900;  --card2: #160c00;
+      --gold: #ffaa00;  --gold-dim: #cc8800;
+      --text: #fff2cc;  --muted: #7a6030;
+      --card: transparent; --card2: transparent;
     }
-    body[data-tab="chatter"] { background: #0a0500; }
-    /* Top-bar magazine cards */
+    body[data-tab="chatter"] { background: #000000; }
+    body[data-tab="chatter"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background: repeating-linear-gradient(-45deg, transparent, transparent 3px,
+        rgba(0,0,0,0.22) 3px, rgba(0,0,0,0.22) 5px);
+    }
+    #tab-chatter,
+    #tab-chatter .hero-label, #tab-chatter .hero-value, #tab-chatter .hero-sub,
+    #tab-chatter .chart-title, #tab-chatter .chart-subtitle,
+    #tab-chatter .section-divider-label,
+    #tab-chatter .metrics-section-header, #tab-chatter .metrics-label,
+    #tab-chatter .metrics-value, #tab-chatter td, #tab-chatter th {
+      font-family: 'Courier New', Courier, monospace;
+    }
     #tab-chatter .chart-card, #tab-chatter .hero-card {
-      background: var(--card);
-      border: none;
-      border-top: 3px solid rgba(251,146,60,0.65);
-      border-radius: 0 0 3px 3px;
-      box-shadow: 0 3px 0 rgba(251,146,60,0.10);
-      padding-top: 18px;
+      background: rgba(255,170,0,0.025);
+      border: 1.5px solid rgba(255,170,0,0.42);
+      border-radius: 0;
+      box-shadow: 0 0 22px rgba(255,170,0,0.12), inset 0 0 16px rgba(255,170,0,0.03);
     }
-    #tab-chatter .chart-card:hover { border-top-color: rgba(251,146,60,0.95); }
-    #tab-chatter .metrics-grid   { border: 1px solid rgba(251,146,60,0.15); border-radius: 0; }
-    #tab-chatter .metrics-section { border-right-color: rgba(251,146,60,0.12); }
-    #tab-chatter .metrics-section-header { background: rgba(251,146,60,0.07); border-bottom-color: rgba(251,146,60,0.15); }
-    #tab-chatter .metrics-row    { border-bottom-color: rgba(251,146,60,0.07); }
-    #tab-chatter .metrics-row:nth-child(even) { background: rgba(251,146,60,0.028); }
-    #tab-chatter .section-divider-line  { background: rgba(251,146,60,0.28); }
-    #tab-chatter .section-divider-label { color: #fb923c; letter-spacing: 3px; font-size: 11px; font-weight: 900; }
-    #tab-chatter .color-gold  { color: #fb923c; }
-    body[data-tab="chatter"] #tabnav-chatter.active { background:#fb923c; border-color:#fb923c; color:#000; }
+    #tab-chatter .chart-card:hover, #tab-chatter .hero-card:hover {
+      border-color: rgba(255,170,0,0.75);
+      box-shadow: 0 0 36px rgba(255,170,0,0.22), inset 0 0 16px rgba(255,170,0,0.05);
+    }
+    #tab-chatter .metrics-grid   { border: 1px solid rgba(255,170,0,0.28); border-radius: 0; }
+    #tab-chatter .metrics-section { border-right-color: rgba(255,170,0,0.15); }
+    #tab-chatter .metrics-section-header { background: #1a0e00; border-bottom-color: rgba(255,170,0,0.22); }
+    #tab-chatter .metrics-row    { border-bottom-color: rgba(255,170,0,0.08); }
+    #tab-chatter .metrics-row:nth-child(even) { background: rgba(255,170,0,0.030); }
+    #tab-chatter .section-divider-line  { background: rgba(255,170,0,0.24); }
+    #tab-chatter .section-divider-label { color: #ffaa00; letter-spacing: 4px; }
+    #tab-chatter .color-gold { color: #ffaa00; text-shadow: 0 0 18px rgba(255,170,0,0.75), 0 0 36px rgba(255,170,0,0.30); }
+    body[data-tab="chatter"] #tabnav-chatter.active { background:#ffaa00; border-color:#ffaa00; color:#000; }
+
+    /* ── 5. META  ─  Terminal v4: Cyan + Grid Pattern ───────────
+       Same transparent neon outline cards + monospace,
+       but background is a crosshatch grid (horiz + vert lines)
+       instead of scanlines. Clean, precise, no outer glow —
+       just a sharp bright border.  Color: cyan #00ccff
+    ──────────────────────────────────────────────────────────── */
+    #tab-meta {
+      --gold: #00ccff;  --gold-dim: #0099cc;
+      --text: #ccf4ff;  --muted: #336678;
+      --card: transparent; --card2: transparent;
+    }
+    body[data-tab="meta"] { background: #000000; }
+    body[data-tab="meta"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background:
+        linear-gradient(rgba(0,204,255,0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,204,255,0.055) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    #tab-meta,
+    #tab-meta .hero-label, #tab-meta .hero-value, #tab-meta .hero-sub,
+    #tab-meta .chart-title, #tab-meta .chart-subtitle,
+    #tab-meta .section-divider-label,
+    #tab-meta .metrics-section-header, #tab-meta .metrics-label,
+    #tab-meta .metrics-value, #tab-meta td, #tab-meta th,
+    #tab-meta .meta-filter-btn, #tab-meta select {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    #tab-meta .chart-card, #tab-meta .hero-card {
+      background: rgba(0,204,255,0.018);
+      border: 1px solid rgba(0,204,255,0.40);
+      border-radius: 0;
+      box-shadow: none;
+    }
+    #tab-meta .chart-card:hover, #tab-meta .hero-card:hover {
+      border-color: rgba(0,204,255,0.75);
+      box-shadow: 0 0 14px rgba(0,204,255,0.10);
+    }
+    #tab-meta .metrics-grid   { border: 1px solid rgba(0,204,255,0.28); border-radius: 0; }
+    #tab-meta .metrics-section { border-right-color: rgba(0,204,255,0.15); }
+    #tab-meta .metrics-section-header { background: #001a22; border-bottom-color: rgba(0,204,255,0.22); }
+    #tab-meta .metrics-row    { border-bottom-color: rgba(0,204,255,0.08); }
+    #tab-meta .metrics-row:nth-child(even) { background: rgba(0,204,255,0.028); }
+    #tab-meta .section-divider-line  { background: rgba(0,204,255,0.24); }
+    #tab-meta .section-divider-label { color: #00ccff; letter-spacing: 4px; }
+    #tab-meta .meta-table th   { color: #00ccff; border-color: rgba(0,204,255,0.18); }
+    #tab-meta .meta-filter-btn { font-family:'Courier New',Courier,monospace; }
+    #tab-meta .meta-filter-btn.active { background:#00ccff; border-color:#00ccff; color:#000; }
+    #tab-meta .meta-filter-btn:hover:not(.active) { border-color:#00ccff; color:#00ccff; }
+    #tab-meta .color-gold { color: #00ccff; text-shadow: 0 0 14px rgba(0,204,255,0.60); }
+    body[data-tab="meta"] #tabnav-meta.active { background:#00ccff; border-color:#00ccff; color:#000; }
   </style>
 </head>
 <body>
