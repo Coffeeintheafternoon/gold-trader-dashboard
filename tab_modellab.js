@@ -961,10 +961,10 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: hoMKeys.map(mthLabelFn),
         datasets: [{ data: hoMVals,
-          backgroundColor:      hoMVals.map(v => v >= 0 ? hexA(SQ.cyan, 0.70) : hexA(SQ.orange, 0.70)),
-          borderColor:          hoMVals.map(v => v >= 0 ? SQ.cyan : SQ.orange),
-          hoverBackgroundColor: hoMVals.map(v => v >= 0 ? hexA(SQ.cyan, 1.0) : hexA(SQ.orange, 1.0)),
-          hoverBorderColor:     hoMVals.map(v => v >= 0 ? SQ.cyan : SQ.orange),
+          backgroundColor:      hoMVals.map(v => v >= 0 ? hexA(SQ.green, 0.70) : hexA(SQ.red, 0.70)),
+          borderColor:          hoMVals.map(v => v >= 0 ? SQ.green : SQ.red),
+          hoverBackgroundColor: hoMVals.map(v => v >= 0 ? hexA(SQ.green, 1.0) : hexA(SQ.red, 1.0)),
+          hoverBorderColor:     hoMVals.map(v => v >= 0 ? SQ.green : SQ.red),
           hoverBorderWidth: 2,
           borderWidth: 1, borderRadius: 3 }]
       },
@@ -1032,9 +1032,9 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: binLabels,
         datasets: [{ label: 'HO', data: hoBins.map(b => b.cnt),
-          backgroundColor:      hoBins.map(b => b.lo >= 0 ? hexA(SQ.cyan, 0.65) : hexA(SQ.orange, 0.65)),
-          borderColor:          hoBins.map(b => b.lo >= 0 ? SQ.cyan : SQ.orange),
-          hoverBackgroundColor: hoBins.map(b => b.lo >= 0 ? hexA(SQ.cyan, 1.0) : hexA(SQ.orange, 1.0)),
+          backgroundColor:      hoBins.map(b => b.lo >= 0 ? hexA(SQ.green, 0.65) : hexA(SQ.red, 0.65)),
+          borderColor:          hoBins.map(b => b.lo >= 0 ? SQ.green : SQ.red),
+          hoverBackgroundColor: hoBins.map(b => b.lo >= 0 ? hexA(SQ.green, 1.0) : hexA(SQ.red, 1.0)),
           hoverBorderWidth: 2,
           borderWidth: 1, borderRadius: 2 }]
       },
@@ -1086,8 +1086,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     _mlDurRetChartHO = new Chart(drHOCanvas.getContext('2d'), {
       type: 'scatter',
       data: { datasets: [
-        { label: 'Win',  data: hoWins3, backgroundColor: hexA(SQ.cyan,   0.55), borderColor: SQ.cyan,   pointRadius: 4, pointHoverRadius: 8 },
-        { label: 'Loss', data: hoLoss3, backgroundColor: hexA(SQ.orange, 0.55), borderColor: SQ.orange, pointRadius: 4, pointHoverRadius: 8 }
+        { label: 'Win',  data: hoWins3, backgroundColor: hexA(SQ.green, 0.55), borderColor: SQ.green, pointRadius: 4, pointHoverRadius: 8 },
+        { label: 'Loss', data: hoLoss3, backgroundColor: hexA(SQ.red,   0.55), borderColor: SQ.red,   pointRadius: 4, pointHoverRadius: 8 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
@@ -1193,8 +1193,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   // ── Grouped bar chart: Win Rate, Avg Return, Profit Factor ─────────────────
   const lsChartEl = document.getElementById('ml-ls-chart');
   if (lsChartEl && (lstats || sstats)) {
-    const lColor = hexA(SQ.cyan,   0.70), lBorder = SQ.cyan;
-    const sColor = hexA(SQ.violet, 0.70), sBorder = SQ.violet;
+    const lColor = hexA(SQ.green, 0.70), lBorder = SQ.green;
+    const sColor = hexA(SQ.red,   0.70), sBorder = SQ.red;
     const metrics = ['Win Rate %', 'Avg Return %', 'Profit Factor', 'Avg Bars'];
     const lVals = lstats ? [+lstats.wr.toFixed(1), +lstats.avg.toFixed(2), lstats.pf!=null?+lstats.pf.toFixed(2):0, +lstats.avgBars.toFixed(1)] : [0,0,0,0];
     const sVals = sstats ? [+sstats.wr.toFixed(1), +sstats.avg.toFixed(2), sstats.pf!=null?+sstats.pf.toFixed(2):0, +sstats.avgBars.toFixed(1)] : [0,0,0,0];
@@ -1204,8 +1204,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: metrics,
         datasets: [
-          { label: '▲ Long',  data: lVals, backgroundColor: lColor, borderColor: lBorder, hoverBackgroundColor: hexA(SQ.cyan,   1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 },
-          { label: '▼ Short', data: sVals, backgroundColor: sColor, borderColor: sBorder, hoverBackgroundColor: hexA(SQ.violet, 1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 }
+          { label: '▲ Long',  data: lVals, backgroundColor: lColor, borderColor: lBorder, hoverBackgroundColor: hexA(SQ.green, 1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 },
+          { label: '▼ Short', data: sVals, backgroundColor: sColor, borderColor: sBorder, hoverBackgroundColor: hexA(SQ.red,   1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 }
         ]
       },
       options: {
@@ -1230,8 +1230,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     _mlLsScatter = new Chart(lsScEl.getContext('2d'), {
       type: 'scatter',
       data: { datasets: [
-        { label: '▲ Long',  data: longPts,  backgroundColor: hexA(SQ.cyan,   0.60), borderColor: SQ.cyan,   pointRadius: 5, pointHoverRadius: 9 },
-        { label: '▼ Short', data: shortPts, backgroundColor: hexA(SQ.violet, 0.60), borderColor: SQ.violet, pointRadius: 5, pointHoverRadius: 9 }
+        { label: '▲ Long',  data: longPts,  backgroundColor: hexA(SQ.green, 0.60), borderColor: SQ.green, pointRadius: 5, pointHoverRadius: 9 },
+        { label: '▼ Short', data: shortPts, backgroundColor: hexA(SQ.red,   0.60), borderColor: SQ.red,   pointRadius: 5, pointHoverRadius: 9 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
@@ -1270,8 +1270,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
         <div style="flex:1;min-width:200px;background:#0c0c0c;border-radius:5px;padding:6px 10px;border:1px solid #1a1a1a;font-size:11px">${tile(s2,label,col,'HO')}</div>
       </div>` : '';
     lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
-      ${row(isLstats, hoLstats, '▲ Long',  SQ.cyan)}
-      ${row(isSstats, hoSstats, '▼ Short', SQ.violet)}
+      ${row(isLstats, hoLstats, '▲ Long',  SQ.green)}
+      ${row(isSstats, hoSstats, '▼ Short', SQ.red)}
     </div>`;
   }
 
@@ -1307,7 +1307,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     });
 
     const posVals = allDates6.map(d => posMap[d]);
-    const barColors = posVals.map(v => v > 0 ? hexA(SQ.cyan, 0.75) : v < 0 ? hexA(SQ.violet, 0.75) : hexA(SQ.neutral, 0.35));
+    const barColors = posVals.map(v => v > 0 ? hexA(SQ.green, 0.75) : v < 0 ? hexA(SQ.red, 0.75) : hexA(SQ.neutral, 0.35));
 
     // IS/HO boundary annotation
     const annotations6 = {};

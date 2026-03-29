@@ -9,7 +9,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 const SQ = (() => {
   // ── CRT phosphor palette ──────────────────────────────────────────────────
-  const green   = '#00ff88';   // primary UI chrome + bullish
+  const green   = '#aaff00';   // primary UI chrome + bullish
   const red     = '#ff3355';   // bearish / error  (hot pink-red, more CRT)
   const amber   = '#ffcc00';   // warning / caution
   const cyan    = '#00ccff';   // info / secondary
@@ -20,14 +20,14 @@ const SQ = (() => {
   const neutral = '#556677';   // flat / unknown / dim
 
   // ── Text / structure ──────────────────────────────────────────────────────
-  const text  = '#c8ffe0';
-  const muted = '#3a6e55';
-  const grid  = 'rgba(0,255,136,0.07)';
+  const text  = '#dff5c0';
+  const muted = '#5a6830';
+  const grid  = 'rgba(170,255,0,0.07)';
 
   // ── Tooltip ───────────────────────────────────────────────────────────────
   const tooltip = {
     bg:     '#000e06',
-    border: 'rgba(0,255,136,0.40)',
+    border: 'rgba(170,255,0,0.40)',
     title:  green,
     body:   text,
   };
@@ -36,7 +36,7 @@ const SQ = (() => {
   // Used for scatter categories, line series, bar groups etc.
   const palette   = [green, cyan, red, amber, violet, orange, teal, magenta];
   const paletteBg = [                          // low-alpha fill variants
-    'rgba(0,255,136,0.10)',
+    'rgba(170,255,0,0.10)',
     'rgba(0,204,255,0.10)',
     'rgba(255,51,85,0.10)',
     'rgba(255,204,0,0.10)',
