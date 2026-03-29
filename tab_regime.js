@@ -2139,21 +2139,21 @@ function _regimeBuildMomentumModels(container, models) {
     // Chart 2: Contributions
     _mmMakeChart(wrap,
       `rd-mm-contrib-${key}`,
-      'Actual Impact (Contribution = Coef × Current Signal)',
-      'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is.',
+      'Actual Impact (Contribution = Coef × Current Signal)  ·  R² on right axis',
+      'Coefficient × standardised feature value at each date. Shows what each feature is actually adding to the model\'s S&P prediction at that moment — combining the sensitivity with how strong the current signal is. White line = rolling in-sample R² (right axis).',
       dates, feats, contribs,
       v => (v >= 0 ? '+' : '') + v.toFixed(4),
-      300, true
+      300, true, r2Dataset
     );
 
     // Chart 3: T-statistics
     _mmMakeChart(wrap,
       `rd-mm-tstat-${key}`,
-      'Reliability (T-Statistic)  ·  |t| > 2 = statistically significant',
-      'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise).',
+      'Reliability (T-Statistic)  ·  |t| > 2 = statistically significant  ·  R² on right axis',
+      'T-statistic = coefficient ÷ standard error. Measures how reliably different from zero the coefficient is at each window. |t| > 2 suggests the relationship is real (not noise). White line = rolling in-sample R² (right axis).',
       dates, feats, tstats,
       v => (v >= 0 ? '+' : '') + v.toFixed(2),
-      300, true
+      300, true, r2Dataset
     );
 
     const refNote = document.createElement('div');
