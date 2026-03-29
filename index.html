@@ -208,45 +208,47 @@
     #tab-signal .color-gold { color: #00ff88; text-shadow: 0 0 18px rgba(0,255,136,0.75), 0 0 36px rgba(0,255,136,0.30); }
     body[data-tab="signal"] #tabnav-signal.active { background:#00ff88; border-color:#00ff88; color:#000; }
 
-    /* ── 2. PAPER TRADING  ─  Frosted Glass / Modern Fintech ───
-       Radial navy gradient background, translucent glass cards
-       with backdrop-filter blur, soft 12 px radius, deep
-       shadow with top-edge inner highlight — premium feel.
+    /* ── 2. PAPER TRADING  ─  Terminal v5: Electric Blue ────────
+       Color: electric blue #3399ff · horizontal scanlines
     ──────────────────────────────────────────────────────────── */
     #tab-papertrade {
-      --gold: #60a5fa;  --gold-dim: #3b82f6;
-      --text: #e2eeff;  --muted: #4e6080;
-      --card: rgba(255,255,255,0.035); --card2: rgba(255,255,255,0.025);
+      --gold: #3399ff;  --gold-dim: #1a77dd;
+      --text: #cce4ff;  --muted: #2a5080;
+      --card: transparent; --card2: transparent;
     }
-    body[data-tab="papertrade"] {
-      background: radial-gradient(ellipse at 25% 0%, #0e1f40 0%, #05101e 55%, #020812 100%);
+    body[data-tab="papertrade"] { background: #000000; }
+    body[data-tab="papertrade"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+    }
+    #tab-papertrade,
+    #tab-papertrade .hero-label, #tab-papertrade .hero-value, #tab-papertrade .hero-sub,
+    #tab-papertrade .chart-title, #tab-papertrade .chart-subtitle,
+    #tab-papertrade .section-divider-label,
+    #tab-papertrade .metrics-section-header, #tab-papertrade .metrics-label,
+    #tab-papertrade .metrics-value, #tab-papertrade td, #tab-papertrade th {
+      font-family: 'Courier New', Courier, monospace;
     }
     #tab-papertrade .chart-card, #tab-papertrade .hero-card {
-      background: rgba(255,255,255,0.04);
-      -webkit-backdrop-filter: blur(14px);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(96,165,250,0.20);
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
+      background: rgba(51,153,255,0.022);
+      border: 1px solid rgba(51,153,255,0.38);
+      border-radius: 0;
+      box-shadow: 0 0 18px rgba(51,153,255,0.09), inset 0 0 14px rgba(51,153,255,0.025);
     }
-    #tab-papertrade .chart-card:hover {
-      border-color: rgba(96,165,250,0.40);
-      box-shadow: 0 12px 44px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10);
+    #tab-papertrade .chart-card:hover, #tab-papertrade .hero-card:hover {
+      border-color: rgba(51,153,255,0.70);
+      box-shadow: 0 0 28px rgba(51,153,255,0.18), inset 0 0 14px rgba(51,153,255,0.04);
     }
-    #tab-papertrade .hero-card {
-      border-top-color: rgba(96,165,250,0.38);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.09);
-    }
-    #tab-papertrade .metrics-grid   { border-color:rgba(96,165,250,0.16); border-radius:12px; overflow:hidden; }
-    #tab-papertrade .metrics-section { border-right-color: rgba(96,165,250,0.12); }
-    #tab-papertrade .metrics-section-header { background: rgba(96,165,250,0.07); border-bottom-color: rgba(96,165,250,0.15); }
-    #tab-papertrade .metrics-row    { border-bottom-color: rgba(96,165,250,0.07); }
-    #tab-papertrade .metrics-row:nth-child(even) { background: rgba(96,165,250,0.030); }
-    #tab-papertrade .section-divider-line  { background: rgba(96,165,250,0.24); }
-    #tab-papertrade .section-divider-label { color: #60a5fa; letter-spacing: 2.5px; }
-    #tab-papertrade .hero-label  { letter-spacing: 1.8px; }
-    #tab-papertrade .color-gold  { color: #60a5fa; }
-    body[data-tab="papertrade"] #tabnav-papertrade.active { background:#60a5fa; border-color:#60a5fa; color:#000; }
+    #tab-papertrade .metrics-grid   { border: 1px solid rgba(51,153,255,0.25); border-radius: 0; }
+    #tab-papertrade .metrics-section { border-right-color: rgba(51,153,255,0.15); }
+    #tab-papertrade .metrics-section-header { background: #001020; border-bottom-color: rgba(51,153,255,0.22); }
+    #tab-papertrade .metrics-row    { border-bottom-color: rgba(51,153,255,0.08); }
+    #tab-papertrade .metrics-row:nth-child(even) { background: rgba(51,153,255,0.028); }
+    #tab-papertrade .section-divider-line  { background: rgba(51,153,255,0.22); }
+    #tab-papertrade .section-divider-label { color: #3399ff; letter-spacing: 4px; }
+    #tab-papertrade .color-gold { color: #3399ff; text-shadow: 0 0 18px rgba(51,153,255,0.75), 0 0 36px rgba(51,153,255,0.30); }
+    body[data-tab="papertrade"] #tabnav-papertrade.active { background:#3399ff; border-color:#3399ff; color:#000; }
 
     /* ── 3. REGIME  ─  Terminal v2: Electric Violet ─────────────
        Exact Signal DNA — transparent neon outline cards,
@@ -387,6 +389,140 @@
     #tab-meta .meta-filter-btn:hover:not(.active) { border-color:#00ccff; color:#00ccff; }
     #tab-meta .color-gold { color: #00ccff; text-shadow: 0 0 14px rgba(0,204,255,0.60); }
     body[data-tab="meta"] #tabnav-meta.active { background:#00ccff; border-color:#00ccff; color:#000; }
+
+    /* ── 6. UNIVERSE  ─  Terminal v6: Hot Magenta + Dot Matrix ──
+       Inspired by old CRT character generators & vector displays.
+       Color: hot magenta #ff44cc · dot-matrix background pattern
+    ──────────────────────────────────────────────────────────── */
+    #tab-universe {
+      --gold: #ff44cc;  --gold-dim: #cc22aa;
+      --text: #ffd6f5;  --muted: #7a3060;
+      --card: transparent; --card2: transparent;
+    }
+    body[data-tab="universe"] { background: #000000; }
+    body[data-tab="universe"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background:
+        radial-gradient(circle, rgba(255,68,204,0.10) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    #tab-universe,
+    #tab-universe .hero-label, #tab-universe .hero-value, #tab-universe .hero-sub,
+    #tab-universe .chart-title, #tab-universe .chart-subtitle,
+    #tab-universe .section-divider-label,
+    #tab-universe .metrics-section-header, #tab-universe .metrics-label,
+    #tab-universe .metrics-value, #tab-universe td, #tab-universe th {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    #tab-universe .chart-card, #tab-universe .hero-card {
+      background: rgba(255,68,204,0.022);
+      border: 1px solid rgba(255,68,204,0.38);
+      border-radius: 0;
+      box-shadow: 0 0 18px rgba(255,68,204,0.09), inset 0 0 14px rgba(255,68,204,0.025);
+    }
+    #tab-universe .chart-card:hover, #tab-universe .hero-card:hover {
+      border-color: rgba(255,68,204,0.70);
+      box-shadow: 0 0 28px rgba(255,68,204,0.18), inset 0 0 14px rgba(255,68,204,0.04);
+    }
+    #tab-universe .metrics-grid   { border: 1px solid rgba(255,68,204,0.25); border-radius: 0; }
+    #tab-universe .metrics-section { border-right-color: rgba(255,68,204,0.15); }
+    #tab-universe .metrics-section-header { background: #1a0015; border-bottom-color: rgba(255,68,204,0.22); }
+    #tab-universe .metrics-row    { border-bottom-color: rgba(255,68,204,0.08); }
+    #tab-universe .metrics-row:nth-child(even) { background: rgba(255,68,204,0.028); }
+    #tab-universe .section-divider-line  { background: rgba(255,68,204,0.22); }
+    #tab-universe .section-divider-label { color: #ff44cc; letter-spacing: 4px; }
+    #tab-universe .color-gold { color: #ff44cc; text-shadow: 0 0 18px rgba(255,68,204,0.75), 0 0 36px rgba(255,68,204,0.30); }
+    body[data-tab="universe"] #tabnav-universe.active { background:#ff44cc; border-color:#ff44cc; color:#000; }
+
+    /* ── 7. MACRO STATES  ─  Terminal v7: Red-Orange + Diagonal ─
+       Urgency palette — matches macro risk / geopolitical tension.
+       Color: red-orange #ff5533 · diagonal scanlines like Chatter
+       but tighter pitch for a more aggressive feel.
+    ──────────────────────────────────────────────────────────── */
+    #tab-macrostate {
+      --gold: #ff5533;  --gold-dim: #cc3311;
+      --text: #ffe0d8;  --muted: #7a3020;
+      --card: transparent; --card2: transparent;
+    }
+    body[data-tab="macrostate"] { background: #000000; }
+    body[data-tab="macrostate"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background: repeating-linear-gradient(-45deg, transparent, transparent 2px,
+        rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px);
+    }
+    #tab-macrostate,
+    #tab-macrostate .hero-label, #tab-macrostate .hero-value, #tab-macrostate .hero-sub,
+    #tab-macrostate .chart-title, #tab-macrostate .chart-subtitle,
+    #tab-macrostate .section-divider-label,
+    #tab-macrostate .metrics-section-header, #tab-macrostate .metrics-label,
+    #tab-macrostate .metrics-value, #tab-macrostate td, #tab-macrostate th {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    #tab-macrostate .chart-card, #tab-macrostate .hero-card {
+      background: rgba(255,85,51,0.022);
+      border: 1px solid rgba(255,85,51,0.38);
+      border-radius: 0;
+      box-shadow: 0 0 18px rgba(255,85,51,0.09), inset 0 0 14px rgba(255,85,51,0.025);
+    }
+    #tab-macrostate .chart-card:hover, #tab-macrostate .hero-card:hover {
+      border-color: rgba(255,85,51,0.70);
+      box-shadow: 0 0 28px rgba(255,85,51,0.18), inset 0 0 14px rgba(255,85,51,0.04);
+    }
+    #tab-macrostate .metrics-grid   { border: 1px solid rgba(255,85,51,0.25); border-radius: 0; }
+    #tab-macrostate .metrics-section { border-right-color: rgba(255,85,51,0.15); }
+    #tab-macrostate .metrics-section-header { background: #1a0800; border-bottom-color: rgba(255,85,51,0.22); }
+    #tab-macrostate .metrics-row    { border-bottom-color: rgba(255,85,51,0.08); }
+    #tab-macrostate .metrics-row:nth-child(even) { background: rgba(255,85,51,0.028); }
+    #tab-macrostate .section-divider-line  { background: rgba(255,85,51,0.22); }
+    #tab-macrostate .section-divider-label { color: #ff5533; letter-spacing: 4px; }
+    #tab-macrostate .color-gold { color: #ff5533; text-shadow: 0 0 18px rgba(255,85,51,0.75), 0 0 36px rgba(255,85,51,0.30); }
+    body[data-tab="macrostate"] #tabnav-macrostate.active { background:#ff5533; border-color:#ff5533; color:#000; }
+
+    /* ── 8. STATE OF THE WORLD  ─  Terminal v8: Teal + Vertical ─
+       Globe/map theme — cooler, more spatial feel.
+       Color: teal #00ffcc · vertical scanlines (unique variant)
+       Map gets a dark CSS filter to match the terminal palette.
+    ──────────────────────────────────────────────────────────── */
+    #tab-sow {
+      --gold: #00ffcc;  --gold-dim: #00ccaa;
+      --text: #ccfff5;  --muted: #1a7060;
+      --card: transparent; --card2: transparent;
+    }
+    body[data-tab="sow"] { background: #000000; }
+    body[data-tab="sow"]::after {
+      content:''; position:fixed; inset:0; z-index:9998; pointer-events:none;
+      background: repeating-linear-gradient(90deg, transparent, transparent 3px,
+        rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 5px);
+    }
+    #tab-sow,
+    #tab-sow .hero-label, #tab-sow .hero-value, #tab-sow .hero-sub,
+    #tab-sow .chart-title, #tab-sow .chart-subtitle,
+    #tab-sow .section-divider-label,
+    #tab-sow .metrics-section-header, #tab-sow .metrics-label,
+    #tab-sow .metrics-value, #tab-sow td, #tab-sow th {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    #tab-sow .chart-card, #tab-sow .hero-card {
+      background: rgba(0,255,204,0.022);
+      border: 1px solid rgba(0,255,204,0.38);
+      border-radius: 0;
+      box-shadow: 0 0 18px rgba(0,255,204,0.09), inset 0 0 14px rgba(0,255,204,0.025);
+    }
+    #tab-sow .chart-card:hover, #tab-sow .hero-card:hover {
+      border-color: rgba(0,255,204,0.70);
+      box-shadow: 0 0 28px rgba(0,255,204,0.18), inset 0 0 14px rgba(0,255,204,0.04);
+    }
+    #tab-sow .metrics-grid   { border: 1px solid rgba(0,255,204,0.25); border-radius: 0; }
+    #tab-sow .metrics-section { border-right-color: rgba(0,255,204,0.15); }
+    #tab-sow .metrics-section-header { background: #001a14; border-bottom-color: rgba(0,255,204,0.22); }
+    #tab-sow .metrics-row    { border-bottom-color: rgba(0,255,204,0.08); }
+    #tab-sow .metrics-row:nth-child(even) { background: rgba(0,255,204,0.028); }
+    #tab-sow .section-divider-line  { background: rgba(0,255,204,0.22); }
+    #tab-sow .section-divider-label { color: #00ffcc; letter-spacing: 4px; }
+    #tab-sow .color-gold { color: #00ffcc; text-shadow: 0 0 18px rgba(0,255,204,0.75), 0 0 36px rgba(0,255,204,0.30); }
+    body[data-tab="sow"] #tabnav-sow.active { background:#00ffcc; border-color:#00ffcc; color:#000; }
+    /* Map tile dark filter — keeps Leaflet readable on black bg */
+    body[data-tab="sow"] .leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.7); }
   </style>
 </head>
 <body>
