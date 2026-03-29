@@ -1534,6 +1534,17 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
       },
     });
 
+    // Crosshair: vertical line at hovered x position (uses _mmCrosshairPlugin)
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      chart._mmHoverX = e.clientX - rect.left;
+      chart.draw();
+    });
+    canvas.addEventListener('mouseleave', () => {
+      chart._mmHoverX = null;
+      chart.draw();
+    });
+
     if (togsEl) {
       feats.forEach((f, i) => {
         const c = _MM_COLORS[f] || '#888';
@@ -1945,6 +1956,26 @@ function _mmMakeSpreadChart(container, id, dates, feats, coefs) {
     }
   });
 }
+
+// Crosshair plugin — registered once, draws vertical line on hover for _mmMakeChart instances
+const _mmCrosshairPlugin = {
+  id: 'mmCrosshair',
+  afterDraw(ch) {
+    if (ch._mmHoverX == null) return;
+    const ctx2 = ch.ctx;
+    const { top, bottom } = ch.chartArea;
+    ctx2.save();
+    ctx2.beginPath();
+    ctx2.moveTo(ch._mmHoverX, top);
+    ctx2.lineTo(ch._mmHoverX, bottom);
+    ctx2.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx2.lineWidth = 1;
+    ctx2.setLineDash([4, 4]);
+    ctx2.stroke();
+    ctx2.restore();
+  },
+};
+Chart.register(_mmCrosshairPlugin);
 
 function _regimeBuildMomentumModels(container, models) {
 
