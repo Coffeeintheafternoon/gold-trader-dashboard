@@ -1406,20 +1406,23 @@ const _MM_LABELS = {
 };
 
 const _MM_TIPS = {
-  gold_mom:         'Gold Momentum — 21-day % change in gold spot price (USD). Positive = gold has been rising. A positive coefficient means gold momentum was predicting S&P gains at that window.',
-  dxy_mom:          'DXY Momentum — 21-day % change in the US Dollar Index. Positive DXY = USD strengthening vs basket of major currencies. A negative coefficient typically means strong USD predicts weaker S&P (risk-off).',
-  oil_mom:          'Oil Momentum — 21-day % change in WTI crude oil price. Rising oil can signal inflation (bad for equities) or strong global demand (good). Excluded in extended models (data only from 1986).',
-  vix_chg:          'VIX Change — 21-day change in the CBOE VIX (volatility index, pp). Positive = fear rising. Synthetic VIX used pre-1990. Captures the direction of fear, not just its level.',
-  yield_curve_chg:  'Yield Curve Change — 21-day change in the 10yr−3mo spread (pp). Positive = curve steepening (growth optimism building). Negative = flattening/inverting (recession risk rising).',
-  real_rate_chg:    'Real Rate Change — 21-day change in the real rate (10yr yield − CPI YoY, pp). Rising real rates = bonds becoming more attractive vs equities, headwind for gold.',
-  cpi_accel:        'CPI Acceleration — 21-day change in CPI YoY % (pp). Positive = inflation re-accelerating. This captures the second derivative of inflation — the momentum of the inflation trend, not its level.',
-  ff_chg:           'Fed Funds Change — 21-day change in the US Federal Funds Rate (pp). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace of monetary policy shifts.',
-  unemp_chg:        'Unemployment Change — 21-day change in US Unemployment Rate (pp). Rising = labour market weakening, recession signal. Falling = tightening labour market, inflationary pressure.',
-  cape_chg:         'PE Ratio Change — 21-day change in S&P 500 trailing PE ratio. Rising = market getting more expensive relative to earnings (stretched valuations). Falling = valuation compression.',
-  hy_spread_chg:    'Credit Spread Change — 21-day change in the US High-Yield bond spread (pp). Rising = credit markets pricing more default risk, financial stress building.',
-  copper_mom:       'Copper Momentum — 21-day % change in COMEX copper futures. Rising copper = global industrial demand expanding = growth regime.',
-  m2_chg:           'M2 Change — 21-day change in US M2 money supply YoY % (pp). Positive = liquidity expanding. Captures shifts in monetary stimulus / tightening.',
-  ism_chg:          'ISM PMI Change — 21-day change in the ISM Manufacturing PMI. Rising = manufacturing activity accelerating. A strong leading indicator of economic direction.',
+  // Coefficients now predict GOLD forward returns, not SPX.
+  // Positive coefficient = this macro condition drives gold UP over the next N months.
+  // Negative coefficient = this condition drives gold DOWN.
+  gold_mom:         'Gold Momentum — 21-day % change in gold spot price (USD). Positive coefficient = gold momentum predicts further gold gains (trend-following regime). Negative = mean-reversion regime.',
+  dxy_mom:          'DXY Momentum — 21-day % change in the US Dollar Index. Negative coefficient is the norm: USD strength typically drives gold down (gold is priced in USD). Sign flip = unusual divergence regime.',
+  oil_mom:          'Oil Momentum — 21-day % change in WTI crude oil price. Positive coefficient = oil-driven inflation is lifting gold (stagflation signal). Excluded in extended models (data only from 1986).',
+  vix_chg:          'VIX Change — 21-day change in CBOE VIX (pp). Positive coefficient = rising fear drives gold UP (safe-haven demand active). Negative = gold decoupling from fear (risk-on regime ignoring safe-haven).',
+  yield_curve_chg:  'Yield Curve Change — 21-day change in 10yr−3mo spread (pp). Negative coefficient = flattening/inversion is bullish for gold (recession fear → safe-haven). Positive = steepening drives growth optimism, headwind for gold.',
+  real_rate_chg:    'Real Rate Change — 21-day change in real rate (10yr yield − CPI, pp). Negative coefficient is the canonical gold relationship: rising real rates = opportunity cost of holding gold rises → gold falls.',
+  cpi_accel:        'CPI Acceleration — 21-day change in CPI YoY % (pp). Positive coefficient = re-accelerating inflation is bullish for gold (inflation hedge regime active). Negative = disinflationary period where gold loses its inflation premium.',
+  ff_chg:           'Fed Funds Change — 21-day change in US Federal Funds Rate (pp). Negative coefficient = Fed hiking predicts gold decline (tightening kills gold). Positive = rate cuts (or hike pauses) are bullish for gold.',
+  unemp_chg:        'Unemployment Change — 21-day change in US Unemployment Rate (pp). Positive coefficient = rising unemployment predicts gold gains (recession fear → safe-haven demand). Negative = labour tightening drives growth, headwind for gold.',
+  cape_chg:         'PE Ratio Change — 21-day change in S&P 500 trailing PE. Negative coefficient = equity valuation expansion (risk-on) is a headwind for gold. Positive = valuation compression (fear of equity drawdown) → gold gains.',
+  hy_spread_chg:    'Credit Spread Change — 21-day change in US HY spread (pp). Positive coefficient = credit stress drives safe-haven gold demand. One of the most reliable gold bull signals historically.',
+  copper_mom:       'Copper Momentum — 21-day % change in copper futures. Negative coefficient = copper rally (growth regime) is a headwind for gold (money flows to industrial assets). Positive = both rallying = broad commodity / inflation regime.',
+  m2_chg:           'M2 Change — 21-day change in M2 YoY % (pp). Positive coefficient = liquidity expansion drives gold (money printing signal). Negative = liquidity withdrawal pulls capital from gold.',
+  ism_chg:          'ISM PMI Change — 21-day change in ISM Manufacturing PMI. Negative coefficient = manufacturing acceleration is a headwind (risk-on, growth). Positive = manufacturing contraction (slowdown fear) drives gold safe-haven.',
   // Legacy names (backward compat)
   vix:              'VIX Level — CBOE Volatility Index (fear gauge). Legacy level feature.',
   yield_curve:      'Yield Curve Level — US 10yr minus 3mo yield spread (%). Legacy level feature.',
