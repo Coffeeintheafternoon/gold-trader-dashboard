@@ -1487,7 +1487,7 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
             content: ev.label,
             position: 'start',
             color: ev.color + 'cc',
-            font: { size: 8 },
+            font: { size: 11 },
             rotation: -90,
             backgroundColor: 'transparent',
             padding: 2,
