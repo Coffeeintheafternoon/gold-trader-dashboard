@@ -155,6 +155,163 @@
     .meta-table th { text-align: left; padding: 8px 12px; color: var(--gold); border-bottom: 1px solid #2a1f00; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'SF Mono','Fira Mono','Consolas',monospace; }
     .meta-table td { padding: 8px 12px; border-bottom: 1px solid #141414; }
     .sortable-ghost { opacity: 0.35 !important; background: rgba(245,165,32,0.08) !important; border-color: var(--gold) !important; }
+
+    /* ═══════════════════════════════════════════════════════════
+       TAB THEMING  —  4 distinct aesthetics
+       Model Lab = base / reference (no overrides)
+       ═══════════════════════════════════════════════════════════ */
+
+    /* Shared: 2 px accent bar at top of each themed tab */
+    #tab-signal::before, #tab-papertrade::before,
+    #tab-regime::before,  #tab-chatter::before {
+      content: ''; display: block; height: 2px; margin-bottom: 22px;
+    }
+
+    /* ── 1. SIGNAL  —  Cyberpunk Command Centre ─────────────────
+       Near-black with blue tint + horizontal scan-lines
+       Accent: electric cyan #00d4ff
+       Cards: dark teal, cyan glow border, monospace labels
+    ──────────────────────────────────────────────────────────── */
+    #tab-signal {
+      --gold: #00d4ff;  --gold-dim: #009ec0;
+      --text: #c8e8ef;  --muted: #456878;
+      --card: #040c12;  --card2: #060f16;
+    }
+    #tab-signal::before {
+      background: linear-gradient(90deg, transparent, #00d4ff 30%, #0066ff 55%, #00d4ff 70%, transparent);
+    }
+    body[data-tab="signal"] {
+      background: #010608
+        repeating-linear-gradient(0deg, transparent, transparent 3px,
+          rgba(0,212,255,0.013) 3px, rgba(0,212,255,0.013) 4px);
+    }
+    body[data-tab="signal"] main { background: transparent; }
+    #tab-signal .chart-card,
+    #tab-signal .hero-card      { border-color: rgba(0,212,255,0.16); background: var(--card); }
+    #tab-signal .chart-card:hover { border-color: rgba(0,212,255,0.32); }
+    #tab-signal .hero-card      { border-left: 2px solid rgba(0,212,255,0.55); }
+    #tab-signal .metrics-grid   { border-color: rgba(0,212,255,0.14); border-radius: 4px; }
+    #tab-signal .metrics-section { border-right-color: rgba(0,212,255,0.12); }
+    #tab-signal .metrics-section-header { background:#030a0f; border-bottom-color:rgba(0,212,255,0.15); }
+    #tab-signal .metrics-row    { border-bottom-color: rgba(0,212,255,0.07); }
+    #tab-signal .metrics-row:nth-child(even) { background: rgba(0,212,255,0.025); }
+    #tab-signal .section-divider-line  { background: rgba(0,212,255,0.20); }
+    #tab-signal .section-divider-label { color: #00d4ff; letter-spacing: 3px; }
+    #tab-signal .hero-label,
+    #tab-signal .chart-title    { font-family:'SF Mono','Fira Mono','Consolas',monospace; letter-spacing:1.5px; }
+    #tab-signal .hero-value     { font-family:'SF Mono','Fira Mono','Consolas',monospace; }
+    #tab-signal .color-gold     { color:#00d4ff; text-shadow:0 0 14px rgba(0,212,255,0.55); }
+    #tab-signal .meta-table th  { color:#00d4ff; border-color:rgba(0,212,255,0.15); }
+    body[data-tab="signal"] #tabnav-signal.active {
+      background:#00d4ff; border-color:#00d4ff; color:#000;
+    }
+
+    /* ── 2. PAPER TRADING  —  Institutional Finance ─────────────
+       Deep navy blue background
+       Accent: sky-blue #60a5fa
+       Cards: navy gradient, 8 px radius, spacious premium feel
+    ──────────────────────────────────────────────────────────── */
+    #tab-papertrade {
+      --gold: #60a5fa;  --gold-dim: #3b82f6;
+      --text: #dbe8ff;  --muted: #5870a0;
+      --card: #070f1c;  --card2: #091426;
+    }
+    #tab-papertrade::before {
+      background: linear-gradient(90deg, transparent, #1d4ed8 25%, #60a5fa 50%, #1d4ed8 75%, transparent);
+    }
+    body[data-tab="papertrade"] { background: #03091a; }
+    body[data-tab="papertrade"] main { background: transparent; }
+    #tab-papertrade .chart-card,
+    #tab-papertrade .hero-card {
+      border-color: rgba(96,165,250,0.16);
+      border-radius: 8px;
+      background: linear-gradient(160deg, var(--card) 0%, #091426 100%);
+    }
+    #tab-papertrade .chart-card:hover { border-color: rgba(96,165,250,0.32); }
+    #tab-papertrade .hero-card {
+      border-top: 1px solid rgba(96,165,250,0.30);
+      border-bottom: 1px solid rgba(96,165,250,0.08);
+    }
+    #tab-papertrade .metrics-grid   { border-color: rgba(96,165,250,0.14); border-radius: 8px; }
+    #tab-papertrade .metrics-section { border-right-color: rgba(96,165,250,0.12); }
+    #tab-papertrade .metrics-section-header { background:#060d1c; border-bottom-color:rgba(96,165,250,0.15); }
+    #tab-papertrade .metrics-row    { border-bottom-color: rgba(96,165,250,0.07); }
+    #tab-papertrade .metrics-row:nth-child(even) { background: rgba(96,165,250,0.028); }
+    #tab-papertrade .section-divider-line  { background: rgba(96,165,250,0.22); }
+    #tab-papertrade .section-divider-label { color: #60a5fa; letter-spacing: 2.5px; }
+    #tab-papertrade .hero-label     { letter-spacing: 1.8px; }
+    #tab-papertrade .color-gold     { color: #60a5fa; }
+    #tab-papertrade .meta-table th  { color:#60a5fa; border-color:rgba(96,165,250,0.15); }
+    body[data-tab="papertrade"] #tabnav-papertrade.active {
+      background:#60a5fa; border-color:#60a5fa; color:#000;
+    }
+
+    /* ── 3. REGIME  —  Research Laboratory ──────────────────────
+       Deep indigo-black + subtle dot-grid background
+       Accent: violet #a78bfa
+       Cards: dark purple-tinted, 6 px radius, academic feel
+    ──────────────────────────────────────────────────────────── */
+    #tab-regime {
+      --gold: #a78bfa;  --gold-dim: #7c5fd4;
+      --text: #e0d8ff;  --muted: #68588a;
+      --card: #0b0818;  --card2: #0f0c20;
+    }
+    #tab-regime::before {
+      background: linear-gradient(90deg, transparent, #5b21b6 25%, #a78bfa 50%, #5b21b6 75%, transparent);
+    }
+    body[data-tab="regime"] { background: #050314; }
+    body[data-tab="regime"] main {
+      background: radial-gradient(circle, rgba(167,139,250,0.07) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    #tab-regime .chart-card,
+    #tab-regime .hero-card    { border-color: rgba(167,139,250,0.16); border-radius: 6px; background: var(--card); }
+    #tab-regime .chart-card:hover { border-color: rgba(167,139,250,0.30); }
+    #tab-regime .hero-card    { border-bottom: 1px solid rgba(167,139,250,0.30); }
+    #tab-regime .metrics-grid { border-color: rgba(167,139,250,0.14); }
+    #tab-regime .metrics-section { border-right-color: rgba(167,139,250,0.12); }
+    #tab-regime .metrics-section-header { background:#08051a; border-bottom-color:rgba(167,139,250,0.15); }
+    #tab-regime .metrics-row  { border-bottom-color: rgba(167,139,250,0.07); }
+    #tab-regime .metrics-row:nth-child(even) { background: rgba(167,139,250,0.025); }
+    #tab-regime .section-divider-line  { background: rgba(167,139,250,0.22); }
+    #tab-regime .section-divider-label { color: #a78bfa; letter-spacing: 2.5px; }
+    #tab-regime .color-gold   { color: #a78bfa; }
+    #tab-regime .meta-table th { color:#a78bfa; border-color:rgba(167,139,250,0.15); }
+    body[data-tab="regime"] #tabnav-regime.active {
+      background:#a78bfa; border-color:#a78bfa; color:#000;
+    }
+
+    /* ── 4. CHATTER  —  Intel Wire / News Room ───────────────────
+       Warm dark amber-black background
+       Accent: orange-amber #fb923c (distinct from base gold)
+       Cards: warm dark, bold left-border, wire-service feel
+    ──────────────────────────────────────────────────────────── */
+    #tab-chatter {
+      --gold: #fb923c;  --gold-dim: #c2691e;
+      --text: #f5e6d4;  --muted: #8a6840;
+      --card: #100a00;  --card2: #160e00;
+    }
+    #tab-chatter::before {
+      background: linear-gradient(90deg, transparent, #c2410c 25%, #fb923c 50%, #c2410c 75%, transparent);
+    }
+    body[data-tab="chatter"] { background: #080400; }
+    body[data-tab="chatter"] main { background: transparent; }
+    #tab-chatter .chart-card,
+    #tab-chatter .hero-card { border-color: rgba(251,146,60,0.16); background: var(--card); }
+    #tab-chatter .chart-card { border-left: 3px solid rgba(251,146,60,0.40); }
+    #tab-chatter .chart-card:hover { border-color: rgba(251,146,60,0.32); }
+    #tab-chatter .metrics-grid   { border-color: rgba(251,146,60,0.14); }
+    #tab-chatter .metrics-section { border-right-color: rgba(251,146,60,0.12); }
+    #tab-chatter .metrics-section-header { background:#0c0700; border-bottom-color:rgba(251,146,60,0.15); }
+    #tab-chatter .metrics-row    { border-bottom-color: rgba(251,146,60,0.07); }
+    #tab-chatter .metrics-row:nth-child(even) { background: rgba(251,146,60,0.025); }
+    #tab-chatter .section-divider-line  { background: rgba(251,146,60,0.22); }
+    #tab-chatter .section-divider-label { color: #fb923c; letter-spacing: 3px; }
+    #tab-chatter .color-gold    { color: #fb923c; }
+    #tab-chatter .meta-table th { color:#fb923c; border-color:rgba(251,146,60,0.15); }
+    body[data-tab="chatter"] #tabnav-chatter.active {
+      background:#fb923c; border-color:#fb923c; color:#000;
+    }
   </style>
 </head>
 <body>
@@ -1852,6 +2009,7 @@ const TABS = ['signal','modellab','universe','meta','papertrade','regime','macro
 const _tabInit = new Set();
 
 function switchTab(id) {
+  document.body.dataset.tab = id;
   TABS.forEach(t => {
     document.getElementById('tab-'+t).style.display = t === id ? 'block' : 'none';
     document.getElementById('tabnav-'+t).classList.toggle('active', t === id);
