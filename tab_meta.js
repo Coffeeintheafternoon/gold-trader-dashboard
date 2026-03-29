@@ -13,6 +13,7 @@ const _CAT_COLOR={
 };
 
 const _MT_COLOR={
+  'Ridge (v5)':         'rgba(245,165,32,0.90)',
   'Ridge (v4)':         'rgba(16,185,129,0.85)',
   'Ridge (1yr)':        'rgba(245,165,32,0.75)',
   'Ridge (6mo)':        'rgba(251,191,36,0.55)',
@@ -68,6 +69,7 @@ let _trCharts=new Array(20).fill(null);
 let _modelIndexData=null, _screenerFull=null;
 let _modelIndexFlat=[];
 let _activeModelFilter='All';
+let _mcptLookup={}; // ticker → {status, mcpt_p, overfit}
 let _metaSectorChart=null,_metaPfHistChart=null,_metaScatterChart=null,_metaSharpeChart=null;
 
 // ── Sector / MC toggle state ──────────────────────────────────────────────
@@ -103,6 +105,7 @@ async function initMetaTab(){
   if(!_fullScreenerData) loads.push(fetch(`./screener_full.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d){_fullScreenerData=d.tickers||[];}}).catch(()=>{}));
   if(!_compData) loads.push(fetch(`./models_comparison.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
   if(!_metaFeatData) loads.push(fetch(`./meta_features.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_metaFeatData=d;}).catch(()=>{}));
+  if(!Object.keys(_mcptLookup).length) loads.push(fetch(`./mcpt_results.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.results){d.results.forEach(r=>{_mcptLookup[r.ticker]={status:r.status,mcpt_p:r.mcpt_p,overfit:r.overfit};});}}).catch(()=>{}));
   await Promise.all(loads);
   _screenerFull=_fullScreenerData||[];
 
@@ -119,13 +122,19 @@ async function initMetaTab(){
   _screenerFull.forEach(t=>{
     if(!t.ticker)return;
     const en=enrichLookup[t.ticker]||{};
+    const mc=_mcptLookup[t.ticker]||{};
     (t.models||[]).forEach(e=>{
+      // Use MCPT overfit if available (more accurate for v5), fallback to ticker-level
+      const overfit=mc.overfit||en.overfit||null;
+      // MCPT status only applies to v5 models (the batch that was MCPT'd)
+      const mcpt_status=(e.label||'').includes('v5')?(mc.status||'NOT_RUN'):null;
       _modelIndexFlat.push({
         ticker:t.ticker, model_type:e.label||'Unknown', label:e.label||'Unknown', safe_name:e.safe_name||'',
         ho_pf:e.ho_pf, ho_sharpe:e.ho_sharpe, is_pf:e.is_pf, is_sharpe:e.is_sharpe,
         sector:secLookup[t.ticker]||'Other',
-        overfit:en.overfit, p_value:en.p_value, oos_bars:en.oos_bars,
-        mean_ann_pct:en.mean_ann_pct, ci95_lower:en.ci95_lower,
+        overfit, mcpt_status,
+        p_value:mc.mcpt_p??en.p_value??null,
+        oos_bars:en.oos_bars, mean_ann_pct:en.mean_ann_pct, ci95_lower:en.ci95_lower,
       });
     });
   });
@@ -155,7 +164,7 @@ function _getMetaFiltered(){
   let rows = _activeModelFilter==='All' ? _modelIndexFlat : _modelIndexFlat.filter(r=>r.model_type===_activeModelFilter);
   if(minPF)   rows=rows.filter(r=>r.ho_pf!=null&&r.ho_pf>=minPF);
   if(minSh!=null) rows=rows.filter(r=>r.ho_sharpe!=null&&r.ho_sharpe>=minSh);
-  if(mcptF)   rows=rows.filter(r=>r.p_value!=null&&r.p_value<=parseFloat(mcptF));
+  if(mcptF){const mcptVals=mcptF.split('|');rows=rows.filter(r=>r.mcpt_status&&mcptVals.includes(r.mcpt_status));}
   if(ovfVals) rows=rows.filter(r=>r.overfit&&ovfVals.includes(r.overfit));
   return rows;
 }
