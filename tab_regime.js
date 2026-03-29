@@ -1432,7 +1432,7 @@ const _MM_TIPS = {
   m2_yoy:           'M2 YoY Level — US M2 money supply year-over-year % change. Legacy level feature.',
 };
 
-function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents) {
+function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents, extraDatasets = []) {
   const togglesId = id + '-togs';
   const wrap = document.createElement('div');
   wrap.style.marginBottom = '20px';
@@ -1464,6 +1464,8 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
     }));
     datasets.push({ label:'_zero', data: dates.map(()=>0), borderColor:'#2a2a2a', borderWidth:1,
                     borderDash:[3,3], pointRadius:0, fill:false, tension:0 });
+    extraDatasets.forEach(ed => datasets.push(ed));
+    const hasR2 = extraDatasets.some(ed => ed.yAxisID === 'r2');
 
     // Build event annotations
     const dateStart = dates.length ? new Date(dates[0]).getTime() : 0;
@@ -1512,6 +1514,7 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
               label: item => {
                 if (item.dataset.label === '_zero') return null;
                 const v = item.raw;
+                if (item.dataset.yAxisID === 'r2') return `  R²: ${v != null ? v.toFixed(3) : '—'}`;
                 return `  ${item.dataset.label}: ${v != null ? yFmt(v) : '—'}`;
               },
             },
@@ -1523,6 +1526,10 @@ function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, he
                        callback: function(val){ const l=this.getLabelForValue(val); if(!l) return ''; const d=new Date(l); return isNaN(d)?l:d.getFullYear(); } },
                grid:{color:'#111'} },
           y: { grid:{color:SQ.grid}, ticks:{ font:{size:9}, maxTicksLimit:7, callback: v => yFmt(v) } },
+          ...(hasR2 ? { r2: { position:'right', grid:{display:false},
+            ticks:{ font:{size:9}, maxTicksLimit:5, color:'#94a3b8',
+                    callback: v => v.toFixed(1) },
+            title:{ display:true, text:'R²', color:'#94a3b8', font:{size:9} } } } : {}),
         },
       },
     });
@@ -2105,14 +2112,28 @@ function _regimeBuildMomentumModels(container, models) {
     `;
     wrap.appendChild(modelHdr);
 
-    // Chart 1: Coefficients
+    // Chart 1: Coefficients + R² overlay
+    const r2Dataset = r2arr.length ? [{
+      label: 'R²',
+      data: r2arr,
+      yAxisID: 'r2',
+      borderColor: '#e2e8f0',
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+      borderDash: [],
+      order: -1,
+    }] : [];
     _mmMakeChart(wrap,
       `rd-mm-coef-${key}`,
-      'Sensitivity (Coefficients)',
-      'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. Vertical lines = key macro events. Drag to zoom.',
+      'Sensitivity (Coefficients)  ·  R² on right axis',
+      'Standardised Ridge coefficient per feature. Positive = feature predicted S&P rising at that window. When a line crosses zero, the relationship with S&P inverted. White line = rolling in-sample R² (right axis) — how well the model fit that window. Drag to zoom.',
       dates, feats, coefs,
       v => (v >= 0 ? '+' : '') + v.toFixed(4),
-      340, true
+      340, true, r2Dataset
     );
 
     // Chart 2: Contributions
