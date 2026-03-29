@@ -1358,51 +1358,75 @@ function _mmNearestDate(dates, target) {
 }
 
 const _MM_COLORS = {
-  gold_mom:      '#22c55e',   // green
-  dxy_mom:       '#60a5fa',   // blue
-  oil_mom:       '#f97316',   // orange
-  vix:           '#ef4444',   // red
-  yield_curve:   '#e879f9',   // fuchsia
-  real_rate:     '#a78bfa',   // purple
-  cpi_yoy:       '#fbbf24',   // amber
-  ff_chg:        '#2dd4bf',   // teal
+  gold_mom:         '#22c55e',   // green
+  dxy_mom:          '#60a5fa',   // blue
+  oil_mom:          '#f97316',   // orange
+  vix_chg:          '#ef4444',   // red
+  yield_curve_chg:  '#e879f9',   // fuchsia
+  real_rate_chg:    '#a78bfa',   // purple
+  cpi_accel:        '#fbbf24',   // amber
+  ff_chg:           '#2dd4bf',   // teal
+  unemp_chg:        '#fb923c',   // light orange
   // V2 enhanced features
-  cape:          '#d8b4fe',   // lavender
-  hy_spread_chg: '#fda4af',   // rose
-  copper_mom:    '#d97706',   // copper/brown
-  m2_yoy:        '#7dd3fc',   // sky blue
-  ism_chg:       '#bef264',   // lime
+  cape_chg:         '#d8b4fe',   // lavender
+  hy_spread_chg:    '#fda4af',   // rose
+  copper_mom:       '#d97706',   // copper/brown
+  m2_chg:           '#7dd3fc',   // sky blue
+  ism_chg:          '#bef264',   // lime
+  // Legacy names (backward compat)
+  vix:              '#ef4444',
+  yield_curve:      '#e879f9',
+  real_rate:        '#a78bfa',
+  cpi_yoy:          '#fbbf24',
+  cape:             '#d8b4fe',
+  m2_yoy:           '#7dd3fc',
 };
 const _MM_LABELS = {
-  gold_mom:      'Gold Mom',
-  dxy_mom:       'DXY Mom',
-  oil_mom:       'Oil Mom',
-  vix:           'VIX',
-  yield_curve:   'Yield Curve',
-  real_rate:     'Real Rate',
-  cpi_yoy:       'CPI YoY',
-  ff_chg:        'Fed Funds Δ',
-  cape:          'PE Ratio',
-  hy_spread_chg: 'Credit Spread Δ',
-  copper_mom:    'Copper Mom',
-  m2_yoy:        'M2 Growth',
-  ism_chg:       'ISM Δ',
+  gold_mom:         'Gold Mom',
+  dxy_mom:          'DXY Mom',
+  oil_mom:          'Oil Mom',
+  vix_chg:          'VIX Δ',
+  yield_curve_chg:  'Yield Curve Δ',
+  real_rate_chg:    'Real Rate Δ',
+  cpi_accel:        'CPI Accel',
+  ff_chg:           'Fed Funds Δ',
+  unemp_chg:        'Unemp Δ',
+  cape_chg:         'PE Ratio Δ',
+  hy_spread_chg:    'Credit Spread Δ',
+  copper_mom:       'Copper Mom',
+  m2_chg:           'M2 Δ',
+  ism_chg:          'ISM Δ',
+  // Legacy
+  vix:              'VIX',
+  yield_curve:      'Yield Curve',
+  real_rate:        'Real Rate',
+  cpi_yoy:          'CPI YoY',
+  cape:             'PE Ratio',
+  m2_yoy:           'M2 Growth',
 };
 
 const _MM_TIPS = {
-  gold_mom:    'Gold Momentum — N-month % change in gold spot price (USD). Positive = gold has been rising. A positive coefficient means gold momentum was predicting S&P gains at that window.',
-  dxy_mom:     'DXY Momentum — N-month % change in the US Dollar Index. Positive DXY = USD strengthening vs basket of major currencies. A negative coefficient typically means strong USD predicts weaker S&P (risk-off).',
-  oil_mom:     'Oil Momentum — N-month % change in WTI crude oil price. Rising oil can signal inflation (bad for equities) or strong global demand (good). Excluded in extended models (data only from 1986).',
-  vix:         'VIX Level — CBOE Volatility Index (fear gauge). High VIX = market expects large swings. Synthetic VIX used pre-1990 (Parkinson vol × calibration factor). A positive coefficient = high fear predicts S&P gains next quarter (contrarian buy signal).',
-  yield_curve: 'Yield Curve — US 10yr Treasury yield minus US 3-month T-bill yield (%). Positive = normal (long rates > short rates, growth expected). Negative / inverted = recession warning. Excluded in extended models (3mo data only from 1982).',
-  real_rate:   'Real Rate — US 10yr yield minus CPI YoY inflation rate (%). Negative real rates = money losing purchasing power, tends to support gold and equities. Positive = bonds competitive vs equities.',
-  cpi_yoy:     'CPI YoY — US Consumer Price Index, year-over-year % change. Measures inflation. High/rising CPI can trigger Fed tightening (bad for equities) or reflect strong nominal growth (mixed).',
-  ff_chg:        'Fed Funds Change — Absolute 3-month change in the US Federal Funds Rate (%). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace and direction of monetary policy shifts.',
-  cape:          'PE Ratio — S&P 500 trailing Price-to-Earnings ratio. High PE = expensive stocks relative to earnings. Historically a negative predictor of forward returns (high PE → lower future gains), but this relationship breaks down in QE/zero-rate eras.',
-  hy_spread_chg: 'Credit Spread Change — 3-month change in the US High-Yield bond spread (ICE BofA index). Rising = credit markets pricing more default risk, financial stress building. One of the best leading indicators of recessions — typically widens 3–6 months before equity stress.',
-  copper_mom:    'Copper Momentum — N-month % change in COMEX copper futures. Rising copper = global industrial demand expanding = growth regime. Divergence from gold (copper up, gold flat) = growth story. Both falling together = crisis.',
-  m2_yoy:        'M2 Money Supply Growth — US M2 YoY % change. M2 = cash + deposits + money market funds. High M2 growth = abundant liquidity, historically bullish for risk assets (2020–21 rally was largely M2-driven). Contraction = liquidity withdrawal.',
-  ism_chg:       'ISM PMI Change — 3-month change in the ISM Manufacturing Purchasing Managers Index. PMI > 50 = manufacturing expanding. Rising ISM = growth accelerating. A strong leading indicator of economic direction, surveying actual purchasing managers.',
+  gold_mom:         'Gold Momentum — 21-day % change in gold spot price (USD). Positive = gold has been rising. A positive coefficient means gold momentum was predicting S&P gains at that window.',
+  dxy_mom:          'DXY Momentum — 21-day % change in the US Dollar Index. Positive DXY = USD strengthening vs basket of major currencies. A negative coefficient typically means strong USD predicts weaker S&P (risk-off).',
+  oil_mom:          'Oil Momentum — 21-day % change in WTI crude oil price. Rising oil can signal inflation (bad for equities) or strong global demand (good). Excluded in extended models (data only from 1986).',
+  vix_chg:          'VIX Change — 21-day change in the CBOE VIX (volatility index, pp). Positive = fear rising. Synthetic VIX used pre-1990. Captures the direction of fear, not just its level.',
+  yield_curve_chg:  'Yield Curve Change — 21-day change in the 10yr−3mo spread (pp). Positive = curve steepening (growth optimism building). Negative = flattening/inverting (recession risk rising).',
+  real_rate_chg:    'Real Rate Change — 21-day change in the real rate (10yr yield − CPI YoY, pp). Rising real rates = bonds becoming more attractive vs equities, headwind for gold.',
+  cpi_accel:        'CPI Acceleration — 21-day change in CPI YoY % (pp). Positive = inflation re-accelerating. This captures the second derivative of inflation — the momentum of the inflation trend, not its level.',
+  ff_chg:           'Fed Funds Change — 21-day change in the US Federal Funds Rate (pp). Positive = Fed is raising rates (tightening). Negative = cutting (easing). Captures the pace of monetary policy shifts.',
+  unemp_chg:        'Unemployment Change — 21-day change in US Unemployment Rate (pp). Rising = labour market weakening, recession signal. Falling = tightening labour market, inflationary pressure.',
+  cape_chg:         'PE Ratio Change — 21-day change in S&P 500 trailing PE ratio. Rising = market getting more expensive relative to earnings (stretched valuations). Falling = valuation compression.',
+  hy_spread_chg:    'Credit Spread Change — 21-day change in the US High-Yield bond spread (pp). Rising = credit markets pricing more default risk, financial stress building.',
+  copper_mom:       'Copper Momentum — 21-day % change in COMEX copper futures. Rising copper = global industrial demand expanding = growth regime.',
+  m2_chg:           'M2 Change — 21-day change in US M2 money supply YoY % (pp). Positive = liquidity expanding. Captures shifts in monetary stimulus / tightening.',
+  ism_chg:          'ISM PMI Change — 21-day change in the ISM Manufacturing PMI. Rising = manufacturing activity accelerating. A strong leading indicator of economic direction.',
+  // Legacy names (backward compat)
+  vix:              'VIX Level — CBOE Volatility Index (fear gauge). Legacy level feature.',
+  yield_curve:      'Yield Curve Level — US 10yr minus 3mo yield spread (%). Legacy level feature.',
+  real_rate:        'Real Rate Level — US 10yr yield minus CPI YoY (%). Legacy level feature.',
+  cpi_yoy:          'CPI YoY Level — US Consumer Price Index, year-over-year % change. Legacy level feature.',
+  cape:             'PE Ratio Level — S&P 500 trailing Price-to-Earnings ratio. Legacy level feature.',
+  m2_yoy:           'M2 YoY Level — US M2 money supply year-over-year % change. Legacy level feature.',
 };
 
 function _mmMakeChart(container, id, label, tip, dates, feats, dataMap, yFmt, height, showEvents) {
