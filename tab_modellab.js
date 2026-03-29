@@ -870,6 +870,32 @@ let _mlScoreDistChart    = null;
 let _mlWindowSharpeChart = null;
 let _mlCurrentData = null;
 
+function mlSwitchTATab(tab) {
+  const isIS = tab === 'is';
+  const btnIS = document.getElementById('ml-ta-btn-is');
+  const btnHO = document.getElementById('ml-ta-btn-ho');
+  if (!btnIS || !btnHO) return;
+
+  document.querySelectorAll('.ml-ta-is').forEach(el => { el.style.display = isIS ? '' : 'none'; });
+  document.querySelectorAll('.ml-ta-ho').forEach(el => { el.style.display = isIS ? 'none' : ''; });
+
+  if (isIS) {
+    btnIS.style.cssText = `font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid ${SQ.green};background:${hexA(SQ.green,0.13)};color:${SQ.green};cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase`;
+    btnHO.style.cssText = `font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid #333;background:transparent;color:${SQ.muted};cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase`;
+  } else {
+    btnHO.style.cssText = `font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid ${SQ.green};background:${hexA(SQ.green,0.13)};color:${SQ.green};cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase`;
+    btnIS.style.cssText = `font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid #333;background:transparent;color:${SQ.muted};cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase`;
+  }
+
+  // Resize whichever charts just became visible (responsive canvas needs nudge)
+  setTimeout(() => {
+    const visible = isIS
+      ? [_mlMonthlyChart, _mlRetDistChart, _mlDurRetChart]
+      : [_mlMonthlyChartHO, _mlRetDistChartHO, _mlDurRetChartHO];
+    visible.forEach(c => c && c.resize());
+  }, 20);
+}
+
 function mlSwitchTradeTab(tab) {
   const btnIS = document.getElementById('ml-tl-btn-is');
   const btnHO = document.getElementById('ml-tl-btn-ho');
