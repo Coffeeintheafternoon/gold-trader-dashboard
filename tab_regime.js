@@ -43,7 +43,7 @@ async function initRegimeTab() {
   body.style.cssText = 'display:block; padding: 0 16px';
 
   // Section 0: Historical Regime Detection (1971–present)
-  if (detectData) _regimeBuildDetectionSection(body, detectData);
+  // if (detectData) _regimeBuildDetectionSection(body, detectData);  // hidden
 
   // Section 0b: Rolling momentum models
   if (detectData && detectData.momentum_models) _regimeBuildMomentumModels(body, detectData.momentum_models);
