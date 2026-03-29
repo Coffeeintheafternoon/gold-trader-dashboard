@@ -874,12 +874,12 @@ function mlSwitchTradeTab(tab) {
   const btnIS = document.getElementById('ml-tl-btn-is');
   const btnHO = document.getElementById('ml-tl-btn-ho');
   if (tab === 'is') {
-    btnIS.style.background='#60a5fa22'; btnIS.style.borderColor='#60a5fa'; btnIS.style.color='#60a5fa';
-    btnHO.style.background='transparent'; btnHO.style.borderColor='#444'; btnHO.style.color='#6b7280';
+    btnIS.style.background=hexA(SQ.green,0.13); btnIS.style.borderColor=SQ.green; btnIS.style.color=SQ.green;
+    btnHO.style.background='transparent'; btnHO.style.borderColor=SQ.neutral; btnHO.style.color=SQ.muted;
     buildMLTradeLog(_mlTradesIS, 'is');
   } else {
-    btnHO.style.background='#34d39922'; btnHO.style.borderColor='#34d399'; btnHO.style.color='#34d399';
-    btnIS.style.background='transparent'; btnIS.style.borderColor='#444'; btnIS.style.color='#6b7280';
+    btnHO.style.background=hexA(SQ.cyan,0.13); btnHO.style.borderColor=SQ.cyan; btnHO.style.color=SQ.cyan;
+    btnIS.style.background='transparent'; btnIS.style.borderColor=SQ.neutral; btnIS.style.color=SQ.muted;
     buildMLTradeLog(_mlTradesHO, 'ho');
   }
 }
@@ -905,8 +905,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   if (_mlWindowSharpeChart) { _mlWindowSharpeChart.destroy(); _mlWindowSharpeChart = null; }
   // _mlRegimeChart is owned by buildMLRegimePanel — do not destroy it here
 
-  const axStyle = { color: '#6b7280', font: { size: 10 } };
-  const gridStyle = { color: '#1e1e1e' };
+  const axStyle = { color: SQ.muted, font: { size: 10 } };
+  const gridStyle = { color: SQ.grid };
 
   // ── 1. Monthly P&L — IS chart + HO chart (separate) ─────────────────────────
   const mthLabelFn = k => { const [y,m]=k.split('-'); return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]} ${y.slice(2)}`; };
@@ -933,8 +933,11 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     data: {
       labels: isMKeys.map(mthLabelFn),
       datasets: [{ data: isMVals,
-        backgroundColor: isMVals.map(v => v >= 0 ? 'rgba(0,255,65,0.75)' : 'rgba(255,80,80,0.75)'),
-        borderColor:     isMVals.map(v => v >= 0 ? '#00ff41' : '#ff5050'),
+        backgroundColor:      isMVals.map(v => v >= 0 ? hexA(SQ.green, 0.70) : hexA(SQ.red, 0.70)),
+        borderColor:          isMVals.map(v => v >= 0 ? SQ.green : SQ.red),
+        hoverBackgroundColor: isMVals.map(v => v >= 0 ? hexA(SQ.green, 1.0) : hexA(SQ.red, 1.0)),
+        hoverBorderColor:     isMVals.map(v => v >= 0 ? SQ.green : SQ.red),
+        hoverBorderWidth: 2,
         borderWidth: 1, borderRadius: 3 }]
     },
     options: { ...mMonthlyOpts, plugins: { ...mMonthlyOpts.plugins,
@@ -958,8 +961,11 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: hoMKeys.map(mthLabelFn),
         datasets: [{ data: hoMVals,
-          backgroundColor: hoMVals.map(v => v >= 0 ? 'rgba(34,211,238,0.80)' : 'rgba(249,115,22,0.80)'),
-          borderColor:     hoMVals.map(v => v >= 0 ? '#22d3ee' : '#f97316'),
+          backgroundColor:      hoMVals.map(v => v >= 0 ? hexA(SQ.cyan, 0.70) : hexA(SQ.orange, 0.70)),
+          borderColor:          hoMVals.map(v => v >= 0 ? SQ.cyan : SQ.orange),
+          hoverBackgroundColor: hoMVals.map(v => v >= 0 ? hexA(SQ.cyan, 1.0) : hexA(SQ.orange, 1.0)),
+          hoverBorderColor:     hoMVals.map(v => v >= 0 ? SQ.cyan : SQ.orange),
+          hoverBorderWidth: 2,
           borderWidth: 1, borderRadius: 3 }]
       },
       options: { ...mMonthlyOpts, plugins: { ...mMonthlyOpts.plugins,
@@ -992,7 +998,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const retDistScales = {
     x: { ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
     y: { ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false },
-         title: { display: true, text: 'Count', color: '#6b7280', font: { size: 10 } } }
+         title: { display: true, text: 'Count', color: SQ.muted, font: { size: 10 } } }
   };
 
   _mlRetDistChart = new Chart(document.getElementById('ml-ret-dist-chart').getContext('2d'), {
@@ -1000,8 +1006,10 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     data: {
       labels: binLabels,
       datasets: [{ label: 'IS', data: isBins.map(b => b.cnt),
-        backgroundColor: isBins.map(b => b.lo >= 0 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
-        borderColor:     isBins.map(b => b.lo >= 0 ? '#00ff41' : '#ff5050'),
+        backgroundColor:      isBins.map(b => b.lo >= 0 ? hexA(SQ.green, 0.65) : hexA(SQ.red, 0.65)),
+        borderColor:          isBins.map(b => b.lo >= 0 ? SQ.green : SQ.red),
+        hoverBackgroundColor: isBins.map(b => b.lo >= 0 ? hexA(SQ.green, 1.0) : hexA(SQ.red, 1.0)),
+        hoverBorderWidth: 2,
         borderWidth: 1, borderRadius: 2 }]
     },
     options: {
@@ -1024,8 +1032,10 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: binLabels,
         datasets: [{ label: 'HO', data: hoBins.map(b => b.cnt),
-          backgroundColor: hoBins.map(b => b.lo >= 0 ? 'rgba(34,211,238,0.7)' : 'rgba(249,115,22,0.7)'),
-          borderColor:     hoBins.map(b => b.lo >= 0 ? '#22d3ee' : '#f97316'),
+          backgroundColor:      hoBins.map(b => b.lo >= 0 ? hexA(SQ.cyan, 0.65) : hexA(SQ.orange, 0.65)),
+          borderColor:          hoBins.map(b => b.lo >= 0 ? SQ.cyan : SQ.orange),
+          hoverBackgroundColor: hoBins.map(b => b.lo >= 0 ? hexA(SQ.cyan, 1.0) : hexA(SQ.orange, 1.0)),
+          hoverBorderWidth: 2,
           borderWidth: 1, borderRadius: 2 }]
       },
       options: {
@@ -1050,16 +1060,16 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   const hoWins3  = (tradesHO||[]).filter(t =>  t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
   const hoLoss3  = (tradesHO||[]).filter(t => !t.win).map(t => ({ x: t.bars||0, y: +(t.return_pct||0).toFixed(2) }));
   const durRetScales = {
-    x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color:'#6b7280', font:{size:10} } },
+    x: { ticks: axStyle, grid: gridStyle, title: { display: true, text: 'Bars Held', color: SQ.muted, font:{size:10} } },
     y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, border:{display:false},
-         title: { display: true, text: 'Return %', color:'#6b7280', font:{size:10} } }
+         title: { display: true, text: 'Return %', color: SQ.muted, font:{size:10} } }
   };
 
   _mlDurRetChart = new Chart(document.getElementById('ml-dur-ret-chart').getContext('2d'), {
     type: 'scatter',
     data: { datasets: [
-      { label: 'Win',  data: isWins3, backgroundColor: 'rgba(0,255,65,0.55)',  borderColor: '#00ff41', pointRadius: 4, pointHoverRadius: 6 },
-      { label: 'Loss', data: isLoss3, backgroundColor: 'rgba(255,80,80,0.55)', borderColor: '#ff5050', pointRadius: 4, pointHoverRadius: 6 }
+      { label: 'Win',  data: isWins3, backgroundColor: hexA(SQ.green, 0.55), borderColor: SQ.green, pointRadius: 4, pointHoverRadius: 8 },
+      { label: 'Loss', data: isLoss3, backgroundColor: hexA(SQ.red,   0.55), borderColor: SQ.red,   pointRadius: 4, pointHoverRadius: 8 }
     ]},
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
@@ -1076,8 +1086,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     _mlDurRetChartHO = new Chart(drHOCanvas.getContext('2d'), {
       type: 'scatter',
       data: { datasets: [
-        { label: 'Win',  data: hoWins3, backgroundColor: 'rgba(34,211,238,0.65)', borderColor: '#22d3ee', pointRadius: 4, pointHoverRadius: 6 },
-        { label: 'Loss', data: hoLoss3, backgroundColor: 'rgba(249,115,22,0.65)', borderColor: '#f97316', pointRadius: 4, pointHoverRadius: 6 }
+        { label: 'Win',  data: hoWins3, backgroundColor: hexA(SQ.cyan,   0.55), borderColor: SQ.cyan,   pointRadius: 4, pointHoverRadius: 8 },
+        { label: 'Loss', data: hoLoss3, backgroundColor: hexA(SQ.orange, 0.55), borderColor: SQ.orange, pointRadius: 4, pointHoverRadius: 8 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
@@ -1101,7 +1111,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   if (concBar && totalGross > 0) {
     concBar.innerHTML = sorted.map((t, i) => {
       const pct  = (Math.abs(t.return_pct) / totalGross * 100).toFixed(2);
-      const col  = t.win ? '#00ff41' : '#ff5050';
+      const col  = t.win ? SQ.green : SQ.red;
       const tip  = `#${i+1}: ${t.entry_date} → ${t.exit_date}  ${t.return_pct >= 0 ? '+' : ''}${t.return_pct.toFixed(2)}%  (${pct}% of gross)`;
       return `<div data-tip="${tip}" style="flex:${pct};background:${col};opacity:${0.35 + 0.65*(Math.abs(t.return_pct)/Math.abs(sorted[0].return_pct))};min-width:1px;cursor:pointer" title=""></div>`;
     }).join('');
@@ -1116,7 +1126,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   if (concLabelEl) {
     const flag = top80 <= 3 ? '⚠ concentrated' : top80 <= Math.round(tradesIS.length * 0.2) ? 'moderate' : 'well spread';
     concLabelEl.textContent = `Top ${top80} trade${top80>1?'s':''} = 80% of gross  ·  biggest = ${top1Pct}%  ·  ${flag}`;
-    concLabelEl.style.color = top80 <= 3 ? '#ff6b6b' : top80 <= 5 ? '#f5a520' : '#6b7280';
+    concLabelEl.style.color = top80 <= 3 ? SQ.red : top80 <= 5 ? SQ.amber : SQ.muted;
   }
 
   // Bubble chart: x=chrono index, y=return%, radius ∝ abs magnitude
@@ -1134,8 +1144,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   _mlConcChart = new Chart(document.getElementById('ml-conc-chart').getContext('2d'), {
     type: 'bubble',
     data: { datasets: [
-      { label: 'Win',  data: bubbleWins,   backgroundColor: 'rgba(0,255,65,0.5)',  borderColor: '#00ff41', borderWidth: 1 },
-      { label: 'Loss', data: bubbleLosses, backgroundColor: 'rgba(255,80,80,0.5)', borderColor: '#ff5050', borderWidth: 1 }
+      { label: 'Win',  data: bubbleWins,   backgroundColor: hexA(SQ.green, 0.50), borderColor: SQ.green, borderWidth: 1, hoverBorderWidth: 2 },
+      { label: 'Loss', data: bubbleLosses, backgroundColor: hexA(SQ.red,   0.50), borderColor: SQ.red,   borderWidth: 1, hoverBorderWidth: 2 }
     ]},
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
@@ -1148,8 +1158,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
         }}}
       },
       scales: {
-        x: { ticks: { ...axStyle, callback: v => `T${v}` }, grid: gridStyle, title: { display: true, text: 'Trade # (chronological)', color: '#6b7280', font: { size: 10 } } },
-        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
+        x: { ticks: { ...axStyle, callback: v => `T${v}` }, grid: gridStyle, title: { display: true, text: 'Trade # (chronological)', color: SQ.muted, font: { size: 10 } } },
+        y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle, title: { display: true, text: 'Return %', color: SQ.muted, font: { size: 10 } } }
       }
     }
   });
@@ -1183,8 +1193,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
   // ── Grouped bar chart: Win Rate, Avg Return, Profit Factor ─────────────────
   const lsChartEl = document.getElementById('ml-ls-chart');
   if (lsChartEl && (lstats || sstats)) {
-    const lColor = 'rgba(79,195,247,0.75)', lBorder = '#4fc3f7';
-    const sColor = 'rgba(244,114,182,0.75)', sBorder = '#f472b6';
+    const lColor = hexA(SQ.cyan,   0.70), lBorder = SQ.cyan;
+    const sColor = hexA(SQ.violet, 0.70), sBorder = SQ.violet;
     const metrics = ['Win Rate %', 'Avg Return %', 'Profit Factor', 'Avg Bars'];
     const lVals = lstats ? [+lstats.wr.toFixed(1), +lstats.avg.toFixed(2), lstats.pf!=null?+lstats.pf.toFixed(2):0, +lstats.avgBars.toFixed(1)] : [0,0,0,0];
     const sVals = sstats ? [+sstats.wr.toFixed(1), +sstats.avg.toFixed(2), sstats.pf!=null?+sstats.pf.toFixed(2):0, +sstats.avgBars.toFixed(1)] : [0,0,0,0];
@@ -1194,8 +1204,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: metrics,
         datasets: [
-          { label: '▲ Long',  data: lVals, backgroundColor: lColor, borderColor: lBorder, borderWidth: 1, borderRadius: 3 },
-          { label: '▼ Short', data: sVals, backgroundColor: sColor, borderColor: sBorder, borderWidth: 1, borderRadius: 3 }
+          { label: '▲ Long',  data: lVals, backgroundColor: lColor, borderColor: lBorder, hoverBackgroundColor: hexA(SQ.cyan,   1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 },
+          { label: '▼ Short', data: sVals, backgroundColor: sColor, borderColor: sBorder, hoverBackgroundColor: hexA(SQ.violet, 1.0), hoverBorderWidth: 2, borderWidth: 1, borderRadius: 3 }
         ]
       },
       options: {
@@ -1220,8 +1230,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     _mlLsScatter = new Chart(lsScEl.getContext('2d'), {
       type: 'scatter',
       data: { datasets: [
-        { label: '▲ Long',  data: longPts,  backgroundColor: 'rgba(79,195,247,0.6)',  borderColor: '#4fc3f7', pointRadius: 5, pointHoverRadius: 7 },
-        { label: '▼ Short', data: shortPts, backgroundColor: 'rgba(244,114,182,0.6)', borderColor: '#f472b6', pointRadius: 5, pointHoverRadius: 7 }
+        { label: '▲ Long',  data: longPts,  backgroundColor: hexA(SQ.cyan,   0.60), borderColor: SQ.cyan,   pointRadius: 5, pointHoverRadius: 9 },
+        { label: '▼ Short', data: shortPts, backgroundColor: hexA(SQ.violet, 0.60), borderColor: SQ.violet, pointRadius: 5, pointHoverRadius: 9 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
@@ -1236,7 +1246,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
         scales: {
           x: { display: false },
           y: { ticks: { ...axStyle, callback: v => `${v>0?'+':''}${v.toFixed(0)}%` }, grid: gridStyle,
-               title: { display: true, text: 'Return %', color: '#6b7280', font: { size: 10 } } }
+               title: { display: true, text: 'Return %', color: SQ.muted, font: { size: 10 } } }
         }
       }
     });
@@ -1250,18 +1260,18 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     const tile = (s, label, col, period) => !s ? '' : `
       <span style="color:${col};font-weight:700">${label}</span>
       <span style="color:var(--muted);font-size:10px;margin-left:4px">${period}</span>
-      <span style="color:#6b7280;margin-left:8px">${s.n} trades</span>
-      <span style="color:${+s.wr>=50?'#00ff41':'#ff6b6b'};margin-left:10px">${s.wr.toFixed(0)}% WR</span>
-      <span style="color:${s.avg>=0?'#00ff41':'#ff6b6b'};margin-left:10px">${s.avg>=0?'+':''}${s.avg.toFixed(2)}% avg</span>
-      <span style="color:${s.pf>=1.2?'#00ff41':s.pf>=1?'#f5a520':'#ff6b6b'};margin-left:10px">PF ${s.pf!=null?s.pf.toFixed(2):'—'}</span>`;
+      <span style="color:${SQ.muted};margin-left:8px">${s.n} trades</span>
+      <span style="color:${+s.wr>=50?SQ.green:SQ.red};margin-left:10px">${s.wr.toFixed(0)}% WR</span>
+      <span style="color:${s.avg>=0?SQ.green:SQ.red};margin-left:10px">${s.avg>=0?'+':''}${s.avg.toFixed(2)}% avg</span>
+      <span style="color:${s.pf>=1.2?SQ.green:s.pf>=1?SQ.amber:SQ.red};margin-left:10px">PF ${s.pf!=null?s.pf.toFixed(2):'—'}</span>`;
     const row = (s1, s2, label, col) => (s1||s2) ? `
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <div style="flex:1;min-width:200px;background:#0c0c0c;border-radius:5px;padding:6px 10px;border:1px solid #1a1a1a;font-size:11px">${tile(s1,label,col,'IS')}</div>
         <div style="flex:1;min-width:200px;background:#0c0c0c;border-radius:5px;padding:6px 10px;border:1px solid #1a1a1a;font-size:11px">${tile(s2,label,col,'HO')}</div>
       </div>` : '';
     lsWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
-      ${row(isLstats, hoLstats, '▲ Long',  '#4fc3f7')}
-      ${row(isSstats, hoSstats, '▼ Short', '#f472b6')}
+      ${row(isLstats, hoLstats, '▲ Long',  SQ.cyan)}
+      ${row(isSstats, hoSstats, '▼ Short', SQ.violet)}
     </div>`;
   }
 
@@ -1297,7 +1307,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
     });
 
     const posVals = allDates6.map(d => posMap[d]);
-    const barColors = posVals.map(v => v > 0 ? 'rgba(79,195,247,0.75)' : v < 0 ? 'rgba(244,114,182,0.75)' : 'rgba(80,80,80,0.35)');
+    const barColors = posVals.map(v => v > 0 ? hexA(SQ.cyan, 0.75) : v < 0 ? hexA(SQ.violet, 0.75) : hexA(SQ.neutral, 0.35));
 
     // IS/HO boundary annotation
     const annotations6 = {};
@@ -1306,8 +1316,8 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       if (hoIdx > 0) {
         annotations6.hoLine = {
           type: 'line', xMin: hoIdx - 0.5, xMax: hoIdx - 0.5,
-          borderColor: '#f5a520', borderWidth: 1.5, borderDash: [6, 3],
-          label: { content: 'HO', display: true, color: '#f5a520', font: { size: 9 }, position: 'start', backgroundColor: 'transparent' }
+          borderColor: SQ.amber, borderWidth: 1.5, borderDash: [6, 3],
+          label: { content: 'HO', display: true, color: SQ.amber, font: { size: 9 }, position: 'start', backgroundColor: 'transparent' }
         };
       }
     }
@@ -1329,11 +1339,11 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
           annotation: Object.keys(annotations6).length ? { annotations: annotations6 } : undefined
         },
         scales: {
-          x: { ticks: { color: '#555', maxTicksLimit: 10, font: { size: 9 } }, grid: { display: false } },
+          x: { ticks: { color: SQ.muted, maxTicksLimit: 10, font: { size: 9 } }, grid: { display: false } },
           y: {
             min: -1.2, max: 1.2,
-            ticks: { color: '#555', font: { size: 9 }, callback: v => v === 1 ? '▲' : v === -1 ? '▼' : '—', stepSize: 1 },
-            grid: { color: '#1e1e1e' }, border: { display: false }
+            ticks: { color: SQ.muted, font: { size: 9 }, callback: v => v === 1 ? '▲' : v === -1 ? '▼' : '—', stepSize: 1 },
+            grid: { color: SQ.grid }, border: { display: false }
           }
         }
       }
@@ -1355,8 +1365,10 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
         datasets: [{
           label: 'Win Rate %',
           data: bWR,
-          backgroundColor: bWR.map(v => v == null ? 'rgba(100,100,100,0.3)' : v >= 50 ? 'rgba(0,255,65,0.7)' : 'rgba(255,80,80,0.7)'),
-          borderColor:     bWR.map(v => v == null ? '#555' : v >= 50 ? '#00ff41' : '#ff5050'),
+          backgroundColor:      bWR.map(v => v == null ? hexA(SQ.neutral, 0.30) : v >= 50 ? hexA(SQ.green, 0.65) : hexA(SQ.red, 0.65)),
+          borderColor:          bWR.map(v => v == null ? SQ.neutral : v >= 50 ? SQ.green : SQ.red),
+          hoverBackgroundColor: bWR.map(v => v == null ? hexA(SQ.neutral, 0.55) : v >= 50 ? hexA(SQ.green, 1.0) : hexA(SQ.red, 1.0)),
+          hoverBorderWidth: 2,
           borderWidth: 1, borderRadius: 3,
         }]
       },
@@ -1395,13 +1407,13 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
       data: {
         labels: bLabels2,
         datasets: [
-          { label: 'Win',  data: bins.map(b => b.wins),   backgroundColor: 'rgba(0,255,65,0.65)',  stack: 'a' },
-          { label: 'Loss', data: bins.map(b => b.losses), backgroundColor: 'rgba(255,80,80,0.65)', stack: 'a' },
+          { label: 'Win',  data: bins.map(b => b.wins),   backgroundColor: hexA(SQ.green, 0.65), hoverBackgroundColor: hexA(SQ.green, 1.0), stack: 'a' },
+          { label: 'Loss', data: bins.map(b => b.losses), backgroundColor: hexA(SQ.red,   0.65), hoverBackgroundColor: hexA(SQ.red,   1.0), stack: 'a' },
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: { legend: { display: true, labels: { color: '#6b7280', font: { size: 9 } } } },
+        plugins: { legend: { display: true, labels: { color: SQ.muted, font: { size: 9 } } } },
         scales: {
           x: { stacked: true, ticks: { ...axStyle, maxRotation: 45, minRotation: 45 }, grid: { display: false } },
           y: { stacked: true, ticks: { ...axStyle, stepSize: 1 }, grid: gridStyle, border: { display: false } }
@@ -1427,6 +1439,7 @@ function buildMLTradeAnalytics(tradesIS, tradesHO, hoStart) {
           backgroundColor: hexA(GOLD, 0.06),
           fill: true, tension: 0.3,
           pointRadius: wVals.length > 20 ? 0 : 3,
+          pointHoverRadius: 6,
           borderWidth: 2,
         }]
       },

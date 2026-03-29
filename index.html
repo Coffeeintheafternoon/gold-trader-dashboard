@@ -570,33 +570,33 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly P&L</div>
-          <div style="position:relative;height:140px"><canvas id="ml-monthly-pnl-chart"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-monthly-pnl-chart"></canvas></div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly P&L</div>
-          <div style="position:relative;height:140px"><canvas id="ml-monthly-pnl-chart-ho"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-monthly-pnl-chart-ho"></canvas></div>
         </div>
       </div>
       <!-- Return Distribution — IS | HO -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution</div>
-          <div style="position:relative;height:140px"><canvas id="ml-ret-dist-chart"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-ret-dist-chart"></canvas></div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution</div>
-          <div style="position:relative;height:140px"><canvas id="ml-ret-dist-chart-ho"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-ret-dist-chart-ho"></canvas></div>
         </div>
       </div>
       <!-- Duration vs Return — IS | HO -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Duration vs Return</div>
-          <div style="position:relative;height:140px"><canvas id="ml-dur-ret-chart"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-dur-ret-chart"></canvas></div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Duration vs Return</div>
-          <div style="position:relative;height:140px"><canvas id="ml-dur-ret-chart-ho"></canvas></div>
+          <div style="position:relative;height:280px"><canvas id="ml-dur-ret-chart-ho"></canvas></div>
         </div>
       </div>
       <!-- Trade Concentration (full width) -->
@@ -608,19 +608,19 @@
         <!-- Composition bar: each segment = 1 trade's % of gross P&L -->
         <div id="ml-conc-bar" style="display:flex;height:28px;border-radius:4px;overflow:hidden;margin-bottom:8px;gap:1px"></div>
         <!-- Bubble chart: x=chrono order, y=return%, size=magnitude -->
-        <div style="position:relative;height:120px"><canvas id="ml-conc-chart"></canvas></div>
+        <div style="position:relative;height:240px"><canvas id="ml-conc-chart"></canvas></div>
       </div>
       <!-- Long vs Short comparison -->
       <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start">
         <!-- Grouped bar chart -->
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Long vs Short — Key Metrics</div>
-          <div style="position:relative;height:150px"><canvas id="ml-ls-chart"></canvas></div>
+          <div style="position:relative;height:300px"><canvas id="ml-ls-chart"></canvas></div>
         </div>
         <!-- Return scatter coloured by direction -->
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Return Distribution by Direction</div>
-          <div style="position:relative;height:150px"><canvas id="ml-ls-scatter"></canvas></div>
+          <div style="position:relative;height:300px"><canvas id="ml-ls-scatter"></canvas></div>
         </div>
       </div>
       <div id="ml-ls-wrap" style="margin-top:10px"></div>
@@ -630,7 +630,7 @@
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Trade Direction Timeline</div>
           <div style="font-size:11px;color:#6b7280">▲ long  ▼ short  — flat  |  dashed line = IS/HO boundary</div>
         </div>
-        <div style="position:relative;height:110px"><canvas id="ml-direction-chart"></canvas></div>
+        <div style="position:relative;height:220px"><canvas id="ml-direction-chart"></canvas></div>
       </div>
       <!-- v4: Score magnitude vs win rate -->
       <div style="margin-top:24px">
@@ -638,11 +638,11 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px">IS — Score Buckets</div>
-            <div style="height:140px"><canvas id="ml-score-buckets-chart"></canvas></div>
+            <div style="height:280px"><canvas id="ml-score-buckets-chart"></canvas></div>
           </div>
           <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px">IS — Score Distribution</div>
-            <div style="height:140px"><canvas id="ml-score-dist-chart"></canvas></div>
+            <div style="height:280px"><canvas id="ml-score-dist-chart"></canvas></div>
           </div>
         </div>
       </div>
@@ -651,7 +651,7 @@
         <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.5px;margin-bottom:8px">WALK-FORWARD WINDOW DEGRADATION</div>
         <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:12px">
           <div style="font-size:10px;color:var(--muted);margin-bottom:6px">OOS Sharpe per window</div>
-          <div style="height:140px"><canvas id="ml-window-sharpe-chart"></canvas></div>
+          <div style="height:280px"><canvas id="ml-window-sharpe-chart"></canvas></div>
         </div>
       </div>
     </div>
