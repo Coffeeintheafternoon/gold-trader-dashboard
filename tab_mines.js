@@ -7,18 +7,27 @@ let _activeTicker = null; // currently selected ticker
 async function initMinesTab() {
   const loading = document.getElementById('mines-loading');
   const body    = document.getElementById('mines-body');
+
+  const _showErr = (msg) => {
+    loading.style.display = '';
+    loading.innerHTML = `<div style="color:#ff6666;font-size:13px;text-align:center;padding:60px">
+      ${msg}</div>`;
+  };
+
   try {
-    const resp = await fetch(`./mine_data.json?v=${_CV}`);
-    if (!resp.ok) throw new Error('no data');
+    loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">Loading mine data…</div>`;
+    const resp = await fetch('./mine_data.json?' + Date.now());
+    if (!resp.ok) { _showErr('Fetch failed: HTTP ' + resp.status); return; }
     _mineData = await resp.json();
+    if (!Array.isArray(_mineData) || _mineData.length === 0) {
+      _showErr('No mine study data yet.<br><span style="font-size:11px">Run: python scripts/run_mine_study.py --all</span>');
+      return;
+    }
     loading.style.display = 'none';
     body.style.display    = '';
     _buildMinesPage();
-  } catch (_e) {
-    loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">
-      No mine study data yet.<br>
-      <span style="font-size:11px">Run: python scripts/run_mine_study.py --all</span>
-    </div>`;
+  } catch (e) {
+    _showErr('Error: ' + (e && e.message ? e.message : String(e)));
   }
 }
 
@@ -104,7 +113,11 @@ function _buildMinesPage() {
   _renderOverviewCards();
 
   // Auto-select first ticker with data
-  if (_mineData.length > 0) _selectTicker(_mineData[0].ticker);
+  if (_mineData.length > 0) {
+    try { _selectTicker(_mineData[0].ticker); } catch(e) {
+      console.error('Mines _selectTicker failed:', e);
+    }
+  }
 }
 
 function _renderTickerBar() {
