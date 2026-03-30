@@ -51,19 +51,21 @@ function _buildMinesPage() {
 
     <!-- Detail panel (shown when ticker selected) -->
     <div id="mines-detail" style="display:none">
-      <!-- Row 1: 3D viewer + 2D map -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="chart-card" style="padding:0;overflow:hidden">
-          <div style="padding:12px 16px 0;font-size:11px;font-weight:700;
-               color:var(--muted);letter-spacing:1px">3D DRILL VIEWER</div>
-          <div id="mines-3d-wrap" style="height:380px"></div>
+      <!-- Row 1: 3D viewer (full width, tall) -->
+      <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        <div style="padding:12px 16px 0;font-size:11px;font-weight:700;
+             color:var(--muted);letter-spacing:1px">3D INTERCEPT VIEWER
+          <span style="font-weight:400;margin-left:8px">· drag to rotate · scroll to zoom · right-drag to pan</span>
         </div>
-        <div class="chart-card" style="padding:0;overflow:hidden">
-          <div style="padding:12px 16px 0;font-size:11px;font-weight:700;
-               color:var(--muted);letter-spacing:1px">PLAN VIEW (TOP-DOWN)</div>
-          <div style="padding:12px">
-            <canvas id="mines-map-canvas" style="width:100%;height:356px"></canvas>
-          </div>
+        <div id="mines-3d-wrap" style="height:520px"></div>
+      </div>
+      <!-- Row 1b: intercepts table -->
+      <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:16px">
+        <div style="padding:12px 16px 0;font-size:11px;font-weight:700;
+             color:var(--muted);letter-spacing:1px">DRILL INTERCEPTS</div>
+        <div style="padding:12px">
+          <canvas id="mines-map-canvas" style="display:none"></canvas>
+          <div id="mines-map-inner"></div>
         </div>
       </div>
 

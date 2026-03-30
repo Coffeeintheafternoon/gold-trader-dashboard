@@ -1,148 +1,101 @@
-// tab_mines_map.js — 2D plan view (or intercepts table when no coordinates)
+// tab_mines_map.js — Intercepts table (plan map when coordinates available)
 
 function minesRenderMap(holes) {
-  const canvas = document.getElementById('mines-map-canvas');
-  if (!canvas) return;
+  const wrap = document.getElementById('mines-map-inner');
+  if (!wrap) return;
 
   const valid = (holes || []).filter(h => h.easting != null && h.northing != null);
-
   if (valid.length > 0) {
-    _renderPlanMap(canvas, valid);
+    _renderPlanMapDiv(wrap, valid);
   } else {
-    _renderInterceptsTable(canvas, holes || []);
+    _renderInterceptsTable(wrap, holes || []);
   }
 }
 
-// ── 2D plan map — only used when collar coordinates are available ─────────────
+// ── 2D plan map ───────────────────────────────────────────────────────────────
 
-function _renderPlanMap(canvas, valid) {
+function _renderPlanMapDiv(wrap, valid) {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'width:100%;height:300px';
+  wrap.innerHTML = '';
+  wrap.appendChild(canvas);
+
   const ctx = canvas.getContext('2d');
-  const W   = canvas.offsetWidth  || 460;
-  const H   = canvas.offsetHeight || 356;
-  canvas.width  = W;
-  canvas.height = H;
+  const W = canvas.offsetWidth || 800;
+  const H = 300;
+  canvas.width = W; canvas.height = H;
 
   ctx.fillStyle = '#050d05';
   ctx.fillRect(0, 0, W, H);
 
-  const xs = valid.map(h => h.easting);
-  const ys = valid.map(h => h.northing);
+  const xs = valid.map(h => h.easting),  ys = valid.map(h => h.northing);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const minY = Math.min(...ys), maxY = Math.max(...ys);
   const pad = 40;
-  const scaleX = (maxX - minX) < 1 ? 1 : (W - pad * 2) / (maxX - minX);
-  const scaleY = (maxY - minY) < 1 ? 1 : (H - pad * 2) / (maxY - minY);
-  const scale  = Math.min(scaleX, scaleY);
-  const toCanv = (e, n) => [pad + (e - minX) * scale, H - pad - (n - minY) * scale];
+  const sx = (maxX-minX)<1 ? 1 : (W-pad*2)/(maxX-minX);
+  const sy = (maxY-minY)<1 ? 1 : (H-pad*2)/(maxY-minY);
+  const sc = Math.min(sx, sy);
+  const toC = (e, n) => [pad+(e-minX)*sc, H-pad-(n-minY)*sc];
 
-  const bestGrade = h => (!h.intervals?.length) ? 0 : Math.max(...h.intervals.map(i => i.grade || 0));
-  const gradeColor = g => g > 5 ? '#aaff00' : g > 2 ? '#ffcc00' : g > 0.5 ? '#33aa44' : '#334433';
+  const bestGrade = h => (!h.intervals?.length) ? 0 : Math.max(...h.intervals.map(i=>i.grade||0));
+  const gc = g => g>5 ? '#aaff00' : g>2 ? '#ffcc00' : g>0.5 ? '#33aa44' : '#334433';
 
-  // Section lines
-  const prefixMap = {};
   valid.forEach(h => {
-    const pfx = (h.hole_id || '').replace(/\d+$/, '');
-    if (!prefixMap[pfx]) prefixMap[pfx] = [];
-    prefixMap[pfx].push(h);
-  });
-  ctx.strokeStyle = 'rgba(170,255,0,0.08)';
-  ctx.lineWidth = 1;
-  Object.values(prefixMap).forEach(group => {
-    if (group.length < 2) return;
-    const sorted = group.sort((a, b) => a.easting - b.easting);
-    ctx.beginPath();
-    sorted.forEach((h, i) => {
-      const [x, y] = toCanv(h.easting, h.northing);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  });
-
-  // Collar dots
-  valid.forEach(h => {
-    const [x, y] = toCanv(h.easting, h.northing);
+    const [x, y] = toC(h.easting, h.northing);
     const g = bestGrade(h), r = g > 2 ? 5 : 4;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = gradeColor(g);
-    ctx.fill();
-    if (g > 2) {
-      ctx.beginPath();
-      ctx.arc(x, y, r + 3, 0, Math.PI * 2);
-      ctx.strokeStyle = gradeColor(g);
-      ctx.globalAlpha = 0.25;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-      ctx.lineWidth = 1;
-    }
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = gc(g); ctx.fill();
   });
 
-  // Axis labels
-  ctx.fillStyle = '#334433'; ctx.font = '9px monospace';
-  ctx.textAlign = 'left';  ctx.fillText(`E ${Math.round(minX)}m`, pad, H - 6);
-  ctx.textAlign = 'right'; ctx.fillText(`E ${Math.round(maxX)}m`, W - pad, H - 6);
-  ctx.textAlign = 'center';ctx.fillText(`N ${Math.round(maxY)}m`, W / 2, 14);
-  [['#aaff00','> 5 g/t'], ['#ffcc00','2–5 g/t'], ['#33aa44','0.5–2 g/t']].forEach(([c, l], i) => {
-    const lx = pad, ly = pad + i * 16;
-    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = c; ctx.fill();
-    ctx.fillStyle = '#556677'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
-    ctx.fillText(l, lx + 10, ly + 3);
-  });
-  ctx.fillStyle = '#334433'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
-  ctx.fillText(`${valid.length} holes`, W - pad, pad);
+  ctx.fillStyle='#334433'; ctx.font='9px monospace';
+  ctx.textAlign='left';  ctx.fillText(`E ${Math.round(minX)}`, pad, H-6);
+  ctx.textAlign='right'; ctx.fillText(`E ${Math.round(maxX)}`, W-pad, H-6);
+  ctx.textAlign='center';ctx.fillText(`N ${Math.round(maxY)}`, W/2, 14);
 }
 
-// ── Intercepts table — used when no coordinates ───────────────────────────────
+// ── Intercepts table ──────────────────────────────────────────────────────────
 
-function _renderInterceptsTable(canvas, holes) {
-  // Replace canvas with a scrollable table
-  const wrap = canvas.parentElement;
-  if (!wrap) return;
-
-  const holesWithData = holes
+function _renderInterceptsTable(wrap, holes) {
+  const rows = holes
     .filter(h => h.intervals && h.intervals.length > 0)
-    .map(h => ({
-      ...h,
-      bestGrade: Math.max(...h.intervals.map(i => i.grade || 0)),
-      bestInterval: h.intervals.reduce((best, iv) =>
-        (iv.grade || 0) > (best.grade || 0) ? iv : best, h.intervals[0]),
-    }))
-    .sort((a, b) => b.bestGrade - a.bestGrade);
+    .flatMap(h => h.intervals.map(iv => ({ hole: h.hole_id || '—', ...iv })))
+    .filter(r => r.grade > 0)
+    .sort((a, b) => b.grade - a.grade);
 
-  const gradeColor = g => g > 10 ? '#aaff00' : g > 5 ? '#88cc00' : g > 2 ? '#ffcc00' : g > 0.5 ? '#33aa44' : '#556655';
+  if (!rows.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px">No intercept data</div>`;
+    return;
+  }
 
-  const html = `
-    <div style="font-size:10px;color:var(--muted);font-family:monospace;
-        padding:6px 10px 4px;border-bottom:1px solid #1a2a1a">
-      BEST INTERCEPTS — ${holesWithData.length} holes (no collar coordinates in source PDF)
-    </div>
-    <div style="overflow-y:auto;max-height:320px">
+  const gc = g => g>10 ? '#aaff00' : g>5 ? '#88cc00' : g>2 ? '#ffcc00' : g>0.5 ? '#33aa44' : '#556655';
+
+  wrap.innerHTML = `
+    <div style="overflow-y:auto;max-height:360px">
       <table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:11px">
-        <thead>
-          <tr style="color:var(--muted);font-size:10px;border-bottom:1px solid #1a2a1a">
-            <th style="padding:5px 8px;text-align:left;font-weight:600">HOLE</th>
-            <th style="padding:5px 8px;text-align:right;font-weight:600">FROM</th>
-            <th style="padding:5px 8px;text-align:right;font-weight:600">TO</th>
-            <th style="padding:5px 8px;text-align:right;font-weight:600">WIDTH</th>
-            <th style="padding:5px 8px;text-align:right;font-weight:600">GRADE</th>
-          </tr>
-        </thead>
+        <thead><tr style="color:var(--muted);font-size:10px;border-bottom:1px solid #1a2a1a;position:sticky;top:0;background:#000">
+          <th style="padding:5px 10px;text-align:left">HOLE</th>
+          <th style="padding:5px 10px;text-align:right">FROM</th>
+          <th style="padding:5px 10px;text-align:right">TO</th>
+          <th style="padding:5px 10px;text-align:right">WIDTH</th>
+          <th style="padding:5px 10px;text-align:right">GRADE</th>
+          <th style="padding:5px 10px;text-align:left">BAR</th>
+        </tr></thead>
         <tbody>
-          ${holesWithData.map(h => {
-            const iv = h.bestInterval;
-            const gc = gradeColor(h.bestGrade);
-            return `<tr style="border-bottom:1px solid #0f1a0f">
-              <td style="padding:5px 8px;color:var(--text)">${h.hole_id || '—'}</td>
-              <td style="padding:5px 8px;text-align:right;color:var(--muted)">${iv.from_m != null ? iv.from_m+'m' : '—'}</td>
-              <td style="padding:5px 8px;text-align:right;color:var(--muted)">${iv.to_m != null ? iv.to_m+'m' : '—'}</td>
-              <td style="padding:5px 8px;text-align:right;color:var(--muted)">${iv.width_m != null ? iv.width_m+'m' : '—'}</td>
-              <td style="padding:5px 8px;text-align:right;font-weight:700;color:${gc}">${h.bestGrade > 0 ? h.bestGrade.toFixed(2)+' g/t' : '—'}</td>
+          ${rows.map(r => {
+            const maxG = rows[0].grade;
+            const barW = Math.round((r.grade / maxG) * 120);
+            return `<tr style="border-bottom:1px solid #0a140a">
+              <td style="padding:4px 10px;color:var(--text)">${r.hole}</td>
+              <td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.from_m != null ? r.from_m+'m' : '—'}</td>
+              <td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.to_m != null ? r.to_m+'m' : '—'}</td>
+              <td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.width_m != null ? r.width_m+'m' : '—'}</td>
+              <td style="padding:4px 10px;text-align:right;font-weight:700;color:${gc(r.grade)}">${r.grade.toFixed(2)} g/t</td>
+              <td style="padding:4px 10px">
+                <div style="height:8px;width:${barW}px;background:${gc(r.grade)};border-radius:1px;opacity:0.8"></div>
+              </td>
             </tr>`;
           }).join('')}
         </tbody>
       </table>
     </div>`;
-
-  wrap.innerHTML = html;
 }

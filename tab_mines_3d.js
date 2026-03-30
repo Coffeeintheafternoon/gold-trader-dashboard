@@ -1,217 +1,246 @@
-// tab_mines_3d.js — Downhole strip-log viewer (falls back from 3D when no coordinates)
+// tab_mines_3d.js — Interactive 3D drill intercept viewer (Three.js)
+// Uses real coordinates if available, otherwise arranges holes synthetically.
 
+let _3dRenderer  = null;
 let _3dAnimFrame = null;
 
 function minesRender3D(holes) {
   const wrap = document.getElementById('mines-3d-wrap');
   if (!wrap) return;
+
   if (_3dAnimFrame) { cancelAnimationFrame(_3dAnimFrame); _3dAnimFrame = null; }
+  if (_3dRenderer)  { _3dRenderer.dispose(); _3dRenderer = null; }
 
-  const validCoords = (holes || []).filter(h => h.easting != null && h.northing != null);
-
-  if (validCoords.length > 0) {
-    _render3D(wrap, validCoords);
-  } else {
-    _renderDownholeLog(wrap, holes || []);
-  }
-}
-
-// ── 3D viewer (Three.js) — only used when collar coordinates are available ────
-
-function _render3D(wrap, holes) {
-  wrap.innerHTML = '';
   const THREE = window.THREE;
   if (!THREE) {
-    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px">Three.js not loaded</div>`;
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-size:12px">Three.js not loaded — refresh the page</div>`;
     return;
   }
 
-  const W = wrap.clientWidth || 500;
-  const H = wrap.clientHeight || 380;
+  const holesWithData = (holes || []).filter(h => h.intervals && h.intervals.length > 0);
+  if (!holesWithData.length) {
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-size:12px">No intercept data extracted for this ticker</div>`;
+    return;
+  }
+
+  // ── Assign 3D positions ──────────────────────────────────────────────────
+  // Use real coordinates if available, otherwise lay out synthetically.
+  const hasCoords = holesWithData.every(h => h.easting != null && h.northing != null);
+
+  let cx = 0, cy = 0;
+  if (hasCoords) {
+    cx = holesWithData.reduce((s, h) => s + h.easting,  0) / holesWithData.length;
+    cy = holesWithData.reduce((s, h) => s + h.northing, 0) / holesWithData.length;
+  }
+
+  // Group holes by prefix for section layout
+  const sections = {};
+  holesWithData.forEach(h => {
+    const pfx = (h.hole_id || 'X').replace(/\d+$/, '') || 'X';
+    if (!sections[pfx]) sections[pfx] = [];
+    sections[pfx].push(h);
+  });
+
+  const SECTION_SPACING = 80;   // metres between sections
+  const HOLE_SPACING    = 40;   // metres between holes within a section
+  const sectionKeys = Object.keys(sections);
+
+  const holePos = {};   // hole_id → {x, z, azRad, dipRad, depth}
+  sectionKeys.forEach((pfx, si) => {
+    const group = sections[pfx];
+    group.forEach((h, hi) => {
+      let x, z;
+      if (hasCoords) {
+        x = h.easting  - cx;
+        z = h.northing - cy;
+      } else {
+        x = si * SECTION_SPACING;
+        z = (hi - (group.length - 1) / 2) * HOLE_SPACING;
+      }
+      const az  = ((h.azimuth || 0)   * Math.PI) / 180;
+      const dip = ((h.dip     || -90) * Math.PI) / 180;
+      const dep = h.total_depth_m ||
+        Math.max(...h.intervals.map(i => i.to_m || 0), 200);
+      holePos[h.id] = { x, z, azRad: az, dipRad: dip, depth: dep };
+    });
+  });
+
+  // ── Scene setup ──────────────────────────────────────────────────────────
+  wrap.innerHTML = '';
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 520;
 
   const scene    = new THREE.Scene();
-  scene.background = new THREE.Color(0x050d05);
-  const camera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 100000);
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  wrap.appendChild(renderer.domElement);
+  scene.background = new THREE.Color(0x020a02);
+  scene.fog = new THREE.FogExp2(0x020a02, 0.0008);
 
-  scene.add(new THREE.GridHelper(2000, 20, 0x1a2a1a, 0x111811));
-  scene.add(new THREE.AxesHelper(200));
-  scene.add(new THREE.AmbientLight(0x334433, 1.2));
-  const dLight = new THREE.DirectionalLight(0xaaffaa, 0.8);
-  dLight.position.set(500, 800, 400);
-  scene.add(dLight);
+  const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 20000);
+  _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
+  _3dRenderer.setSize(W, H);
+  _3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  wrap.appendChild(_3dRenderer.domElement);
 
-  const cx = holes.reduce((s, h) => s + h.easting,  0) / holes.length;
-  const cy = holes.reduce((s, h) => s + h.northing, 0) / holes.length;
-  const cz = holes.reduce((s, h) => s + (h.elevation || 0), 0) / holes.length;
+  // Grid
+  const grid = new THREE.GridHelper(2000, 40, 0x112211, 0x0a150a);
+  scene.add(grid);
 
+  // Lights
+  scene.add(new THREE.AmbientLight(0x223322, 1.5));
+  const sun = new THREE.DirectionalLight(0xaaffaa, 1.0);
+  sun.position.set(600, 1000, 400);
+  scene.add(sun);
+
+  // ── Build geometry ───────────────────────────────────────────────────────
   const gradeColor = (g) => {
-    if (!g)    return new THREE.Color(0x334433);
-    if (g > 5) return new THREE.Color(0xaaff00);
-    if (g > 2) return new THREE.Color(0xffcc00);
-    return new THREE.Color(0x336633);
+    if (!g || g <= 0) return new THREE.Color(0x1a2a1a);
+    if (g > 15) return new THREE.Color(0xffffff);
+    if (g > 10) return new THREE.Color(0xccff00);
+    if (g > 5)  return new THREE.Color(0xaaff00);
+    if (g > 2)  return new THREE.Color(0xffcc00);
+    if (g > 0.5)return new THREE.Color(0x33cc44);
+    return new THREE.Color(0x1a4a1a);
   };
 
-  for (const hole of holes) {
-    const x0 = hole.easting  - cx;
-    const z0 = hole.northing - cy;
-    const y0 = (hole.elevation || cz) - cz;
-    const az  = ((hole.azimuth || 0) * Math.PI) / 180;
-    const dip = ((hole.dip || -90) * Math.PI) / 180;
-    const dep = hole.total_depth_m || 200;
-    const dx = dep * Math.sin(az) * Math.cos(dip);
-    const dy = dep * Math.sin(dip);
-    const dz = dep * Math.cos(az) * Math.cos(dip);
+  let allPoints = [];
 
-    const pts = [new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x0+dx, y0+dy, z0+dz)];
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0x335533 })));
+  holesWithData.forEach(hole => {
+    const pos = holePos[hole.id];
+    if (!pos) return;
 
-    const collar = new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8),
-      new THREE.MeshLambertMaterial({ color: 0x88cc88 }));
-    collar.position.set(x0, y0, z0);
-    scene.add(collar);
+    const { x, z, azRad, dipRad, depth } = pos;
+    const y0 = 0;
 
-    for (const iv of (hole.intervals || [])) {
-      if (!iv.grade || iv.grade <= 0) continue;
-      const f = (iv.from_m || 0) / dep, t = (iv.to_m || 0) / dep;
-      const mx = x0 + dx * (f + t) / 2, my = y0 + dy * (f + t) / 2, mz = z0 + dz * (f + t) / 2;
-      const len = (iv.to_m || 0) - (iv.from_m || 0);
-      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, len, 8),
-        new THREE.MeshLambertMaterial({ color: gradeColor(iv.grade), transparent: true, opacity: 0.85 }));
+    // Direction vector (downward into ground)
+    const dx = depth * Math.sin(azRad) * Math.cos(dipRad);
+    const dy = depth * Math.sin(dipRad);   // negative = downward
+    const dz = depth * Math.cos(azRad) * Math.cos(dipRad);
+
+    // Hole trace line
+    const pts = [new THREE.Vector3(x, y0, z), new THREE.Vector3(x+dx, y0+dy, z+dz)];
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x223322, linewidth: 1 })));
+    allPoints.push(...pts);
+
+    // Collar sphere
+    const collarMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(3, 10, 10),
+      new THREE.MeshLambertMaterial({ color: 0x55aa55, emissive: 0x112211 })
+    );
+    collarMesh.position.set(x, y0, z);
+    scene.add(collarMesh);
+
+    // Intercept cylinders
+    hole.intervals.forEach(iv => {
+      if (!iv.grade || iv.grade < 0.1) return;
+      const f = (iv.from_m || 0) / depth;
+      const t = Math.min((iv.to_m || 0) / depth, 1.0);
+      const len = Math.max(((iv.to_m||0) - (iv.from_m||0)), 1);
+
+      const mx = x  + dx * (f + t) / 2;
+      const my = y0 + dy * (f + t) / 2;
+      const mz = z  + dz * (f + t) / 2;
+
+      // Radius scales with grade
+      const radius = Math.min(3 + iv.grade * 0.4, 12);
+      const geo  = new THREE.CylinderGeometry(radius, radius, len, 12);
+      const col  = gradeColor(iv.grade);
+      const mat  = new THREE.MeshLambertMaterial({
+        color: col,
+        emissive: col,
+        emissiveIntensity: 0.2,
+        transparent: true,
+        opacity: 0.88,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      // Orient along drill direction
       const dir = new THREE.Vector3(dx, dy, dz).normalize();
-      cyl.setRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir));
-      cyl.position.set(mx, my, mz);
-      scene.add(cyl);
-    }
-  }
+      mesh.setRotationFromQuaternion(
+        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
+      );
+      mesh.position.set(mx, my, mz);
+      scene.add(mesh);
+      allPoints.push(new THREE.Vector3(mx, my, mz));
+    });
+  });
 
-  camera.position.set(800, 600, 800);
-  camera.lookAt(0, 0, 0);
+  // ── Camera position — fit to scene ───────────────────────────────────────
+  const bbox = new THREE.Box3();
+  allPoints.forEach(p => bbox.expandByPoint(p));
+  const centre = new THREE.Vector3();
+  bbox.getCenter(centre);
+  const size   = bbox.getSize(new THREE.Vector3()).length();
+  const dist   = size * 1.4;
+  camera.position.set(centre.x + dist * 0.6, centre.y + dist * 0.5, centre.z + dist * 0.7);
+  camera.lookAt(centre);
+  camera.near = dist * 0.001;
+  camera.far  = dist * 10;
+  camera.updateProjectionMatrix();
 
+  // ── Orbit controls ───────────────────────────────────────────────────────
   let controls = null;
-  if (window.THREE_OrbitControls) {
-    controls = new window.THREE_OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-  }
+  const _tryControls = () => {
+    if (window.THREE_OrbitControls && !controls) {
+      controls = new window.THREE_OrbitControls(camera, _3dRenderer.domElement);
+      controls.target.copy(centre);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.minDistance   = 10;
+      controls.maxDistance   = dist * 5;
+      controls.update();
+    }
+  };
+  _tryControls();
+  // Retry after 1s in case module script hasn't loaded yet
+  setTimeout(_tryControls, 1000);
 
-  const tip = document.createElement('div');
-  tip.style.cssText = `position:absolute;top:8px;right:8px;font-size:10px;color:var(--muted);
-    font-family:monospace;pointer-events:none;background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:2px`;
-  tip.textContent = `${holes.length} holes · drag to rotate · scroll to zoom`;
+  // ── Overlays ─────────────────────────────────────────────────────────────
   wrap.style.position = 'relative';
-  wrap.appendChild(tip);
 
+  // Grade legend
+  const legend = document.createElement('div');
+  legend.style.cssText = `position:absolute;bottom:12px;left:12px;font-size:10px;
+    font-family:monospace;pointer-events:none;background:rgba(0,0,0,0.55);
+    padding:8px 10px;border-radius:3px;border:1px solid #1a2a1a`;
+  legend.innerHTML = [
+    ['#ffffff', '> 15 g/t'],
+    ['#ccff00', '10–15 g/t'],
+    ['#aaff00', '5–10 g/t'],
+    ['#ffcc00', '2–5 g/t'],
+    ['#33cc44', '0.5–2 g/t'],
+  ].map(([c, l]) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>
+      <span style="color:#88aa88">${l}</span>
+    </div>`).join('');
+  wrap.appendChild(legend);
+
+  // Hole count badge
+  const badge = document.createElement('div');
+  badge.style.cssText = `position:absolute;top:10px;right:10px;font-size:10px;
+    color:var(--muted);font-family:monospace;background:rgba(0,0,0,0.55);
+    padding:4px 8px;border-radius:2px;border:1px solid #1a2a1a;pointer-events:none`;
+  badge.textContent = `${holesWithData.length} holes · ${
+    holesWithData.reduce((s, h) => s + (h.intervals||[]).filter(i=>i.grade>0).length, 0)
+  } intercepts${hasCoords ? '' : ' · synthetic layout'}`;
+  wrap.appendChild(badge);
+
+  // ── Animation loop ───────────────────────────────────────────────────────
   function animate() {
     _3dAnimFrame = requestAnimationFrame(animate);
     if (controls) controls.update();
-    renderer.render(scene, camera);
+    _3dRenderer.render(scene, camera);
   }
   animate();
 
+  // Resize handler
   new ResizeObserver(() => {
     const w = wrap.clientWidth, h = wrap.clientHeight;
+    if (!w || !h) return;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
+    _3dRenderer.setSize(w, h);
   }).observe(wrap);
-}
-
-// ── Downhole strip-log (canvas) — used when no coordinates ───────────────────
-
-function _renderDownholeLog(wrap, holes) {
-  const holesWithData = holes.filter(h => h.intervals && h.intervals.length > 0);
-
-  wrap.innerHTML = '';
-  wrap.style.position = 'relative';
-  wrap.style.overflow = 'auto';
-
-  if (!holesWithData.length) {
-    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
-      color:var(--muted);font-size:12px">No drill intercept data extracted</div>`;
-    return;
-  }
-
-  // Label at top
-  const note = document.createElement('div');
-  note.style.cssText = `font-size:10px;color:var(--muted);font-family:monospace;
-    padding:6px 10px;border-bottom:1px solid #1a2a1a`;
-  note.textContent = `DOWNHOLE GRADE LOG — ${holesWithData.length} holes with intercepts (no collar coordinates in source PDF)`;
-  wrap.appendChild(note);
-
-  const canvas = document.createElement('canvas');
-  const W = wrap.clientWidth || 500;
-  const H = 320;
-  canvas.width  = W;
-  canvas.height = H;
-  canvas.style.display = 'block';
-  wrap.appendChild(canvas);
-
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#050d05';
-  ctx.fillRect(0, 0, W, H);
-
-  const maxDepth = Math.max(...holesWithData.map(h =>
-    Math.max(...h.intervals.map(i => i.to_m || 0), 10)
-  ));
-
-  const colW   = Math.max(18, Math.floor((W - 20) / holesWithData.length) - 2);
-  const margin = { top: 30, bottom: 20 };
-  const drawH  = H - margin.top - margin.bottom;
-
-  const gradeColor = (g) => {
-    if (!g)    return '#1a2a1a';
-    if (g > 10) return '#aaff00';
-    if (g > 5)  return '#66cc00';
-    if (g > 2)  return '#ffcc00';
-    if (g > 0.5)return '#33aa44';
-    return '#1a3a1a';
-  };
-
-  holesWithData.forEach((hole, i) => {
-    const x = 10 + i * (colW + 2);
-
-    // Background column
-    ctx.fillStyle = '#0a140a';
-    ctx.fillRect(x, margin.top, colW, drawH);
-
-    // Grade intervals
-    hole.intervals.forEach(iv => {
-      const y0 = margin.top + ((iv.from_m || 0) / maxDepth) * drawH;
-      const y1 = margin.top + ((iv.to_m   || 0) / maxDepth) * drawH;
-      ctx.fillStyle = gradeColor(iv.grade);
-      ctx.fillRect(x + 1, y0, colW - 2, Math.max(2, y1 - y0));
-    });
-
-    // Hole label
-    ctx.fillStyle = '#556655';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    const label = (hole.hole_id || `H${i+1}`).slice(-6);
-    ctx.fillText(label, x + colW / 2, margin.top - 4);
-  });
-
-  // Depth axis labels
-  ctx.fillStyle = '#334433';
-  ctx.font = '9px monospace';
-  ctx.textAlign = 'right';
-  [0, 0.25, 0.5, 0.75, 1].forEach(frac => {
-    const y = margin.top + frac * drawH;
-    ctx.fillText(`${Math.round(frac * maxDepth)}m`, 9, y + 3);
-  });
-
-  // Legend
-  [['#aaff00','>10 g/t'], ['#66cc00','5–10'], ['#ffcc00','2–5'], ['#33aa44','0.5–2']].forEach(([c, l], i) => {
-    const lx = W - 80, ly = margin.top + i * 16;
-    ctx.fillStyle = c;
-    ctx.fillRect(lx, ly, 10, 10);
-    ctx.fillStyle = '#556655';
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(l, lx + 14, ly + 8);
-  });
 }
