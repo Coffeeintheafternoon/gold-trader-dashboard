@@ -245,12 +245,16 @@
       <select id="asset-select" onchange="switchAsset(this.value)" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;outline:none"></select>
     </div>
     <!-- Accent colour picker -->
-    <div style="position:relative;display:flex;align-items:center" title="Theme colour — click to change">
-      <div id="sq-swatch" onclick="document.getElementById('sq-picker').click()"
-           style="width:16px;height:16px;background:var(--gold);border-radius:2px;cursor:pointer;border:1px solid rgb(var(--gold-rgb) / 0.5);box-shadow:0 0 8px var(--gold);flex-shrink:0;transition:box-shadow 0.2s"></div>
-      <input type="color" id="sq-picker" value="#aaff00"
-             style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
-             oninput="sqAccentChange(this.value)">
+    <div style="display:flex;align-items:center;gap:5px">
+      <div style="position:relative;display:flex;align-items:center" title="Theme colour — click to change">
+        <div id="sq-swatch" onclick="document.getElementById('sq-picker').click()"
+             style="width:16px;height:16px;background:var(--gold);border-radius:2px;cursor:pointer;border:1px solid rgb(var(--gold-rgb) / 0.5);box-shadow:0 0 8px var(--gold);flex-shrink:0;transition:box-shadow 0.2s"></div>
+        <input type="color" id="sq-picker" value="#aaff00"
+               style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
+               oninput="sqAccentChange(this.value)">
+      </div>
+      <div id="sq-reset" onclick="sqAccentReset()" title="Reset to default colour"
+           style="font-size:10px;color:var(--muted);cursor:pointer;line-height:1;padding:1px 3px;border-radius:2px;transition:color 0.15s;display:none">↺</div>
     </div>
     <span class="header-updated" id="header-updated">Loading…</span>
   </div>
@@ -2152,6 +2156,17 @@ setInterval(_srvCheck, 60000);
         }
       } catch(e) {}
     }, 700);
+
+    // Show reset button whenever colour differs from default
+    const resetBtn = document.getElementById('sq-reset');
+    if (resetBtn) resetBtn.style.display = (hex === '#aaff00') ? 'none' : '';
+  };
+
+  window.sqAccentReset = function() {
+    const picker = document.getElementById('sq-picker');
+    if (picker) picker.value = '#aaff00';
+    sqAccentChange('#aaff00');
+    localStorage.removeItem('sq_accent');
   };
 
   // Restore saved accent on load
