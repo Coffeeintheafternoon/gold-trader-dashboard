@@ -311,16 +311,6 @@ function _buildMetaTab(){
     hmWrap.innerHTML=html;
   }
 
-  // ── Top 20 ────────────────────────────────────────────────────────────────
-  const top20=[...valid].sort((a,b)=>(b.ho_pf||0)-(a.ho_pf||0)).slice(0,20);
-  _metaTop20=top20.map(r=>({ticker:r.ticker,sector:r.sector,pf:r.ho_pf,sharpe:r.ho_sharpe,label:r.model_type}));
-  el('meta-top20-tbody').innerHTML=top20.map((r,i)=>{
-    const pfC=r.ho_pf>=1.10?'var(--green)':r.ho_pf>=1.05?SQ.amber:'var(--muted)';
-    const shC=r.ho_sharpe!=null?(r.ho_sharpe>=0.5?'var(--green)':r.ho_sharpe>=0.2?SQ.amber:'var(--muted)'):'var(--muted)';
-    const ofC=r.overfit==='LOW'?GREEN:r.overfit==='MEDIUM'?SQ.amber:r.overfit==='HIGH'?RED:'var(--muted)';
-    return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 10px;color:var(--muted);font-size:12px">${i+1}</td><td style="padding:7px 10px;font-weight:700;color:var(--text)">${r.ticker}</td><td style="padding:7px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td><td style="padding:7px 10px;font-size:10px;color:var(--muted);white-space:nowrap">${r.model_type}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${pfC};font-weight:700">${r.ho_pf.toFixed(3)}</td><td style="padding:7px 10px;text-align:right;font-family:monospace;color:${shC}">${r.ho_sharpe!=null?r.ho_sharpe.toFixed(2):'—'}</td><td style="padding:7px 10px;text-align:right;font-size:11px;color:${ofC}">${r.overfit||'—'}</td></tr>`;
-  }).join('');
-
   // ── Model Summary ─────────────────────────────────────────────────────────
   const isPFs=valid.filter(r=>r.is_pf!=null).map(r=>r.is_pf);
   const avgIs=isPFs.length?isPFs.reduce((a,b)=>a+b,0)/isPFs.length:0;
