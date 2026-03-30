@@ -282,34 +282,39 @@
           <circle cx="15" cy="9"  r="0.9" fill="currentColor" opacity="0.7"/>
         </g>
 
-        <!-- ── II  TOP-RIGHT: News — newspaper / broadcast ── -->
+        <!-- ── II  TOP-RIGHT: News — globe + broadcast signal ── -->
         <g clip-path="url(#coa-shield)">
-          <!-- Page body -->
-          <rect x="21" y="5" width="13" height="18" rx="1" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.1"/>
-          <!-- Headline bar -->
-          <rect x="22.5" y="7" width="10" height="3" rx="0.3" fill="currentColor" fill-opacity="0.55"/>
-          <!-- Horizontal text lines -->
-          <line x1="22.5" y1="13" x2="32.5" y2="13" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-          <line x1="22.5" y1="15.5" x2="32.5" y2="15.5" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-          <line x1="22.5" y1="18" x2="30"   y2="18"   stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-          <line x1="22.5" y1="20.5" x2="31"   y2="20.5" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-          <!-- Dog-ear fold top-right corner -->
-          <polyline points="31,5 34,5 34,8" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.5"/>
-          <line x1="31" y1="5" x2="34" y2="8" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
+          <!-- Globe outline -->
+          <circle cx="27" cy="13" r="7.5" stroke="currentColor" stroke-width="1.1" fill="currentColor" fill-opacity="0.1"/>
+          <!-- Equator -->
+          <line x1="19.5" y1="13" x2="34.5" y2="13" stroke="currentColor" stroke-width="0.9" opacity="0.5"/>
+          <!-- Central meridian arc -->
+          <path d="M 27,5.5 Q 31.5,13 27,20.5" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.5"/>
+          <!-- Left meridian arc -->
+          <path d="M 27,5.5 Q 22,13 27,20.5" stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.35"/>
+          <!-- Latitude lines -->
+          <path d="M 21,9.5 Q 27,8 33,9.5"   stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.4"/>
+          <path d="M 21,16.5 Q 27,18 33,16.5" stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.4"/>
+          <!-- Broadcast arcs (top-right, like signal/antenna) -->
+          <path d="M 32.5,7.5 A 2.5,2.5 0 0,1 35,10.5" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+          <path d="M 33.5,5.5 A 5,5   0 0,1 36,11.5"   stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round"/>
         </g>
 
-        <!-- ── III  BOTTOM-LEFT: Sentiment Analysis — gauge / dial ── -->
+        <!-- ── III  BOTTOM-LEFT: Sentiment — balance scales ── -->
         <g clip-path="url(#coa-shield)">
-          <!-- Semicircle gauge arc -->
-          <path d="M 4,38 A 8,8 0 0,1 20,38" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
-          <!-- Tick marks: bearish left, neutral top, bullish right -->
-          <line x1="4"  y1="38" x2="5.5"  y2="35" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-          <line x1="12" y1="30" x2="12"   y2="32" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-          <line x1="20" y1="38" x2="18.5" y2="35" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-          <!-- Needle pointing bullish (upper-right) -->
-          <line x1="12" y1="38" x2="18" y2="32" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-          <!-- Pivot dot -->
-          <circle cx="12" cy="38" r="1.8" fill="currentColor"/>
+          <!-- Vertical post -->
+          <line x1="11" y1="29" x2="11" y2="40" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- Beam (right side slightly higher = bullish sentiment outweighs) -->
+          <line x1="5" y1="32" x2="17" y2="30.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- Left pan chain + pan -->
+          <line x1="5"  y1="32" x2="5"  y2="37" stroke="currentColor" stroke-width="1"/>
+          <line x1="3"  y1="37" x2="7"  y2="37" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Right pan chain + pan (higher = lighter) -->
+          <line x1="17" y1="30.5" x2="17" y2="35" stroke="currentColor" stroke-width="1"/>
+          <line x1="15" y1="35"   x2="19" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Pivot dot + base -->
+          <circle cx="11" cy="29" r="1.6" fill="currentColor"/>
+          <line x1="8" y1="40" x2="14" y2="40" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </g>
 
         <!-- ── IV  BOTTOM-RIGHT: Mining — pickaxe ── -->
@@ -2212,25 +2217,27 @@ setInterval(_srvCheck, 60000);
       <circle cx="10" cy="15" r="0.9" fill="currentColor" opacity="0.7"/>
       <circle cx="15" cy="9"  r="0.9" fill="currentColor" opacity="0.7"/>
     </g>
-    <!-- II: News — newspaper -->
+    <!-- II: News — globe + broadcast signal -->
     <g clip-path="url(#coa-shield-lg)">
-      <rect x="21" y="5" width="13" height="18" rx="1" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.1"/>
-      <rect x="22.5" y="7" width="10" height="3" rx="0.3" fill="currentColor" fill-opacity="0.55"/>
-      <line x1="22.5" y1="13"   x2="32.5" y2="13"   stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-      <line x1="22.5" y1="15.5" x2="32.5" y2="15.5" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-      <line x1="22.5" y1="18"   x2="30"   y2="18"   stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-      <line x1="22.5" y1="20.5" x2="31"   y2="20.5" stroke="currentColor" stroke-width="0.9" opacity="0.55"/>
-      <polyline points="31,5 34,5 34,8" stroke="currentColor" stroke-width="0.8" fill="none" opacity="0.5"/>
-      <line x1="31" y1="5" x2="34" y2="8" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
+      <circle cx="27" cy="13" r="7.5" stroke="currentColor" stroke-width="1.1" fill="currentColor" fill-opacity="0.1"/>
+      <line x1="19.5" y1="13" x2="34.5" y2="13" stroke="currentColor" stroke-width="0.9" opacity="0.5"/>
+      <path d="M 27,5.5 Q 31.5,13 27,20.5" stroke="currentColor" stroke-width="0.9" fill="none" opacity="0.5"/>
+      <path d="M 27,5.5 Q 22,13 27,20.5" stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.35"/>
+      <path d="M 21,9.5 Q 27,8 33,9.5"   stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.4"/>
+      <path d="M 21,16.5 Q 27,18 33,16.5" stroke="currentColor" stroke-width="0.7" fill="none" opacity="0.4"/>
+      <path d="M 32.5,7.5 A 2.5,2.5 0 0,1 35,10.5" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <path d="M 33.5,5.5 A 5,5   0 0,1 36,11.5"   stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round"/>
     </g>
-    <!-- III: Sentiment Analysis — gauge dial -->
+    <!-- III: Sentiment — balance scales -->
     <g clip-path="url(#coa-shield-lg)">
-      <path d="M 4,38 A 8,8 0 0,1 20,38" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.5"/>
-      <line x1="4"  y1="38" x2="5.5"  y2="35" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-      <line x1="12" y1="30" x2="12"   y2="32" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-      <line x1="20" y1="38" x2="18.5" y2="35" stroke="currentColor" stroke-width="1"   opacity="0.55"/>
-      <line x1="12" y1="38" x2="18" y2="32" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
-      <circle cx="12" cy="38" r="1.8" fill="currentColor"/>
+      <line x1="11" y1="29" x2="11" y2="40" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      <line x1="5" y1="32" x2="17" y2="30.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="5"  y1="32" x2="5"  y2="37" stroke="currentColor" stroke-width="1"/>
+      <line x1="3"  y1="37" x2="7"  y2="37" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="17" y1="30.5" x2="17" y2="35" stroke="currentColor" stroke-width="1"/>
+      <line x1="15" y1="35"   x2="19" y2="35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="11" cy="29" r="1.6" fill="currentColor"/>
+      <line x1="8" y1="40" x2="14" y2="40" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
     </g>
     <!-- IV: Mining — pickaxe -->
     <g clip-path="url(#coa-shield-lg)">
