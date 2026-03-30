@@ -1438,18 +1438,11 @@
       <div class="section-divider-line"></div>
     </div>
 
-    <!-- Row 1: IS→HO Decay + Cumulative Pass Rate -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">IS→HO Decay by Sector</div>
-        <div class="chart-subtitle">Avg performance decay from in-sample to holdout · red = high overfit risk · green = stable</div>
-        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-decay-chart"></canvas></div>
-      </div>
-      <div class="chart-card" style="padding:20px;margin-bottom:0">
-        <div class="chart-title">Cumulative Pass Rate by HO PF Threshold</div>
-        <div class="chart-subtitle">% of models beating each threshold · shows the distribution shape of the whole universe</div>
-        <div class="chart-wrap" style="height:340px;margin-top:12px"><canvas id="meta-adv-cumpass-chart"></canvas></div>
-      </div>
+    <!-- Cumulative Pass Rate -->
+    <div class="chart-card" style="padding:20px;margin-bottom:16px">
+      <div class="chart-title">Cumulative Pass Rate by HO PF Threshold</div>
+      <div class="chart-subtitle">% of models beating each threshold · shows the distribution shape of the whole universe</div>
+      <div class="chart-wrap" style="height:300px;margin-top:12px"><canvas id="meta-adv-cumpass-chart"></canvas></div>
     </div>
 
     <!-- Row 2: HO Sharpe vs PF + Feature Count vs PF -->

@@ -557,33 +557,17 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
   const el=id=>document.getElementById(id);
   const D=i=>{if(_advCharts[i]){_advCharts[i].destroy();_advCharts[i]=null;}};
 
-  // ── 1. IS→HO Decay by Sector ──────────────────────────────────────────────
+  // ── 1. Cumulative Pass Rate by PF threshold ────────────────────────────────
   D(0);
-  const decayMap={};
-  filtered.filter(r=>r.is_pf>0&&r.ho_pf!=null).forEach(r=>{
-    const s=r.sector||'Other';
-    if(!decayMap[s])decayMap[s]={sum:0,n:0};
-    decayMap[s].sum+=(r.is_pf-r.ho_pf)/r.is_pf*100;
-    decayMap[s].n++;
-  });
-  const decayE=Object.entries(decayMap).map(([s,d])=>({s,avg:d.sum/d.n})).sort((a,b)=>b.avg-a.avg);
-  const c1=el('meta-adv-decay-chart')?.getContext('2d');
-  if(c1) _advCharts[0]=new Chart(c1,{type:'bar',
-    data:{labels:decayE.map(e=>e.s),datasets:[{data:decayE.map(e=>+e.avg.toFixed(1)),backgroundColor:decayE.map(e=>e.avg>25?RED_55:e.avg>15?hexA(SQ.amber,0.65):GREEN_7),borderWidth:0,borderRadius:3}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`IS→HO decay: ${c.raw.toFixed(1)}%`}}},
-      scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'Avg IS→HO Decay % (higher = more overfitting)',color:SQ.muted,font:{size:10}}},y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}}}});
-
-  // ── 2. Cumulative Pass Rate by PF threshold ────────────────────────────────
-  D(1);
   const thresholds=[0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25,1.30,1.40,1.50];
   const v2=filtered.filter(r=>r.ho_pf!=null);
   const cumPass=thresholds.map(t=>v2.length?+(v2.filter(r=>r.ho_pf>=t).length/v2.length*100).toFixed(1):0);
   const c2=el('meta-adv-cumpass-chart')?.getContext('2d');
-  if(c2) _advCharts[1]=new Chart(c2,{type:'line',
+  if(c2) _advCharts[0]=new Chart(c2,{type:'line',
     data:{labels:thresholds.map(t=>t.toFixed(2)),datasets:[{label:'% models ≥ threshold',data:cumPass,borderColor:hexA(SQ.amber,0.85),backgroundColor:hexA(SQ.amber,0.07),borderWidth:2,fill:true,tension:0.3,pointRadius:5,pointHoverRadius:8,pointBackgroundColor:thresholds.map(t=>t>=1.10?GREEN_7:hexA(SQ.amber,0.85))}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}% of models pass HO PF ≥ ${thresholds[c.dataIndex].toFixed(2)}`}},zoom:_zoom('xy')},
       scales:{x:{grid:{color:SQ.grid},ticks:{color:SQ.muted,font:{size:10}},title:{display:true,text:'HO PF Threshold',color:SQ.muted,font:{size:11}}},y:{grid:{color:SQ.grid},ticks:{color:SQ.muted,callback:v=>v+'%'},title:{display:true,text:'% Models Passing',color:SQ.muted,font:{size:11}}}}}});
-  _addResetZoom(_advCharts[1].canvas,_advCharts[1]);
+  _addResetZoom(_advCharts[0].canvas,_advCharts[0]);
 
   // ── 3. HO Sharpe vs HO PF scatter ─────────────────────────────────────────
   D(2);
