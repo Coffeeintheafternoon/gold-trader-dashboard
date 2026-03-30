@@ -11,12 +11,29 @@ function minesRender3D(holes) {
   if (_3dAnimFrame) { cancelAnimationFrame(_3dAnimFrame); _3dAnimFrame = null; }
   if (_3dRenderer)  { _3dRenderer.dispose(); _3dRenderer = null; }
 
-  const THREE = window.THREE;
-  if (!THREE) {
+  wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-size:12px">Loading 3D engine…</div>`;
+
+  _loadThree().then(() => _minesRender3DInner(wrap, holes)).catch(e => {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
-      color:var(--muted);font-size:12px">Three.js not loaded — refresh the page</div>`;
-    return;
-  }
+      color:#ff6666;font-size:12px">3D load error: ${e.message}</div>`;
+  });
+}
+
+function _loadThree() {
+  if (window.THREE) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load Three.js from CDN'));
+    document.head.appendChild(s);
+  });
+}
+
+function _minesRender3DInner(wrap, holes) {
+  const THREE = window.THREE;
+  if (!THREE) throw new Error('THREE still undefined after load');
 
   const holesWithData = (holes || []).filter(h => h.intervals && h.intervals.length > 0);
   if (!holesWithData.length) {
