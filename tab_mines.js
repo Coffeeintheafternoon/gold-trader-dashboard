@@ -26,6 +26,11 @@ function _buildMinesPage() {
   const body = document.getElementById('mines-body');
 
   body.innerHTML = `
+    <!-- Header -->
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:18px">
+      <h2 style="margin:0;font-size:18px;color:var(--gold);letter-spacing:1px">MINE STUDIES</h2>
+      <span style="font-size:11px;color:var(--muted)">v1.0 &mdash; ${_mineData.length} ticker${_mineData.length !== 1 ? 's' : ''} &mdash; data loaded ${new Date().toLocaleTimeString()}</span>
+    </div>
     <!-- Ticker selector -->
     <div id="mines-ticker-bar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
 
