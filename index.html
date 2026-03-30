@@ -15,8 +15,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #000000; --card: transparent; --card2: transparent; --border: rgba(170,255,0,0.22);
-      --text: #dff5c0; --muted: #5a6830; --gold: #aaff00; --gold-dim: #88cc00;
+      --bg: #000000; --card: transparent; --card2: transparent; --border: rgb(var(--gold-rgb) / 0.22);
+      --text: #dff5c0; --muted: #5a6830; --gold: #aaff00; --gold-dim: #88cc00; --gold-rgb: 170 255 0;
       --green: #aaff00; --red: #ff2020; --grey: #555;
     }
     html, body { background: var(--bg); color: var(--text); font-family: 'Courier New', Courier, monospace; font-size: 14px; min-height: 100vh; }
@@ -26,9 +26,9 @@
       background: repeating-linear-gradient(0deg, transparent, transparent 2px,
         rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
     }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; gap: 12px; flex-wrap: wrap; box-shadow: 0 0 24px rgba(170,255,0,0.12); }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: #000; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; gap: 12px; flex-wrap: wrap; box-shadow: 0 0 24px rgb(var(--gold-rgb) / 0.12); }
     .header-left { display: flex; flex-direction: column; gap: 2px; }
-    .header-title { font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 18px rgba(170,255,0,0.60), 0 0 36px rgba(170,255,0,0.30); font-family: 'Courier New', Courier, monospace; }
+    .header-title { font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 18px rgb(var(--gold-rgb) / 0.60), 0 0 36px rgb(var(--gold-rgb) / 0.30); font-family: 'Courier New', Courier, monospace; }
     .header-updated { font-size: 12px; color: var(--muted); }
     .tab-nav { display: flex; gap: 6px; align-items: center; }
     .tab-btn { padding: 6px 18px; border-radius: 3px; border: 1px solid #2a2a2a; cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; background: #0a0a0a; color: var(--muted); transition: border-color 0.15s, color 0.15s; white-space: nowrap; }
@@ -41,7 +41,7 @@
     .ml-sort-btn.ml-sort-active { background:var(--gold);color:#000;border-color:var(--gold); }
     .ml-sort-btn:hover:not(.ml-sort-active) { border-color:var(--gold);color:var(--gold); }
     .pt-wl-btn { padding:5px 14px;border-radius:3px;border:1px solid #2a2a2a;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:#0a0a0a;color:var(--muted);transition:border-color 0.15s,color 0.15s; }
-    .pt-wl-active { background:rgba(170,255,0,0.10);border-color:rgba(170,255,0,0.50);color:var(--gold); }
+    .pt-wl-active { background:rgb(var(--gold-rgb) / 0.10);border-color:rgb(var(--gold-rgb) / 0.50);color:var(--gold); }
     .pt-wl-btn:hover:not(.pt-wl-active) { border-color:var(--gold);color:var(--gold); }
     /* Tooltip system */
     .tip { position:relative; cursor:help; }
@@ -90,7 +90,7 @@
     #pt-model-tip .mt-sep { border-top:1px solid #222; margin:5px 0; }
     /* Server status dot */
     .srv-dot { width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0; }
-    .srv-dot-live    { background:#aaff00;box-shadow:0 0 6px rgba(170,255,0,0.6); }
+    .srv-dot-live    { background:var(--gold);box-shadow:0 0 6px rgb(var(--gold-rgb) / 0.6); }
     .srv-dot-offline { background:#444; }
     .srv-status-wrap { display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:3px;border:1px solid #1a1a1a; }
     .srv-status-wrap:hover { border-color:#333; }
@@ -122,15 +122,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
     @media (max-width: 900px) { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
-    .hero-card { background: rgba(170,255,0,0.022); border: 1px solid rgba(170,255,0,0.35); border-radius: 0; padding: 18px 20px; box-shadow: 0 0 18px rgba(170,255,0,0.08), inset 0 0 14px rgba(170,255,0,0.022); }
-    .hero-card:hover { border-color: rgba(170,255,0,0.65); box-shadow: 0 0 28px rgba(170,255,0,0.16), inset 0 0 14px rgba(170,255,0,0.04); }
+    .hero-card { background: rgb(var(--gold-rgb) / 0.022); border: 1px solid rgb(var(--gold-rgb) / 0.35); border-radius: 0; padding: 18px 20px; box-shadow: 0 0 18px rgb(var(--gold-rgb) / 0.08), inset 0 0 14px rgb(var(--gold-rgb) / 0.022); }
+    .hero-card:hover { border-color: rgb(var(--gold-rgb) / 0.65); box-shadow: 0 0 28px rgb(var(--gold-rgb) / 0.16), inset 0 0 14px rgb(var(--gold-rgb) / 0.04); }
     .hero-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 8px; font-family: 'SF Mono','Fira Mono','Consolas',monospace; }
     .hero-value { font-size: 22px; font-weight: 700; line-height: 1.2; font-family: 'SF Mono','Fira Mono','Consolas',monospace; }
     .hero-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
     .color-bullish { color: var(--green); } .color-bearish { color: var(--red); } .color-neutral { color: var(--grey); }
     .color-gold { color: var(--gold); } .color-green { color: var(--green); } .color-red { color: var(--red); } .color-yellow { color: #f5c842; }
-    .chart-card { background: rgba(170,255,0,0.022); border: 1px solid rgba(170,255,0,0.35); border-radius: 0; padding: 20px 20px 16px; margin-bottom: 20px; box-shadow: 0 0 18px rgba(170,255,0,0.08), inset 0 0 14px rgba(170,255,0,0.022); }
-    .chart-card:hover { border-color: rgba(170,255,0,0.65); box-shadow: 0 0 28px rgba(170,255,0,0.16), inset 0 0 14px rgba(170,255,0,0.04); }
+    .chart-card { background: rgb(var(--gold-rgb) / 0.022); border: 1px solid rgb(var(--gold-rgb) / 0.35); border-radius: 0; padding: 20px 20px 16px; margin-bottom: 20px; box-shadow: 0 0 18px rgb(var(--gold-rgb) / 0.08), inset 0 0 14px rgb(var(--gold-rgb) / 0.022); }
+    .chart-card:hover { border-color: rgb(var(--gold-rgb) / 0.65); box-shadow: 0 0 28px rgb(var(--gold-rgb) / 0.16), inset 0 0 14px rgb(var(--gold-rgb) / 0.04); }
     .chart-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; letter-spacing: 0.4px; text-transform: uppercase; }
     .chart-subtitle { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
     .chart-wrap { position: relative; }
@@ -138,31 +138,31 @@
     .chart-row-bottom { display: grid; grid-template-columns: 55fr 45fr; gap: 20px; margin-bottom: 20px; }
     .no-data { display: flex; align-items: center; justify-content: center; height: 180px; color: var(--muted); font-size: 13px; }
     .section-divider { display: flex; align-items: center; gap: 14px; margin: 32px 0 20px; }
-    .section-divider-line { flex: 1; height: 1px; background: rgba(170,255,0,0.25); }
+    .section-divider-line { flex: 1; height: 1px; background: rgb(var(--gold-rgb) / 0.25); }
     .section-divider-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
     .section-divider-icon { font-size: 13px; }
-    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid rgba(170,255,0,0.25); border-radius: 0; overflow: hidden; font-size: 13px; }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid rgb(var(--gold-rgb) / 0.25); border-radius: 0; overflow: hidden; font-size: 13px; }
     @media (max-width: 700px) { .metrics-grid { grid-template-columns: 1fr; } }
-    .metrics-section { border-right: 1px solid rgba(170,255,0,0.15); }
+    .metrics-section { border-right: 1px solid rgb(var(--gold-rgb) / 0.15); }
     .metrics-section:last-child { border-right: none; }
-    .metrics-section-header { background: #0c1000; padding: 7px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid rgba(170,255,0,0.22); font-family: 'Courier New', Courier, monospace; }
-    .metrics-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; border-bottom: 1px solid rgba(170,255,0,0.08); }
+    .metrics-section-header { background: #0c1000; padding: 7px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.22); font-family: 'Courier New', Courier, monospace; }
+    .metrics-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; border-bottom: 1px solid rgb(var(--gold-rgb) / 0.08); }
     .metrics-row:last-child { border-bottom: none; }
-    .metrics-row:nth-child(even) { background: rgba(170,255,0,0.028); }
+    .metrics-row:nth-child(even) { background: rgb(var(--gold-rgb) / 0.028); }
     .metrics-label { color: var(--muted); font-size: 12px; }
     .metrics-value { font-weight: 600; font-size: 13px; color: var(--text); text-align: right; font-family: 'SF Mono','Fira Mono','Consolas',monospace; }
-    footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px 0 10px; border-top: 1px solid rgba(170,255,0,0.22); margin-top: 8px; }
+    footer { text-align: center; color: var(--muted); font-size: 11px; padding: 20px 0 10px; border-top: 1px solid rgb(var(--gold-rgb) / 0.22); margin-top: 8px; }
     .tip { cursor: help; border-bottom: 1px dashed #4a3a20; display: inline-block; }
     .ml-sort-th:hover { color: #e5e7eb; }
     .ml-sort-icon { font-size:10px; opacity:0.5; margin-left:2px; }
-    #_tip { position: fixed; background: #090b00; border: 1px solid var(--gold); color: var(--text); font-size: 12px; font-weight: 400; line-height: 1.6; padding: 9px 13px; border-radius: 0; white-space: pre-line; max-width: 300px; z-index: 99999; pointer-events: none; box-shadow: 0 4px 24px rgba(170,255,0,0.15); display: none; font-family: 'Courier New', Courier, monospace; }
+    #_tip { position: fixed; background: #090b00; border: 1px solid var(--gold); color: var(--text); font-size: 12px; font-weight: 400; line-height: 1.6; padding: 9px 13px; border-radius: 0; white-space: pre-line; max-width: 300px; z-index: 99999; pointer-events: none; box-shadow: 0 4px 24px rgb(var(--gold-rgb) / 0.15); display: none; font-family: 'Courier New', Courier, monospace; }
     @media (max-width: 800px) { .chart-row, .chart-row-bottom { grid-template-columns: 1fr; } }
     @media (max-width: 768px) { .tab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; } .tab-nav::-webkit-scrollbar { display: none; } .tab-btn { white-space: nowrap; padding: 7px 14px; font-size: 13px; } }
     @media (max-width: 600px) { .hero-grid { grid-template-columns: 1fr 1fr; } }
     .meta-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .meta-table th { text-align: left; padding: 8px 12px; color: var(--gold); border-bottom: 1px solid rgba(170,255,0,0.22); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; }
-    .meta-table td { padding: 8px 12px; border-bottom: 1px solid rgba(170,255,0,0.08); }
-    .sortable-ghost { opacity: 0.35 !important; background: rgba(170,255,0,0.08) !important; border-color: var(--gold) !important; }
+    .meta-table th { text-align: left; padding: 8px 12px; color: var(--gold); border-bottom: 1px solid rgb(var(--gold-rgb) / 0.22); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; }
+    .meta-table td { padding: 8px 12px; border-bottom: 1px solid rgb(var(--gold-rgb) / 0.08); }
+    .sortable-ghost { opacity: 0.35 !important; background: rgb(var(--gold-rgb) / 0.08) !important; border-color: var(--gold) !important; }
 
     /* Leaflet map dark filter */
     .leaflet-tile { filter: invert(1) brightness(0.32) contrast(1.5) hue-rotate(55deg) saturate(1.8); }
@@ -174,7 +174,7 @@
     input[type="search"] {
       background: #070a00 !important;
       color: var(--text) !important;
-      border: 1px solid rgba(170,255,0,0.28) !important;
+      border: 1px solid rgb(var(--gold-rgb) / 0.28) !important;
       border-radius: 3px !important;
       font-family: 'Courier New', Courier, monospace !important;
       font-size: 12px;
@@ -192,8 +192,8 @@
     select:focus,
     input[type="text"]:focus,
     input[type="number"]:focus {
-      border-color: rgba(170,255,0,0.65) !important;
-      box-shadow: 0 0 8px rgba(170,255,0,0.12) !important;
+      border-color: rgb(var(--gold-rgb) / 0.65) !important;
+      box-shadow: 0 0 8px rgb(var(--gold-rgb) / 0.12) !important;
     }
     option {
       background: #070a00;
@@ -211,11 +211,11 @@
 <header>
   <div class="header-left">
     <span class="header-title">
-      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:10px">
-        <circle cx="14" cy="14" r="13" fill="#aaff00" fill-opacity="0.10" stroke="#aaff00" stroke-width="1.5"/>
-        <rect x="7" y="11" width="14" height="7" rx="1.5" fill="#aaff00"/>
-        <rect x="9" y="9" width="10" height="3" rx="1" fill="#aaff00" fill-opacity="0.7"/>
-        <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="#aaff00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:10px;color:var(--gold)">
+        <circle cx="14" cy="14" r="13" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="7" y="11" width="14" height="7" rx="1.5" fill="currentColor"/>
+        <rect x="9" y="9" width="10" height="3" rx="1" fill="currentColor" fill-opacity="0.7"/>
+        <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>SQUANT BOT
     </span>
     <span style="font-size:11px;color:var(--muted);padding-left:32px;font-family:'Courier New',Courier,monospace;letter-spacing:1px">XAU/AUD &middot; 1H &middot; K-MEANS + CLAUDE AI &middot; PAPER TRADING</span>
@@ -243,6 +243,14 @@
     </div>
     <div id="asset-dropdown-wrap" style="display:none">
       <select id="asset-select" onchange="switchAsset(this.value)" style="background:#222;color:#e0e0e0;border:1px solid #444;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;outline:none"></select>
+    </div>
+    <!-- Accent colour picker -->
+    <div style="position:relative;display:flex;align-items:center" title="Theme colour — click to change">
+      <div id="sq-swatch" onclick="document.getElementById('sq-picker').click()"
+           style="width:16px;height:16px;background:var(--gold);border-radius:2px;cursor:pointer;border:1px solid rgb(var(--gold-rgb) / 0.5);box-shadow:0 0 8px var(--gold);flex-shrink:0;transition:box-shadow 0.2s"></div>
+      <input type="color" id="sq-picker" value="#aaff00"
+             style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
+             oninput="sqAccentChange(this.value)">
     </div>
     <span class="header-updated" id="header-updated">Loading…</span>
   </div>
@@ -451,8 +459,8 @@
       <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #1e1e1e">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;align-self:center">Instability guide:</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-          <div style="width:24px;height:3px;background:#aaff00;border-radius:2px"></div>
-          <span style="color:#aaff00;font-weight:600">&lt; 1.0 — Stable</span>
+          <div style="width:24px;height:3px;background:var(--gold);border-radius:2px"></div>
+          <span style="color:var(--gold);font-weight:600">&lt; 1.0 — Stable</span>
           <span style="color:var(--muted);margin-left:4px">Weight barely moves window to window. Trust it.</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px">
@@ -509,7 +517,7 @@
       <!-- Heatmap legend -->
       <div id="ml-heatmap-legend" style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:11px">
         <span style="color:var(--muted)">Correlation:</span>
-        <span style="display:inline-block;width:60px;height:10px;background:linear-gradient(to right,#ff2020,#141414,#aaff00);border-radius:3px"></span>
+        <span style="display:inline-block;width:60px;height:10px;background:linear-gradient(to right,#ff2020,#141414,var(--gold));border-radius:3px"></span>
         <span style="color:var(--muted)">−1.0 → 0 → +1.0</span>
         <span style="color:var(--muted);margin-left:10px">Feature names coloured by category. Diagonal is always 1 (feature vs itself).</span>
       </div>
@@ -590,9 +598,9 @@
       <div class="chart-subtitle">
         <span style="color:#4fc3f7">■</span> IS price &nbsp;
         <span style="color:#f5a520">■</span> Holdout price &nbsp;
-        <span style="color:#aaff00">▲</span> Long entry &nbsp;
+        <span style="color:var(--gold)">▲</span> Long entry &nbsp;
         <span style="color:#ff6b6b">▼</span> Short entry &nbsp;
-        <span style="color:rgba(170,255,0,0.25)">░</span> Holdout region
+        <span style="color:rgb(var(--gold-rgb) / 0.25)">░</span> Holdout region
       </div>
       <div class="chart-wrap" style="height:320px"><canvas id="ml-price-chart"></canvas></div>
     </div>
@@ -604,7 +612,7 @@
         <div class="chart-title" style="margin:0">Trade Analytics</div>
         <div style="display:flex;gap:4px;align-items:center">
           <span style="font-size:10px;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:1.2px">Period</span>
-          <button id="ml-ta-btn-is" onclick="mlSwitchTATab('is')" style="font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid #aaff00;background:rgba(170,255,0,0.13);color:#aaff00;cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase">IS</button>
+          <button id="ml-ta-btn-is" onclick="mlSwitchTATab('is')" style="font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid var(--gold);background:rgb(var(--gold-rgb) / 0.13);color:var(--gold);cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase">IS</button>
           <button id="ml-ta-btn-ho" onclick="mlSwitchTATab('ho')" style="font-size:11px;padding:4px 14px;border-radius:3px;border:1px solid #333;background:transparent;color:#5a6830;cursor:pointer;font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;text-transform:uppercase">HO</button>
         </div>
       </div>
@@ -1665,7 +1673,7 @@
 
     <!-- Header bar -->
     <div id="pt-header-row" style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <span id="pt-watchlist-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgba(170,255,0,0.10);border:1px solid rgba(170,255,0,0.30);color:var(--gold)">PAPER</span>
+      <span id="pt-watchlist-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:rgb(var(--gold-rgb) / 0.10);border:1px solid rgb(var(--gold-rgb) / 0.30);color:var(--gold)">PAPER</span>
       <span id="pt-strategy-badge" style="font-size:11px;padding:2px 8px;border-radius:3px;background:#111;border:1px solid #2a2a2a;color:var(--muted)"></span>
       <span id="pt-last-updated" style="font-size:11px;color:var(--muted)"></span>
     </div>
@@ -2049,5 +2057,111 @@ setInterval(_srvCheck, 60000);
 
 <!-- Model stats tooltip (paper trade ticker hover) -->
 <div id="pt-model-tip"></div>
+
+<script>
+// ── Accent colour picker ──────────────────────────────────────────────────────
+(function () {
+  /** Parse 6-char hex → [r, g, b] integers */
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+  }
+
+  /** Darken a hex colour by ~33% for --gold-dim */
+  function dimHex(hex) {
+    const [r,g,b] = hexToRgb(hex);
+    return '#' + [r,g,b].map(c => Math.round(c*0.67).toString(16).padStart(2,'0')).join('');
+  }
+
+  /** Compute hue-rotate degrees needed to shift from olive (#aaff00 ≈ 77°) to target hue */
+  function hueRotateForColor(hex) {
+    const [r,g,b] = hexToRgb(hex);
+    const max = Math.max(r,g,b)/255, min = Math.min(r,g,b)/255;
+    const d = max - min;
+    let h = 0;
+    if (d > 0) {
+      const rm=r/255, gm=g/255, bm=b/255;
+      if (max === rm)      h = ((gm-bm)/d + 6) % 6;
+      else if (max === gm) h = (bm-rm)/d + 2;
+      else                 h = (rm-gm)/d + 4;
+      h *= 60;
+    }
+    const baseHue = 77; // #aaff00 hue
+    return Math.round(h - baseHue);
+  }
+
+  let _rebuildTimer = null;
+
+  window.sqAccentChange = function(hex) {
+    const [r,g,b] = hexToRgb(hex);
+    const dim      = dimHex(hex);
+    const rgbStr   = `${r} ${g} ${b}`;
+    const borderA  = `rgb(${r} ${g} ${b} / 0.22)`;
+
+    // 1. Update CSS custom properties
+    const root = document.documentElement.style;
+    root.setProperty('--gold',     hex);
+    root.setProperty('--green',    hex);
+    root.setProperty('--gold-dim', dim);
+    root.setProperty('--gold-rgb', rgbStr);
+    root.setProperty('--border',   borderA);
+
+    // 2. Update swatch colour
+    const sw = document.getElementById('sq-swatch');
+    if (sw) { sw.style.background = hex; sw.style.boxShadow = `0 0 8px ${hex}`; }
+
+    // 3. Sync SQ globals so chart builders pick up new colour
+    if (window.SQ) {
+      SQ.green = SQ.bullish = SQ.ok = SQ.low = hex;
+      SQ.palette[0] = hex;
+      SQ.paletteBg[0] = `rgba(${r},${g},${b},0.10)`;
+      SQ.tooltip.border = `rgba(${r},${g},${b},0.40)`;
+      SQ.grid = `rgba(${r},${g},${b},0.07)`;
+      SQ.muted = dim;
+    }
+
+    // 4. Update Chart.js global defaults
+    if (window.Chart) {
+      Chart.defaults.borderColor = `rgba(${r},${g},${b},0.07)`;
+      Chart.defaults.plugins.tooltip.borderColor  = `rgba(${r},${g},${b},0.40)`;
+      Chart.defaults.plugins.tooltip.titleColor   = hex;
+    }
+
+    // 5. Update compat globals used by tab JS files
+    if (typeof GREEN !== 'undefined') { window.GREEN = hex; }
+
+    // 6. Update Leaflet map tile filter hue-rotate
+    const deg = hueRotateForColor(hex);
+    document.querySelectorAll('.leaflet-tile-pane img').forEach(img => {
+      img.style.filter = `invert(1) brightness(0.32) contrast(1.5) hue-rotate(${55+deg}deg) saturate(1.8)`;
+    });
+
+    // 7. Persist to localStorage
+    localStorage.setItem('sq_accent', hex);
+
+    // 8. Debounce chart rebuild (all tabs)
+    clearTimeout(_rebuildTimer);
+    _rebuildTimer = setTimeout(() => {
+      try { if (window._refreshAllCharts) _refreshAllCharts(); } catch(e) {}
+      // Rebuild whichever tab is active so charts update immediately
+      try {
+        const active = document.querySelector('.tab-btn.active');
+        if (active) {
+          const id = active.id.replace('tabnav-', '');
+          if (window.initTab) initTab(id);
+        }
+      } catch(e) {}
+    }, 700);
+  };
+
+  // Restore saved accent on load
+  const saved = localStorage.getItem('sq_accent');
+  if (saved && saved !== '#aaff00') {
+    const picker = document.getElementById('sq-picker');
+    if (picker) picker.value = saved;
+    sqAccentChange(saved);
+  }
+})();
+</script>
 </body>
 </html>
