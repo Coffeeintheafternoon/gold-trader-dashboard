@@ -693,18 +693,7 @@ function _buildAdvancedCharts(filtered, joined, topFeats, abbr){
     });
   }
 
-  // ── 9. HO PF Distribution by Model Type (reuse jitter helper) ─────────────
-  D(8);
-  const mtG={};
-  filtered.forEach(r=>{const mt=r.model_type;if(!mtG[mt])mtG[mt]=[];mtG[mt].push(r);});
-  const mtO=[...new Set(filtered.map(r=>r.model_type))].sort((a,b)=>{
-    const ga=mtG[a].filter(m=>m.ho_pf!=null),gb=mtG[b].filter(m=>m.ho_pf!=null);
-    const ma=ga.length?ga.reduce((s,m)=>s+m.ho_pf,0)/ga.length:0,mb=gb.length?gb.reduce((s,m)=>s+m.ho_pf,0)/gb.length:0;
-    return mb-ma;
-  });
-  _advCharts[8]=_buildDistChart('meta-adv-mtdist-chart',mtG,mtO);
-
-  // ── 10. Top 10 feature rank consistency ───────────────────────────────────
+  // ── 9. Top 10 feature rank consistency ────────────────────────────────────
   D(9);
   const top10=topFeats.slice(0,10);
   const rankBands=[['Top 5',0,5,hexA(SQ.green,0.80)],['6–10',5,10,hexA(SQ.amber,0.75)],['11–20',10,20,hexA(SQ.violet,0.65)],['21+',20,999,hexA(SQ.neutral,0.50)]];
