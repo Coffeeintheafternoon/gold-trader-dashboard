@@ -24,9 +24,9 @@ function _loadThree() {
   if (window.THREE) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js';
+    s.src = './three.min.js';
     s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load Three.js from CDN'));
+    s.onerror = () => reject(new Error('three.min.js not found'));
     document.head.appendChild(s);
   });
 }
@@ -196,22 +196,8 @@ function _minesRender3DInner(wrap, holes) {
   camera.far  = dist * 10;
   camera.updateProjectionMatrix();
 
-  // ── Orbit controls ───────────────────────────────────────────────────────
-  let controls = null;
-  const _tryControls = () => {
-    if (window.THREE_OrbitControls && !controls) {
-      controls = new window.THREE_OrbitControls(camera, _3dRenderer.domElement);
-      controls.target.copy(centre);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.06;
-      controls.minDistance   = 10;
-      controls.maxDistance   = dist * 5;
-      controls.update();
-    }
-  };
-  _tryControls();
-  // Retry after 1s in case module script hasn't loaded yet
-  setTimeout(_tryControls, 1000);
+  // ── Inline orbit controls (no CDN dependency) ────────────────────────────
+  const _orbit = _makeOrbitControls(camera, _3dRenderer.domElement, centre, dist);
 
   // ── Overlays ─────────────────────────────────────────────────────────────
   wrap.style.position = 'relative';
@@ -247,7 +233,7 @@ function _minesRender3DInner(wrap, holes) {
   // ── Animation loop ───────────────────────────────────────────────────────
   function animate() {
     _3dAnimFrame = requestAnimationFrame(animate);
-    if (controls) controls.update();
+    _orbit.update();
     _3dRenderer.render(scene, camera);
   }
   animate();
@@ -260,4 +246,73 @@ function _minesRender3DInner(wrap, holes) {
     camera.updateProjectionMatrix();
     _3dRenderer.setSize(w, h);
   }).observe(wrap);
+}
+
+// ── Minimal orbit controls (rotate / zoom / pan) ─────────────────────────────
+function _makeOrbitControls(camera, domEl, target, sceneSize) {
+  const _t  = target.clone();
+  let _phi  = Math.acos((camera.position.y - _t.y) / camera.position.distanceTo(_t));
+  let _theta = Math.atan2(camera.position.x - _t.x, camera.position.z - _t.z);
+  let _r    = camera.position.distanceTo(_t);
+  let _mouse = null, _button = 0;
+  let _velPhi = 0, _velTheta = 0;
+
+  const _update = () => {
+    _velPhi   *= 0.88;
+    _velTheta *= 0.88;
+    _phi   += _velPhi;
+    _theta += _velTheta;
+    _phi = Math.max(0.05, Math.min(Math.PI - 0.05, _phi));
+    camera.position.set(
+      _t.x + _r * Math.sin(_phi) * Math.sin(_theta),
+      _t.y + _r * Math.cos(_phi),
+      _t.z + _r * Math.sin(_phi) * Math.cos(_theta),
+    );
+    camera.lookAt(_t);
+  };
+
+  domEl.addEventListener('mousedown', e => { _mouse = { x: e.clientX, y: e.clientY }; _button = e.button; e.preventDefault(); });
+  domEl.addEventListener('contextmenu', e => e.preventDefault());
+
+  window.addEventListener('mousemove', e => {
+    if (!_mouse) return;
+    const dx = e.clientX - _mouse.x, dy = e.clientY - _mouse.y;
+    _mouse = { x: e.clientX, y: e.clientY };
+    if (_button === 0) {
+      // Left drag → rotate
+      _velTheta -= dx * 0.008;
+      _velPhi   -= dy * 0.008;
+    } else if (_button === 2) {
+      // Right drag → pan
+      const panScale = _r * 0.001;
+      const right = new camera.position.clone().crossVectors ?
+        new THREE.Vector3().crossVectors(
+          new THREE.Vector3().subVectors(camera.position, _t).normalize(),
+          camera.up
+        ).normalize() : new THREE.Vector3(1,0,0);
+      _t.addScaledVector(right, -dx * panScale);
+      _t.y += dy * panScale;
+    }
+  });
+
+  window.addEventListener('mouseup', () => { _mouse = null; });
+
+  domEl.addEventListener('wheel', e => {
+    _r = Math.max(sceneSize * 0.05, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
+    e.preventDefault();
+  }, { passive: false });
+
+  domEl.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) _mouse = { x: e.touches[0].clientX, y: e.touches[0].clientY, _button: 0 };
+  }, { passive: true });
+  domEl.addEventListener('touchmove', e => {
+    if (!_mouse || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - _mouse.x, dy = e.touches[0].clientY - _mouse.y;
+    _mouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    _velTheta -= dx * 0.008;
+    _velPhi   -= dy * 0.008;
+  }, { passive: true });
+  domEl.addEventListener('touchend', () => { _mouse = null; }, { passive: true });
+
+  return { update: _update };
 }
