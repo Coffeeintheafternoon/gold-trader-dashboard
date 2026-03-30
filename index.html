@@ -210,15 +210,72 @@
 <body>
 <header>
   <div class="header-left">
-    <span class="header-title">
-      <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:10px;color:var(--gold)">
-        <circle cx="14" cy="14" r="13" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="1.5"/>
-        <rect x="7" y="11" width="14" height="7" rx="1.5" fill="currentColor"/>
-        <rect x="9" y="9" width="10" height="3" rx="1" fill="currentColor" fill-opacity="0.7"/>
-        <polyline points="6,20 10,16 13,18 18,12 22,14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>SQUANT BOT
-    </span>
-    <span style="font-size:11px;color:var(--muted);padding-left:32px;font-family:'Courier New',Courier,monospace;letter-spacing:1px">XAU/AUD &middot; 1H &middot; K-MEANS + CLAUDE AI &middot; PAPER TRADING</span>
+    <div style="display:flex;align-items:center;gap:16px">
+
+      <!-- ── Logo A: Candlestick Pulse ───────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px" title="Logo A — Candlestick Pulse">
+        <svg width="38" height="38" viewBox="0 0 32 32" fill="none" style="color:var(--gold)">
+          <!-- Wicks -->
+          <line x1="6"  y1="4"  x2="6"  y2="28" stroke="currentColor" stroke-width="1"   opacity="0.4"/>
+          <line x1="16" y1="5"  x2="16" y2="27" stroke="currentColor" stroke-width="1"   opacity="0.4"/>
+          <line x1="26" y1="2"  x2="26" y2="22" stroke="currentColor" stroke-width="1"   opacity="0.4"/>
+          <!-- Candle bodies -->
+          <rect x="3.5" y="12" width="5" height="10" rx="0.5" fill="currentColor"/>
+          <rect x="13.5" y="9" width="5" height="12" rx="0.5" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="23.5" y="6" width="5" height="11" rx="0.5" fill="currentColor"/>
+          <!-- Rising signal line -->
+          <polyline points="1,26 6,17 16,13 26,8 31,5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- Signal dot at tip -->
+          <circle cx="31" cy="5" r="2" fill="currentColor"/>
+        </svg>
+        <span style="font-size:8px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:1.5px">A</span>
+      </div>
+
+      <!-- ── Logo B: SQ Monogram ─────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px" title="Logo B — SQ Monogram">
+        <svg width="38" height="38" viewBox="0 0 32 32" fill="none" style="color:var(--gold)">
+          <!-- Outer frame -->
+          <rect x="1" y="1" width="30" height="30" rx="3" stroke="currentColor" stroke-width="1" fill="currentColor" fill-opacity="0.06"/>
+          <!-- "S" — blocky geometric S in left half -->
+          <path d="M 13,6 H 4 V 15 H 13 V 26 H 4" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+          <!-- "Q" — circle + tail in right half -->
+          <circle cx="23" cy="16" r="7.5" stroke="currentColor" stroke-width="2.2" fill="none"/>
+          <line x1="27.5" y1="20.5" x2="31" y2="27" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          <!-- Small dot accent top-right corner -->
+          <circle cx="28" cy="4" r="1.5" fill="currentColor" opacity="0.5"/>
+        </svg>
+        <span style="font-size:8px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:1.5px">B</span>
+      </div>
+
+      <!-- ── Logo C: Hex Circuit ─────────────────────────────────────── -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px" title="Logo C — Hex Circuit">
+        <svg width="38" height="38" viewBox="0 0 32 32" fill="none" style="color:var(--gold)">
+          <!-- Hexagon (pointy-top) -->
+          <polygon points="16,2 27.8,9 27.8,23 16,30 4.2,23 4.2,9" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.07"/>
+          <!-- Circuit traces to vertices -->
+          <line x1="16" y1="2"    x2="16" y2="8"    stroke="currentColor" stroke-width="0.9" opacity="0.45"/>
+          <line x1="27.8" y1="9"  x2="22" y2="12"   stroke="currentColor" stroke-width="0.9" opacity="0.45"/>
+          <line x1="27.8" y1="23" x2="22" y2="20"   stroke="currentColor" stroke-width="0.9" opacity="0.45"/>
+          <line x1="4.2"  y1="9"  x2="10" y2="12"   stroke="currentColor" stroke-width="0.9" opacity="0.45"/>
+          <line x1="4.2"  y1="23" x2="10" y2="20"   stroke="currentColor" stroke-width="0.9" opacity="0.45"/>
+          <!-- Mini chart line inside -->
+          <polyline points="8,22 11,17 15,19 20,11 24,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Dots at circuit nodes -->
+          <circle cx="16" cy="2"    r="1.8" fill="currentColor"/>
+          <circle cx="27.8" cy="9"  r="1.8" fill="currentColor"/>
+          <circle cx="27.8" cy="23" r="1.8" fill="currentColor"/>
+          <circle cx="4.2"  cy="9"  r="1.8" fill="currentColor"/>
+          <circle cx="4.2"  cy="23" r="1.8" fill="currentColor"/>
+          <circle cx="16"   cy="30" r="1.8" fill="currentColor"/>
+          <!-- Signal peak dot -->
+          <circle cx="24" cy="9" r="2.5" fill="currentColor"/>
+        </svg>
+        <span style="font-size:8px;color:var(--muted);font-family:'Courier New',monospace;letter-spacing:1.5px">C</span>
+      </div>
+
+      <span class="header-title" style="margin-left:4px">SQUANT BOT</span>
+    </div>
+    <span style="font-size:11px;color:var(--muted);font-family:'Courier New',Courier,monospace;letter-spacing:1px;padding-left:2px">XAU/AUD &middot; 1H &middot; K-MEANS + CLAUDE AI &middot; PAPER TRADING</span>
   </div>
   <nav class="tab-nav">
     <button class="tab-btn" id="tabnav-signal" onclick="switchTab('signal')">Signal</button>
