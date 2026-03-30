@@ -8,9 +8,10 @@ let _chatterLiveMode  = false;   // true = Flask server available, false = stati
 let _glossaryItems    = [];      // full YouTube glossary dataset
 let _hcItems          = [];      // HotCopper forum thread dataset
 let _annItems         = [];      // ASX announcements dataset
+let _newsItems        = [];      // RSS / NewsAPI / Telegram news articles
 let _glFiltered       = [];      // current filtered view (used by modal)
 let _tickerFilter     = '';      // ticker search string (e.g. "WAF")
-let _enabledSources   = new Set(['youtube', 'hotcopper', 'asx_announce']);  // toggled by source bar
+let _enabledSources   = new Set(['youtube', 'hotcopper', 'asx_announce', 'news']);  // toggled by source bar
 
 async function initChatterTab() {
   const elLoading = document.getElementById('chatter-loading');
@@ -30,9 +31,9 @@ async function initChatterTab() {
     try {
       const staticResp = await fetch(`./chatter_data.json?v=${_CV}`);
       const staticData = staticResp.ok ? await staticResp.json() : {};
-      _buildChatterPage(staticData.glossary || [], staticData.broken_transcripts || [], channels, staticData.hotcopper || [], staticData.asx_announcements || [], true);
+      _buildChatterPage(staticData.glossary || [], staticData.broken_transcripts || [], channels, staticData.hotcopper || [], staticData.asx_announcements || [], staticData.news_items || [], true);
     } catch (_e2) {
-      _buildChatterPage([], [], channels, [], [], true);
+      _buildChatterPage([], [], channels, [], [], [], true);
     }
     return;
   } catch (_e) {}
@@ -44,7 +45,7 @@ async function initChatterTab() {
     const data = await resp.json();
     elLoading.style.display = 'none';
     document.getElementById('chatter-content').style.display = '';
-    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], data.hotcopper || [], data.asx_announcements || [], false);
+    _buildChatterPage(data.glossary || [], data.broken_transcripts || [], data.channels || [], data.hotcopper || [], data.asx_announcements || [], data.news_items || [], false);
   } catch (_e) {
     elLoading.style.display = 'none';
     elOffline.style.display = '';
@@ -53,15 +54,16 @@ async function initChatterTab() {
 
 // ── Main layout builder ────────────────────────────────────────────────────────
 
-function _buildChatterPage(glossary, broken, channels, hotcopper, announcements, interactive) {
+function _buildChatterPage(glossary, broken, channels, hotcopper, announcements, newsItems, interactive) {
   const body = document.getElementById('chatter-body');
   _glossaryItems = glossary;
   _hcItems       = hotcopper;
   _annItems      = announcements;
+  _newsItems     = newsItems;
 
   body.innerHTML = `
     ${_buildTickerBar()}
-    ${_buildSourceBar(glossary.length, hotcopper.length, announcements.length)}
+    ${_buildSourceBar(glossary.length, hotcopper.length, announcements.length, newsItems.length)}
     ${_buildFilterBar(glossary)}
     <div id="chatter-feed" style="margin-bottom:32px"></div>
     ${_buildManageSection(interactive)}
@@ -138,16 +140,17 @@ function _buildTickerBar() {
 
 // ── Source status bar ──────────────────────────────────────────────────────────
 
-function _buildSourceBar(ytCount, hcCount, annCount) {
-  const hcActive  = hcCount  > 0;
-  const annActive = annCount > 0;
+function _buildSourceBar(ytCount, hcCount, annCount, newsCount) {
+  const hcActive   = hcCount   > 0;
+  const annActive  = annCount  > 0;
+  const newsActive = (newsCount || 0) > 0;
   const sources = [
-    { key: 'youtube',      label: 'YouTube',           live: true,      count: ytCount },
-    { key: 'hotcopper',    label: 'HC Forum',           live: hcActive,  count: hcActive  ? hcCount  : null },
-    { key: 'asx_announce', label: 'ASX Announcements',  live: annActive, count: annActive ? annCount : null },
-    { key: 'twitter',      label: 'Twitter / X',       live: false,     count: null },
-    { key: 'news',         label: 'News',               live: false,     count: null },
-    { key: 'broker',       label: 'Broker Reports',     live: false,     count: null },
+    { key: 'youtube',      label: 'YouTube',           live: true,        count: ytCount },
+    { key: 'hotcopper',    label: 'HC Forum',           live: hcActive,    count: hcActive   ? hcCount   : null },
+    { key: 'asx_announce', label: 'ASX Announcements',  live: annActive,   count: annActive  ? annCount  : null },
+    { key: 'news',         label: 'News',               live: newsActive,  count: newsActive ? newsCount : null },
+    { key: 'twitter',      label: 'Twitter / X',       live: false,       count: null },
+    { key: 'broker',       label: 'Broker Reports',     live: false,       count: null },
   ];
 
   const cards = sources.map(s => {
@@ -239,8 +242,8 @@ function _buildFilterBar(items) {
         <option value="youtube">YouTube</option>
         <option value="hotcopper">HC Forum</option>
         <option value="asx_announce">ASX Announcements</option>
+        <option value="news">News</option>
         <option value="twitter" disabled>Twitter (soon)</option>
-        <option value="news" disabled>News (soon)</option>
         <option value="broker" disabled>Broker Reports (soon)</option>
       </select>
       <select id="chatter-filter-score" style="${selectStyle}">
@@ -321,14 +324,32 @@ function _applyFeedFilter() {
     }).map(i => ({ ...i, _source: 'asx_announce', _date: i.announced_at }));
   }
 
+  // ── News items ─────────────────────────────────────────────────────────────
+  let newsFiltered = [];
+  if (_enabledSources.has('news') && (!source || source === 'news')) {
+    newsFiltered = _newsItems.filter(item => {
+      if (item.impact_score != null && item.impact_score < minSc) return false;
+      if (search) {
+        const h = `${item.title} ${item.summary || ''}`.toLowerCase();
+        if (!h.includes(search)) return false;
+      }
+      if (ticker) {
+        const h = `${item.title} ${item.summary || ''}`.toUpperCase();
+        if (!h.includes(ticker)) return false;
+      }
+      return true;
+    }).map(i => ({ ...i, _source: 'news', _date: i.published_at }));
+  }
+
   // ── Merge + sort ───────────────────────────────────────────────────────────
-  let merged = [...ytItems, ...hcFiltered, ...annFiltered];
+  let merged = [...ytItems, ...hcFiltered, ...annFiltered, ...newsFiltered];
 
   if (sort === 'score') {
-    // HC items go after YouTube (no score); YT sorted by score desc
-    const yt = merged.filter(i => i._source === 'youtube').sort((a, b) => (b.llm_score || 0) - (a.llm_score || 0));
-    const hc = merged.filter(i => i._source === 'hotcopper');
-    merged = [...yt, ...hc];
+    // Score-sortable sources first (YT by llm_score, news by impact_score), then HC/ASX
+    const scored = merged.filter(i => i._source === 'youtube' || i._source === 'news')
+      .sort((a, b) => (b.llm_score || b.impact_score || 0) - (a.llm_score || a.impact_score || 0));
+    const unscored = merged.filter(i => i._source !== 'youtube' && i._source !== 'news');
+    merged = [...scored, ...unscored];
   } else if (sort === 'channel') {
     merged.sort((a, b) => {
       const aName = a._source === 'youtube' ? (a.channel_name || '') : `HC:${a.ticker}`;
@@ -344,7 +365,7 @@ function _applyFeedFilter() {
   _glFiltered = merged.filter(i => i._source === 'youtube');
   window._glFiltered = _glFiltered;
 
-  const total = _glossaryItems.length + _hcItems.length + _annItems.length;
+  const total = _glossaryItems.length + _hcItems.length + _annItems.length + _newsItems.length;
   const countEl = document.getElementById('chatter-feed-count');
   if (countEl) {
     countEl.textContent = ticker
@@ -359,7 +380,7 @@ function _renderFeed(items) {
   const container = document.getElementById('chatter-feed');
   if (!container) return;
 
-  if (!_glossaryItems.length && !_tickerFilter) {
+  if (!_glossaryItems.length && !_newsItems.length && !_tickerFilter) {
     container.innerHTML = _buildComingSoonPlaceholders();
     return;
   }
@@ -382,6 +403,8 @@ function _renderFeed(items) {
       return _renderHCRow(item);
     } else if (item._source === 'asx_announce') {
       return _renderAnnRow(item);
+    } else if (item._source === 'news') {
+      return _renderNewsRow(item);
     } else {
       return _renderYTRow(item, ytIdx++);
     }
@@ -513,10 +536,49 @@ function _renderAnnRow(item) {
     : inner;
 }
 
+function _renderNewsRow(item) {
+  const score      = item.impact_score != null ? item.impact_score.toFixed(1) : '—';
+  const scoreColor = item.impact_score >= 7 ? 'var(--green)' : item.impact_score >= 4 ? 'var(--gold)' : 'var(--muted)';
+  const date       = (item.published_at || '').slice(0, 16).replace('T', ' ');
+  const src        = (item.source || 'news').replace(/_/g, ' ');
+
+  let titleHtml   = item.title   || '';
+  let summaryHtml = item.summary || '';
+  if (_tickerFilter) {
+    const re = new RegExp(`(${_tickerFilter})`, 'gi');
+    titleHtml   = titleHtml.replace(re,   `<mark style="background:rgba(255,204,0,0.2);color:var(--gold);border-radius:2px;padding:0 2px">$1</mark>`);
+    summaryHtml = summaryHtml.replace(re, `<mark style="background:rgba(255,204,0,0.2);color:var(--gold);border-radius:2px;padding:0 2px">$1</mark>`);
+  }
+
+  const inner = `
+    <div style="padding:14px 16px;border-bottom:1px solid #141414;
+                display:flex;gap:14px;align-items:flex-start;transition:background 0.1s"
+         onmouseover="this.style.background='rgba(255,255,255,0.02)'"
+         onmouseout="this.style.background='none'">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:40px">
+        <span style="font-family:monospace;font-size:14px;font-weight:700;color:${scoreColor}">${score}</span>
+        <span style="font-size:9px;padding:2px 5px;border-radius:2px;
+                     background:rgba(255,136,0,0.08);color:#ff8800;
+                     border:1px solid rgba(255,136,0,0.2);white-space:nowrap;letter-spacing:0.3px">NEWS</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${src} &nbsp;·&nbsp; ${date}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${titleHtml}</div>
+        ${summaryHtml ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${summaryHtml}</div>` : ''}
+      </div>
+      <span style="font-size:11px;color:#333;white-space:nowrap;padding-top:2px;align-self:center">open ›</span>
+    </div>`;
+
+  return item.url
+    ? `<a href="${item.url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">${inner}</a>`
+    : inner;
+}
+
 function _buildComingSoonPlaceholders() {
   const placeholders = [
     { key: 'twitter', label: 'Twitter / X',    desc: 'High-signal finance accounts — @KitcoNews, @ZeroHedge, @MacroAlf and more' },
-    { key: 'news',    label: 'News',            desc: 'Reuters, BBC, Al Jazeera, MarketWatch RSS feeds — geopolitical + macro events' },
     { key: 'broker',  label: 'Broker Reports',  desc: 'Research notes from Macquarie, Bell Potter, Ord Minnett on gold sector' },
   ];
 
