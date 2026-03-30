@@ -15,18 +15,12 @@ async function initMinesTab() {
   };
 
   try {
-    const _s = (msg) => { loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">${msg}</div>`; };
-    _s('Step 1: starting…');
     const _ctrl = new AbortController();
     const _t = setTimeout(() => _ctrl.abort(), 10000);
-    _s('Step 2: fetching mine_data.json…');
     const resp = await fetch('./mine_data.json?' + Date.now(), { signal: _ctrl.signal });
     clearTimeout(_t);
-    _s('Step 3: got response HTTP ' + resp.status);
     if (!resp.ok) { _showErr('Fetch failed: HTTP ' + resp.status); return; }
-    _s('Step 4: parsing JSON…');
     _mineData = await resp.json();
-    _s('Step 5: parsed ' + _mineData.length + ' tickers');
     if (!Array.isArray(_mineData) || _mineData.length === 0) {
       _showErr('No mine study data yet.<br><span style="font-size:11px">Run: python scripts/run_mine_study.py --all</span>');
       return;
@@ -78,12 +72,12 @@ function _buildMinesPage() {
         <div class="chart-card" style="padding:16px">
           <div style="font-size:11px;font-weight:700;color:var(--muted);
                letter-spacing:1px;margin-bottom:12px">RESOURCE HISTORY (Moz)</div>
-          <canvas id="mines-resource-chart" height="200"></canvas>
+          <div style="position:relative;height:200px"><canvas id="mines-resource-chart"></canvas></div>
         </div>
         <div class="chart-card" style="padding:16px">
           <div style="font-size:11px;font-weight:700;color:var(--muted);
                letter-spacing:1px;margin-bottom:12px">GRADE vs CUTOFF</div>
-          <canvas id="mines-grade-chart" height="200"></canvas>
+          <div style="position:relative;height:200px"><canvas id="mines-grade-chart"></canvas></div>
         </div>
       </div>
 
@@ -92,7 +86,7 @@ function _buildMinesPage() {
         <div class="chart-card" style="padding:16px">
           <div style="font-size:11px;font-weight:700;color:var(--muted);
                letter-spacing:1px;margin-bottom:12px">VALUATION WATERFALL (A$M)</div>
-          <canvas id="mines-waterfall-chart" height="200"></canvas>
+          <div style="position:relative;height:200px"><canvas id="mines-waterfall-chart"></canvas></div>
         </div>
         <div class="chart-card" style="padding:16px">
           <div style="font-size:11px;font-weight:700;color:var(--muted);
@@ -112,7 +106,7 @@ function _buildMinesPage() {
       <div class="chart-card" style="padding:16px;margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;color:var(--muted);
              letter-spacing:1px;margin-bottom:12px">BACK-TEST: MODEL PREMIUM vs 90D RETURN</div>
-        <canvas id="mines-backtest-chart" height="180"></canvas>
+        <div style="position:relative;height:180px"><canvas id="mines-backtest-chart"></canvas></div>
       </div>
     </div>
   `;
