@@ -160,11 +160,18 @@ function buildScreenerGrid(tickers) {
     const hoPF = t.ho_pf != null ? t.ho_pf.toFixed(3) : '—';
     const isSc = t.sharpe >= 0.5 ? 'var(--green)' : t.sharpe > 0 ? SQ.amber : 'var(--red)';
     const hoSc = (t.ho_sharpe||0) >= 0.5 ? 'var(--green)' : (t.ho_sharpe||0) > 0 ? SQ.amber : 'var(--red)';
-    const safe = (t.models && t.models[0]) ? t.models[0].safe_name : t.ticker.toLowerCase().replace(/\./g,'_');
+    // Pick highest model version available for click routing and badge
+    const modelsSorted = (t.models || []).slice().sort((a,b) => {
+      const ver = s => { const m = s.safe_name.match(/v(\d+)/); return m ? +m[1] : 0; };
+      return ver(b) - ver(a);
+    });
+    const safe = modelsSorted.length ? modelsSorted[0].safe_name : t.ticker.toLowerCase().replace(/\./g,'_');
+    const topVersion = modelsSorted.length ? (modelsSorted[0].safe_name.match(/v(\d+)/)||[])[1] : null;
+    const vBadge = topVersion ? `<span style="background:${topVersion==='6'?'rgba(245,165,32,0.2)':topVersion==='5'?'rgba(99,102,241,0.2)':'rgba(55,65,81,0.4)'};color:${topVersion==='6'?'var(--gold)':topVersion==='5'?'#a5b4fc':'#9ca3af'};border:1px solid ${topVersion==='6'?'var(--gold)':topVersion==='5'?'#6366f1':'#374151'};border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700">v${topVersion}</span>` : '';
     const ovLabel = { LOW:'✓ LOW', MEDIUM:'~ MED', HIGH:'⚠ HIGH', NO_EDGE:'✕ NONE', REGIME_CHANGE:'↑ SHIFT', UNKNOWN:'? UNK' }[ov] || ov;
     const ovColor = (_ML_OVERFIT_LABELS[ov]||{}).color || '#4b5563';
     return `<div class="ml-ticker-card ${cardClass}" onclick="openModelLabTicker('${safe}')" title="${t.ticker} — ${ov}">
-      <div style="font-size:15px;font-weight:800;color:#e5e7eb;margin-bottom:8px">${t.ticker}</div>
+      <div style="font-size:15px;font-weight:800;color:#e5e7eb;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center"><span>${t.ticker}</span>${vBadge}</div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
         <span style="color:var(--muted)">IS PF</span><span style="font-family:monospace;font-weight:600">${isPF}</span>
       </div>
