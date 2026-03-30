@@ -238,6 +238,7 @@ function renderTickerDetail(d) {
   function _modelLabel(mt) {
     if (!mt) return 'Linear Regression Model';
     if (mt === 'regime_similarity') return 'Regime Similarity Model';
+    if (mt.includes('v6')) return 'Ridge v6 Model';
     if (mt.includes('v5')) return 'Ridge v5 Model';
     if (mt.includes('v4')) return 'Ridge v4 Model';
     if (mt.includes('v3')) return 'Ridge v3 Model';
@@ -267,6 +268,53 @@ function renderTickerDetail(d) {
       }).join('');
   } else {
     switcherEl.style.display = 'none';
+  }
+
+  // v6 variant toggle — only shown for v6 models
+  const v6ToggleEl = document.getElementById('ml-v6-toggle');
+  if (d.v6 && d.variants && v6ToggleEl) {
+    const FORWARD_BARS = [3, 5, 10];
+    const WINDOWS = [
+      { key: '6m',  label: '6m train' },
+      { key: '1yr', label: '1yr train' },
+      { key: '2yr', label: '2yr train' },
+    ];
+    let html = '<div style="margin-bottom:12px">';
+    html += '<div style="font-size:11px;color:var(--muted);letter-spacing:0.5px;margin-bottom:6px">V6 VARIANT — FORWARD BARS × TRAINING WINDOW</div>';
+    html += '<table style="border-collapse:collapse;font-size:11px">';
+    // Header row
+    html += '<tr><td style="padding:3px 8px;color:var(--muted)"></td>';
+    WINDOWS.forEach(w => { html += `<td style="padding:3px 10px;color:var(--muted);text-align:center">${w.label}</td>`; });
+    html += '</tr>';
+    // Data rows
+    FORWARD_BARS.forEach(fb => {
+      html += `<tr><td style="padding:3px 8px;color:var(--muted);white-space:nowrap">${fb}-bar</td>`;
+      WINDOWS.forEach(w => {
+        const vkey = `fb${fb}_${w.key}`;
+        const v = d.variants[vkey];
+        if (!v) { html += '<td></td>'; return; }
+        const isBest = v.is_best;
+        const shr = v.is_sharpe;
+        const shrColor = shr > 0.4 ? 'var(--green)' : shr > 0 ? SQ.amber : 'var(--red)';
+        const isActive = (d._active_variant || d.best_variant) === vkey;
+        const border = isActive ? '2px solid var(--gold)' : '1px solid #333';
+        const bg = isActive ? 'rgba(245,165,32,0.15)' : '#111';
+        html += `<td style="padding:2px 4px;text-align:center">
+          <button onclick="_mlSwitchV6Variant('${vkey}')"
+            style="background:${bg};border:${border};border-radius:4px;padding:4px 8px;cursor:pointer;min-width:60px">
+            <div style="color:${shrColor};font-weight:700;font-size:12px">${shr >= 0 ? '+' : ''}${shr.toFixed(3)}</div>
+            <div style="color:var(--muted);font-size:10px">${v.n_features}f/${v.n_windows}w</div>
+            ${isBest ? '<div style="color:var(--gold);font-size:9px">&#9733; best IS</div>' : ''}
+          </button>
+        </td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</table></div>';
+    v6ToggleEl.innerHTML = html;
+    v6ToggleEl.style.display = '';
+  } else if (v6ToggleEl) {
+    v6ToggleEl.style.display = 'none';
   }
 
   // IS metrics
@@ -869,6 +917,33 @@ let _mlScoreBucketsChart = null;
 let _mlScoreDistChart    = null;
 let _mlWindowSharpeChart = null;
 let _mlCurrentData = null;
+
+function _mlSwitchV6Variant(variantKey) {
+  if (!_mlCurrentData || !_mlCurrentData.variants) return;
+  const v = _mlCurrentData.variants[variantKey];
+  if (!v) return;
+  _mlCurrentData._active_variant = variantKey;
+  // Swap active data
+  _mlCurrentData.features       = v.features       || [];
+  _mlCurrentData.weight_history = v.weight_history  || [];
+  _mlCurrentData.equity_is      = v.equity_is       || [];
+  _mlCurrentData.is_model = {
+    pf:           v.is_pf,
+    sharpe:       v.is_sharpe,
+    n_windows:    v.n_windows,
+    forward_bars: v.forward_bars,
+    train_days:   v.train_days,
+  };
+  _mlCurrentData.pruning = {
+    mode:           'ridge_v6',
+    hard_pruned:    v.hard_pruned    || [],
+    dormant_pool:   v.dormant_pool   || [],
+    final_excluded: v.final_excluded || [],
+    final_features: v.n_features,
+  };
+  // Re-render
+  renderTickerDetail(_mlCurrentData);
+}
 
 function mlSwitchTATab(tab) {
   const isIS = tab === 'is';
