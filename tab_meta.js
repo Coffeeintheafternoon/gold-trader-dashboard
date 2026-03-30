@@ -283,34 +283,6 @@ function _buildMetaTab(){
     return`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:7px 12px;font-weight:600;color:var(--text)">${name}</td><td style="padding:7px 12px;text-align:center;color:var(--muted)">${d.total}</td><td style="padding:7px 12px;text-align:center;color:var(--muted)">${d.valid}</td><td style="padding:7px 12px;text-align:center;color:${GREEN}">${d.edge}</td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:${avgC}">${d.valid?avgP.toFixed(3):'—'}</td><td style="padding:7px 12px;text-align:right;font-family:monospace;color:var(--green)">${d.best?d.best.toFixed(3):'—'}</td><td style="padding:7px 12px;min-width:120px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;height:6px;background:#222;border-radius:3px"><div style="height:100%;width:${pass}%;background:${barC};border-radius:3px"></div></div><span style="font-size:11px;color:${barC};min-width:26px">${pass}%</span></div></td></tr>`;
   }).join('');
 
-  // ── Sector × Model Type Heatmap ───────────────────────────────────────────
-  const hmWrap=el('meta-heatmap-wrap');
-  if(hmWrap){
-    const allMTs=[...new Set(filtered.map(r=>r.model_type))].sort();
-    const allSecs=[...new Set(filtered.map(r=>r.sector||'Other'))].sort();
-    // Only model types with ≥ 2 models total (in filtered set)
-    const validMTs=_activeModelFilter==='All'
-      ? allMTs.filter(mt=>filtered.filter(r=>r.model_type===mt&&r.ho_pf!=null).length>=2)
-      : allMTs;
-    const pfBg=pf=>{if(pf==null)return'';if(pf>=1.15)return'background:rgba(170,255,0,0.22)';if(pf>=1.10)return'background:rgba(170,255,0,0.14)';if(pf>=1.05)return'background:rgba(255,204,0,0.14)';if(pf>=1.00)return'background:rgba(255,204,0,0.06)';return'background:rgba(255,51,85,0.11)';};
-    const pfTxt=pf=>pf>=1.10?'var(--green)':pf>=1.00?SQ.amber:RED;
-    let html=`<div style="overflow-x:auto"><table class="meta-table" style="font-size:11px"><thead><tr><th style="white-space:nowrap">Sector</th>`;
-    validMTs.forEach(mt=>{const dot=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${_MT_COLOR[mt]||SQ.muted};margin-right:4px"></span>`;html+=`<th style="text-align:center;white-space:nowrap">${dot}${mt}</th>`;});
-    html+=`</tr></thead><tbody>`;
-    allSecs.forEach(sec=>{
-      const cells=validMTs.map(mt=>{const recs=filtered.filter(r=>r.sector===sec&&r.model_type===mt&&r.ho_pf!=null);return recs.length?{pf:recs.reduce((s,r)=>s+r.ho_pf,0)/recs.length,n:recs.length}:{pf:null,n:0};});
-      if(cells.every(c=>c.n===0))return;
-      html+=`<tr style="border-bottom:1px solid #1a1a1a"><td style="padding:6px 10px;font-weight:600;color:var(--text);white-space:nowrap">${sec}</td>`;
-      cells.forEach(c=>{
-        if(!c.n){html+=`<td style="padding:6px 8px;text-align:center;color:#2a2a2a">·</td>`;return;}
-        html+=`<td style="padding:6px 8px;text-align:center;${pfBg(c.pf)}"><span style="font-family:monospace;font-weight:700;color:${pfTxt(c.pf)}">${c.pf.toFixed(2)}</span><br><span style="color:var(--muted);font-size:9px">n=${c.n}</span></td>`;
-      });
-      html+=`</tr>`;
-    });
-    html+=`</tbody></table></div>`;
-    hmWrap.innerHTML=html;
-  }
-
   // ── Model Summary ─────────────────────────────────────────────────────────
   const isPFs=valid.filter(r=>r.is_pf!=null).map(r=>r.is_pf);
   const avgIs=isPFs.length?isPFs.reduce((a,b)=>a+b,0)/isPFs.length:0;
