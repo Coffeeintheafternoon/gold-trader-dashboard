@@ -16,7 +16,10 @@ async function initMinesTab() {
 
   try {
     loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">Loading mine data…</div>`;
-    const resp = await fetch('./mine_data.json?' + Date.now());
+    const _ctrl = new AbortController();
+    const _t = setTimeout(() => _ctrl.abort(), 10000);
+    const resp = await fetch('./mine_data.json?' + Date.now(), { signal: _ctrl.signal });
+    clearTimeout(_t);
     if (!resp.ok) { _showErr('Fetch failed: HTTP ' + resp.status); return; }
     _mineData = await resp.json();
     if (!Array.isArray(_mineData) || _mineData.length === 0) {
