@@ -219,9 +219,17 @@ async function _ptLoadWatchlist(name) {
   _ptRenderHeader(portfolio, signals);
   _ptRenderHero(portfolio, signals);
   _ptRenderPositions(portfolio, signals);
-  _ptRenderEquityCurve(portfolio);
-  _ptRenderSignals(signals, portfolio);
-  _ptRenderTrades(portfolio, signals);
+  try { _ptRenderEquityCurve(portfolio); } catch(e) { console.error('_ptRenderEquityCurve:', e); }
+  try { _ptRenderSignals(signals, portfolio); } catch(e) {
+    console.error('_ptRenderSignals:', e);
+    const tb = document.getElementById('pt-signals-tbody');
+    if (tb) tb.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:12px">Render error: ${e.message}</td></tr>`;
+  }
+  try { _ptRenderTrades(portfolio, signals); } catch(e) {
+    console.error('_ptRenderTrades:', e);
+    const tb = document.getElementById('pt-trades-tbody');
+    if (tb) tb.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:12px">Render error: ${e.message}</td></tr>`;
+  }
   _ptRenderModelHealth(signals);
 }
 
