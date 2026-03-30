@@ -1,175 +1,217 @@
-// tab_mines_3d.js — Three.js 3D drill hole viewer
-// Loaded after Three.js CDN script.
+// tab_mines_3d.js — Downhole strip-log viewer (falls back from 3D when no coordinates)
 
-let _3dScene     = null;
-let _3dRenderer  = null;
-let _3dCamera    = null;
-let _3dControls  = null;
 let _3dAnimFrame = null;
 
 function minesRender3D(holes) {
   const wrap = document.getElementById('mines-3d-wrap');
   if (!wrap) return;
-
-  // Cancel previous animation loop
   if (_3dAnimFrame) { cancelAnimationFrame(_3dAnimFrame); _3dAnimFrame = null; }
 
-  if (!holes || holes.length === 0 || !holes.some(h => h.easting != null)) {
-    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
-      color:var(--muted);font-size:12px">No drill coordinate data available</div>`;
-    return;
+  const validCoords = (holes || []).filter(h => h.easting != null && h.northing != null);
+
+  if (validCoords.length > 0) {
+    _render3D(wrap, validCoords);
+  } else {
+    _renderDownholeLog(wrap, holes || []);
   }
+}
 
+// ── 3D viewer (Three.js) — only used when collar coordinates are available ────
+
+function _render3D(wrap, holes) {
   wrap.innerHTML = '';
-  const W = wrap.clientWidth  || 500;
-  const H = wrap.clientHeight || 380;
-
-  // Three.js scene setup
   const THREE = window.THREE;
   if (!THREE) {
-    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px">
-      Three.js not loaded</div>`;
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:20px">Three.js not loaded</div>`;
     return;
   }
 
-  _3dScene    = new THREE.Scene();
-  _3dScene.background = new THREE.Color(0x050d05);
+  const W = wrap.clientWidth || 500;
+  const H = wrap.clientHeight || 380;
 
-  _3dCamera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 100000);
-  _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
-  _3dRenderer.setSize(W, H);
-  _3dRenderer.setPixelRatio(window.devicePixelRatio);
-  wrap.appendChild(_3dRenderer.domElement);
+  const scene    = new THREE.Scene();
+  scene.background = new THREE.Color(0x050d05);
+  const camera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 100000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  wrap.appendChild(renderer.domElement);
 
-  // Grid helper
-  const grid = new THREE.GridHelper(2000, 20, 0x1a2a1a, 0x111811);
-  _3dScene.add(grid);
-
-  // Axes
-  _3dScene.add(new THREE.AxesHelper(200));
-
-  // Ambient + directional light
-  _3dScene.add(new THREE.AmbientLight(0x334433, 1.2));
+  scene.add(new THREE.GridHelper(2000, 20, 0x1a2a1a, 0x111811));
+  scene.add(new THREE.AxesHelper(200));
+  scene.add(new THREE.AmbientLight(0x334433, 1.2));
   const dLight = new THREE.DirectionalLight(0xaaffaa, 0.8);
   dLight.position.set(500, 800, 400);
-  _3dScene.add(dLight);
+  scene.add(dLight);
 
-  // Normalise coordinates relative to centroid
-  const validHoles = holes.filter(h => h.easting != null && h.northing != null);
-  const cx = validHoles.reduce((s, h) => s + h.easting,  0) / validHoles.length;
-  const cy = validHoles.reduce((s, h) => s + h.northing, 0) / validHoles.length;
-  const cz = validHoles.reduce((s, h) => s + (h.elevation || 0), 0) / validHoles.length;
+  const cx = holes.reduce((s, h) => s + h.easting,  0) / holes.length;
+  const cy = holes.reduce((s, h) => s + h.northing, 0) / holes.length;
+  const cz = holes.reduce((s, h) => s + (h.elevation || 0), 0) / holes.length;
 
-  // Grade → colour helper
-  const _gradeColor = (grade) => {
-    if (!grade)   return new THREE.Color(0x334433);
-    if (grade > 5) return new THREE.Color(0xaaff00);  // high grade — bright green
-    if (grade > 2) return new THREE.Color(0xffcc00);  // mid grade — amber
-    return new THREE.Color(0x336633);                 // low grade — dim green
+  const gradeColor = (g) => {
+    if (!g)    return new THREE.Color(0x334433);
+    if (g > 5) return new THREE.Color(0xaaff00);
+    if (g > 2) return new THREE.Color(0xffcc00);
+    return new THREE.Color(0x336633);
   };
 
-  // Render each hole
-  for (const hole of validHoles) {
+  for (const hole of holes) {
     const x0 = hole.easting  - cx;
     const z0 = hole.northing - cy;
     const y0 = (hole.elevation || cz) - cz;
-
     const az  = ((hole.azimuth || 0) * Math.PI) / 180;
-    const dip = ((hole.dip     || -90) * Math.PI) / 180;
+    const dip = ((hole.dip || -90) * Math.PI) / 180;
     const dep = hole.total_depth_m || 200;
-
-    // End point using azimuth & dip
     const dx = dep * Math.sin(az) * Math.cos(dip);
-    const dy = dep * Math.sin(dip);           // negative = downward
+    const dy = dep * Math.sin(dip);
     const dz = dep * Math.cos(az) * Math.cos(dip);
 
-    // Hole trace line
-    const pts = [
-      new THREE.Vector3(x0,       y0,       z0),
-      new THREE.Vector3(x0 + dx,  y0 + dy,  z0 + dz),
-    ];
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x335533, linewidth: 1 });
-    _3dScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+    const pts = [new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x0+dx, y0+dy, z0+dz)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0x335533 })));
 
-    // Collar sphere
-    const collarGeo = new THREE.SphereGeometry(4, 8, 8);
-    const collarMat = new THREE.MeshLambertMaterial({ color: 0x88cc88 });
-    const collar    = new THREE.Mesh(collarGeo, collarMat);
+    const collar = new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8),
+      new THREE.MeshLambertMaterial({ color: 0x88cc88 }));
     collar.position.set(x0, y0, z0);
-    _3dScene.add(collar);
+    scene.add(collar);
 
-    // Significant intercept cylinders
     for (const iv of (hole.intervals || [])) {
       if (!iv.grade || iv.grade <= 0) continue;
-      const frac0 = (iv.from_m || 0) / dep;
-      const frac1 = (iv.to_m   || 0) / dep;
-      const cx_ = x0 + dx * (frac0 + frac1) / 2;
-      const cy_ = y0 + dy * (frac0 + frac1) / 2;
-      const cz_ = z0 + dz * (frac0 + frac1) / 2;
-      const len  = ((iv.to_m || 0) - (iv.from_m || 0));
-
-      const cyl  = new THREE.CylinderGeometry(6, 6, len, 8);
-      const mat  = new THREE.MeshLambertMaterial({ color: _gradeColor(iv.grade), transparent: true, opacity: 0.85 });
-      const mesh = new THREE.Mesh(cyl, mat);
-
-      // Orient cylinder along drill direction
+      const f = (iv.from_m || 0) / dep, t = (iv.to_m || 0) / dep;
+      const mx = x0 + dx * (f + t) / 2, my = y0 + dy * (f + t) / 2, mz = z0 + dz * (f + t) / 2;
+      const len = (iv.to_m || 0) - (iv.from_m || 0);
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, len, 8),
+        new THREE.MeshLambertMaterial({ color: gradeColor(iv.grade), transparent: true, opacity: 0.85 }));
       const dir = new THREE.Vector3(dx, dy, dz).normalize();
-      const up  = new THREE.Vector3(0, 1, 0);
-      const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
-      mesh.setRotationFromQuaternion(quat);
-      mesh.position.set(cx_, cy_, cz_);
-      _3dScene.add(mesh);
+      cyl.setRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), dir));
+      cyl.position.set(mx, my, mz);
+      scene.add(cyl);
     }
   }
 
-  // Camera position
-  _3dCamera.position.set(800, 600, 800);
-  _3dCamera.lookAt(0, 0, 0);
+  camera.position.set(800, 600, 800);
+  camera.lookAt(0, 0, 0);
 
-  // Orbit controls (loaded from CDN alongside Three.js)
+  let controls = null;
   if (window.THREE_OrbitControls) {
-    _3dControls = new window.THREE_OrbitControls(_3dCamera, _3dRenderer.domElement);
-    _3dControls.enableDamping = true;
-    _3dControls.dampingFactor = 0.08;
+    controls = new window.THREE_OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
   }
 
-  // Tooltip overlay
-  const tooltip = document.createElement('div');
-  tooltip.style.cssText = `position:absolute;top:8px;right:8px;font-size:10px;
-    color:var(--muted);font-family:monospace;pointer-events:none;
-    background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:2px`;
-  tooltip.textContent = `${validHoles.length} holes · drag to rotate · scroll to zoom`;
+  const tip = document.createElement('div');
+  tip.style.cssText = `position:absolute;top:8px;right:8px;font-size:10px;color:var(--muted);
+    font-family:monospace;pointer-events:none;background:rgba(0,0,0,0.6);padding:4px 8px;border-radius:2px`;
+  tip.textContent = `${holes.length} holes · drag to rotate · scroll to zoom`;
   wrap.style.position = 'relative';
-  wrap.appendChild(tooltip);
+  wrap.appendChild(tip);
 
-  // Legend
-  const legend = document.createElement('div');
-  legend.style.cssText = `position:absolute;bottom:8px;left:8px;font-size:10px;
-    font-family:monospace;pointer-events:none`;
-  legend.innerHTML = [
-    ['#aaff00','> 5 g/t'],['#ffcc00','2–5 g/t'],['#336633','< 2 g/t']
-  ].map(([c,l]) =>
-    `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
-      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c}"></span>
-      <span style="color:var(--muted)">${l}</span>
-    </div>`
-  ).join('');
-  wrap.appendChild(legend);
-
-  // Animation loop
   function animate() {
     _3dAnimFrame = requestAnimationFrame(animate);
-    if (_3dControls) _3dControls.update();
-    _3dRenderer.render(_3dScene, _3dCamera);
+    if (controls) controls.update();
+    renderer.render(scene, camera);
   }
   animate();
 
-  // Resize handler
-  const ro = new ResizeObserver(() => {
+  new ResizeObserver(() => {
     const w = wrap.clientWidth, h = wrap.clientHeight;
-    _3dCamera.aspect = w / h;
-    _3dCamera.updateProjectionMatrix();
-    _3dRenderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }).observe(wrap);
+}
+
+// ── Downhole strip-log (canvas) — used when no coordinates ───────────────────
+
+function _renderDownholeLog(wrap, holes) {
+  const holesWithData = holes.filter(h => h.intervals && h.intervals.length > 0);
+
+  wrap.innerHTML = '';
+  wrap.style.position = 'relative';
+  wrap.style.overflow = 'auto';
+
+  if (!holesWithData.length) {
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-size:12px">No drill intercept data extracted</div>`;
+    return;
+  }
+
+  // Label at top
+  const note = document.createElement('div');
+  note.style.cssText = `font-size:10px;color:var(--muted);font-family:monospace;
+    padding:6px 10px;border-bottom:1px solid #1a2a1a`;
+  note.textContent = `DOWNHOLE GRADE LOG — ${holesWithData.length} holes with intercepts (no collar coordinates in source PDF)`;
+  wrap.appendChild(note);
+
+  const canvas = document.createElement('canvas');
+  const W = wrap.clientWidth || 500;
+  const H = 320;
+  canvas.width  = W;
+  canvas.height = H;
+  canvas.style.display = 'block';
+  wrap.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#050d05';
+  ctx.fillRect(0, 0, W, H);
+
+  const maxDepth = Math.max(...holesWithData.map(h =>
+    Math.max(...h.intervals.map(i => i.to_m || 0), 10)
+  ));
+
+  const colW   = Math.max(18, Math.floor((W - 20) / holesWithData.length) - 2);
+  const margin = { top: 30, bottom: 20 };
+  const drawH  = H - margin.top - margin.bottom;
+
+  const gradeColor = (g) => {
+    if (!g)    return '#1a2a1a';
+    if (g > 10) return '#aaff00';
+    if (g > 5)  return '#66cc00';
+    if (g > 2)  return '#ffcc00';
+    if (g > 0.5)return '#33aa44';
+    return '#1a3a1a';
+  };
+
+  holesWithData.forEach((hole, i) => {
+    const x = 10 + i * (colW + 2);
+
+    // Background column
+    ctx.fillStyle = '#0a140a';
+    ctx.fillRect(x, margin.top, colW, drawH);
+
+    // Grade intervals
+    hole.intervals.forEach(iv => {
+      const y0 = margin.top + ((iv.from_m || 0) / maxDepth) * drawH;
+      const y1 = margin.top + ((iv.to_m   || 0) / maxDepth) * drawH;
+      ctx.fillStyle = gradeColor(iv.grade);
+      ctx.fillRect(x + 1, y0, colW - 2, Math.max(2, y1 - y0));
+    });
+
+    // Hole label
+    ctx.fillStyle = '#556655';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    const label = (hole.hole_id || `H${i+1}`).slice(-6);
+    ctx.fillText(label, x + colW / 2, margin.top - 4);
   });
-  ro.observe(wrap);
+
+  // Depth axis labels
+  ctx.fillStyle = '#334433';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'right';
+  [0, 0.25, 0.5, 0.75, 1].forEach(frac => {
+    const y = margin.top + frac * drawH;
+    ctx.fillText(`${Math.round(frac * maxDepth)}m`, 9, y + 3);
+  });
+
+  // Legend
+  [['#aaff00','>10 g/t'], ['#66cc00','5–10'], ['#ffcc00','2–5'], ['#33aa44','0.5–2']].forEach(([c, l], i) => {
+    const lx = W - 80, ly = margin.top + i * 16;
+    ctx.fillStyle = c;
+    ctx.fillRect(lx, ly, 10, 10);
+    ctx.fillStyle = '#556655';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(l, lx + 14, ly + 8);
+  });
 }
