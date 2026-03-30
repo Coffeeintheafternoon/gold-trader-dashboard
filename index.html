@@ -14,12 +14,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.4.4/build/index.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
-  <script>
-    // Expose OrbitControls under a safe global name
-    (async () => {
-      const mod = await import('https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/controls/OrbitControls.js');
-      window.THREE_OrbitControls = mod.OrbitControls;
-    })();
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"}}</script>
+  <script type="module">
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/controls/OrbitControls.js';
+    window.THREE_OrbitControls = OrbitControls;
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

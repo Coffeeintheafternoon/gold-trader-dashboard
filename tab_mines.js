@@ -1,8 +1,8 @@
 // tab_mines.js — MINES tab orchestrator
 // Loads mine_data.json and coordinates all sub-modules.
 
-let _mineData     = [];   // full dataset from mine_data.json
-let _activeTicker = null; // currently selected ticker
+let _mineData        = [];   // full dataset from mine_data.json
+let _minesActiveTicker = null; // currently selected ticker
 
 async function initMinesTab() {
   const loading = document.getElementById('mines-loading');
@@ -15,13 +15,18 @@ async function initMinesTab() {
   };
 
   try {
-    loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">Loading mine data…</div>`;
+    const _s = (msg) => { loading.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:60px">${msg}</div>`; };
+    _s('Step 1: starting…');
     const _ctrl = new AbortController();
     const _t = setTimeout(() => _ctrl.abort(), 10000);
+    _s('Step 2: fetching mine_data.json…');
     const resp = await fetch('./mine_data.json?' + Date.now(), { signal: _ctrl.signal });
     clearTimeout(_t);
+    _s('Step 3: got response HTTP ' + resp.status);
     if (!resp.ok) { _showErr('Fetch failed: HTTP ' + resp.status); return; }
+    _s('Step 4: parsing JSON…');
     _mineData = await resp.json();
+    _s('Step 5: parsed ' + _mineData.length + ' tickers');
     if (!Array.isArray(_mineData) || _mineData.length === 0) {
       _showErr('No mine study data yet.<br><span style="font-size:11px">Run: python scripts/run_mine_study.py --all</span>');
       return;
@@ -188,7 +193,7 @@ function _renderOverviewCards() {
 }
 
 function _selectTicker(ticker) {
-  _activeTicker = ticker;
+  _minesActiveTicker = ticker;
 
   // Highlight button
   document.querySelectorAll('[id^="mines-btn-"]').forEach(b => {
