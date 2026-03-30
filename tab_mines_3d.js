@@ -60,28 +60,27 @@ function _minesRender3DInner(wrap, holes) {
     sections[pfx].push(h);
   });
 
-  const SECTION_SPACING = 80;   // metres between sections
-  const HOLE_SPACING    = 40;   // metres between holes within a section
-  const sectionKeys = Object.keys(sections);
+  const COLS          = Math.ceil(Math.sqrt(holesWithData.length));
+  const HOLE_SPACING  = 60;
+  const sectionKeys   = Object.keys(sections);
 
-  const holePos = {};   // hole_id → {x, z, azRad, dipRad, depth}
-  sectionKeys.forEach((pfx, si) => {
-    const group = sections[pfx];
-    group.forEach((h, hi) => {
-      let x, z;
-      if (hasCoords) {
-        x = h.easting  - cx;
-        z = h.northing - cy;
-      } else {
-        x = si * SECTION_SPACING;
-        z = (hi - (group.length - 1) / 2) * HOLE_SPACING;
-      }
-      const az  = ((h.azimuth || 0)   * Math.PI) / 180;
-      const dip = ((h.dip     || -90) * Math.PI) / 180;
-      const dep = h.total_depth_m ||
-        Math.max(...h.intervals.map(i => i.to_m || 0), 200);
-      holePos[h.id] = { x, z, azRad: az, dipRad: dip, depth: dep };
-    });
+  const holePos = {};
+  holesWithData.forEach((h, i) => {
+    let x, z;
+    if (hasCoords) {
+      x = h.easting  - cx;
+      z = h.northing - cy;
+    } else {
+      // 2D grid — fills X and Z so scene has depth
+      x = (i % COLS)              * HOLE_SPACING;
+      z = Math.floor(i / COLS)    * HOLE_SPACING;
+    }
+    // Default dip -60° (realistic exploration angle) and vary azimuth slightly
+    const az  = ((h.azimuth || (i % 4) * 90) * Math.PI) / 180;
+    const dip = ((h.dip     || -60)           * Math.PI) / 180;
+    const dep = h.total_depth_m ||
+      Math.max(...h.intervals.map(iv => iv.to_m || 0), 150);
+    holePos[h.id] = { x, z, azRad: az, dipRad: dip, depth: dep };
   });
 
   // ── Scene setup ──────────────────────────────────────────────────────────
