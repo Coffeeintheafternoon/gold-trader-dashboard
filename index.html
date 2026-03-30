@@ -12,6 +12,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.4.4/build/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
+  <script>
+    // Expose OrbitControls under a safe global name
+    (async () => {
+      const mod = await import('https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/controls/OrbitControls.js');
+      window.THREE_OrbitControls = mod.OrbitControls;
+    })();
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -358,6 +366,7 @@
     <button class="tab-btn" id="tabnav-regime" onclick="switchTab('regime')">Regime</button>
     <button class="tab-btn" id="tabnav-macrostate" onclick="switchTab('macrostate')">Macro States</button>
     <button class="tab-btn" id="tabnav-chatter" onclick="switchTab('chatter')">Chatter</button>
+    <button class="tab-btn" id="tabnav-mines" onclick="switchTab('mines')">Mines</button>
     <button class="tab-btn" id="tabnav-sow" onclick="switchTab('sow')">S.O.W</button>
   </nav>
   <div class="header-right">
@@ -1887,6 +1896,18 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- TAB: MINES                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="tab-mines" class="tab-pane">
+  <div style="padding:20px 24px;max-width:1400px;margin:0 auto">
+    <div id="mines-loading" style="text-align:center;padding:60px;color:var(--muted);font-size:13px">
+      Loading mine data…
+    </div>
+    <div id="mines-body" style="display:none"></div>
+  </div>
+</div>
+
 <!-- TAB 8: STATE OF THE WORLD                                               -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <div id="tab-sow" class="tab-pane">
@@ -2012,6 +2033,7 @@ function switchTab(id) {
     else if (id === 'regime') initRegimeTab();
     else if (id === 'macrostate') initMacroStateTab();
     else if (id === 'chatter') initChatterTab();
+    else if (id === 'mines')   initMinesTab();
     else if (id === 'sow') initSOWTab();
   }
 }
@@ -2064,6 +2086,10 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_macrostate.js?v=20260328d"></script>
 <script src="tab_papertrade.js?v=20260326n"></script>
 <script src="tab_chatter.js?v=20260325"></script>
+<script src="tab_mines.js?v=20260331"></script>
+<script src="tab_mines_3d.js?v=20260331"></script>
+<script src="tab_mines_map.js?v=20260331"></script>
+<script src="tab_mines_charts.js?v=20260331"></script>
 <script src="tab_sow.js?v=20260325"></script>
 
 <!-- ── Token modal ──────────────────────────────────────────────────────────── -->
