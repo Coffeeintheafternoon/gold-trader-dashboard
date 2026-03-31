@@ -12,10 +12,13 @@ const _sowLayers = {
   geopolitical: { label: 'Geopolitical Risks',   color: '#e05252', group: null, enabled: true,  live: false },
   shipping:     { label: 'Shipping Lanes',        color: '#f5a520', group: null, enabled: true,  live: false },
   conflict:     { label: 'Conflict Events',       color: '#ff6b6b', group: null, enabled: true,  live: true  },
+  crises:       { label: 'Humanitarian Crises',   color: '#e07aaa', group: null, enabled: true,  live: true  },
+  pipelines:    { label: 'Oil / Gas Pipelines',   color: '#e07a30', group: null, enabled: true,  live: true  },
+  ports:        { label: 'Major Ports',           color: '#60cfff', group: null, enabled: false, live: true  },
   tradeflows:   { label: 'Gold Trade Flows',      color: '#f5c842', group: null, enabled: false, live: false },
   heatmap:      { label: 'News Heat Map',         color: '#ff9f43', group: null, enabled: false, live: false },
-  airtraffic:   { label: 'Air Traffic',            color: '#60cfff', group: null, enabled: false, live: true  },
-  ships:        { label: 'Live Ships',             color: '#e07a30', group: null, enabled: false, live: true  },
+  airtraffic:   { label: 'Air Traffic',           color: '#60cfff', group: null, enabled: false, live: true  },
+  ships:        { label: 'Live Ships',            color: '#e07a30', group: null, enabled: false, live: true  },
   mining:       { label: 'Mining Regions',        color: '#52c4a0', group: null, enabled: false, live: false },
   australia:    { label: 'Australia — Minerals',  color: '#a78bfa', group: null, enabled: false, live: true  },
 };
@@ -573,9 +576,13 @@ function _buildShips(data) {
     const status = statusLabel[ship.status] || 'Unknown';
     const dest   = ship.dest ? ` → ${ship.dest}` : '';
 
+    const ofacFlag = ship.ofac_sanctioned
+      ? `<span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#3a0000;border:1px solid #e05252;color:#e05252;font-weight:700;margin-left:4px">⚠ SANCTIONED</span>`
+      : '';
+
     marker.bindTooltip(`
       <div>
-        <div style="font-size:12px;font-weight:700;color:#e8d5a0;margin-bottom:3px">${ship.name}</div>
+        <div style="font-size:12px;font-weight:700;color:#e8d5a0;margin-bottom:3px">${ship.name}${ofacFlag}</div>
         <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px">
           <span style="font-size:9px;padding:1px 5px;border-radius:2px;background:#1a1a1a;border:1px solid ${colour};color:${colour};font-weight:700">${catLabel[cat] || cat}</span>
           <span style="font-size:10px;color:#7a7060">${status}${dest}</span>
@@ -589,6 +596,7 @@ function _buildShips(data) {
       const el = document.getElementById('sow-detail-content');
       if (el) el.innerHTML = `
         <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:4px">${ship.name}</div>
+        ${ship.ofac_sanctioned ? `<div style="padding:6px 10px;background:#1a0000;border:1px solid #e05252;border-radius:3px;margin-bottom:8px;font-size:11px;color:#e05252">⚠ OFAC SANCTIONED VESSEL — Program: ${ship.ofac_program || 'Unknown'}</div>` : ''}
         <div style="margin-bottom:8px">
           <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${colour};color:${colour}">${catLabel[cat] || cat}</span>
           ${dest ? `<span style="font-size:10px;color:#7a7060;margin-left:6px">${dest}</span>` : ''}
@@ -605,6 +613,138 @@ function _buildShips(data) {
     });
 
     _sowLayers.ships.group.addLayer(marker);
+  });
+}
+
+// ── Build layer: humanitarian crises (ReliefWeb) ─────────────────────────────
+function _buildCrises(data) {
+  const layer = _sowLayers.crises;
+  layer.group = L.layerGroup();
+
+  const typeColour = {
+    'Armed Conflict':     '#e05252',
+    'Civil Unrest':       '#e07aaa',
+    'Political Crisis':   '#c470c4',
+    'Humanitarian Crisis':'#aa52c4',
+    'Earthquake':         '#c49052',
+    'Flood':              '#5288c4',
+    'Epidemic':           '#52c488',
+    'Drought':            '#c4c452',
+  };
+
+  (data.crises || []).forEach(c => {
+    const col  = typeColour[c.crisis_type] || '#e07aaa';
+    const size = c.severity === 'high' ? 13 : c.severity === 'medium' ? 10 : 8;
+    const marker = L.marker([c.lat, c.lng], { icon: _makeIcon(col, size) });
+
+    marker.bindTooltip(
+      `<b style="color:#e8d5a0">${c.name}</b><br>`
+      + `<span style="font-size:11px;color:${col}">${c.crisis_type || 'Crisis'}</span>`
+      + (c.country ? `<br><span style="font-size:10px;color:#7a7060">${c.country}</span>` : ''),
+      { direction: 'top', offset: [0, -8], className: 'sow-tooltip' }
+    );
+    marker.on('click', () => _showDetail({
+      ...c,
+      name:  c.name,
+      type:  c.crisis_type || 'crisis',
+    }));
+    layer.group.addLayer(marker);
+  });
+}
+
+// ── Build layer: oil / gas pipelines (Overpass) ───────────────────────────────
+function _buildPipelines(data) {
+  const layer = _sowLayers.pipelines;
+  layer.group = L.layerGroup();
+
+  const substanceStyle = {
+    oil:         { color: '#c47820', weight: 2.5, dashArray: null },
+    petroleum:   { color: '#c47820', weight: 2.5, dashArray: null },
+    crude:       { color: '#c47820', weight: 2.5, dashArray: null },
+    gas:         { color: '#f5a520', weight: 2,   dashArray: '6 3' },
+    natural_gas: { color: '#f5a520', weight: 2,   dashArray: '6 3' },
+    lng:         { color: '#f5c842', weight: 2,   dashArray: '4 4' },
+    lpg:         { color: '#f5c842', weight: 1.5, dashArray: '4 4' },
+    fuel:        { color: '#c48850', weight: 1.5, dashArray: null },
+  };
+  const defaultStyle = { color: '#8a6830', weight: 1.5, dashArray: '3 3' };
+
+  (data.pipelines || []).forEach(p => {
+    if (!p.coords || p.coords.length < 2) return;
+    const style = substanceStyle[p.substance] || defaultStyle;
+
+    const line = L.polyline(p.coords, {
+      color:     style.color,
+      weight:    style.weight,
+      opacity:   0.7,
+      dashArray: style.dashArray,
+    });
+
+    const nameStr = p.name && p.name !== p.label ? p.name : '';
+    const opStr   = p.operator ? ` · ${p.operator}` : '';
+    line.bindTooltip(
+      `<b style="color:#e8d5a0">${nameStr || p.label}</b>`
+      + `<br><span style="font-size:11px;color:${style.color}">${p.label}${opStr}</span>`
+      + `<br><span style="font-size:10px;color:#7a7060">${p.region.replace('_', ' ')}</span>`,
+      { sticky: true, className: 'sow-tooltip' }
+    );
+    line.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (!el) return;
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:6px">${nameStr || p.label}</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid ${style.color};color:${style.color};text-transform:uppercase">${p.label}</span>
+          ${p.operator ? `<span style="font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid #2a2a2a;color:var(--muted)">${p.operator}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:#9a8a70">Region: ${p.region.replace(/_/g,' ')}</div>
+        ${p.ref ? `<div style="font-size:11px;color:#7a7060;margin-top:4px">Ref: ${p.ref}</div>` : ''}
+      `;
+      const status = document.getElementById('sow-status');
+      if (status) status.textContent = nameStr || p.label;
+    });
+
+    layer.group.addLayer(line);
+  });
+}
+
+// ── Build layer: major world ports (NGA WPI) ──────────────────────────────────
+function _buildPorts(data) {
+  const layer = _sowLayers.ports;
+  layer.group = L.layerGroup();
+
+  (data.ports || []).forEach(p => {
+    const col  = p.color || '#60cfff';
+    const size = p.size === 'V' ? 10 : 7;
+    const marker = L.circleMarker([p.lat, p.lng], {
+      radius:      size,
+      fillColor:   col,
+      color:       col,
+      weight:      1,
+      fillOpacity: 0.65,
+    });
+
+    marker.bindTooltip(
+      `<b style="color:#e8d5a0">${p.name}</b><br>`
+      + `<span style="font-size:11px;color:${col}">${p.size_label} port</span>`
+      + (p.country ? `<br><span style="font-size:10px;color:#7a7060">${p.country}</span>` : ''),
+      { direction: 'top', offset: [0, -8], className: 'sow-tooltip' }
+    );
+    marker.on('click', () => {
+      const el = document.getElementById('sow-detail-content');
+      if (!el) return;
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;color:#e8d5a0;margin-bottom:6px">${p.name}</div>
+        <div style="font-size:12px;color:#9a8a70;margin-bottom:8px">${p.size_label} port · ${p.country}</div>
+        ${p.use ? `<div style="font-size:11px;color:#7a7060">Use: ${p.use}</div>` : ''}
+        ${p.shelter ? `<div style="font-size:11px;color:#7a7060">Shelter: ${p.shelter}</div>` : ''}
+        ${p.wpi ? `<div style="font-size:10px;color:#5a5040;margin-top:4px">WPI #${p.wpi}</div>` : ''}
+      `;
+      const status = document.getElementById('sow-status');
+      if (status) status.textContent = p.name;
+    });
+
+    layer.group.addLayer(marker);
   });
 }
 
@@ -1258,6 +1398,9 @@ function initSOWTab() {
       _buildShippingLanes(data);
       _buildChokepoints(data);
       _buildConflictEvents(data);
+      _buildCrises(data);
+      _buildPipelines(data);
+      _buildPorts(data);
       _buildTradeFlows(data);
       _buildNewsHeatmap(data);
       _buildAirTraffic(data);
