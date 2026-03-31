@@ -303,15 +303,15 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
       const forward = new THREE.Vector3().subVectors(camera.position, _t).normalize();
       const right   = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
       const up      = new THREE.Vector3().crossVectors(right, forward).normalize();
-      _t.addScaledVector(right, -dx * panScale);
-      _t.addScaledVector(up,     dy * panScale);
+      _t.addScaledVector(right, dx * panScale);
+      _t.addScaledVector(up,   -dy * panScale);
     }
   });
 
   window.addEventListener('mouseup', () => { _mouse = null; });
 
   domEl.addEventListener('wheel', e => {
-    _r = Math.max(sceneSize * 0.05, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
+    _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
     e.preventDefault();
   }, { passive: false });
 
