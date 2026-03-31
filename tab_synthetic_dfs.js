@@ -69,6 +69,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
   const s = t.stats || {};
   const bb = s.bounding_box || {};
   const gs = s.grade_stats || {};
+  const v  = Date.now();
 
   // Grade colour helper
   const gradeColour = g => g >= 5 ? '#cc0000' : g >= 2 ? '#e07b00' : g >= 0.5 ? '#f5c518' : '#888';
@@ -91,19 +92,35 @@ function buildTargetPane(ticker, tkey, t, visible) {
     if (!src) return `<div style="color:var(--muted);font-size:11px;padding:20px;text-align:center;border:1px dashed #333;border-radius:6px">${label} — not yet generated</div>`;
     return `<div>
       <div style="color:var(--muted);font-size:11px;margin-bottom:6px">${label}</div>
-      <img src="${src}?v=${Date.now()}" alt="${label}" style="${imgStyle}" onclick="sdfsExpandImg(this)">
+      <img src="${src}?v=${v}" alt="${label}" style="${imgStyle}" onclick="sdfsExpandImg(this)">
     </div>`;
   };
+
+  const has3d = !!t.drill_holes_url;
 
   return `
     <div id="sdfs-pane-${ticker}-${tkey}" style="display:${display}">
       <div style="color:var(--muted);font-size:12px;margin-bottom:14px">${t.label || tkey} | cutoff ${t.cutoff_date || '—'}</div>
 
+      <!-- 2D section plots -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
         ${imgHtml('plan_view', 'Plan View (X–Y)')}
-        ${imgHtml('section_ns', 'N–S Section')}
-        ${imgHtml('section_ew', 'E–W Section')}
+        ${imgHtml('section_ns', 'N–S Section (looking east)')}
+        ${imgHtml('section_ew', 'E–W Section (looking north) — true dip visible')}
       </div>
+
+      <!-- 3D viewer -->
+      ${has3d ? `
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">3D Drill Intercept Viewer</div>
+        <div id="sdfs-3d-wrap-${ticker}-${tkey}"
+             style="width:100%;height:480px;border-radius:6px;border:1px solid #333;background:#0a0a12;position:relative">
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">
+            Click <strong style="color:var(--accent);margin:0 4px;cursor:pointer"
+              onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}')">Load 3D View</strong> to render
+          </div>
+        </div>
+      </div>` : ''}
 
       <div style="display:grid;grid-template-columns:auto 1fr;gap:20px">
         <!-- Stats -->
@@ -156,6 +173,39 @@ function sdfsSelectTarget(ticker, tkey) {
   const btn  = document.getElementById(`sdfs-btn-${ticker}-${tkey}`);
   if (pane) pane.style.display = 'block';
   if (btn)  btn.classList.add('sdfs-tab-active');
+}
+
+async function sdfsLoad3D(ticker, tkey, url) {
+  const wrap = document.getElementById(`sdfs-3d-wrap-${ticker}-${tkey}`);
+  if (!wrap) return;
+  wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading drill data…</div>`;
+
+  let holes;
+  try {
+    const r = await fetch(url + '?v=' + Date.now());
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    holes = await r.json();
+  } catch (e) {
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">Failed to load: ${e.message}</div>`;
+    return;
+  }
+
+  // tab_mines_3d.js exposes minesRender3D(holes, containerEl).
+  // If it doesn't accept a container argument, temporarily move wrap into position.
+  if (typeof minesRender3D === 'function') {
+    // minesRender3D uses document.getElementById('mines-3d-wrap') by default.
+    // We override by temporarily giving wrap that id, then restoring.
+    const origId = wrap.id;
+    wrap.id = 'mines-3d-wrap';
+    try {
+      minesRender3D(holes);
+    } finally {
+      // Restore id after a tick so the renderer has time to grab the element
+      setTimeout(() => { wrap.id = origId; }, 50);
+    }
+  } else {
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded (tab_mines_3d.js required)</div>`;
+  }
 }
 
 function sdfsExpandImg(img) {
