@@ -99,7 +99,6 @@ function _minesRender3DInner(wrap, holes) {
 
   const scene    = new THREE.Scene();
   scene.background = new THREE.Color(0x020a02);
-  scene.fog = new THREE.FogExp2(0x020a02, 3 / sceneSpan);  // density scales with scene
 
   const camera = new THREE.PerspectiveCamera(50, W / H, sceneSpan * 0.0001, sceneSpan * 20);
   _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
