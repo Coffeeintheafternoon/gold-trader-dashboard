@@ -294,9 +294,10 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
     const dx = e.clientX - _mouse.x, dy = e.clientY - _mouse.y;
     _mouse = { x: e.clientX, y: e.clientY };
     if (_button === 0) {
-      // Left drag → rotate
-      _velTheta -= dx * 0.008;
-      _velPhi   -= dy * 0.008;
+      // Left drag → rotate; sensitivity scales with zoom so close-up stays controllable
+      const sens = Math.max(0.001, 0.008 * Math.min(_r / sceneSize, 1));
+      _velTheta -= dx * sens;
+      _velPhi   -= dy * sens;
     } else if (_button === 2) {
       // Right drag → pan (camera-relative axes)
       const panScale = _r * 0.001;
@@ -311,7 +312,23 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
   window.addEventListener('mouseup', () => { _mouse = null; });
 
   domEl.addEventListener('wheel', e => {
+    const oldR = _r;
     _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
+    // When zooming in, drift the orbit target toward what the camera is looking at
+    // so rotation pivots around the zoomed-in area, not the original scene center.
+    if (_r < oldR) {
+      const towardScene = new THREE.Vector3(
+        -Math.sin(_phi) * Math.sin(_theta),
+        -Math.cos(_phi),
+        -Math.sin(_phi) * Math.cos(_theta)
+      );
+      _t.addScaledVector(towardScene, (oldR - _r) * 0.4);
+      // Recompute spherical coords since target moved
+      const tc = new THREE.Vector3().subVectors(camera.position, _t);
+      _r     = tc.length();
+      _phi   = Math.acos(Math.max(-1, Math.min(1, tc.y / _r)));
+      _theta = Math.atan2(tc.x, tc.z);
+    }
     e.preventDefault();
   }, { passive: false });
 
