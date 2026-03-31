@@ -109,8 +109,18 @@ function _minesRender3DInner(wrap, holes) {
   // Grid — scales to scene, capped at 100 divisions to avoid GPU overload
   const gridSize = Math.ceil(sceneSpan * 1.1 / 100) * 100;
   const gridDivs = Math.min(Math.round(sceneSpan / 200), 100);
-  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x112211, 0x0a150a);
+  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x2a3a2a, 0x1a2a1a);
   scene.add(grid);
+
+  // Ground plane — semi-opaque so drill holes visibly pierce the surface
+  const groundMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(gridSize, gridSize),
+    new THREE.MeshLambertMaterial({
+      color: 0x1a2a0a, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
+    })
+  );
+  groundMesh.rotation.x = -Math.PI / 2;
+  scene.add(groundMesh);
 
   // Neutral white lights so all colours render correctly
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
