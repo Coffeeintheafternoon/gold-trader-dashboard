@@ -314,20 +314,14 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
   domEl.addEventListener('wheel', e => {
     const oldR = _r;
     _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
-    // When zooming in, drift the orbit target toward what the camera is looking at
-    // so rotation pivots around the zoomed-in area, not the original scene center.
+    // Zoom in: drift orbit pivot toward camera so rotation stays local to zoomed area
     if (_r < oldR) {
-      const towardScene = new THREE.Vector3(
-        -Math.sin(_phi) * Math.sin(_theta),
-        -Math.cos(_phi),
-        -Math.sin(_phi) * Math.cos(_theta)
+      const towardCamera = new THREE.Vector3(
+        Math.sin(_phi) * Math.sin(_theta),
+        Math.cos(_phi),
+        Math.sin(_phi) * Math.cos(_theta)
       );
-      _t.addScaledVector(towardScene, (oldR - _r) * 0.4);
-      // Recompute spherical coords since target moved
-      const tc = new THREE.Vector3().subVectors(camera.position, _t);
-      _r     = tc.length();
-      _phi   = Math.acos(Math.max(-1, Math.min(1, tc.y / _r)));
-      _theta = Math.atan2(tc.x, tc.z);
+      _t.addScaledVector(towardCamera, (oldR - _r) * 0.3);
     }
     e.preventDefault();
   }, { passive: false });
