@@ -708,4 +708,159 @@ function minesRenderMissionGrid(synth) {
     </div>` : ''}`;
 }
 
+// ── Assumed Ore Body framework ─────────────────────────────────────────────
+//
+// Expected JSON shape under synthetic_dfs.ore_body (all fields optional):
+// {
+//   "collar_coords_available": false,   // true when easting/northing extracted
+//   "holes_with_coords": 0,
+//   "holes_total": 74,
+//   "deposit_type": "orogenic_gold",    // orogenic_gold | epithermal | porphyry | skarn
+//   "assumed_strike_deg": 170,          // degrees from north
+//   "assumed_dip_deg": -70,             // negative = dipping west
+//   "strike_length_m": 1800,
+//   "down_dip_m": 600,
+//   "true_width_m": 25,
+//   "avg_grade_gt": 2.1,
+//   "estimated_tonnage_mt": 12.5,
+//   "interpolation_method": "idw",      // idw | kriging
+//   "blocks": null                      // block model array — populated when coords available
+// }
+
+function minesRenderOreBody(holes, synth) {
+  const el = document.getElementById('mines-orebody');
+  if (!el) return;
+
+  const ob = synth?.ore_body || null;
+  const totalHoles   = (holes || []).length;
+  const coordHoles   = (holes || []).filter(h => h.easting != null && h.northing != null).length;
+  const hasAzDip     = (holes || []).filter(h => h.azimuth != null && h.dip != null).length;
+  const hasIntervals = (holes || []).filter(h => (h.intervals||[]).length > 0).length;
+  const hasBlocks    = ob?.blocks && ob.blocks.length > 0;
+
+  // ── Status chip helper ──
+  const chip = (label, ok, n, tot) => {
+    const col  = ok ? SQ.green : (n > 0 ? SQ.amber : SQ.neutral);
+    const icon = ok ? '✓' : (n > 0 ? '◑' : '○');
+    const sub  = tot != null ? ` ${n}/${tot}` : '';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="font-size:12px;color:${col}">${icon}</span>
+      <span style="font-size:11px;color:${ok ? 'var(--text)' : 'var(--muted)'}">${label}</span>
+      ${sub ? `<span style="font-size:10px;color:var(--muted);font-family:monospace">${sub}</span>` : ''}
+    </div>`;
+  };
+
+  const dataGrid = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin-bottom:16px">
+      <div>
+        ${chip('Drill holes extracted',    totalHoles > 0,   totalHoles,   null)}
+        ${chip('Significant intercepts',   hasIntervals > 0, hasIntervals, totalHoles)}
+        ${chip('Collar coordinates',       coordHoles > 0,   coordHoles,   totalHoles)}
+      </div>
+      <div>
+        ${chip('Azimuth + dip',            hasAzDip > 0,     hasAzDip,     totalHoles)}
+        ${chip('Ore body parameters',      !!ob,             ob ? 1 : 0,   null)}
+        ${chip('Block model (IDW/kriging)',hasBlocks,        hasBlocks ? 1 : 0, null)}
+      </div>
+    </div>`;
+
+  // ── No holes at all ──
+  if (totalHoles === 0) {
+    el.innerHTML = `${dataGrid}
+      <div style="color:var(--muted);font-size:11px;padding:10px 0">
+        No drill holes extracted yet.
+        Run: <code style="color:var(--gold)">python scripts/bulk_mine_collector.py TICKER --export</code>
+      </div>`;
+    return;
+  }
+
+  // ── Holes but no collar coordinates ──
+  if (coordHoles === 0) {
+    el.innerHTML = `${dataGrid}
+      <div style="background:#0a1a0a;border:1px solid #1a2a1a;border-radius:3px;
+                  padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px">
+          AWAITING COLLAR COORDINATES
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          Easting / northing coordinates are required to position drill holes in 3D space
+          and interpolate grade between holes.<br><br>
+          <strong style="color:var(--text)">Where to find them:</strong><br>
+          · JORC Appendix 1 tables in the ASX announcement PDF<br>
+          · "Drill hole collar" appendix in PFS/DFS technical report<br>
+          · Company's quarterly report drill tables<br><br>
+          <strong style="color:var(--text)">Once available:</strong> update the
+          <code style="color:var(--gold)">mine_drill_holes</code> table with
+          <code style="color:var(--gold)">easting, northing, elevation, azimuth, dip</code>
+          and re-export — the 3D viewer above will switch to real coordinates automatically,
+          and the ore body interpolation will run.
+        </div>
+      </div>
+      ${_oreBodyPlaceholderCanvas()}`;
+    return;
+  }
+
+  // ── Coordinates available, check for model parameters ──
+  if (!ob) {
+    el.innerHTML = `${dataGrid}
+      <div style="background:#0a150a;border:1px solid #1a3a1a;border-radius:3px;
+                  padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px">
+          COORDINATES LOADED — ORE BODY PARAMETERS PENDING
+        </div>
+        <div style="font-size:11px;color:var(--muted)">
+          ${coordHoles} holes have real coordinates. Run the synthetic DFS builder
+          to generate ore body parameters and block model interpolation.
+        </div>
+      </div>
+      ${_oreBodyPlaceholderCanvas()}`;
+    return;
+  }
+
+  // ── Full ore body model available ──
+  const fv = (v, unit='', dp=0) => v != null ? `${(+v).toFixed(dp)}${unit}` : '—';
+  const kv = (label, val) => `
+    <div style="min-width:100px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:2px">${label}</div>
+      <div style="font-size:13px;font-family:monospace;color:var(--text)">${val}</div>
+    </div>`;
+
+  el.innerHTML = `${dataGrid}
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+      ${kv('DEPOSIT TYPE',    (ob.deposit_type||'—').replace(/_/g,' ').toUpperCase())}
+      ${kv('STRIKE',          fv(ob.strike_length_m, 'm') + (ob.assumed_strike_deg != null ? ` @ ${ob.assumed_strike_deg}°` : ''))}
+      ${kv('DOWN-DIP',        fv(ob.down_dip_m, 'm'))}
+      ${kv('TRUE WIDTH',      fv(ob.true_width_m, 'm'))}
+      ${kv('AVG GRADE',       fv(ob.avg_grade_gt, ' g/t', 2))}
+      ${kv('TONNAGE EST.',    fv(ob.estimated_tonnage_mt, ' Mt', 1))}
+      ${kv('DIP',             fv(ob.assumed_dip_deg, '°'))}
+      ${kv('METHOD',          (ob.interpolation_method||'—').toUpperCase())}
+    </div>
+    ${hasBlocks ? _oreBodyBlockCanvas(ob) : _oreBodyPlaceholderCanvas('Block model pending — run interpolation')}`;
+}
+
+function _oreBodyPlaceholderCanvas(msg) {
+  const label = msg || 'Block model visualisation — awaiting collar coordinates';
+  return `
+    <div style="background:#050e05;border:1px dashed #1a2a1a;border-radius:3px;
+                height:160px;display:flex;flex-direction:column;
+                align-items:center;justify-content:center;gap:10px">
+      <div style="display:flex;gap:4px">
+        ${[SQ.green, SQ.amber, SQ.neutral, SQ.neutral, SQ.neutral].map(c =>
+          `<div style="width:22px;height:22px;border-radius:2px;opacity:0.25;background:${c}"></div>`
+        ).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;max-width:300px">
+        ${label}
+      </div>
+    </div>`;
+}
+
+function _oreBodyBlockCanvas(ob) {
+  // Placeholder — will be replaced with real IDW voxel renderer when blocks[] is populated.
+  return `<div style="color:var(--muted);font-size:11px;padding:8px 0">
+    Block model loaded (${ob.blocks.length} blocks) — voxel renderer coming soon.
+  </div>`;
+}
+
 // hexA() is defined globally in sq_theme.js — no redefinition needed here.

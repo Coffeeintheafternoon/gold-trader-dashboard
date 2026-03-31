@@ -81,6 +81,13 @@ function _buildMinesPage() {
         <div id="mines-3d-wrap" style="height:480px"></div>
       </div>
 
+      <!-- Assumed ore body framework -->
+      <div class="chart-card" style="padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);
+             letter-spacing:1px;margin-bottom:12px">ASSUMED ORE BODY</div>
+        <div id="mines-orebody"></div>
+      </div>
+
       <!-- Intercepts table -->
       <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:16px">
         <div style="padding:12px 16px 0;font-size:11px;font-weight:700;
@@ -351,6 +358,7 @@ function _selectTicker(ticker) {
   const synth    = entry.synthetic_dfs || null;
 
   minesRender3D(holes);
+  minesRenderOreBody(holes, synth);
   minesRenderMap(holes);
   _renderValSummary(val);
   minesRenderCharts(studies, val);
