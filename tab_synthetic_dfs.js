@@ -96,11 +96,44 @@ function buildTargetPane(ticker, tkey, t, visible) {
     </div>`;
   };
 
-  const has3d = !!t.drill_holes_url;
+  const has3d  = !!t.drill_holes_url;
+  const hasMesh = !!t.ore_body_mesh_url;
+  const m1 = t.mission1 || {};
+
+  // Resource estimate panel (Mission 1 GemPy)
+  const errColor = m1.pass === true ? '#44bb88' : m1.pass === false ? '#ff6666' : '#888';
+  const m1Panel = m1.contained_koz != null ? `
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px">
+        Mission 1 — GemPy Resource Estimate
+        <span style="font-weight:normal;color:var(--muted);margin-left:8px">(IS data only)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:bold;color:#f5c518">${m1.contained_koz.toFixed(1)}</div>
+          <div style="font-size:11px;color:var(--muted)">Predicted koz Au</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:bold;color:#888">${m1.ho_koz != null ? m1.ho_koz.toFixed(0) : '—'}</div>
+          <div style="font-size:11px;color:var(--muted)">HO Target koz</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:bold;color:${errColor}">${m1.error_pct != null ? (m1.error_pct > 0 ? '+' : '') + m1.error_pct.toFixed(1) + '%' : '—'}</div>
+          <div style="font-size:11px;color:var(--muted)">Error vs HO</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:bold;color:#aaa">${m1.grade_gt != null ? m1.grade_gt.toFixed(3) : '—'}</div>
+          <div style="font-size:11px;color:var(--muted)">Grade (IDW g/t)</div>
+        </div>
+      </div>
+      ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}</div>` : ''}
+    </div>` : '';
 
   return `
     <div id="sdfs-pane-${ticker}-${tkey}" style="display:${display}">
       <div style="color:var(--muted);font-size:12px;margin-bottom:14px">${t.label || tkey} | cutoff ${t.cutoff_date || '—'}</div>
+
+      ${m1Panel}
 
       <!-- 2D section plots -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
@@ -112,12 +145,14 @@ function buildTargetPane(ticker, tkey, t, visible) {
       <!-- 3D viewer -->
       ${has3d ? `
       <div style="margin-bottom:20px">
-        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">3D Drill Intercept Viewer</div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px">3D Drill Intercept + Ore Body Viewer</div>
         <div id="sdfs-3d-wrap-${ticker}-${tkey}"
              style="width:100%;height:480px;border-radius:6px;border:1px solid #333;background:#0a0a12;position:relative">
-          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">
-            Click <strong style="color:var(--accent);margin:0 4px;cursor:pointer"
-              onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}')">Load 3D View</strong> to render
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:8px">
+            <div>
+              Click <strong style="color:var(--accent);margin:0 4px;cursor:pointer"
+                onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}','${hasMesh ? t.ore_body_mesh_url : ''}')">Load 3D View</strong> to render drill intercepts${hasMesh ? ' + ore body mesh' : ''}
+            </div>
           </div>
         </div>
       </div>` : ''}
@@ -175,27 +210,77 @@ function sdfsSelectTarget(ticker, tkey) {
   if (btn)  btn.classList.add('sdfs-tab-active');
 }
 
-async function sdfsLoad3D(ticker, tkey, url) {
+async function sdfsLoad3D(ticker, tkey, url, meshUrl) {
   const containerId = `sdfs-3d-wrap-${ticker}-${tkey}`;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
-  wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading drill data…</div>`;
+  wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading…</div>`;
 
-  let holes;
+  let holes, meshData = null;
   try {
     const r = await fetch(url + '?v=' + Date.now());
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     holes = await r.json();
   } catch (e) {
-    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">Failed to load: ${e.message}</div>`;
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">Failed to load drill data: ${e.message}</div>`;
     return;
   }
 
+  // Try to load ore body mesh (optional — soft fail)
+  if (meshUrl) {
+    try {
+      const mr = await fetch(meshUrl + '?v=' + Date.now());
+      if (mr.ok) meshData = await mr.json();
+    } catch (e) { /* ignore */ }
+  }
+
   if (typeof minesRender3D === 'function') {
+    // Queue the mesh before calling minesRender3D — it's async and will pick up _pendingMesh
+    // once the Three.js scene is fully constructed (_minesRender3DInner stores scene on wrap).
+    if (meshData) wrap._pendingMesh = meshData;
     minesRender3D(holes, containerId);
   } else {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded — tab_mines_3d.js required</div>`;
   }
+}
+
+function sdfsAddOreMesh(containerId, meshData) {
+  // Overlay the GemPy ore surface mesh in the Three.js scene.
+  // Requires tab_mines_3d.js to have stored _threeScene / _threeCx / _threeCy / _threeZRef on wrap.
+  const wrap = document.getElementById(containerId);
+  if (!wrap || !wrap._threeScene || !window.THREE) return;
+  const scene = wrap._threeScene;
+
+  const verts = meshData.vertices;  // [[easting, northing, rl], ...] in MGA94 absolute coords
+  const faces = meshData.faces;     // [[a,b,c], ...]
+  if (!verts || !faces || verts.length === 0) return;
+
+  // Map MGA94 → Three.js scene coords
+  // Three.js: X = easting - cx,  Y = elevation_rl - zRef,  Z = northing - cy
+  const cx   = wrap._threeCx  || 0;
+  const cy   = wrap._threeCy  || 0;
+  const zRef = wrap._threeZRef || 0;
+
+  const posArr = new Float32Array(verts.length * 3);
+  for (let i = 0; i < verts.length; i++) {
+    posArr[i * 3]     = verts[i][0] - cx;    // X = easting  - cx
+    posArr[i * 3 + 1] = verts[i][2] - zRef;  // Y = RL       - zRef
+    posArr[i * 3 + 2] = verts[i][1] - cy;    // Z = northing - cy
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xf5c518,
+    transparent: true,
+    opacity: 0.25,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  scene.add(new THREE.Mesh(geometry, material));
 }
 
 function sdfsExpandImg(img) {

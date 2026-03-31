@@ -294,6 +294,19 @@ function _minesRender3DInner(wrap, holes) {
   }
   animate();
 
+  // Store scene context on the container so callers can overlay meshes after render
+  wrap._threeScene = scene;
+  wrap._threeCx    = hasCoords ? cx : 0;
+  wrap._threeCy    = hasCoords ? cy : 0;
+  // Median collar RL → Y=0 reference elevation for 3D scene
+  const _rls = holesWithData.filter(h => h.rl != null).map(h => h.rl);
+  wrap._threeZRef  = _rls.length > 0 ? _median(_rls) : 0;
+  // If a pending ore body mesh was queued (e.g. from DFS Pred tab), add it now
+  if (wrap._pendingMesh && typeof sdfsAddOreMesh === 'function') {
+    sdfsAddOreMesh(wrap.id, wrap._pendingMesh);
+    delete wrap._pendingMesh;
+  }
+
   // Geology overlay — async, non-blocking. Only fires for tickers with real UTM coords.
   _overlayGeology(scene, groundMesh, cx, cy, gridSize, holesWithData, badge).catch(() => {});
 
