@@ -312,17 +312,7 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
   window.addEventListener('mouseup', () => { _mouse = null; });
 
   domEl.addEventListener('wheel', e => {
-    const oldR = _r;
     _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
-    // Zoom in: drift orbit pivot toward camera so rotation stays local to zoomed area
-    if (_r < oldR) {
-      const towardCamera = new THREE.Vector3(
-        Math.sin(_phi) * Math.sin(_theta),
-        Math.cos(_phi),
-        Math.sin(_phi) * Math.cos(_theta)
-      );
-      _t.addScaledVector(towardCamera, (oldR - _r) * 0.3);
-    }
     e.preventDefault();
   }, { passive: false });
 
