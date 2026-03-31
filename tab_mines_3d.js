@@ -312,7 +312,9 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
   window.addEventListener('mouseup', () => { _mouse = null; });
 
   domEl.addEventListener('wheel', e => {
-    _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + e.deltaY * 0.001)));
+    // Normalise across mouse wheel (deltaY ~100/tick) and trackpad (deltaY ~3/tick)
+    const delta = e.deltaMode === 0 ? e.deltaY * 0.003 : e.deltaY * 0.3;
+    _r = Math.max(50, Math.min(sceneSize * 8, _r * (1 + delta)));
     e.preventDefault();
   }, { passive: false });
 
