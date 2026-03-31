@@ -298,15 +298,13 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
       _velTheta -= dx * 0.008;
       _velPhi   -= dy * 0.008;
     } else if (_button === 2) {
-      // Right drag → pan
+      // Right drag → pan (camera-relative axes)
       const panScale = _r * 0.001;
-      const right = new camera.position.clone().crossVectors ?
-        new THREE.Vector3().crossVectors(
-          new THREE.Vector3().subVectors(camera.position, _t).normalize(),
-          camera.up
-        ).normalize() : new THREE.Vector3(1,0,0);
+      const forward = new THREE.Vector3().subVectors(camera.position, _t).normalize();
+      const right   = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+      const up      = new THREE.Vector3().crossVectors(right, forward).normalize();
       _t.addScaledVector(right, -dx * panScale);
-      _t.y += dy * panScale;
+      _t.addScaledVector(up,     dy * panScale);
     }
   });
 
