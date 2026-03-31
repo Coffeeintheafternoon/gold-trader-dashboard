@@ -813,7 +813,7 @@ function minesRenderOreBody(holes, synth) {
           to generate ore body parameters and block model interpolation.
         </div>
       </div>
-      ${_oreBodyPlaceholderCanvas()}`;
+      ${_oreBodyPlaceholderCanvas('Block model ready to run — awaiting synthetic DFS ore body parameters')}`;
     return;
   }
 
