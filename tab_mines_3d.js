@@ -238,9 +238,15 @@ function _minesRender3DInner(wrap, holes) {
     ['#ff4400', '5–10 g/t'],
     ['#ff2200', '2–5 g/t'],
     ['#cc1100', '0.5–2 g/t'],
-  ].map(([c, l]) => `
+    [null, null],                               // separator
+    ['#ff3300', '— Fault / shear zone'],
+    ['#8B7355', '▪ Sedimentary'],
+    ['#4a6741', '▪ Volcanic / greenstone'],
+    ['#ff6633', '▪ Intrusive / granite'],
+    ['#557799', '▪ Metamorphic'],
+  ].map(([c, l]) => !c ? '<div style="border-top:1px solid #1a2a1a;margin:4px 0"></div>' : `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-      <span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>
+      <span style="width:10px;height:10px;border-radius:${l.startsWith('—') ? '0' : '50%'};background:${c};display:inline-block"></span>
       <span style="color:#88aa88">${l}</span>
     </div>`).join('');
   wrap.appendChild(legend);
@@ -262,6 +268,9 @@ function _minesRender3DInner(wrap, holes) {
     _3dRenderer.render(scene, camera);
   }
   animate();
+
+  // Geology overlay — async, non-blocking. Only fires for tickers with real UTM coords.
+  _overlayGeology(scene, groundMesh, cx, cy, gridSize, holesWithData, badge).catch(() => {});
 
   // Resize handler
   new ResizeObserver(() => {
@@ -341,4 +350,125 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
   domEl.addEventListener('touchend', () => { _mouse = null; }, { passive: true });
 
   return { update: _update };
+}
+
+// ── Geology overlay functions ─────────────────────────────────────────────────
+
+function _detectUTMZone(holes) {
+  // Return EPSG number if we can identify a real UTM zone from collar coordinates.
+  // UTM 29N (Guinea / PDI): eastings ~300k-500k, northings ~900k-1.5M
+  const h = (holes || []).find(h => h.easting != null && h.northing != null);
+  if (!h) return null;
+  const e = h.easting, n = h.northing;
+  if (e > 300000 && e < 500000 && n > 900000 && n < 1500000) return 32629;
+  // Mine-grid (BGL): small relative coords — no reprojection without datum origin
+  return null;
+}
+
+function _loadProj4() {
+  if (window.proj4) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.min.js';
+    s.onload = () => {
+      // Define UTM 29N for Guinea (PDI.AX)
+      if (window.proj4) {
+        proj4.defs('EPSG:32629', '+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs');
+      }
+      resolve();
+    };
+    s.onerror = () => reject(new Error('proj4.js load failed'));
+    document.head.appendChild(s);
+  });
+}
+
+async function _overlayGeology(scene, groundMesh, cx, cy, gridSize, holes, badge) {
+  const THREE = window.THREE;
+  const utmZone = _detectUTMZone(holes);
+  if (!utmZone) return;  // Mine-grid tickers can't be overlaid without datum origin
+
+  await _loadProj4();
+
+  // Convert scene centre (UTM metres) to lat/lng for WMS/WFS requests
+  const pad = gridSize * 0.05;
+  const [lng1, lat1] = proj4('EPSG:' + utmZone, 'EPSG:4326', [cx - gridSize/2 - pad, cy - gridSize/2 - pad]);
+  const [lng2, lat2] = proj4('EPSG:' + utmZone, 'EPSG:4326', [cx + gridSize/2 + pad, cy + gridSize/2 + pad]);
+
+  // ── WMS texture on ground plane ───────────────────────────────────────────
+  // USGS GSC World: open CORS, returns PNG with geology + faults
+  const wmsUrl = `https://mrdata.usgs.gov/services/gscworld`
+    + `?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap`
+    + `&LAYERS=geology,flt`
+    + `&CRS=EPSG:4326`
+    + `&BBOX=${lat1},${lng1},${lat2},${lng2}`
+    + `&WIDTH=512&HEIGHT=512`
+    + `&FORMAT=image/png&TRANSPARENT=TRUE`;
+
+  const loader = new THREE.TextureLoader();
+  loader.setCrossOrigin('anonymous');
+  loader.load(
+    wmsUrl,
+    (tex) => {
+      // Apply texture to existing ground plane
+      groundMesh.material.map = tex;
+      groundMesh.material.color.set(0xffffff);  // don't tint the texture
+      groundMesh.material.opacity = 0.65;
+      groundMesh.material.needsUpdate = true;
+
+      // Update badge to show geology loaded
+      if (badge) {
+        const cur = badge.textContent || '';
+        if (!cur.includes('geo')) badge.textContent = cur + ' · geo';
+      }
+    },
+    undefined,
+    () => {}  // silently ignore WMS errors (optional overlay)
+  );
+
+  // ── WFS fault lines ───────────────────────────────────────────────────────
+  const wfsUrl = `https://mrdata.usgs.gov/services/gscworld`
+    + `?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature`
+    + `&TYPENAMES=flt&COUNT=100&OUTPUTFORMAT=application/json`
+    + `&BBOX=${lat1},${lng1},${lat2},${lng2},EPSG:4326`;
+
+  try {
+    const r = await fetch(wfsUrl);
+    if (r.ok) {
+      const gj = await r.json();
+      _add3DFaultLines(scene, gj, cx, cy, utmZone);
+    }
+  } catch (_) {}
+}
+
+function _add3DFaultLines(scene, geojson, cx, cy, utmZone, depth) {
+  const THREE = window.THREE;
+  depth = depth || 600;
+  const features = (geojson && geojson.features) || [];
+  features.forEach(f => {
+    const geom = f.geometry;
+    if (!geom) return;
+    const lines = geom.type === 'LineString'
+      ? [geom.coordinates]
+      : geom.type === 'MultiLineString' ? geom.coordinates : [];
+
+    lines.forEach(coords => {
+      // Surface trace — bright red
+      const pts = coords.map(([lng, lat]) => {
+        const [e, n] = proj4('EPSG:4326', 'EPSG:' + utmZone, [lng, lat]);
+        return new THREE.Vector3(e - cx, 0, n - cy);
+      });
+      if (pts.length < 2) return;
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xff3300 })));
+
+      // Depth projection — dashed down-dip planes (one vertical line per vertex)
+      pts.forEach(p => {
+        const vPts = [p.clone(), new THREE.Vector3(p.x, -depth, p.z)];
+        const vGeo = new THREE.BufferGeometry().setFromPoints(vPts);
+        scene.add(new THREE.Line(vGeo,
+          new THREE.LineBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.25 })
+        ));
+      });
+    });
+  });
 }
