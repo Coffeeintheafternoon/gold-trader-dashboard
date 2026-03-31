@@ -53,6 +53,8 @@ function buildTickerSection(ticker, tdata) {
     tabPanes += buildTargetPane(ticker, tkey, t, i === 0);
   });
 
+  const pdfGallery = buildPdfGallery(ticker, tdata.source_pdfs || []);
+
   return `
     <div style="margin-bottom:36px">
       <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
@@ -61,7 +63,103 @@ function buildTickerSection(ticker, tdata) {
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">${tabBtns}</div>
       ${tabPanes}
+      ${pdfGallery}
     </div>`;
+}
+
+function buildPdfGallery(ticker, pdfs) {
+  if (!pdfs || !pdfs.length) return '';
+
+  const cards = pdfs.map((p, i) => {
+    const isHO = p.is_holdout;
+    const badgeColor = isHO ? '#c0392b' : '#27ae60';
+    const badgeText  = isHO ? 'HO' : 'IS';
+    const dateStr    = p.date || '—';
+    const safeName   = (p.label || p.filename).replace(/'/g, "\\'");
+    const safeUrl    = (p.url  || '').replace(/'/g, "\\'");
+    return `<div class="sdfs-pdf-card" onclick="sdfsPdfOpen('${safeUrl}','${safeName}')" title="${p.filename}">
+      <div class="sdfs-pdf-thumb">
+        <svg viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="40" rx="2" fill="#1e1e2e"/>
+          <path d="M6 0h16l10 10v30H6z" fill="#252536"/>
+          <path d="M22 0l10 10H22V0z" fill="#3a3a5c"/>
+          <text x="16" y="28" font-family="monospace" font-size="7" fill="#e07b00" text-anchor="middle">PDF</text>
+        </svg>
+      </div>
+      <div class="sdfs-pdf-meta">
+        <div style="font-size:10px;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px" title="${safeName}">${p.label || p.filename.replace('.pdf','')}</div>
+        <div style="font-size:9px;color:#888;margin-top:2px">${dateStr}</div>
+        <div style="margin-top:3px"><span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${badgeColor};color:#fff;font-weight:bold">${badgeText}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div style="margin-top:20px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px">Source PDFs (${pdfs.length})</div>
+      <div class="sdfs-pdf-gallery">${cards}</div>
+    </div>`;
+}
+
+function sdfsPdfOpen(url, label) {
+  // Remove any existing modal
+  const existing = document.getElementById('sdfs-pdf-modal');
+  if (existing) { sdfsPdfClose(); return; }
+
+  const modal = document.createElement('div');
+  modal.id = 'sdfs-pdf-modal';
+  modal.innerHTML = `
+    <div id="sdfs-pdf-backdrop" onclick="sdfsPdfClose()" style="
+      position:fixed;inset:0;background:rgba(0,0,0,0.0);z-index:9990;
+      transition:background 0.25s ease;cursor:zoom-out"></div>
+    <div id="sdfs-pdf-panel" style="
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.05);
+      width:min(95vw,1100px);height:min(92vh,900px);
+      background:#111;border:1px solid #444;border-radius:8px;
+      z-index:9991;display:flex;flex-direction:column;
+      box-shadow:0 24px 80px rgba(0,0,0,0.9);
+      transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s ease;
+      opacity:0;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:10px 16px;border-bottom:1px solid #333;background:#1a1a1a;flex-shrink:0">
+        <span style="font-size:12px;color:#ccc;font-weight:600">${label}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <a href="${url}" target="_blank" style="
+            font-size:11px;color:var(--accent,#4a9eff);text-decoration:none;
+            padding:2px 8px;border:1px solid var(--accent,#4a9eff);border-radius:3px">
+            Open in tab ↗
+          </a>
+          <button onclick="sdfsPdfClose()" style="
+            background:none;border:none;color:#888;font-size:18px;cursor:pointer;
+            padding:2px 8px;border-radius:4px;line-height:1" title="Close">✕</button>
+        </div>
+      </div>
+      <iframe src="${url}" style="flex:1;border:none;background:#fff" loading="lazy"></iframe>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Animate open on next frame
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const backdrop = document.getElementById('sdfs-pdf-backdrop');
+      const panel    = document.getElementById('sdfs-pdf-panel');
+      if (backdrop) backdrop.style.background = 'rgba(0,0,0,0.75)';
+      if (panel) { panel.style.transform = 'translate(-50%,-50%) scale(1)'; panel.style.opacity = '1'; }
+    });
+  });
+}
+
+function sdfsPdfClose() {
+  const panel    = document.getElementById('sdfs-pdf-panel');
+  const backdrop = document.getElementById('sdfs-pdf-backdrop');
+  if (!panel) return;
+  panel.style.transform = 'translate(-50%,-50%) scale(0.05)';
+  panel.style.opacity = '0';
+  if (backdrop) backdrop.style.background = 'rgba(0,0,0,0.0)';
+  setTimeout(() => {
+    const modal = document.getElementById('sdfs-pdf-modal');
+    if (modal) modal.remove();
+  }, 300);
 }
 
 function buildTargetPane(ticker, tkey, t, visible) {
@@ -227,7 +325,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
           ${statRow('Grade mean', gs.mean_gt != null ? gs.mean_gt.toFixed(2) + ' g/t' : '—')}
           ${statRow('Above 0.5 g/t', gs.n_above_cutoff_0p5 != null ? `${gs.n_above_cutoff_0p5} / ${s.assay_count}` : '—')}
           ${statRow('Above 1.0 g/t', gs.n_above_cutoff_1p0 != null ? `${gs.n_above_cutoff_1p0} / ${s.assay_count}` : '—')}
-          <div style="margin-top:10px;border-top:1px solid #333;padding-top:10px;font-size:11px;color:var(--muted)">Bounding box (MGA94 Z50)</div>
+          <div style="margin-top:10px;border-top:1px solid #333;padding-top:10px;font-size:11px;color:var(--muted)">Bounding box (MGA94 Z${t.mga_zone || 50})</div>
           ${statRow('Easting', bb.x_min != null ? `${bb.x_min.toFixed(0)} – ${bb.x_max.toFixed(0)}` : '—')}
           ${statRow('Northing', bb.y_min != null ? `${bb.y_min.toFixed(0)} – ${bb.y_max.toFixed(0)}` : '—')}
           ${statRow('RL', bb.z_min != null ? `${bb.z_min.toFixed(0)} – ${bb.z_max.toFixed(0)} m` : '—')}
@@ -437,6 +535,45 @@ function sdfsExpandImg(img) {
 (function() {
   const style = document.createElement('style');
   style.textContent = `
+    .sdfs-pdf-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .sdfs-pdf-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 120px;
+      padding: 10px 8px 8px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      user-select: none;
+    }
+    .sdfs-pdf-card:hover {
+      border-color: var(--accent, #4a9eff);
+      background: #222;
+      transform: translateY(-2px);
+    }
+    .sdfs-pdf-card:active {
+      transform: scale(0.97);
+    }
+    .sdfs-pdf-thumb {
+      width: 48px;
+      height: 60px;
+      margin-bottom: 8px;
+    }
+    .sdfs-pdf-thumb svg {
+      width: 100%;
+      height: 100%;
+    }
+    .sdfs-pdf-meta {
+      text-align: center;
+      width: 100%;
+    }
     .sdfs-tab-btn {
       background: #2a2a2a;
       border: 1px solid #444;
