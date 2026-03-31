@@ -330,7 +330,7 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   const cy   = wrap._threeCy  || 0;
   const zRef = wrap._threeZRef || 0;
 
-  function addMeshToScene(meshData, color, opacity) {
+  function addMeshToScene(meshData, color, opacity, wireColor) {
     if (!meshData) return false;
     const verts = meshData.vertices;  // [[easting, northing, rl], ...]
     const faces = meshData.faces;     // [[a,b,c], ...]
@@ -347,19 +347,42 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshPhongMaterial({
+    // Solid surface — front face opaque enough to read as a 3D object
+    const solidMat = new THREE.MeshPhongMaterial({
       color,
       transparent: true,
       opacity,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
+      shininess: 60,
       depthWrite: false,
     });
-    scene.add(new THREE.Mesh(geometry, material));
+    scene.add(new THREE.Mesh(geometry, solidMat));
+
+    // Back face at lower opacity — gives the interior some depth
+    const backMat = new THREE.MeshPhongMaterial({
+      color,
+      transparent: true,
+      opacity: opacity * 0.35,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    scene.add(new THREE.Mesh(geometry, backMat));
+
+    // Wireframe overlay — makes the mesh shape legible as a 3D structure
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: wireColor,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.18,
+      depthWrite: false,
+    });
+    scene.add(new THREE.Mesh(geometry, wireMat));
+
     return true;
   }
 
-  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.20);
-  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.15);
+  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.55, 0xf5c518);
+  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.35, 0x4488cc);
 
   // Add key badge to the 3D viewer
   // Avoid duplicating if already present (re-load case)
@@ -391,7 +414,7 @@ function sdfsAddOreMesh(containerId, meshBundle) {
       topRow,
       baseRow,
       `<div style="font-size:9px;color:#555;margin-top:4px">`,
-      `  Implicit GemPy kriging · 0.5 g/t cutoff`,
+      `  Implicit GemPy kriging · 1.0 g/t cutoff`,
       `</div>`,
     ].join('');
     wrap.appendChild(key);
