@@ -112,7 +112,7 @@ function _minesRender3DInner(wrap, holes) {
   );
 
   const scene    = new THREE.Scene();
-  scene.background = new THREE.Color(0x020a02);
+  scene.background = new THREE.Color(0x0a0a12);
 
   const camera = new THREE.PerspectiveCamera(50, W / H, sceneSpan * 0.0001, sceneSpan * 20);
   _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
@@ -123,14 +123,14 @@ function _minesRender3DInner(wrap, holes) {
   // Grid — scales to scene, capped at 100 divisions to avoid GPU overload
   const gridSize = Math.ceil(sceneSpan * 1.1 / 100) * 100;
   const gridDivs = Math.min(Math.round(sceneSpan / 200), 100);
-  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x2a3a2a, 0x1a2a1a);
+  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x334455, 0x1a2233);
   scene.add(grid);
 
   // Ground plane — semi-opaque so drill holes visibly pierce the surface
   const groundMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(gridSize, gridSize),
     new THREE.MeshLambertMaterial({
-      color: 0x1a2a0a, transparent: true, opacity: 0.25, side: THREE.DoubleSide,
+      color: 0x1a2233, transparent: true, opacity: 0.25, side: THREE.DoubleSide,
     })
   );
   groundMesh.rotation.x = -Math.PI / 2;
@@ -179,13 +179,13 @@ function _minesRender3DInner(wrap, holes) {
     // Hole trace line — white-ish so it's visible
     const pts = [new THREE.Vector3(x, y0, z), new THREE.Vector3(x+dx, y0+dy, z+dz)];
     const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
-    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x335533 })));
+    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x8899bb })));
     allPoints.push(...pts);
 
     // Collar sphere — scaled to scene
     const collar = new THREE.Mesh(
       new THREE.SphereGeometry(geomScale * 0.6, 8, 8),
-      new THREE.MeshLambertMaterial({ color: 0x44aa44, emissive: 0x112211 })
+      new THREE.MeshLambertMaterial({ color: 0xddcc55, emissive: 0x443300 })
     );
     collar.position.set(x, y0, z);
     scene.add(collar);
