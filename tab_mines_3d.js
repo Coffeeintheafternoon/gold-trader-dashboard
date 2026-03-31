@@ -144,8 +144,11 @@ function _minesRender3DInner(wrap, holes) {
 
   // ── Build geometry ───────────────────────────────────────────────────────
   // geomScale drives collar sphere + cylinder radius.
-  // Target: ~5m at PDI's 23km scene so holes don't clip each other (spaced ~40m).
-  const geomScale = Math.max(sceneSpan * 0.00025, 1.5);
+  // Large UTM scenes (PDI ~23km): 0.00025 → ~5.75m — tuned to avoid clipping at 40m spacing.
+  // Small mine-grid scenes (BGL ~1.6km): needs ~0.5% of sceneSpan to be visible at all.
+  const geomScale = sceneSpan < 5000
+    ? Math.max(sceneSpan * 0.005, 3)   // mine-grid scale
+    : sceneSpan * 0.00025;             // UTM scale
 
   // Red-toned grade colours (bright, easy to see on dark background)
   const gradeColor = (g) => {
