@@ -29,16 +29,37 @@ function buildSynthDFS(data) {
   const tickers = Object.keys(data.tickers || {});
   if (!tickers.length) return '<p style="color:var(--muted)">No pipeline outputs found.</p>';
 
-  let html = `
-    <div style="margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <span style="color:var(--muted);font-size:12px">Updated: ${data.updated_at ? data.updated_at.slice(0,19).replace('T',' ') + ' UTC' : '—'}</span>
-    </div>`;
+  // Ticker toggle buttons
+  const toggleBtns = tickers.map((t, i) =>
+    `<button class="sdfs-ticker-btn ${i === 0 ? 'sdfs-ticker-active' : ''}"
+       id="sdfs-ticker-btn-${t}"
+       onclick="sdfsSelectTicker('${t}')">${t}</button>`
+  ).join('');
 
+  let sections = '';
   for (const ticker of tickers) {
     const tdata = data.tickers[ticker];
-    html += buildTickerSection(ticker, tdata);
+    const visible = tickers.indexOf(ticker) === 0;
+    sections += `<div id="sdfs-ticker-section-${ticker}" style="display:${visible ? 'block' : 'none'}">
+      ${buildTickerSection(ticker, tdata)}
+    </div>`;
   }
-  return html;
+
+  return `
+    <div style="margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px">${toggleBtns}</div>
+      <span style="color:var(--muted);font-size:12px">Updated: ${data.updated_at ? data.updated_at.slice(0,19).replace('T',' ') + ' UTC' : '—'}</span>
+    </div>
+    ${sections}`;
+}
+
+function sdfsSelectTicker(ticker) {
+  document.querySelectorAll('[id^="sdfs-ticker-section-"]').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.sdfs-ticker-btn').forEach(el => el.classList.remove('sdfs-ticker-active'));
+  const section = document.getElementById(`sdfs-ticker-section-${ticker}`);
+  const btn     = document.getElementById(`sdfs-ticker-btn-${ticker}`);
+  if (section) section.style.display = 'block';
+  if (btn) btn.classList.add('sdfs-ticker-active');
 }
 
 function buildTickerSection(ticker, tdata) {
@@ -573,6 +594,27 @@ function sdfsExpandImg(img) {
     .sdfs-pdf-meta {
       text-align: center;
       width: 100%;
+    }
+    .sdfs-ticker-btn {
+      background: #1a1a1a;
+      border: 1px solid #555;
+      color: #aaa;
+      padding: 5px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .sdfs-ticker-btn:hover {
+      border-color: var(--accent, #4a9eff);
+      color: #fff;
+    }
+    .sdfs-ticker-btn.sdfs-ticker-active {
+      background: var(--accent, #4a9eff);
+      border-color: var(--accent, #4a9eff);
+      color: #fff;
     }
     .sdfs-tab-btn {
       background: #2a2a2a;
