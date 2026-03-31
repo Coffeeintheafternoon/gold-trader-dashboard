@@ -147,7 +147,7 @@ function _minesRender3DInner(wrap, holes) {
   // Large UTM scenes (PDI ~23km): 0.00025 → ~5.75m — tuned to avoid clipping at 40m spacing.
   // Small mine-grid scenes (BGL ~1.6km): needs ~0.5% of sceneSpan to be visible at all.
   const geomScale = sceneSpan < 5000
-    ? Math.max(sceneSpan * 0.005, 3)   // mine-grid scale
+    ? Math.max(sceneSpan * 0.01, 5)    // mine-grid scale
     : sceneSpan * 0.00025;             // UTM scale
 
   // Red-toned grade colours (bright, easy to see on dark background)
@@ -226,8 +226,16 @@ function _minesRender3DInner(wrap, holes) {
   });
 
   // ── Camera position — fit to scene ───────────────────────────────────────
+  // Filter outlier points before fitting camera so one bad coord can't push the camera miles back
+  const _apx = allPoints.map(p => p.x), _apz = allPoints.map(p => p.z);
+  const _mX = _median(_apx), _mZ = _median(_apz);
+  const _dX = (_median(_apx.map(v => Math.abs(v - _mX))) || 1) * 1.4826 * 3;
+  const _dZ = (_median(_apz.map(v => Math.abs(v - _mZ))) || 1) * 1.4826 * 3;
+  const _corePoints = allPoints.filter((p, i) =>
+    Math.abs(_apx[i] - _mX) <= _dX && Math.abs(_apz[i] - _mZ) <= _dZ
+  );
   const bbox = new THREE.Box3();
-  allPoints.forEach(p => bbox.expandByPoint(p));
+  (_corePoints.length ? _corePoints : allPoints).forEach(p => bbox.expandByPoint(p));
   const centre = new THREE.Vector3();
   bbox.getCenter(centre);
   const size   = bbox.getSize(new THREE.Vector3()).length();
