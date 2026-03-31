@@ -119,9 +119,9 @@ function _minesRender3DInner(wrap, holes) {
   scene.add(sun);
 
   // ── Build geometry ───────────────────────────────────────────────────────
-  // Scale all geometry to be visible regardless of scene size.
-  // At 23km (PDI), geomScale ≈ 115m — collar spheres and cylinders remain visible.
-  const geomScale = Math.max(sceneSpan * 0.005, 3);
+  // geomScale drives collar sphere + cylinder radius.
+  // Target: ~5m at PDI's 23km scene so holes don't clip each other (spaced ~40m).
+  const geomScale = Math.max(sceneSpan * 0.00025, 1.5);
 
   // Red-toned grade colours (bright, easy to see on dark background)
   const gradeColor = (g) => {
@@ -176,7 +176,7 @@ function _minesRender3DInner(wrap, holes) {
       const my = y0 + dy * (f + t) / 2;
       const mz = z  + dz * (f + t) / 2;
 
-      const radius = geomScale * (0.4 + Math.min(iv.grade / 15, 1.0));
+      const radius = geomScale * (0.3 + Math.min(iv.grade / 25, 0.7));
       const col    = gradeColor(iv.grade);
       const mesh   = new THREE.Mesh(
         new THREE.CylinderGeometry(radius, radius, len, 8),
