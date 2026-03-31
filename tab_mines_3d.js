@@ -113,9 +113,9 @@ function _minesRender3DInner(wrap, holes) {
   const grid = new THREE.GridHelper(gridSize, gridDivs, 0x112211, 0x0a150a);
   scene.add(grid);
 
-  // Lights
-  scene.add(new THREE.AmbientLight(0x223322, 1.5));
-  const sun = new THREE.DirectionalLight(0xaaffaa, 1.0);
+  // Neutral white lights so all colours render correctly
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.8);
   sun.position.set(sceneSpan * 0.3, sceneSpan * 0.5, sceneSpan * 0.2);
   scene.add(sun);
 
@@ -181,7 +181,7 @@ function _minesRender3DInner(wrap, holes) {
       const col    = gradeColor(iv.grade);
       const mesh   = new THREE.Mesh(
         new THREE.CylinderGeometry(radius, radius, len, 8),
-        new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: 0.35 })
+        new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: 0.8 })
       );
 
       // Orient cylinder along drill direction
