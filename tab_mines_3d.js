@@ -4,8 +4,8 @@
 let _3dRenderer  = null;
 let _3dAnimFrame = null;
 
-function minesRender3D(holes) {
-  const wrap = document.getElementById('mines-3d-wrap');
+function minesRender3D(holes, containerId) {
+  const wrap = document.getElementById(containerId || 'mines-3d-wrap');
   if (!wrap) return;
 
   if (_3dAnimFrame) { cancelAnimationFrame(_3dAnimFrame); _3dAnimFrame = null; }
