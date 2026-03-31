@@ -136,7 +136,44 @@ function buildTargetPane(ticker, tkey, t, visible) {
           <div style="font-size:11px;color:var(--muted)">Grade (IDW g/t)</div>
         </div>
       </div>
-      ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}</div>` : ''}
+      ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}${m1.model_version ? ' v' + m1.model_version : ''}</div>` : ''}
+      ${m1.assumptions && Object.keys(m1.assumptions).length ? (() => {
+        const LABELS = {
+          grade_cutoff_gt:              ['Grade cutoff', 'g/t Au'],
+          grade_cutoff_source:          ['Cutoff source', ''],
+          bulk_density_tm3:             ['Bulk density', 't/m³'],
+          orientation_dip_direction_deg:['Dip direction', '°'],
+          orientation_dip_deg:          ['Dip angle', '°'],
+          interval_buffer_m:            ['Interval buffer', 'm each side'],
+          influence_clip_m:             ['Influence clip', 'm radius'],
+          idw_search_radius_m:          ['IDW search radius', 'm'],
+          idw_power:                    ['IDW power (p)', ''],
+          idw_min_samples:              ['IDW min samples', ''],
+          northing_min:                 ['Northing filter (min)', 'm'],
+          model_resolution:             ['Grid resolution', '[nx,ny,nz]'],
+          model_pad_xy_m:               ['Model pad XY', 'm'],
+          model_pad_z_m:                ['Model pad Z', 'm'],
+          assay_data_type:              ['Assay data type', ''],
+          collar_rl_source:             ['Collar RL source', ''],
+          correction_factor:            ['Volume correction factor', ''],
+          assay_intervals_total:        ['Assay intervals (total)', ''],
+          assay_intervals_above_cutoff: ['Assay intervals (above cutoff)', ''],
+        };
+        const rows = Object.entries(m1.assumptions).map(([k, v]) => {
+          const [label, unit] = LABELS[k] || [k, ''];
+          const display = Array.isArray(v) ? JSON.stringify(v) : (v == null ? '—' : String(v));
+          return `<tr>
+            <td style="padding:3px 10px 3px 0;color:var(--muted);white-space:nowrap">${label}</td>
+            <td style="padding:3px 0;color:#ccc;font-family:monospace">${display}${unit ? ' <span style="color:var(--muted);font-size:10px">' + unit + '</span>' : ''}</td>
+          </tr>`;
+        }).join('');
+        return `<details style="margin-top:10px;border-top:1px solid #2a2a3a;padding-top:8px">
+          <summary style="cursor:pointer;font-size:11px;color:var(--muted);user-select:none">
+            Model assumptions (v${m1.model_version || '?'}) — click to expand
+          </summary>
+          <table style="font-size:11px;margin-top:8px;border-collapse:collapse;width:100%">${rows}</table>
+        </details>`;
+      })() : ''}
     </div>` : '';
 
   return `
