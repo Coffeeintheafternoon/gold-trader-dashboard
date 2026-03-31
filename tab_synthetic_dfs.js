@@ -176,7 +176,8 @@ function sdfsSelectTarget(ticker, tkey) {
 }
 
 async function sdfsLoad3D(ticker, tkey, url) {
-  const wrap = document.getElementById(`sdfs-3d-wrap-${ticker}-${tkey}`);
+  const containerId = `sdfs-3d-wrap-${ticker}-${tkey}`;
+  const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading drill data…</div>`;
 
@@ -190,21 +191,10 @@ async function sdfsLoad3D(ticker, tkey, url) {
     return;
   }
 
-  // tab_mines_3d.js exposes minesRender3D(holes, containerEl).
-  // If it doesn't accept a container argument, temporarily move wrap into position.
   if (typeof minesRender3D === 'function') {
-    // minesRender3D uses document.getElementById('mines-3d-wrap') by default.
-    // We override by temporarily giving wrap that id, then restoring.
-    const origId = wrap.id;
-    wrap.id = 'mines-3d-wrap';
-    try {
-      minesRender3D(holes);
-    } finally {
-      // Restore id after a tick so the renderer has time to grab the element
-      setTimeout(() => { wrap.id = origId; }, 50);
-    }
+    minesRender3D(holes, containerId);
   } else {
-    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded (tab_mines_3d.js required)</div>`;
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded — tab_mines_3d.js required</div>`;
   }
 }
 
