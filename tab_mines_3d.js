@@ -87,8 +87,10 @@ function _minesRender3DInner(wrap, holes) {
       z = Math.floor(i / COLS)    * HOLE_SPACING;
     }
     // Default dip -60° (realistic exploration angle) and vary azimuth slightly
+    // Dip is stored negative-downward (convention) OR positive-downward (some companies).
+    // Always treat as downward: negate so dipRad is always negative (below horizontal).
     const az  = ((h.azimuth || (i % 4) * 90) * Math.PI) / 180;
-    const dip = ((h.dip     || -60)           * Math.PI) / 180;
+    const dip = (-Math.abs(h.dip || 60)      * Math.PI) / 180;
     const dep = h.total_depth_m ||
       Math.max(...h.intervals.map(iv => iv.to_m || 0), 150);
     holePos[h.id] = { x, z, azRad: az, dipRad: dip, depth: dep };
