@@ -46,10 +46,21 @@ function _minesRender3DInner(wrap, holes) {
   // Use real coordinates if available, otherwise lay out synthetically.
   const hasCoords = holesWithData.every(h => h.easting != null && h.northing != null);
 
+  // Robust median helper — immune to outlier parsing artifacts
+  const _median = arr => { const s = [...arr].sort((a,b)=>a-b); const m = s.length>>1; return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+  const _iqrFilter = (arr, vals, k=3) => {
+    const med = _median(arr);
+    const devs = arr.map(v => Math.abs(v - med));
+    const mad  = _median(devs) || 1;
+    return vals.filter((_, i) => Math.abs(arr[i] - med) <= k * mad * 1.4826);
+  };
+
   let cx = 0, cy = 0;
   if (hasCoords) {
-    cx = holesWithData.reduce((s, h) => s + h.easting,  0) / holesWithData.length;
-    cy = holesWithData.reduce((s, h) => s + h.northing, 0) / holesWithData.length;
+    const es = holesWithData.map(h => h.easting);
+    const ns = holesWithData.map(h => h.northing);
+    cx = _median(es);
+    cy = _median(ns);
   }
 
   // Group holes by prefix for section layout
@@ -89,11 +100,14 @@ function _minesRender3DInner(wrap, holes) {
   const H = wrap.clientHeight || 520;
 
   // Pre-compute scene extent to scale grid/fog/camera correctly
+  // Use IQR-filtered coords so one bad parse can't blow out the scale
   const _extE = hasCoords ? holesWithData.map(h => h.easting  - cx) : holesWithData.map((_,i) => (i % COLS) * HOLE_SPACING);
   const _extN = hasCoords ? holesWithData.map(h => h.northing - cy) : holesWithData.map((_,i) => Math.floor(i / COLS) * HOLE_SPACING);
+  const _filtE = hasCoords ? _iqrFilter(_extE, _extE) : _extE;
+  const _filtN = hasCoords ? _iqrFilter(_extN, _extN) : _extN;
   const sceneSpan = Math.max(
-    Math.max(..._extE) - Math.min(..._extE),
-    Math.max(..._extN) - Math.min(..._extN),
+    Math.max(..._filtE) - Math.min(..._filtE),
+    Math.max(..._filtN) - Math.min(..._filtN),
     500
   );
 
@@ -116,7 +130,7 @@ function _minesRender3DInner(wrap, holes) {
   const groundMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(gridSize, gridSize),
     new THREE.MeshLambertMaterial({
-      color: 0x1a2a0a, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
+      color: 0x1a2a0a, transparent: true, opacity: 0.25, side: THREE.DoubleSide,
     })
   );
   groundMesh.rotation.x = -Math.PI / 2;
