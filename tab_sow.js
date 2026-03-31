@@ -685,7 +685,7 @@ function _buildPipelines(data) {
     line.bindTooltip(
       `<b style="color:#e8d5a0">${nameStr || p.label}</b>`
       + `<br><span style="font-size:11px;color:${style.color}">${p.label}${opStr}</span>`
-      + `<br><span style="font-size:10px;color:#7a7060">${p.region.replace('_', ' ')}</span>`,
+      + `<br><span style="font-size:10px;color:#7a7060">${p.region.replace(/_/g, ' ')}</span>`,
       { sticky: true, className: 'sow-tooltip' }
     );
     line.on('click', () => {
