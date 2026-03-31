@@ -360,6 +360,7 @@
     <button class="tab-btn" id="tabnav-macrostate" onclick="switchTab('macrostate')">Macro States</button>
     <button class="tab-btn" id="tabnav-chatter" onclick="switchTab('chatter')">Chatter</button>
     <button class="tab-btn" id="tabnav-mines" onclick="switchTab('mines')">Mines</button>
+    <button class="tab-btn" id="tabnav-synthdfs" onclick="switchTab('synthdfs')">DFS Pred</button>
     <button class="tab-btn" id="tabnav-sow" onclick="switchTab('sow')">S.O.W</button>
   </nav>
   <div class="header-right">
@@ -1901,6 +1902,17 @@
   </div>
 </div>
 
+<!-- TAB: SYNTHETIC DFS PREDICTION                                           -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="tab-synthdfs" class="tab-pane">
+  <div style="padding:20px 24px;max-width:1400px;margin:0 auto">
+    <div id="synth-dfs-loading" style="text-align:center;padding:60px;color:var(--muted);font-size:13px">
+      Loading synthetic DFS data…
+    </div>
+    <div id="synth-dfs-body" style="display:none"></div>
+  </div>
+</div>
+
 <!-- TAB 8: STATE OF THE WORLD                                               -->
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 <div id="tab-sow" class="tab-pane">
@@ -2001,7 +2013,7 @@
 // ── Colors + Chart defaults now live in sq_theme.js ──────────────────────────
 
 // ── Tab management ────────────────────────────────────────────────────────────
-const TABS = ['signal','modellab','universe','meta','papertrade','regime','macrostate','chatter','mines','sow'];
+const TABS = ['signal','modellab','universe','meta','papertrade','regime','macrostate','chatter','mines','synthdfs','sow'];
 const _tabInit = new Set();
 
 function switchTab(id) {
@@ -2026,7 +2038,8 @@ function switchTab(id) {
     else if (id === 'regime') initRegimeTab();
     else if (id === 'macrostate') initMacroStateTab();
     else if (id === 'chatter') initChatterTab();
-    else if (id === 'mines')   initMinesTab();
+    else if (id === 'mines')    initMinesTab();
+    else if (id === 'synthdfs') initSynthDFSTab();
     else if (id === 'sow') initSOWTab();
   }
 }
@@ -2079,6 +2092,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_macrostate.js?v=20260328d"></script>
 <script src="tab_papertrade.js?v=20260326n"></script>
 <script src="tab_chatter.js?v=20260325"></script>
+<script src="tab_synthetic_dfs.js?v=20260331a"></script>
 <script src="tab_mines.js?v=20260331c"></script>
 <script src="tab_mines_3d.js?v=20260331q"></script>
 <script src="tab_mines_map.js?v=20260331c"></script>
