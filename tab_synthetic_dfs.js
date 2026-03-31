@@ -96,8 +96,18 @@ function buildTargetPane(ticker, tkey, t, visible) {
     </div>`;
   };
 
-  const has3d  = !!t.drill_holes_url;
-  const hasMesh = !!t.ore_body_mesh_url;
+  const imgHtml2 = (key, label) => {
+    const src = t.model_sections?.[key];
+    if (!src) return `<div style="color:var(--muted);font-size:11px;padding:20px;text-align:center;border:1px dashed #333;border-radius:6px">${label} — not yet generated</div>`;
+    return `<div>
+      <div style="color:var(--muted);font-size:11px;margin-bottom:6px">${label}</div>
+      <img src="${src}?v=${v}" alt="${label}" style="${imgStyle}" onclick="sdfsExpandImg(this)">
+    </div>`;
+  };
+
+  const has3d       = !!t.drill_holes_url;
+  const hasMesh     = !!t.ore_body_mesh_url;
+  const hasMeshBase = !!t.ore_body_mesh_base_url;
   const m1 = t.mission1 || {};
 
   // Resource estimate panel (Mission 1 GemPy)
@@ -142,6 +152,17 @@ function buildTargetPane(ticker, tkey, t, visible) {
         ${imgHtml('section_ew', 'E–W Section (looking north) — true dip visible')}
       </div>
 
+      <!-- GemPy lith+grade section images -->
+      ${(t.model_sections && Object.keys(t.model_sections).length > 0) ? `
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">GemPy Block Model Sections — lith + grade</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          ${imgHtml2('model_section_ns', 'N\u2013S Section (GemPy)')}
+          ${imgHtml2('model_section_ew', 'E\u2013W Section (GemPy)')}
+          ${imgHtml2('model_plan', 'Plan View (GemPy)')}
+        </div>
+      </div>` : ''}
+
       <!-- 3D viewer -->
       ${has3d ? `
       <div style="margin-bottom:20px">
@@ -151,7 +172,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
           <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:8px">
             <div>
               Click <strong style="color:var(--accent);margin:0 4px;cursor:pointer"
-                onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}','${hasMesh ? t.ore_body_mesh_url : ''}')">Load 3D View</strong> to render drill intercepts${hasMesh ? ' + ore body mesh' : ''}
+                onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}','${hasMesh ? t.ore_body_mesh_url : ''}','${hasMeshBase ? t.ore_body_mesh_base_url : ''}')">Load 3D View</strong> to render drill intercepts${hasMesh || hasMeshBase ? ' + ore body mesh' : ''}
             </div>
           </div>
         </div>
@@ -210,13 +231,13 @@ function sdfsSelectTarget(ticker, tkey) {
   if (btn)  btn.classList.add('sdfs-tab-active');
 }
 
-async function sdfsLoad3D(ticker, tkey, url, meshUrl) {
+async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
   const containerId = `sdfs-3d-wrap-${ticker}-${tkey}`;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading…</div>`;
 
-  let holes, meshData = null;
+  let holes, meshData = null, meshDataBase = null;
   try {
     const r = await fetch(url + '?v=' + Date.now());
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -226,7 +247,7 @@ async function sdfsLoad3D(ticker, tkey, url, meshUrl) {
     return;
   }
 
-  // Try to load ore body mesh (optional — soft fail)
+  // Try to load ore body top mesh (optional — soft fail)
   if (meshUrl) {
     try {
       const mr = await fetch(meshUrl + '?v=' + Date.now());
@@ -234,53 +255,74 @@ async function sdfsLoad3D(ticker, tkey, url, meshUrl) {
     } catch (e) { /* ignore */ }
   }
 
+  // Try to load ore body base mesh (optional — soft fail)
+  if (meshBaseUrl) {
+    try {
+      const mr = await fetch(meshBaseUrl + '?v=' + Date.now());
+      if (mr.ok) meshDataBase = await mr.json();
+    } catch (e) { /* ignore */ }
+  }
+
   if (typeof minesRender3D === 'function') {
-    // Queue the mesh before calling minesRender3D — it's async and will pick up _pendingMesh
+    // Queue the mesh bundle before calling minesRender3D — it's async and will pick up _pendingMesh
     // once the Three.js scene is fully constructed (_minesRender3DInner stores scene on wrap).
-    if (meshData) wrap._pendingMesh = meshData;
+    if (meshData || meshDataBase) {
+      wrap._pendingMesh = { top: meshData, base: meshDataBase };
+    }
     minesRender3D(holes, containerId);
   } else {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded — tab_mines_3d.js required</div>`;
   }
 }
 
-function sdfsAddOreMesh(containerId, meshData) {
-  // Overlay the GemPy ore surface mesh in the Three.js scene.
+function sdfsAddOreMesh(containerId, meshBundle) {
+  // Overlay the GemPy ore surface meshes in the Three.js scene.
+  // meshBundle may be: {top: meshData|null, base: meshData|null}
+  // or (legacy) a plain mesh data object — normalise to bundle form.
   // Requires tab_mines_3d.js to have stored _threeScene / _threeCx / _threeCy / _threeZRef on wrap.
   const wrap = document.getElementById(containerId);
   if (!wrap || !wrap._threeScene || !window.THREE) return;
   const scene = wrap._threeScene;
 
-  const verts = meshData.vertices;  // [[easting, northing, rl], ...] in MGA94 absolute coords
-  const faces = meshData.faces;     // [[a,b,c], ...]
-  if (!verts || !faces || verts.length === 0) return;
+  // Normalise legacy single-mesh call
+  if (meshBundle && !('top' in meshBundle) && !('base' in meshBundle)) {
+    meshBundle = { top: meshBundle, base: null };
+  }
 
-  // Map MGA94 → Three.js scene coords
-  // Three.js: X = easting - cx,  Y = elevation_rl - zRef,  Z = northing - cy
   const cx   = wrap._threeCx  || 0;
   const cy   = wrap._threeCy  || 0;
   const zRef = wrap._threeZRef || 0;
 
-  const posArr = new Float32Array(verts.length * 3);
-  for (let i = 0; i < verts.length; i++) {
-    posArr[i * 3]     = verts[i][0] - cx;    // X = easting  - cx
-    posArr[i * 3 + 1] = verts[i][2] - zRef;  // Y = RL       - zRef
-    posArr[i * 3 + 2] = verts[i][1] - cy;    // Z = northing - cy
+  function addMeshToScene(meshData, color, opacity) {
+    if (!meshData) return false;
+    const verts = meshData.vertices;  // [[easting, northing, rl], ...]
+    const faces = meshData.faces;     // [[a,b,c], ...]
+    if (!verts || !faces || verts.length === 0) return false;
+
+    const posArr = new Float32Array(verts.length * 3);
+    for (let i = 0; i < verts.length; i++) {
+      posArr[i * 3]     = verts[i][0] - cx;    // X = easting  - cx
+      posArr[i * 3 + 1] = verts[i][2] - zRef;  // Y = RL       - zRef
+      posArr[i * 3 + 2] = verts[i][1] - cy;    // Z = northing - cy
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshPhongMaterial({
+      color,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    scene.add(new THREE.Mesh(geometry, material));
+    return true;
   }
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
-  geometry.computeVertexNormals();
-
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xf5c518,
-    transparent: true,
-    opacity: 0.25,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  scene.add(new THREE.Mesh(geometry, material));
+  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.20);
+  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.15);
 
   // Add key badge to the 3D viewer
   // Avoid duplicating if already present (re-load case)
@@ -293,13 +335,24 @@ function sdfsAddOreMesh(containerId, meshData) {
       'background:rgba(0,0,0,0.60)', 'padding:8px 10px',
       'border-radius:3px', 'border:1px solid #333',
     ].join(';');
-    key.innerHTML = [
-      `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>`,
+    const topRow = hasTop ? [
       `<div style="display:flex;align-items:center;gap:6px;color:#f5c518">`,
       `  <span style="width:12px;height:12px;background:rgba(245,197,24,0.35);`,
       `    border:1px solid #f5c518;display:inline-block;border-radius:2px"></span>`,
       `  Ore_Top surface`,
       `</div>`,
+    ].join('') : '';
+    const baseRow = hasBase ? [
+      `<div style="display:flex;align-items:center;gap:6px;color:#4488cc;margin-top:4px">`,
+      `  <span style="width:12px;height:12px;background:rgba(68,136,204,0.30);`,
+      `    border:1px solid #4488cc;display:inline-block;border-radius:2px"></span>`,
+      `  Ore_Base surface`,
+      `</div>`,
+    ].join('') : '';
+    key.innerHTML = [
+      `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>`,
+      topRow,
+      baseRow,
       `<div style="font-size:9px;color:#555;margin-top:4px">`,
       `  Implicit GemPy kriging · 0.5 g/t cutoff`,
       `</div>`,
