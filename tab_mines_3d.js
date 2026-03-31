@@ -88,24 +88,35 @@ function _minesRender3DInner(wrap, holes) {
   const W = wrap.clientWidth || 900;
   const H = wrap.clientHeight || 520;
 
+  // Pre-compute scene extent to scale grid/fog/camera correctly
+  const _extE = hasCoords ? holesWithData.map(h => h.easting  - cx) : holesWithData.map((_,i) => (i % COLS) * HOLE_SPACING);
+  const _extN = hasCoords ? holesWithData.map(h => h.northing - cy) : holesWithData.map((_,i) => Math.floor(i / COLS) * HOLE_SPACING);
+  const sceneSpan = Math.max(
+    Math.max(..._extE) - Math.min(..._extE),
+    Math.max(..._extN) - Math.min(..._extN),
+    500
+  );
+
   const scene    = new THREE.Scene();
   scene.background = new THREE.Color(0x020a02);
-  scene.fog = new THREE.FogExp2(0x020a02, 0.0008);
+  scene.fog = new THREE.FogExp2(0x020a02, 3 / sceneSpan);  // density scales with scene
 
-  const camera = new THREE.PerspectiveCamera(50, W / H, 0.5, 20000);
+  const camera = new THREE.PerspectiveCamera(50, W / H, sceneSpan * 0.0001, sceneSpan * 20);
   _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
   _3dRenderer.setSize(W, H);
   _3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   wrap.appendChild(_3dRenderer.domElement);
 
-  // Grid
-  const grid = new THREE.GridHelper(2000, 40, 0x112211, 0x0a150a);
+  // Grid — scales to scene, capped at 100 divisions to avoid GPU overload
+  const gridSize = Math.ceil(sceneSpan * 1.1 / 100) * 100;
+  const gridDivs = Math.min(Math.round(sceneSpan / 200), 100);
+  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x112211, 0x0a150a);
   scene.add(grid);
 
   // Lights
   scene.add(new THREE.AmbientLight(0x223322, 1.5));
   const sun = new THREE.DirectionalLight(0xaaffaa, 1.0);
-  sun.position.set(600, 1000, 400);
+  sun.position.set(sceneSpan * 0.3, sceneSpan * 0.5, sceneSpan * 0.2);
   scene.add(sun);
 
   // ── Build geometry ───────────────────────────────────────────────────────
@@ -191,8 +202,8 @@ function _minesRender3DInner(wrap, holes) {
   const dist   = size * 1.4;
   camera.position.set(centre.x + dist * 0.6, centre.y + dist * 0.5, centre.z + dist * 0.7);
   camera.lookAt(centre);
-  camera.near = dist * 0.001;
-  camera.far  = dist * 10;
+  camera.near = Math.max(dist * 0.001, 0.1);
+  camera.far  = dist * 20;
   camera.updateProjectionMatrix();
 
   // ── Inline orbit controls (no CDN dependency) ────────────────────────────
