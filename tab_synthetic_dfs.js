@@ -281,6 +281,31 @@ function sdfsAddOreMesh(containerId, meshData) {
     depthWrite: false,
   });
   scene.add(new THREE.Mesh(geometry, material));
+
+  // Add key badge to the 3D viewer
+  // Avoid duplicating if already present (re-load case)
+  if (!wrap.querySelector('.sdfs-ore-key')) {
+    const key = document.createElement('div');
+    key.className = 'sdfs-ore-key';
+    key.style.cssText = [
+      'position:absolute', 'bottom:12px', 'right:12px',
+      'font-size:10px', 'font-family:monospace', 'pointer-events:none',
+      'background:rgba(0,0,0,0.60)', 'padding:8px 10px',
+      'border-radius:3px', 'border:1px solid #333',
+    ].join(';');
+    key.innerHTML = [
+      `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>`,
+      `<div style="display:flex;align-items:center;gap:6px;color:#f5c518">`,
+      `  <span style="width:12px;height:12px;background:rgba(245,197,24,0.35);`,
+      `    border:1px solid #f5c518;display:inline-block;border-radius:2px"></span>`,
+      `  Ore_Top surface`,
+      `</div>`,
+      `<div style="font-size:9px;color:#555;margin-top:4px">`,
+      `  Implicit GemPy kriging · 0.5 g/t cutoff`,
+      `</div>`,
+    ].join('');
+    wrap.appendChild(key);
+  }
 }
 
 function sdfsExpandImg(img) {
