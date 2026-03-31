@@ -69,6 +69,9 @@ function _buildMinesPage() {
         </div>
       </div>
 
+      <!-- Valuation summary bridge -->
+      <div class="chart-card" id="mines-val-summary" style="padding:16px;margin-bottom:16px"></div>
+
       <!-- Row 2: resource history + grade-tonnage -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <div class="chart-card" style="padding:16px">
@@ -137,12 +140,20 @@ function _renderTickerBar() {
   ).join('');
 }
 
+function _fmtM(v) {
+  if (v == null) return '—';
+  return `A$${Math.round(v)}m`;
+}
+
 function _renderOverviewCards() {
   const wrap = document.getElementById('mines-cards');
   wrap.innerHTML = _mineData.map(d => {
     const latest = d.studies?.[0];
     const val    = d.valuation || {};
-    const up     = val.upside_pct;
+
+    // Prefer upside vs actual EV, fall back to vs market cap
+    const up     = val.upside_vs_ev_pct != null ? val.upside_vs_ev_pct : val.upside_pct;
+    const upLabel = val.upside_vs_ev_pct != null ? 'vs actual EV' : 'vs market cap';
     const upCol  = up == null ? 'var(--muted)' : up > 0 ? 'var(--green)' : 'var(--red)';
     const upStr  = up != null ? `${up > 0 ? '+' : ''}${up}%` : '—';
     const stg    = latest?.study_type || '—';
@@ -173,7 +184,7 @@ function _renderOverviewCards() {
         </div>
         <div style="font-size:22px;font-weight:700;font-family:monospace;
                     color:${upCol};margin-bottom:2px">${upStr}</div>
-        <div style="font-size:10px;color:var(--muted)">vs market cap</div>
+        <div style="font-size:10px;color:var(--muted)">${upLabel}</div>
         <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px">
           <div>
             <div style="font-size:10px;color:var(--muted)">RESOURCE</div>
@@ -183,9 +194,55 @@ function _renderOverviewCards() {
             <div style="font-size:10px;color:var(--muted)">GRADE</div>
             <div style="font-size:12px;color:var(--text);font-family:monospace">${grade}</div>
           </div>
+          <div style="margin-top:6px">
+            <div style="font-size:10px;color:var(--muted)">MODEL EV</div>
+            <div style="font-size:12px;color:var(--gold);font-family:monospace">${_fmtM(val.model_ev_m)}</div>
+          </div>
+          <div style="margin-top:6px">
+            <div style="font-size:10px;color:var(--muted)">ACTUAL EV</div>
+            <div style="font-size:12px;color:var(--text);font-family:monospace">${_fmtM(val.ev_m)}</div>
+          </div>
         </div>
       </div>`;
   }).join('');
+}
+
+function _renderValSummary(val) {
+  const el = document.getElementById('mines-val-summary');
+  if (!el) return;
+
+  const up = val.upside_vs_ev_pct != null ? val.upside_vs_ev_pct : val.upside_pct;
+  const upCol = up == null ? 'var(--muted)' : up > 0 ? 'var(--green)' : 'var(--red)';
+  const upStr = up != null ? `${up > 0 ? '+' : ''}${up}%` : '—';
+  const upLabel = val.upside_vs_ev_pct != null ? 'UPSIDE vs EV' : 'UPSIDE vs MCap';
+
+  const stat = (label, value, col) => `
+    <div style="min-width:100px">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px">${label}</div>
+      <div style="font-size:13px;font-family:monospace;color:${col || 'var(--text)'}">
+        ${value}
+      </div>
+    </div>`;
+
+  const arrow = `<div style="font-size:16px;color:#444;align-self:center;padding-top:14px">→</div>`;
+
+  el.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:12px">
+      ENTERPRISE VALUE BRIDGE
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start">
+      ${stat('MARKET CAP', _fmtM(val.market_cap_m))}
+      <div style="font-size:16px;color:#444;align-self:center;padding-top:14px">+</div>
+      ${stat('TOTAL DEBT', _fmtM(val.debt_m))}
+      <div style="font-size:16px;color:#444;align-self:center;padding-top:14px">−</div>
+      ${stat('CASH', _fmtM(val.cash_m))}
+      ${arrow}
+      ${stat('ACTUAL EV', _fmtM(val.ev_m), '#4499ff')}
+      <div style="font-size:16px;color:#444;align-self:center;padding-top:14px">vs</div>
+      ${stat('MODEL EV', _fmtM(val.model_ev_m), 'var(--gold)')}
+      ${arrow}
+      ${stat(upLabel, upStr, upCol)}
+    </div>`;
 }
 
 function _selectTicker(ticker) {
@@ -207,5 +264,6 @@ function _selectTicker(ticker) {
   // Render all sub-sections
   minesRender3D(entry.drill_holes || []);
   minesRenderMap(entry.drill_holes || []);
+  _renderValSummary(entry.valuation || {});
   minesRenderCharts(entry.studies || [], entry.valuation || {});
 }

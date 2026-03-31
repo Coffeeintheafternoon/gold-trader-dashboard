@@ -104,18 +104,23 @@ function _renderWaterfall(study, val) {
   const gross = ass.gross_insitu_m || 0;
   const rec   = gross * ((study.recovery_pct || 90) / 100) - gross;   // negative
   const disc  = (val.model_ev_m || 0) - gross - rec;
-  const ev    = val.model_ev_m || 0;
-  const mc    = val.market_cap_m || 0;
+  const modelEv = val.model_ev_m || 0;
+  const actualEv = val.ev_m;   // may be null if data unavailable
 
-  const labels = ['Gross In-Situ', 'Recovery', 'Stage Discount', 'Model EV', 'Mkt Cap'];
-  const data   = [gross, rec, disc, ev, mc];
+  const labels = ['Gross In-Situ', 'Recovery', 'Stage Discount', 'Model EV'];
+  const data   = [gross, rec, disc, modelEv];
   const colors = [
     hexA(SQ.green, 0.6),
     hexA(SQ.red,   0.5),
     hexA(SQ.red,   0.4),
     hexA(SQ.green, 0.8),
-    hexA(SQ.cyan,  0.6),
   ];
+
+  if (actualEv != null) {
+    labels.push('Actual EV');
+    data.push(actualEv);
+    colors.push('rgba(68,153,255,0.7)');
+  }
 
   _mineCharts['mines-waterfall-chart'] = new Chart(c, {
     type: 'bar',
