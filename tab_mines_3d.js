@@ -120,17 +120,23 @@ function _minesRender3DInner(wrap, holes) {
   scene.add(sun);
 
   // ── Build geometry ───────────────────────────────────────────────────────
+  // Scale all geometry to be visible regardless of scene size.
+  // At 23km (PDI), geomScale ≈ 115m — collar spheres and cylinders remain visible.
+  const geomScale = Math.max(sceneSpan * 0.005, 3);
+
+  // Red-toned grade colours (bright, easy to see on dark background)
   const gradeColor = (g) => {
-    if (!g || g <= 0) return new THREE.Color(0x1a2a1a);
-    if (g > 15) return new THREE.Color(0xffffff);
-    if (g > 10) return new THREE.Color(0xccff00);
-    if (g > 5)  return new THREE.Color(0xaaff00);
-    if (g > 2)  return new THREE.Color(0xffcc00);
-    if (g > 0.5)return new THREE.Color(0x33cc44);
-    return new THREE.Color(0x1a4a1a);
+    if (!g || g <= 0) return new THREE.Color(0x1a0a0a);
+    if (g > 15) return new THREE.Color(0xffffff);   // white — bonanza
+    if (g > 10) return new THREE.Color(0xff8800);   // orange
+    if (g > 5)  return new THREE.Color(0xff4400);   // red-orange
+    if (g > 2)  return new THREE.Color(0xff2200);   // red
+    if (g > 0.5)return new THREE.Color(0xcc1100);   // dark red
+    return new THREE.Color(0x551100);               // sub-cutoff
   };
 
   let allPoints = [];
+  let meshCount = 0;
 
   holesWithData.forEach(hole => {
     const pos = holePos[hole.id];
@@ -144,52 +150,52 @@ function _minesRender3DInner(wrap, holes) {
     const dy = depth * Math.sin(dipRad);   // negative = downward
     const dz = depth * Math.cos(azRad) * Math.cos(dipRad);
 
-    // Hole trace line
+    // Hole trace line — white-ish so it's visible
     const pts = [new THREE.Vector3(x, y0, z), new THREE.Vector3(x+dx, y0+dy, z+dz)];
     const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
-    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x223322, linewidth: 1 })));
+    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x335533 })));
     allPoints.push(...pts);
 
-    // Collar sphere
-    const collarMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(3, 10, 10),
-      new THREE.MeshLambertMaterial({ color: 0x55aa55, emissive: 0x112211 })
+    // Collar sphere — scaled to scene
+    const collar = new THREE.Mesh(
+      new THREE.SphereGeometry(geomScale * 0.6, 8, 8),
+      new THREE.MeshLambertMaterial({ color: 0x44aa44, emissive: 0x112211 })
     );
-    collarMesh.position.set(x, y0, z);
-    scene.add(collarMesh);
+    collar.position.set(x, y0, z);
+    scene.add(collar);
+    meshCount++;
 
-    // Intercept cylinders
+    // Intercept cylinders — scaled to scene, red-toned
     hole.intervals.forEach(iv => {
       if (!iv.grade || iv.grade < 0.1) return;
-      const f = (iv.from_m || 0) / depth;
-      const t = Math.min((iv.to_m || 0) / depth, 1.0);
-      const len = Math.max(((iv.to_m||0) - (iv.from_m||0)), 1);
+      const f  = (iv.from_m || 0) / depth;
+      const t  = Math.min((iv.to_m   || 0) / depth, 1.0);
+      // Minimum visible length = geomScale so intercepts don't vanish
+      const len = Math.max((iv.to_m||0) - (iv.from_m||0), geomScale * 0.5);
 
       const mx = x  + dx * (f + t) / 2;
       const my = y0 + dy * (f + t) / 2;
       const mz = z  + dz * (f + t) / 2;
 
-      // Radius scales with grade
-      const radius = Math.min(3 + iv.grade * 0.4, 12);
-      const geo  = new THREE.CylinderGeometry(radius, radius, len, 12);
-      const col  = gradeColor(iv.grade);
-      const mat  = new THREE.MeshLambertMaterial({
-        color: col,
-        emissive: col,
-        emissiveIntensity: 0.2,
-        transparent: true,
-        opacity: 0.88,
-      });
-      const mesh = new THREE.Mesh(geo, mat);
+      const radius = geomScale * (0.4 + Math.min(iv.grade / 15, 1.0));
+      const col    = gradeColor(iv.grade);
+      const mesh   = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius, radius, len, 8),
+        new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: 0.35 })
+      );
 
-      // Orient along drill direction
+      // Orient cylinder along drill direction
       const dir = new THREE.Vector3(dx, dy, dz).normalize();
+      // Guard against degenerate case (straight down)
+      const up = Math.abs(dir.dot(new THREE.Vector3(0, 1, 0))) > 0.999
+        ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
       mesh.setRotationFromQuaternion(
-        new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
+        new THREE.Quaternion().setFromUnitVectors(up, dir)
       );
       mesh.position.set(mx, my, mz);
       scene.add(mesh);
       allPoints.push(new THREE.Vector3(mx, my, mz));
+      meshCount++;
     });
   });
 
@@ -219,10 +225,10 @@ function _minesRender3DInner(wrap, holes) {
     padding:8px 10px;border-radius:3px;border:1px solid #1a2a1a`;
   legend.innerHTML = [
     ['#ffffff', '> 15 g/t'],
-    ['#ccff00', '10–15 g/t'],
-    ['#aaff00', '5–10 g/t'],
-    ['#ffcc00', '2–5 g/t'],
-    ['#33cc44', '0.5–2 g/t'],
+    ['#ff8800', '10–15 g/t'],
+    ['#ff4400', '5–10 g/t'],
+    ['#ff2200', '2–5 g/t'],
+    ['#cc1100', '0.5–2 g/t'],
   ].map(([c, l]) => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
       <span style="width:10px;height:10px;border-radius:50%;background:${c};display:inline-block"></span>
@@ -237,7 +243,7 @@ function _minesRender3DInner(wrap, holes) {
     padding:4px 8px;border-radius:2px;border:1px solid #1a2a1a;pointer-events:none`;
   badge.textContent = `${holesWithData.length} holes · ${
     holesWithData.reduce((s, h) => s + (h.intervals||[]).filter(i=>i.grade>0).length, 0)
-  } intercepts${hasCoords ? '' : ' · synthetic layout'}`;
+  } intercepts · ${meshCount} objects${hasCoords ? ' · real coords' : ' · synthetic layout'}`;
   wrap.appendChild(badge);
 
   // ── Animation loop ───────────────────────────────────────────────────────
