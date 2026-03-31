@@ -295,7 +295,7 @@ function _makeOrbitControls(camera, domEl, target, sceneSize) {
     _mouse = { x: e.clientX, y: e.clientY };
     if (_button === 0) {
       // Left drag → rotate; sensitivity scales with zoom so close-up stays controllable
-      const sens = Math.max(0.001, 0.008 * Math.min(_r / sceneSize, 1));
+      const sens = Math.max(0.0003, 0.003 * Math.min(_r / sceneSize, 1));
       _velTheta -= dx * sens;
       _velPhi   -= dy * sens;
     } else if (_button === 2) {
