@@ -2792,17 +2792,33 @@ function mlRenderFeatTable() {
   const fbPrefix  = fbMatch ? fbMatch[1] : null;
   const shortKey  = fbPrefix ? `${fbPrefix}_6m`  : null;
   const longKey   = fbPrefix ? `${fbPrefix}_2yr` : null;
-  const shortWts  = {};
+  const shortWts  = {};   // name → avg_signed
   const longWts   = {};
+  const shortFeats = {};  // name → full feature object
+  const longFeats  = {};
   if (shortKey && _mlCurrentData?.variants?.[shortKey]) {
-    (_mlCurrentData.variants[shortKey].features || []).forEach(f => { shortWts[f.name] = f.avg_signed; });
+    (_mlCurrentData.variants[shortKey].features || []).forEach(f => { shortWts[f.name] = f.avg_signed; shortFeats[f.name] = f; });
   }
   if (longKey && _mlCurrentData?.variants?.[longKey]) {
-    (_mlCurrentData.variants[longKey].features || []).forEach(f => { longWts[f.name] = f.avg_signed; });
+    (_mlCurrentData.variants[longKey].features || []).forEach(f => { longWts[f.name] = f.avg_signed; longFeats[f.name] = f; });
+  }
+
+  // If we have sibling data, show union of both models — not just current variant's features
+  const isV6 = !!(_mlCurrentData?.variants);
+  if (isV6 && (Object.keys(shortFeats).length || Object.keys(longFeats).length)) {
+    const allNames = new Set([...feats.map(f => f.name), ...Object.keys(shortFeats), ...Object.keys(longFeats)]);
+    feats = [...allNames].map(name => {
+      const base = feats.find(f => f.name === name) || shortFeats[name] || longFeats[name] || { name };
+      return { ...base };
+    }).sort((a, b) => {
+      const av = _mlSortValue(a, _mlSortCol), bv = _mlSortValue(b, _mlSortCol);
+      const cmp = typeof av === 'string' ? av.localeCompare(bv) : (av ?? 999) - (bv ?? 999);
+      return _mlSortAsc ? cmp : -cmp;
+    });
   }
 
   const tbody = document.getElementById('ml-feat-tbody');
-  const totalFeats = _mlCurrentFeatures.length;
+  const totalFeats = feats.length;
   tbody.innerHTML = feats.map((f, idx) => {
     // Fix category: look up from map if not stored on the feature object
     const cat      = f.category || _FEAT_CAT_MAP[f.name] || 'other';
@@ -2829,12 +2845,18 @@ function mlRenderFeatTable() {
     // short/long weights
     const sw = shortWts[f.name];
     const lw = longWts[f.name];
-    const fmtW = (v, col) => v != null
+    const inShort = sw != null, inLong = lw != null;
+    const srcBadge = (inShort && inLong)
+      ? `<span style="color:#60a5fa;font-size:9px">S</span><span style="color:#f97316;font-size:9px">L</span>`
+      : inShort ? `<span style="color:#60a5fa;font-size:9px">S</span>`
+      : inLong  ? `<span style="color:#f97316;font-size:9px">L</span>` : '';
+    const fmtW = v => v != null
       ? `<span style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${v >= 0 ? '+' : ''}${(v * 1000).toFixed(2)}</span>`
-      : `<span style="color:#444">—</span>`;
+      : `<span style="color:#333">—</span>`;
     const _p = 'padding:5px 8px;overflow:hidden;white-space:nowrap;';
+    const rank = f.rank ?? '?';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
-      <td style="${_p}font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
+      <td style="${_p}font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">${srcBadge} #${rank}/${totalFeats}</td>
       <td style="${_p}font-size:11px;color:${nameColor};font-weight:${nameFW};text-overflow:ellipsis;cursor:${_featTip(f.name)?'help':'default'}"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
       <td style="${_p}font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:${catColor}">${cat}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
