@@ -256,65 +256,123 @@ function buildTargetPane(ticker, tkey, t, visible) {
         </div>
       </div>
       ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}${m1.model_version ? ' v' + m1.model_version : ''}</div>` : ''}
-      ${m1.assumptions && Object.keys(m1.assumptions).length ? (() => {
-        const LABELS = {
-          grade_cutoff_gt:              ['Grade cutoff', 'g/t Au'],
-          grade_cutoff_source:          ['Cutoff source', ''],
-          grade_cap_gt:                 ['Grade cap (top-cut)', 'g/t Au'],
-          bulk_density_tm3:             ['Bulk density', 't/m³'],
-          orientation_dip_direction_deg:['Dip direction', '°'],
-          orientation_dip_deg:          ['Dip angle', '°'],
-          interval_buffer_m:            ['Interval buffer', 'm each side'],
-          influence_clip_m:             ['Influence clip', 'm radius'],
-          idw_search_radius_m:          ['IDW search radius', 'm'],
-          idw_power:                    ['IDW power (p)', ''],
-          idw_min_samples:              ['IDW min samples', ''],
-          northing_min:                 ['Northing filter (min)', 'm'],
-          model_resolution:             ['Grid resolution', '[nx,ny,nz]'],
-          model_pad_xy_m:               ['Model pad XY', 'm'],
-          model_pad_z_m:                ['Model pad Z', 'm'],
-          assay_data_type:              ['Assay data type', ''],
-          collar_rl_source:             ['Collar RL source', ''],
-          correction_factor:            ['Volume correction factor', ''],
-          assay_intervals_total:        ['Assay intervals (total)', ''],
-          assay_intervals_above_cutoff: ['Assay intervals (above cutoff)', ''],
-          grade_method:                 ['Grade method', ''],
-          jorc_measured_threshold_m:    ['JORC Measured radius', 'm'],
-          jorc_indicated_threshold_m:   ['JORC Indicated radius', 'm'],
-          composite_length_m:           ['Composite length', 'm'],
-        };
-        const rows = Object.entries(m1.assumptions).flatMap(([k, v]) => {
-          // Flatten nested variogram dict into individual rows
-          if (k === 'variogram' && v && typeof v === 'object') {
-            const varioLabels = {
-              nugget: ['Variogram nugget', ''],
-              sill:   ['Variogram sill', ''],
-              range:  ['Variogram range', 'm'],
-              model:  ['Variogram model', ''],
-            };
-            return Object.entries(v).map(([vk, vv]) => {
-              const [lbl, unit] = varioLabels[vk] || ['Variogram ' + vk, ''];
-              const disp = vv == null ? '—' : String(typeof vv === 'number' ? vv.toFixed(3) : vv);
-              return `<tr>
-                <td style="padding:3px 10px 3px 0;color:var(--muted);white-space:nowrap">${lbl}</td>
-                <td style="padding:3px 0;color:#ccc;font-family:monospace">${disp}${unit ? ' <span style="color:var(--muted);font-size:10px">' + unit + '</span>' : ''}</td>
-              </tr>`;
-            });
-          }
-          const [label, unit] = LABELS[k] || [k, ''];
-          const display = Array.isArray(v) ? JSON.stringify(v) : (v == null ? '—' : String(v));
-          return `<tr>
-            <td style="padding:3px 10px 3px 0;color:var(--muted);white-space:nowrap">${label}</td>
-            <td style="padding:3px 0;color:#ccc;font-family:monospace">${display}${unit ? ' <span style="color:var(--muted);font-size:10px">' + unit + '</span>' : ''}</td>
-          </tr>`;
-        }).join('');
-        return `<details style="margin-top:10px;border-top:1px solid #2a2a3a;padding-top:8px">
-          <summary style="cursor:pointer;font-size:11px;color:var(--muted);user-select:none">
-            Model assumptions (v${m1.model_version || '?'}) — click to expand
-          </summary>
-          <table style="font-size:11px;margin-top:8px;border-collapse:collapse;width:100%">${rows}</table>
-        </details>`;
-      })() : ''}
+    </div>` : '';
+
+  // ── Model Assumptions Panel ──────────────────────────────────────────────
+  // Every judgement call, hardcoded number, and pipeline parameter that produced
+  // the koz number — grouped by category. Always visible, fully auditable.
+  const a = m1.assumptions || {};
+  const v_ = m1.variogram || a.variogram || {};
+  const fmtN = (v, dp=2) => (v == null || v === '' || v === undefined) ? '—' : (typeof v === 'number' ? v.toFixed(dp) : String(v));
+  const fmtS = v => (v == null || v === '' || v === undefined) ? '—' : String(v);
+  const nuggetPct = (v_.nugget != null && v_.sill != null && v_.sill > 0)
+    ? (v_.nugget / v_.sill * 100).toFixed(0) + '%' : '—';
+
+  function aRow(label, value, unit='', warn=false) {
+    const col = warn ? '#ffaa44' : '#ccc';
+    return `<tr>
+      <td style="padding:2px 12px 2px 0;color:var(--muted);font-size:10px;white-space:nowrap;vertical-align:top">${label}</td>
+      <td style="padding:2px 0;color:${col};font-family:monospace;font-size:10px">${value}${unit ? `<span style="color:#555;margin-left:3px">${unit}</span>` : ''}</td>
+    </tr>`;
+  }
+  function aSection(title, color, rows) {
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:9px;font-weight:600;letter-spacing:0.08em;color:${color};text-transform:uppercase;margin-bottom:5px;border-bottom:1px solid #222;padding-bottom:3px">${title}</div>
+      <table style="border-collapse:collapse;width:100%">${rows}</table>
+    </div>`;
+  }
+
+  const gradeMethod = fmtS(a.grade_method);
+  const nuggetRatio = (a.variogram && a.variogram.sill > 0) ? a.variogram.nugget / a.variogram.sill : null;
+  const highNugget = nuggetRatio != null && nuggetRatio > 0.6;
+
+  const assumptionsPanel = m1.model_version ? `
+    <div style="background:#0f0f1a;border:1px solid #2a2a3a;border-radius:6px;padding:16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;color:#8888cc;margin-bottom:14px">
+        Model Assumptions
+        <span style="font-weight:normal;color:var(--muted);margin-left:8px;font-size:10px">v${m1.model_version || '?'} — every judgement call that produced the koz number</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+
+        <!-- Col 1: Data inputs + geometry -->
+        <div>
+          ${aSection('Data & Inputs', '#6699cc', [
+            aRow('IS cutoff date',       fmtS(t.cutoff_date)),
+            aRow('Composite length',     fmtN(a.composite_length_m, 0), 'm'),
+            aRow('Grade cutoff',         fmtN(a.grade_cutoff_gt, 2), 'g/t Au'),
+            aRow('Cutoff source',        fmtS(a.grade_cutoff_source)),
+            aRow('Grade cap (top-cut)',  a.grade_cap_gt != null ? fmtN(a.grade_cap_gt, 1) : 'none', a.grade_cap_gt != null ? 'g/t Au' : ''),
+            aRow('Bulk density',         fmtN(a.bulk_density_tm3, 2), 't/m³'),
+            aRow('Assay intervals total', fmtS(a.assay_intervals_total)),
+            aRow('Intervals above cutoff', fmtS(a.assay_intervals_above_cutoff)),
+          ].join(''))}
+
+          ${aSection('Geometry / Ore Zone', '#88aa66', [
+            aRow('Ore zone method',      fmtS(a.ore_zone_method || m1.method || '—')),
+            aRow('Orientation strategy', fmtS(a.orientation_strategy)),
+            aRow('Dip direction',        fmtN(a.orientation_dip_direction_deg, 1), '°'),
+            aRow('Dip angle',            fmtN(a.orientation_dip_deg, 1), '°'),
+            aRow('Interval buffer',      fmtN(a.interval_buffer_m, 1), 'm each side'),
+            aRow('Influence clip',       fmtN(a.influence_clip_m, 0), 'm radius'),
+            aRow('Northing filter (min)', fmtS(a.northing_min), 'm'),
+            aRow('Volume correction',    fmtN(a.correction_factor, 4)),
+          ].join(''))}
+        </div>
+
+        <!-- Col 2: Model grid + JORC -->
+        <div>
+          ${aSection('Model Grid', '#aa8844', [
+            aRow('Grid resolution',  Array.isArray(a.model_resolution) ? a.model_resolution.join(' × ') : fmtS(a.model_resolution), 'voxels'),
+            aRow('Pad XY',          fmtN(a.model_pad_xy_m, 0), 'm'),
+            aRow('Pad Z',           fmtN(a.model_pad_z_m, 0), 'm'),
+          ].join(''))}
+
+          ${aSection('JORC Classification', '#9966aa', [
+            aRow('Method',          'Nearest collar (XY plane)'),
+            aRow('Measured radius', fmtN(a.jorc_measured_threshold_m, 1), 'm to collar'),
+            aRow('Indicated radius',fmtN(a.jorc_indicated_threshold_m, 1), 'm to collar'),
+            aRow('Inferred',        'Beyond Indicated radius'),
+            ...(m1.jorc_split ? [
+              aRow('Measured koz',  fmtN(m1.jorc_split.Measured, 1), 'koz'),
+              aRow('Indicated koz', fmtN(m1.jorc_split.Indicated, 1), 'koz'),
+              aRow('Inferred koz',  fmtN(m1.jorc_split.Inferred, 1), 'koz'),
+            ] : []).join(''),
+          ].join(''))}
+
+          ${aSection('Layers Active', '#557799', (a.layers_enabled || []).map(l =>
+            aRow('', l)
+          ).join('') || aRow('', '—'))}
+        </div>
+
+        <!-- Col 3: Grade estimation + variogram -->
+        <div>
+          ${aSection('Grade Estimation', '#cc8866', [
+            aRow('Method',      gradeMethod === 'kriging_ok3d' ? 'Ordinary Kriging (OK3D)' :
+                                gradeMethod === 'idw_fallback' ? 'IDW (fallback — kriging failed)' : fmtS(gradeMethod),
+                                '', gradeMethod === 'idw_fallback'),
+          ].join(''))}
+
+          ${a.variogram ? aSection('Variogram (Spherical)', highNugget ? '#ffaa44' : '#cc8866', [
+            aRow('Model',       fmtS(a.variogram.model)),
+            aRow('Range',       fmtN(a.variogram.range, 1), 'm', a.variogram.range < 30),
+            aRow('Nugget',      fmtN(a.variogram.nugget, 4), '', false),
+            aRow('Sill',        fmtN(a.variogram.sill, 4), '', false),
+            aRow('Nugget ratio',nuggetPct, '', highNugget),
+            highNugget ? aRow('⚠ High nugget', 'Grade has little spatial structure at drill spacing — kriging approaches weighted mean', '', true) : '',
+          ].join('')) : ''}
+
+          ${aSection('Scoring', '#66aa88', [
+            aRow('Pass gate',           fmtS(m1.pass_gate || '±30%')),
+            aRow('Predicted koz',       fmtN(m1.contained_koz, 1), 'koz'),
+            aRow('HO target koz',       fmtN(m1.ho_koz, 1), 'koz'),
+            aRow('Error',               m1.error_pct != null ? (m1.error_pct > 0 ? '+' : '') + m1.error_pct.toFixed(1) + '%' : '—', '',
+                                        m1.pass === false),
+            aRow('Result',              m1.pass === true ? '✓ PASS' : m1.pass === false ? '✗ FAIL' : '—', '',
+                                        m1.pass === false),
+          ].join(''))}
+        </div>
+
+      </div>
     </div>` : '';
 
   return `
@@ -322,6 +380,8 @@ function buildTargetPane(ticker, tkey, t, visible) {
       <div style="color:var(--muted);font-size:12px;margin-bottom:14px">${t.label || tkey} | cutoff ${t.cutoff_date || '—'}</div>
 
       ${m1Panel}
+
+      ${assumptionsPanel}
 
       <!-- 2D section plots -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
