@@ -2792,24 +2792,48 @@ function mlRenderFeatTable() {
     return _mlSortAsc ? cmp : -cmp;
   });
 
-  // Build short(6m) and long(2yr) weight lookups from sibling variants
-  const activeKey = _mlCurrentData?._active_variant || _mlCurrentData?.best_variant || '';
-  const fbMatch   = activeKey.match(/^(fb\d+)_/);
-  const fbPrefix  = fbMatch ? fbMatch[1] : null;
-  const shortKey  = fbPrefix ? `${fbPrefix}_6m`  : null;
-  const longKey   = fbPrefix ? `${fbPrefix}_2yr` : null;
-  const shortWts  = {};   // name → avg_signed
-  const longWts   = {};
-  const shortFeats = {};  // name → full feature object
+  // Build short/long weight lookups
+  // v7: Short = Model B (recent window), Long = Model A (full history) — within same variant
+  // v6: Short = 6m sibling variant, Long = 2yr sibling variant — across the 3×3 grid
+  const activeKey  = _mlCurrentData?._active_variant || _mlCurrentData?.best_variant || '';
+  const isV7Data   = !!(_mlCurrentData?.v7);
+  const shortWts   = {};   // name → avg_signed
+  const longWts    = {};
+  const shortFeats = {};   // name → full feature object
   const longFeats  = {};
-  if (shortKey && _mlCurrentData?.variants?.[shortKey]) {
-    (_mlCurrentData.variants[shortKey].features || []).forEach(f => { shortWts[f.name] = f.avg_signed; shortFeats[f.name] = f; });
-  }
-  if (longKey && _mlCurrentData?.variants?.[longKey]) {
-    (_mlCurrentData.variants[longKey].features || []).forEach(f => { longWts[f.name] = f.avg_signed; longFeats[f.name] = f; });
+
+  if (isV7Data) {
+    // v7: use Model B and Model A from the active variant
+    const activeVariant = _mlCurrentData?.variants?.[activeKey];
+    if (activeVariant) {
+      (activeVariant.features_b || []).forEach(f => { shortWts[f.name] = f.avg_signed; shortFeats[f.name] = f; });
+      (activeVariant.features   || []).forEach(f => { longWts[f.name]  = f.avg_signed; longFeats[f.name]  = f; });
+    }
+    // Relabel column headers for v7
+    const thShort = document.getElementById('ml-feat-th-short');
+    const thLong  = document.getElementById('ml-feat-th-long');
+    if (thShort) thShort.innerHTML = '<span class="tip" data-tip="Signed weight from Model B (recent ' + (_mlCurrentData?.variants?.[activeKey]?.model_b_bars||'?') + '-bar window).\n— = feature pruned out of Model B.">Mdl B (recent)</span>';
+    if (thLong)  thLong.innerHTML  = '<span class="tip" data-tip="Signed weight from Model A (full history window).\n— = feature pruned out of Model A.">Mdl A (full)</span>';
+  } else {
+    // v6: use sibling 6m / 2yr training window variants
+    const fbMatch  = activeKey.match(/^(fb\d+)_/);
+    const fbPrefix = fbMatch ? fbMatch[1] : null;
+    const shortKey = fbPrefix ? `${fbPrefix}_6m`  : null;
+    const longKey  = fbPrefix ? `${fbPrefix}_2yr` : null;
+    if (shortKey && _mlCurrentData?.variants?.[shortKey]) {
+      (_mlCurrentData.variants[shortKey].features || []).forEach(f => { shortWts[f.name] = f.avg_signed; shortFeats[f.name] = f; });
+    }
+    if (longKey && _mlCurrentData?.variants?.[longKey]) {
+      (_mlCurrentData.variants[longKey].features || []).forEach(f => { longWts[f.name] = f.avg_signed; longFeats[f.name] = f; });
+    }
+    // Restore original column headers for v6
+    const thShort = document.getElementById('ml-feat-th-short');
+    const thLong  = document.getElementById('ml-feat-th-long');
+    if (thShort) thShort.innerHTML = '<span class="tip" data-tip="Signed weight from the short-window (6m) variant with the same forward_bars.\n— = feature not present in that variant.">Short(6m)</span>';
+    if (thLong)  thLong.innerHTML  = '<span class="tip" data-tip="Signed weight from the long-window (2yr) variant with the same forward_bars.\n— = feature not present in that variant.">Long(2yr)</span>';
   }
 
-  // If we have sibling data, show union of both models — not just current variant's features
+  // If we have sibling/dual-model data, show union of both models — not just current variant's features
   const isV6 = !!(_mlCurrentData?.variants);
   if (isV6 && (Object.keys(shortFeats).length || Object.keys(longFeats).length)) {
     const allNames = new Set([...feats.map(f => f.name), ...Object.keys(shortFeats), ...Object.keys(longFeats)]);
