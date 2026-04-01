@@ -2785,18 +2785,36 @@ function mlRenderFeatTable() {
     const cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
     return _mlSortAsc ? cmp : -cmp;
   });
+
+  // Build short(6m) and long(2yr) weight lookups from sibling variants
+  const activeKey = _mlCurrentData?._active_variant || _mlCurrentData?.best_variant || '';
+  const fbMatch   = activeKey.match(/^(fb\d+)_/);
+  const fbPrefix  = fbMatch ? fbMatch[1] : null;
+  const shortKey  = fbPrefix ? `${fbPrefix}_6m`  : null;
+  const longKey   = fbPrefix ? `${fbPrefix}_2yr` : null;
+  const shortWts  = {};
+  const longWts   = {};
+  if (shortKey && _mlCurrentData?.variants?.[shortKey]) {
+    (_mlCurrentData.variants[shortKey].features || []).forEach(f => { shortWts[f.name] = f.avg_signed; });
+  }
+  if (longKey && _mlCurrentData?.variants?.[longKey]) {
+    (_mlCurrentData.variants[longKey].features || []).forEach(f => { longWts[f.name] = f.avg_signed; });
+  }
+
   const tbody = document.getElementById('ml-feat-tbody');
   const totalFeats = _mlCurrentFeatures.length;
   tbody.innerHTML = feats.map((f, idx) => {
-    const catColor   = _ML_CAT_COLORS[f.category] || '#6b7280';
+    // Fix category: look up from map if not stored on the feature object
+    const cat      = f.category || _FEAT_CAT_MAP[f.name] || 'other';
+    const catColor = _ML_CAT_COLORS[cat] || '#6b7280';
     const rankColor  = f.rank <= 10 ? 'var(--green)' : f.rank <= 25 ? SQ.amber : 'var(--muted)';
     const instColor  = f.stability < 1 ? 'var(--green)' : f.stability < 2 ? SQ.amber : 'var(--red)';
     const signColor  = f.avg_signed >= 0 ? 'var(--green)' : 'var(--red)';
-    const isAnn      = f.category === 'announcement';
+    const isAnn      = cat === 'announcement';
     const nameColor  = isAnn ? 'var(--gold)' : '#e5e7eb';
     const nameFW     = isAnn ? '600' : '400';
     const rowBg      = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
-    // p-value colour: <0.05 green, <0.20 amber, else red
+    // p-value colour
     const pv         = f.p_value != null ? f.p_value : 1.0;
     const pvColor    = pv < 0.05 ? 'var(--green)' : pv < 0.20 ? SQ.amber : 'var(--red)';
     const pvStr      = f.p_value != null ? pv.toFixed(3) : '—';
@@ -2808,11 +2826,17 @@ function mlRenderFeatTable() {
     const sp         = f.sign_pct != null ? f.sign_pct : null;
     const spColor    = sp == null ? 'var(--muted)' : sp >= 80 ? 'var(--green)' : sp >= 60 ? SQ.amber : 'var(--red)';
     const spStr      = sp != null ? sp + '%' : '—';
+    // short/long weights
+    const sw = shortWts[f.name];
+    const lw = longWts[f.name];
+    const fmtW = (v, col) => v != null
+      ? `<span style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${v >= 0 ? '+' : ''}${(v * 1000).toFixed(2)}</span>`
+      : `<span style="color:#444">—</span>`;
     const _p = 'padding:5px 8px;overflow:hidden;white-space:nowrap;';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
       <td style="${_p}font-family:monospace;font-size:11px;color:${rankColor};font-weight:600">#${f.rank}/${totalFeats}</td>
       <td style="${_p}font-size:11px;color:${nameColor};font-weight:${nameFW};text-overflow:ellipsis;cursor:${_featTip(f.name)?'help':'default'}"${_featTip(f.name)?` data-tip="${_featTip(f.name)}"`:''}>${f.name}</td>
-      <td style="${_p}font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:${catColor}">${f.category}</td>
+      <td style="${_p}font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:${catColor}">${cat}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:#e5e7eb">${(f.avg_weight * 1000).toFixed(3)}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${signColor}">${f.avg_signed >= 0 ? '+' : ''}${(f.avg_signed * 1000).toFixed(3)}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${pvColor};font-weight:${pv < 0.05 ? '600' : '400'}">${pvStr}</td>
@@ -2820,6 +2844,8 @@ function mlRenderFeatTable() {
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${spColor}">${spStr}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:#9ca3af">${f.std_err != null ? (f.std_err * 1000).toFixed(3) : '—'}</td>
       <td style="${_p}text-align:right;font-family:monospace;font-size:11px;color:${instColor}">${f.stability.toFixed(2)}</td>
+      <td style="${_p}text-align:center;font-family:monospace;font-size:11px">${fmtW(sw)}</td>
+      <td style="${_p}text-align:center;font-family:monospace;font-size:11px">${fmtW(lw)}</td>
     </tr>`;
   }).join('');
 }
