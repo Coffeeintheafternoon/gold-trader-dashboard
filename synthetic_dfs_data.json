@@ -414,22 +414,23 @@
             "model_plan": "synthetic_dfs/MEK/model_plan_fs1.png"
           },
           "mission1": {
-            "ore_volume_m3": 194632.0,
-            "tonnes": 525506.0,
-            "grade_gt": 1.283,
-            "contained_koz": 21.7,
+            "ore_volume_m3": 209391.0,
+            "tonnes": 565354.0,
+            "grade_gt": 1.247,
+            "contained_koz": 22.7,
             "ho_koz": 25.0,
-            "error_pct": -13.3,
+            "error_pct": -9.3,
             "pass_gate": "\u00b130%",
             "pass": true,
-            "ho_label": "St Anne's maiden MRE May 2023 (25 koz)",
+            "ho_label": "FS1.0 Murchison Gold Project Feasibility Study",
             "method": "gempy",
             "model_version": "1.1",
-            "run_at": "2026-03-31T14:38:44.896511+00:00",
+            "run_at": "2026-03-31T21:33:50.652671+00:00",
             "assumptions": {
               "grade_cutoff_gt": 1.0,
               "grade_cutoff_source": "per-target override",
               "bulk_density_tm3": 2.7,
+              "orientation_strategy": "fixed",
               "orientation_dip_direction_deg": 70.0,
               "orientation_dip_deg": 70.0,
               "interval_buffer_m": 5.0,
@@ -446,10 +447,13 @@
               "model_pad_xy_m": 100.0,
               "model_pad_z_m": 50.0,
               "assay_data_type": "headline_intercepts_only",
-              "collar_rl_source": "extraction_default_518m",
-              "correction_factor": 0.5545,
+              "correction_factor": 0.6918,
               "assay_intervals_total": 24,
-              "assay_intervals_above_cutoff": 9
+              "assay_intervals_above_cutoff": 9,
+              "layers_enabled": [
+                "drill_contacts",
+                "drill_orientations"
+              ]
             }
           }
         }
@@ -793,18 +797,18 @@
             "model_plan": "synthetic_dfs/STN/model_plan_mre_feb2025.png"
           },
           "mission1": {
-            "ore_volume_m3": 44708268.0,
-            "tonnes": 118476910.0,
-            "grade_gt": 1.444,
-            "contained_koz": 5501.9,
+            "ore_volume_m3": 24156695.0,
+            "tonnes": 64015241.0,
+            "grade_gt": 1.213,
+            "contained_koz": 2497.4,
             "ho_koz": 2030,
-            "error_pct": 171.0,
+            "error_pct": 23.0,
             "pass_gate": "\u00b130%",
-            "pass": false,
+            "pass": true,
             "ho_label": "Apollo Hill MRE February 2025 (2.03 Moz)",
             "method": "gempy",
             "model_version": "1.1",
-            "run_at": "2026-03-31T18:39:03.371901+00:00",
+            "run_at": "2026-04-01T05:17:46.816871+00:00",
             "assumptions": {
               "grade_cutoff_gt": 0.2,
               "grade_cutoff_source": "per-target override",
@@ -813,11 +817,11 @@
               "orientation_dip_direction_deg": 10.9,
               "orientation_dip_deg": 3.2,
               "interval_buffer_m": 0.0,
-              "influence_clip_m": 60.0,
-              "idw_search_radius_m": 80.0,
+              "influence_clip_m": 80.0,
+              "idw_search_radius_m": 400.0,
               "idw_power": 2.0,
               "idw_min_samples": 2,
-              "northing_min": null,
+              "northing_min": 6772500,
               "model_resolution": [
                 40,
                 60,
@@ -828,10 +832,11 @@
               "assay_data_type": "headline_intercepts_only",
               "correction_factor": 1.0,
               "assay_intervals_total": 614,
-              "assay_intervals_above_cutoff": 612,
+              "assay_intervals_above_cutoff": 610,
               "layers_enabled": [
                 "drill_contacts",
-                "drill_orientations"
+                "drill_orientations",
+                "collar_topo"
               ]
             }
           }
@@ -839,5 +844,5 @@
       }
     }
   },
-  "updated_at": "2026-03-31T18:47:19.663791+00:00"
+  "updated_at": "2026-04-01T05:17:57.357235+00:00"
 }
