@@ -252,7 +252,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
         </div>
         <div style="text-align:center">
           <div style="font-size:20px;font-weight:bold;color:#aaa">${m1.grade_gt != null ? m1.grade_gt.toFixed(3) : '—'}</div>
-          <div style="font-size:11px;color:var(--muted)">Grade (IDW g/t)</div>
+          <div style="font-size:11px;color:var(--muted)">Grade g/t Au</div>
         </div>
       </div>
       ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}${m1.model_version ? ' v' + m1.model_version : ''}</div>` : ''}
@@ -277,8 +277,29 @@ function buildTargetPane(ticker, tkey, t, visible) {
           correction_factor:            ['Volume correction factor', ''],
           assay_intervals_total:        ['Assay intervals (total)', ''],
           assay_intervals_above_cutoff: ['Assay intervals (above cutoff)', ''],
+          grade_method:                 ['Grade method', ''],
+          jorc_measured_threshold_m:    ['JORC Measured radius', 'm'],
+          jorc_indicated_threshold_m:   ['JORC Indicated radius', 'm'],
+          composite_length_m:           ['Composite length', 'm'],
         };
-        const rows = Object.entries(m1.assumptions).map(([k, v]) => {
+        const rows = Object.entries(m1.assumptions).flatMap(([k, v]) => {
+          // Flatten nested variogram dict into individual rows
+          if (k === 'variogram' && v && typeof v === 'object') {
+            const varioLabels = {
+              nugget: ['Variogram nugget', ''],
+              sill:   ['Variogram sill', ''],
+              range:  ['Variogram range', 'm'],
+              model:  ['Variogram model', ''],
+            };
+            return Object.entries(v).map(([vk, vv]) => {
+              const [lbl, unit] = varioLabels[vk] || ['Variogram ' + vk, ''];
+              const disp = vv == null ? '—' : String(typeof vv === 'number' ? vv.toFixed(3) : vv);
+              return `<tr>
+                <td style="padding:3px 10px 3px 0;color:var(--muted);white-space:nowrap">${lbl}</td>
+                <td style="padding:3px 0;color:#ccc;font-family:monospace">${disp}${unit ? ' <span style="color:var(--muted);font-size:10px">' + unit + '</span>' : ''}</td>
+              </tr>`;
+            });
+          }
           const [label, unit] = LABELS[k] || [k, ''];
           const display = Array.isArray(v) ? JSON.stringify(v) : (v == null ? '—' : String(v));
           return `<tr>
@@ -393,11 +414,18 @@ async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
   if (!wrap) return;
   wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading…</div>`;
 
-  let holes, meshData = null, meshDataBase = null;
+  let holesArray, groundSurface = null, meshData = null, meshDataBase = null;
   try {
     const r = await fetch(url + '?v=' + Date.now());
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    holes = await r.json();
+    const drillData = await r.json();
+    // drill_holes JSON may be {holes: [...], ground_surface: {...}} or legacy plain array
+    if (Array.isArray(drillData)) {
+      holesArray = drillData;
+    } else {
+      holesArray    = drillData.holes || [];
+      groundSurface = drillData.ground_surface || null;
+    }
   } catch (e) {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">Failed to load drill data: ${e.message}</div>`;
     return;
@@ -425,7 +453,11 @@ async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
     if (meshData || meshDataBase) {
       wrap._pendingMesh = { top: meshData, base: meshDataBase };
     }
-    minesRender3D(holes, containerId);
+    // Queue ground surface terrain mesh if present
+    if (groundSurface && groundSurface.n_points >= 3) {
+      wrap._pendingGround = groundSurface;
+    }
+    minesRender3D(holesArray, containerId);
   } else {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded — tab_mines_3d.js required</div>`;
   }
@@ -538,6 +570,48 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     ].join('');
     wrap.appendChild(key);
   }
+}
+
+function sdfsAddGroundSurface(containerId, groundSurface) {
+  // Render a Delaunay-triangulated ground surface mesh from collar RL points.
+  // groundSurface = {vertices: [[easting, northing, rl], ...], faces: [[a,b,c], ...], n_points: N}
+  // Uses the same coordinate transform as sdfsAddOreMesh.
+  const wrap = document.getElementById(containerId);
+  if (!wrap || !wrap._threeScene || !window.THREE) return;
+  if (!groundSurface || !groundSurface.vertices || !groundSurface.faces) return;
+  if (groundSurface.n_points < 3) return;
+
+  const THREE  = window.THREE;
+  const scene  = wrap._threeScene;
+  const cx     = wrap._threeCx  || 0;
+  const cy     = wrap._threeCy  || 0;
+  const zRef   = wrap._threeZRef || 0;
+
+  const verts = groundSurface.vertices;
+  const faces = groundSurface.faces;
+
+  const posArr = new Float32Array(verts.length * 3);
+  for (let i = 0; i < verts.length; i++) {
+    posArr[i * 3]     = verts[i][0] - cx;    // X = easting  - cx
+    posArr[i * 3 + 1] = verts[i][2] - zRef;  // Y = RL       - zRef
+    posArr[i * 3 + 2] = verts[i][1] - cy;    // Z = northing - cy
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
+  geometry.computeVertexNormals();
+
+  // Semi-transparent sandy terrain surface — visible from above and below
+  const mat = new THREE.MeshPhongMaterial({
+    color:       0xc8a86e,
+    transparent: true,
+    opacity:     0.28,
+    side:        THREE.DoubleSide,
+    shininess:   10,
+    depthWrite:  false,
+  });
+  scene.add(new THREE.Mesh(geometry, mat));
 }
 
 function sdfsExpandImg(img) {

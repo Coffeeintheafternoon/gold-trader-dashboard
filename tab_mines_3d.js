@@ -308,6 +308,11 @@ function _minesRender3DInner(wrap, holes) {
     sdfsAddOreMesh(wrap.id, wrap._pendingMesh);
     delete wrap._pendingMesh;
   }
+  // If a pending ground surface terrain mesh was queued, add it now
+  if (wrap._pendingGround && typeof sdfsAddGroundSurface === 'function') {
+    sdfsAddGroundSurface(wrap.id, wrap._pendingGround);
+    delete wrap._pendingGround;
+  }
 
   // Geology overlay — async, non-blocking. Only fires for tickers with real UTM coords.
   _overlayGeology(scene, groundMesh, cx, cy, gridSize, holesWithData, badge).catch(() => {});
