@@ -2850,9 +2850,13 @@ function mlRenderFeatTable() {
       ? `<span style="color:#60a5fa;font-size:9px">S</span><span style="color:#f97316;font-size:9px">L</span>`
       : inShort ? `<span style="color:#60a5fa;font-size:9px">S</span>`
       : inLong  ? `<span style="color:#f97316;font-size:9px">L</span>` : '';
-    const fmtW = v => v != null
-      ? `<span style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${v >= 0 ? '+' : ''}${(v * 1000).toFixed(2)}</span>`
-      : `<span style="color:#333">—</span>`;
+    const fmtW = v => {
+      if (v == null) return '<span style="color:#555">—</span>';
+      const num = Number(v);
+      if (isNaN(num)) return '<span style="color:#f97316">ERR</span>';
+      const s = (num >= 0 ? '+' : '') + (num * 1000).toFixed(2);
+      return `<span style="color:${num >= 0 ? '#00c832' : '#ef4444'}">${s}</span>`;
+    };
     const _p = 'padding:5px 8px;overflow:hidden;white-space:nowrap;';
     const rank = f.rank ?? '?';
     return `<tr style="background:${rowBg};border-bottom:1px solid #141414">
