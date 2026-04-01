@@ -799,16 +799,16 @@
           "mission1": {
             "ore_volume_m3": 24156695.0,
             "tonnes": 64015241.0,
-            "grade_gt": 1.213,
-            "contained_koz": 2497.4,
+            "grade_gt": 1.601,
+            "contained_koz": 3295.0,
             "ho_koz": 2030,
-            "error_pct": 23.0,
+            "error_pct": 62.3,
             "pass_gate": "\u00b130%",
-            "pass": true,
+            "pass": false,
             "ho_label": "Apollo Hill MRE February 2025 (2.03 Moz)",
             "method": "gempy",
-            "model_version": "1.1",
-            "run_at": "2026-04-01T06:04:20.806405+00:00",
+            "model_version": "1.2",
+            "run_at": "2026-04-01T07:15:59.703746+00:00",
             "assumptions": {
               "grade_cutoff_gt": 0.2,
               "grade_cutoff_source": "per-target override",
@@ -818,9 +818,6 @@
               "orientation_dip_deg": 3.2,
               "interval_buffer_m": 0.0,
               "influence_clip_m": 80.0,
-              "idw_search_radius_m": 400.0,
-              "idw_power": 2.0,
-              "idw_min_samples": 2,
               "northing_min": 6772500,
               "model_resolution": [
                 40,
@@ -829,7 +826,6 @@
               ],
               "model_pad_xy_m": 100.0,
               "model_pad_z_m": 50.0,
-              "assay_data_type": "headline_intercepts_only",
               "correction_factor": 1.0,
               "assay_intervals_total": 614,
               "assay_intervals_above_cutoff": 610,
@@ -841,12 +837,22 @@
                 "grade_shells",
                 "slip_wa_geology",
                 "ga_geology"
-              ]
+              ],
+              "grade_method": "kriging_ok3d",
+              "variogram": {
+                "model": "spherical",
+                "nugget": 2.6423,
+                "sill": 2.6423,
+                "range_m": 4013.8,
+                "nugget_pct": 100.0
+              },
+              "jorc_measured_threshold_m": 12.5,
+              "jorc_indicated_threshold_m": 40.0
             }
           }
         }
       }
     }
   },
-  "updated_at": "2026-04-01T06:05:56.861694+00:00"
+  "updated_at": "2026-04-01T07:17:23.065375+00:00"
 }
