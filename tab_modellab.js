@@ -931,9 +931,10 @@ function _mlSwitchV6Variant(variantKey) {
   if (!v) return;
   _mlCurrentData._active_variant = variantKey;
   // Swap active data
-  _mlCurrentData.features       = v.features       || [];
-  _mlCurrentData.weight_history = v.weight_history  || [];
-  _mlCurrentData.equity_is      = v.equity_is       || [];
+  _mlCurrentData.features        = v.features       || [];
+  _mlCurrentData.weight_history  = v.weight_history  || [];
+  _mlCurrentData.equity_is       = v.equity_is       || [];
+  _mlCurrentData.equity_holdout  = v.equity_ho       || [];
   _mlCurrentData.is_model = {
     pf:           v.is_pf,
     sharpe:       v.is_sharpe,
@@ -941,6 +942,15 @@ function _mlSwitchV6Variant(variantKey) {
     forward_bars: v.forward_bars,
     train_days:   v.train_days,
   };
+  _mlCurrentData.holdout = v.ho_sharpe != null ? {
+    pf:           v.ho_pf,
+    sharpe:       v.ho_sharpe,
+    period_start: v.ho_period_start,
+    period_end:   v.ho_period_end,
+  } : null;
+  _mlCurrentData.overfit_signal = (v.ho_sharpe == null) ? 'UNKNOWN'
+    : (v.ho_sharpe >= 0.3 && v.ho_sharpe >= (v.is_sharpe || 0) * 0.5) ? 'CLEAN'
+    : (v.ho_sharpe >= 0.0) ? 'CAUTION' : 'OVERFIT';
   _mlCurrentData.pruning = {
     mode:           'ridge_v6',
     hard_pruned:    v.hard_pruned    || [],
