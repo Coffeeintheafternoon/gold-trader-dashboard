@@ -245,6 +245,7 @@ function renderTickerDetail(d) {
   function _modelLabel(mt) {
     if (!mt) return 'Linear Regression Model';
     if (mt === 'regime_similarity') return 'Regime Similarity Model';
+    if (mt.includes('v7')) return 'Ridge v7 Model';
     if (mt.includes('v6')) return 'Ridge v6 Model';
     if (mt.includes('v5')) return 'Ridge v5 Model';
     if (mt.includes('v4')) return 'Ridge v4 Model';
@@ -277,17 +278,18 @@ function renderTickerDetail(d) {
     switcherEl.style.display = 'none';
   }
 
-  // v6 variant toggle — only shown for v6 models
+  // variant toggle — shown for v6 and v7 models
   const v6ToggleEl = document.getElementById('ml-v6-toggle');
-  if (d.v6 && d.variants && v6ToggleEl) {
+  if ((d.v6 || d.v7) && d.variants && v6ToggleEl) {
     const FORWARD_BARS = [3, 5, 10];
     const WINDOWS = [
       { key: '6m',  label: '6m train' },
       { key: '1yr', label: '1yr train' },
       { key: '2yr', label: '2yr train' },
     ];
+    const versionLabel = d.v7 ? 'V7' : 'V6';
     let html = '<div style="margin-bottom:12px">';
-    html += '<div style="font-size:11px;color:var(--muted);letter-spacing:0.5px;margin-bottom:6px">V6 VARIANT — FORWARD BARS × TRAINING WINDOW</div>';
+    html += `<div style="font-size:11px;color:var(--muted);letter-spacing:0.5px;margin-bottom:6px">${versionLabel} VARIANT — FORWARD BARS × TRAINING WINDOW</div>`;
     html += '<table style="border-collapse:collapse;font-size:11px">';
     // Header row
     html += '<tr><td style="padding:3px 8px;color:var(--muted)"></td>';
@@ -310,7 +312,7 @@ function renderTickerDetail(d) {
           <button onclick="_mlSwitchV6Variant('${vkey}')"
             style="background:${bg};border:${border};border-radius:4px;padding:4px 8px;cursor:pointer;min-width:60px">
             <div style="color:${shrColor};font-weight:700;font-size:12px">${shr >= 0 ? '+' : ''}${shr.toFixed(3)}</div>
-            <div style="color:var(--muted);font-size:10px">${v.n_features}f/${v.n_windows}w</div>
+            <div style="color:var(--muted);font-size:10px">${(v.n_features!=null?v.n_features:(v.features||[]).length)}f/${v.n_windows||v.n_windows_a||'?'}w</div>
             ${isBest ? '<div style="color:var(--gold);font-size:9px">&#9733; best IS</div>' : ''}
           </button>
         </td>`;
@@ -936,9 +938,12 @@ function _mlSwitchV6Variant(variantKey) {
   _mlCurrentData.equity_is       = v.equity_is       || [];
   _mlCurrentData.equity_holdout  = v.equity_ho       || [];
   _mlCurrentData.is_model = {
-    pf:           v.is_pf,
+    pf:           v.is_pf_a || v.is_pf,
     sharpe:       v.is_sharpe,
-    n_windows:    v.n_windows,
+    sharpe_a:     v.is_sharpe_a,
+    sharpe_b:     v.is_sharpe_b,
+    n_windows:    v.n_windows || v.n_windows_a,
+    n_windows_b:  v.n_windows_b,
     forward_bars: v.forward_bars,
     train_days:   v.train_days,
   };
@@ -951,12 +956,13 @@ function _mlSwitchV6Variant(variantKey) {
   _mlCurrentData.overfit_signal = (v.ho_sharpe == null) ? 'UNKNOWN'
     : (v.ho_sharpe >= 0.3 && v.ho_sharpe >= (v.is_sharpe || 0) * 0.5) ? 'CLEAN'
     : (v.ho_sharpe >= 0.0) ? 'CAUTION' : 'OVERFIT';
+  const isV7 = !!(_mlCurrentData.v7);
   _mlCurrentData.pruning = {
-    mode:           'ridge_v6',
+    mode:           isV7 ? 'ridge_v7' : 'ridge_v6',
     hard_pruned:    v.hard_pruned    || [],
     dormant_pool:   v.dormant_pool   || [],
     final_excluded: v.final_excluded || [],
-    final_features: v.n_features,
+    final_features: v.n_features != null ? v.n_features : (v.features||[]).length,
   };
   // Re-render
   renderTickerDetail(_mlCurrentData);
