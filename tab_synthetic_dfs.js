@@ -260,6 +260,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
         const LABELS = {
           grade_cutoff_gt:              ['Grade cutoff', 'g/t Au'],
           grade_cutoff_source:          ['Cutoff source', ''],
+          grade_cap_gt:                 ['Grade cap (top-cut)', 'g/t Au'],
           bulk_density_tm3:             ['Bulk density', 't/m³'],
           orientation_dip_direction_deg:['Dip direction', '°'],
           orientation_dip_deg:          ['Dip angle', '°'],
