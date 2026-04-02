@@ -153,23 +153,35 @@ function _minesRender3DInner(wrap, holes) {
     ? Math.max(sceneSpan * 0.01, 5)    // mine-grid scale
     : sceneSpan * 0.00025;             // UTM scale
 
-  // Red-toned grade colours (bright, easy to see on dark background)
-  const gradeColor = (g) => {
-    if (!g || g <= 0) return new THREE.Color(0x1a0a0a);
-    if (g > 15) return new THREE.Color(0xffffff);   // white — bonanza
-    if (g > 10) return new THREE.Color(0xff8800);   // orange
-    if (g > 5)  return new THREE.Color(0xff4400);   // red-orange
-    if (g > 2)  return new THREE.Color(0xff2200);   // red
-    if (g > 0.5)return new THREE.Color(0xcc1100);   // dark red
-    return new THREE.Color(0x551100);               // sub-cutoff
+  // Grade colours — company holes: red spectrum; WAMEX holes: blue-grey spectrum
+  const gradeColor = (g, isWamex) => {
+    if (!g || g <= 0) return new THREE.Color(isWamex ? 0x0a0a1a : 0x1a0a0a);
+    if (isWamex) {
+      // Blue-grey tones for WAMEX (validation/peripheral holes)
+      if (g > 5)  return new THREE.Color(0x88ccff);
+      if (g > 2)  return new THREE.Color(0x5599dd);
+      if (g > 0.5)return new THREE.Color(0x336699);
+      return new THREE.Color(0x1a3355);
+    }
+    // Red tones for company holes
+    if (g > 15) return new THREE.Color(0xffffff);
+    if (g > 10) return new THREE.Color(0xff8800);
+    if (g > 5)  return new THREE.Color(0xff4400);
+    if (g > 2)  return new THREE.Color(0xff2200);
+    if (g > 0.5)return new THREE.Color(0xcc1100);
+    return new THREE.Color(0x551100);
   };
 
   let allPoints = [];
   let meshCount = 0;
+  let nCompany = 0, nWamex = 0;
 
   holesWithData.forEach(hole => {
     const pos = holePos[hole.id];
     if (!pos) return;
+
+    const isWamex = hole.source === 'wamex';
+    if (isWamex) nWamex++; else nCompany++;
 
     const { x, z, azRad, dipRad, depth } = pos;
     const y0 = 0;
@@ -179,43 +191,45 @@ function _minesRender3DInner(wrap, holes) {
     const dy = depth * Math.sin(dipRad);   // negative = downward
     const dz = depth * Math.cos(azRad) * Math.cos(dipRad);
 
-    // Hole trace line — white-ish so it's visible
+    // Hole trace line — dimmer for WAMEX holes
+    const lineColor = isWamex ? 0x334466 : 0x8899bb;
     const pts = [new THREE.Vector3(x, y0, z), new THREE.Vector3(x+dx, y0+dy, z+dz)];
     const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
-    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x8899bb })));
+    scene.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: lineColor })));
     allPoints.push(...pts);
 
-    // Collar sphere — scaled to scene
+    // Collar sphere — gold for company, blue-grey for WAMEX
+    const collarColor   = isWamex ? 0x4466aa : 0xddcc55;
+    const collarEmissive= isWamex ? 0x112244 : 0x443300;
     const collar = new THREE.Mesh(
-      new THREE.SphereGeometry(geomScale * 0.6, 8, 8),
-      new THREE.MeshLambertMaterial({ color: 0xddcc55, emissive: 0x443300 })
+      new THREE.SphereGeometry(geomScale * (isWamex ? 0.4 : 0.6), 8, 8),
+      new THREE.MeshLambertMaterial({ color: collarColor, emissive: collarEmissive })
     );
     collar.position.set(x, y0, z);
     scene.add(collar);
     meshCount++;
 
-    // Intercept cylinders — scaled to scene, red-toned
+    // Intercept cylinders
     hole.intervals.forEach(iv => {
       if (!iv.grade || iv.grade < 0.1) return;
       const f  = (iv.from_m || 0) / depth;
       const t  = Math.min((iv.to_m   || 0) / depth, 1.0);
-      // Minimum visible length = geomScale so intercepts don't vanish
       const len = Math.max((iv.to_m||0) - (iv.from_m||0), geomScale * 0.5);
 
       const mx = x  + dx * (f + t) / 2;
       const my = y0 + dy * (f + t) / 2;
       const mz = z  + dz * (f + t) / 2;
 
-      const radius = geomScale * (0.3 + Math.min(iv.grade / 25, 0.7));
-      const col    = gradeColor(iv.grade);
+      const radius = geomScale * (isWamex ? 0.2 : 0.3 + Math.min(iv.grade / 25, 0.7));
+      const col    = gradeColor(iv.grade, isWamex);
       const mesh   = new THREE.Mesh(
         new THREE.CylinderGeometry(radius, radius, len, 8),
-        new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: 0.8 })
+        new THREE.MeshLambertMaterial({ color: col, emissive: col,
+          emissiveIntensity: isWamex ? 0.4 : 0.8 })
       );
 
       // Orient cylinder along drill direction
       const dir = new THREE.Vector3(dx, dy, dz).normalize();
-      // Guard against degenerate case (straight down)
       const up = Math.abs(dir.dot(new THREE.Vector3(0, 1, 0))) > 0.999
         ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
       mesh.setRotationFromQuaternion(
@@ -266,6 +280,9 @@ function _minesRender3DInner(wrap, holes) {
     ['#ff4400', '5–10 g/t'],
     ['#ff2200', '2–5 g/t'],
     ['#cc1100', '0.5–2 g/t'],
+    [null, null],
+    ['#4466aa', '● WAMEX hole (blue = low grade)'],
+    ['#88ccff', '● WAMEX high grade'],
     [null, null],                               // separator
     ['#ff3300', '— Fault / shear zone'],
     ['#8B7355', '▪ Sedimentary'],
@@ -279,15 +296,48 @@ function _minesRender3DInner(wrap, holes) {
     </div>`).join('');
   wrap.appendChild(legend);
 
-  // Hole count badge
+  // Hole count badge — shows company vs WAMEX split
   const badge = document.createElement('div');
   badge.style.cssText = `position:absolute;top:10px;right:10px;font-size:10px;
     color:var(--muted);font-family:monospace;background:rgba(0,0,0,0.55);
     padding:4px 8px;border-radius:2px;border:1px solid #1a2a1a;pointer-events:none`;
-  badge.textContent = `${holesWithData.length} holes · ${
-    holesWithData.reduce((s, h) => s + (h.intervals||[]).filter(i=>i.grade>0).length, 0)
-  } intercepts · ${meshCount} objects${hasCoords ? ' · real coords' : ' · synthetic layout'}`;
+  const _nIntervals = holesWithData.reduce((s, h) => s + (h.intervals||[]).filter(i=>i.grade>0).length, 0);
+  const _holeLabel  = nWamex > 0
+    ? `<span style="color:#ddcc55">${nCompany} co</span> + <span style="color:#4466aa">${nWamex} wamex</span> holes`
+    : `${holesWithData.length} holes`;
+  badge.innerHTML = `${_holeLabel} · ${_nIntervals} intercepts${hasCoords ? ' · real coords' : ''}`;
   wrap.appendChild(badge);
+
+  // Plan view toggle — top-down camera button (acts like a level plan)
+  const planBtn = document.createElement('div');
+  planBtn.style.cssText = `position:absolute;top:10px;left:10px;font-size:10px;
+    font-family:monospace;background:rgba(0,0,0,0.6);padding:4px 10px;
+    border-radius:2px;border:1px solid #1a2a3a;cursor:pointer;color:#88aa88;
+    user-select:none`;
+  planBtn.textContent = '⊙ Plan view';
+  let _planMode = false;
+  planBtn.addEventListener('click', () => {
+    _planMode = !_planMode;
+    if (_planMode) {
+      // Top-down: camera directly above centre, looking straight down
+      camera.position.set(centre.x, centre.y + dist * 1.5, centre.z);
+      camera.up.set(0, 0, -1);   // north = up in plan view
+      camera.lookAt(centre);
+      camera.updateProjectionMatrix();
+      planBtn.textContent = '⊙ 3D view';
+      planBtn.style.color = '#aaccaa';
+      planBtn.style.borderColor = '#2a4a2a';
+    } else {
+      camera.up.set(0, 1, 0);
+      camera.position.set(centre.x + dist * 0.6, centre.y + dist * 0.5, centre.z + dist * 0.7);
+      camera.lookAt(centre);
+      camera.updateProjectionMatrix();
+      planBtn.textContent = '⊙ Plan view';
+      planBtn.style.color = '#88aa88';
+      planBtn.style.borderColor = '#1a2a3a';
+    }
+  });
+  wrap.appendChild(planBtn);
 
   // ── Depth slicer ─────────────────────────────────────────────────────────
   // Clip plane: normal (0,-1,0), constant C → keeps geometry where y ≤ C.
