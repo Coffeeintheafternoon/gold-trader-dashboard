@@ -120,6 +120,7 @@ function _minesRender3DInner(wrap, holes) {
   _3dRenderer = new THREE.WebGLRenderer({ antialias: true });
   _3dRenderer.setSize(W, H);
   _3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  _3dRenderer.localClippingEnabled = true;
   wrap.appendChild(_3dRenderer.domElement);
 
   // Grid — scales to scene, capped at 100 divisions to avoid GPU overload
@@ -287,6 +288,38 @@ function _minesRender3DInner(wrap, holes) {
     holesWithData.reduce((s, h) => s + (h.intervals||[]).filter(i=>i.grade>0).length, 0)
   } intercepts · ${meshCount} objects${hasCoords ? ' · real coords' : ' · synthetic layout'}`;
   wrap.appendChild(badge);
+
+  // ── Depth slicer ─────────────────────────────────────────────────────────
+  // Clip plane: normal (0,-1,0), constant C → keeps geometry where y ≤ C.
+  // At slider=d: C = -d → shows everything below d metres depth (y ≤ -d).
+  const _maxSliceDepth = Math.max(Math.abs(bbox.min.y), 100);
+  const _slicePlane    = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+
+  const sliceWrap = document.createElement('div');
+  sliceWrap.style.cssText = `position:absolute;bottom:12px;right:12px;
+    background:rgba(0,0,0,0.6);border:1px solid #1a2a3a;border-radius:3px;
+    padding:8px 10px;font-family:monospace;font-size:10px;color:#88aa88;
+    display:flex;flex-direction:column;align-items:center;gap:4px`;
+  sliceWrap.innerHTML = `
+    <div>&#9660; depth slice</div>
+    <input type="range" min="0" max="${Math.round(_maxSliceDepth)}" value="0"
+      style="width:110px;cursor:pointer;accent-color:#4a8a4a">
+    <div style="color:#aaccaa">Full view</div>`;
+  wrap.appendChild(sliceWrap);
+
+  const _sliceInput = sliceWrap.querySelector('input');
+  const _sliceLabel = sliceWrap.querySelectorAll('div')[1];
+  _sliceInput.addEventListener('input', function () {
+    const d = parseFloat(this.value);
+    if (d <= 0) {
+      _3dRenderer.clippingPlanes = [];
+      _sliceLabel.textContent = 'Full view';
+    } else {
+      _slicePlane.constant = -d;
+      _3dRenderer.clippingPlanes = [_slicePlane];
+      _sliceLabel.textContent = `>${Math.round(d)}m depth`;
+    }
+  });
 
   // ── Animation loop ───────────────────────────────────────────────────────
   function animate() {
