@@ -255,7 +255,7 @@ function buildTickerSection(ticker, tdata) {
       <div style="padding:6px 12px;background:#0d1117;border-bottom:1px solid #1a2a1a;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.07em">
         Satellite View${satLabel ? ' — ' + satLabel : ''}
       </div>
-      <div id="sdfs-mine-map-${ticker}" style="height:240px;width:100%"></div>
+      <div id="sdfs-mine-map-${ticker}" style="height:240px;width:100%;filter:brightness(1.35)"></div>
     </div>` : '';
 
   return `
