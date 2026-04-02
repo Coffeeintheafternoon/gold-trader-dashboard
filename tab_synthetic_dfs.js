@@ -542,11 +542,56 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   const cy   = wrap._threeCy  || 0;
   const zRef = wrap._threeZRef || 0;
 
-  function addMeshToScene(meshData, color, opacity, wireColor, showWireframe) {
+  // Smooth the RL (height) of a voxel mesh by averaging each grid corner's RL
+  // with its 4 cardinal neighbours. Handles top and base independently so the
+  // ore thickness is preserved. CELL = grid spacing in metres.
+  function _smoothVoxelRL(verts, CELL, iters) {
+    // Build map: "roundedE,roundedN" → {topRL, topVerts[], baseRL, baseVerts[]}
+    const snap  = v => Math.round(v / CELL) * CELL;
+    const colMap = {};
+    for (let i = 0; i < verts.length; i++) {
+      const key = `${snap(verts[i][0])},${snap(verts[i][1])}`;
+      const rl  = verts[i][2];
+      if (!colMap[key]) colMap[key] = { maxRL: rl, minRL: rl, maxIdx: [], minIdx: [],
+                                        eSnap: snap(verts[i][0]), nSnap: snap(verts[i][1]) };
+      const c = colMap[key];
+      if (rl > c.maxRL + 0.1)      { c.maxRL = rl; c.maxIdx = [i]; }
+      else if (rl >= c.maxRL - 0.1) c.maxIdx.push(i);
+      if (rl < c.minRL - 0.1)      { c.minRL = rl; c.minIdx = [i]; }
+      else if (rl <= c.minRL + 0.1) c.minIdx.push(i);
+    }
+    // Laplacian iterations — smooth top and base RL independently
+    for (let it = 0; it < iters; it++) {
+      const newTop = {}, newBase = {};
+      for (const [key, c] of Object.entries(colMap)) {
+        const nbKeys = [
+          `${c.eSnap + CELL},${c.nSnap}`, `${c.eSnap - CELL},${c.nSnap}`,
+          `${c.eSnap},${c.nSnap + CELL}`, `${c.eSnap},${c.nSnap - CELL}`,
+        ].filter(k => colMap[k]);
+        const avgTop  = nbKeys.length ? nbKeys.reduce((s,k)=>s+colMap[k].maxRL,0)/nbKeys.length : c.maxRL;
+        const avgBase = nbKeys.length ? nbKeys.reduce((s,k)=>s+colMap[k].minRL,0)/nbKeys.length : c.minRL;
+        newTop[key]  = 0.5 * c.maxRL + 0.5 * avgTop;
+        newBase[key] = 0.5 * c.minRL + 0.5 * avgBase;
+      }
+      for (const [key, c] of Object.entries(colMap)) { c.maxRL = newTop[key]; c.minRL = newBase[key]; }
+    }
+    // Write smoothed RL back onto a copy of the verts array
+    const smoothed = verts.map(v => [v[0], v[1], v[2]]);
+    for (const c of Object.values(colMap)) {
+      for (const i of c.maxIdx) smoothed[i][2] = c.maxRL;
+      for (const i of c.minIdx) smoothed[i][2] = c.minRL;
+    }
+    return smoothed;
+  }
+
+  function addMeshToScene(meshData, color, opacity, wireColor, showWireframe, smoothIters) {
     if (!meshData) return false;
-    const verts = meshData.vertices;  // [[easting, northing, rl], ...]
-    const faces = meshData.faces;     // [[a,b,c], ...]
+    let verts = meshData.vertices;  // [[easting, northing, rl], ...]
+    const faces = meshData.faces;   // [[a,b,c], ...]
     if (!verts || !faces || verts.length === 0) return false;
+
+    // Smooth voxel mesh to remove staircase effect before building geometry
+    if (smoothIters > 0) verts = _smoothVoxelRL(verts, 50, smoothIters);
 
     const posArr = new Float32Array(verts.length * 3);
     for (let i = 0; i < verts.length; i++) {
@@ -585,10 +630,10 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     return true;
   }
 
-  // Top: closed solid ore body — higher opacity, no wireframe (would trace every voxel edge)
-  // Base: open floor surface — show wireframe so the surface shape reads clearly
-  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.72, 0xf5c518, false);
-  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.55, 0x4488cc, true);
+  // Top: voxel solid — smooth 4 Laplacian iterations to round staircase edges; no wireframe
+  // Base: marching-cubes surface — already smooth; wireframe shows surface structure
+  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.72, 0xf5c518, false, 4);
+  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.55, 0x4488cc, true,  0);
 
   // Add key badge to the 3D viewer
   // Avoid duplicating if already present (re-load case)
