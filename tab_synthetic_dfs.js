@@ -2,6 +2,7 @@
 // Shows drill visualisations and stats for each ticker/target.
 
 let _synthDFSData = null;
+const _mineMapInstances = {};
 
 async function initSynthDFSTab() {
   const body = document.getElementById('synth-dfs-body');
@@ -39,6 +40,36 @@ async function initSynthDFSTab() {
       if (i === 0) _sdfsRenderGVC(ticker, tkey);
     });
   });
+
+  // Init satellite maps for all tickers (first one is visible; others get invalidateSize on switch)
+  Object.entries(_synthDFSData.tickers || {}).forEach(([ticker, tdata]) => {
+    const mi = tdata.mine_info;
+    if (mi && mi.lat != null && mi.lng != null) {
+      _sdfsInitMineMap(ticker, mi.lat, mi.lng);
+    }
+  });
+}
+
+function _sdfsInitMineMap(ticker, lat, lng) {
+  if (!window.L) return;
+  const containerId = `sdfs-mine-map-${ticker}`;
+  const container = document.getElementById(containerId);
+  if (!container || _mineMapInstances[ticker]) return;
+
+  const map = L.map(containerId, { zoomControl: true, attributionControl: true })
+    .setView([lat, lng], 14);
+
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution: '© Esri World Imagery', maxZoom: 19 }
+  ).addTo(map);
+
+  // Mine site marker
+  L.circleMarker([lat, lng], {
+    radius: 7, color: '#8bc34a', fillColor: '#8bc34a', fillOpacity: 0.55, weight: 2
+  }).addTo(map);
+
+  _mineMapInstances[ticker] = map;
 }
 
 function buildSynthDFS(data) {
@@ -76,6 +107,8 @@ function sdfsSelectTicker(ticker) {
   const btn     = document.getElementById(`sdfs-ticker-btn-${ticker}`);
   if (section) section.style.display = 'block';
   if (btn) btn.classList.add('sdfs-ticker-active');
+  // Leaflet needs a size refresh after container becomes visible
+  setTimeout(() => { _mineMapInstances[ticker]?.invalidateSize(); }, 50);
 }
 
 function buildMineInfoPanel(mi) {
@@ -214,6 +247,17 @@ function buildTickerSection(ticker, tdata) {
   const pdfGallery = buildPdfGallery(ticker, tdata.source_pdfs || []);
   const mineInfoPanel = buildMineInfoPanel(tdata.mine_info);
 
+  const mi = tdata.mine_info;
+  const hasCoords = mi && mi.lat != null && mi.lng != null && (mi.lat !== 0 || mi.lng !== 0);
+  const satLabel = mi && (mi.project || mi.location_description) || '';
+  const satMapHtml = hasCoords ? `
+    <div style="margin-bottom:16px;border:1px solid #1a2a1a;border-radius:6px;overflow:hidden">
+      <div style="padding:6px 12px;background:#0d1117;border-bottom:1px solid #1a2a1a;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.07em">
+        Satellite View${satLabel ? ' — ' + satLabel : ''}
+      </div>
+      <div id="sdfs-mine-map-${ticker}" style="height:240px;width:100%"></div>
+    </div>` : '';
+
   return `
     <div style="margin-bottom:36px">
       <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
@@ -221,6 +265,7 @@ function buildTickerSection(ticker, tdata) {
         <span style="color:var(--muted);font-size:13px">${tdata.company || ''}</span>
       </div>
       ${mineInfoPanel}
+      ${satMapHtml}
       <div style="display:flex;gap:8px;margin-bottom:16px">${tabBtns}</div>
       ${tabPanes}
       ${pdfGallery}
