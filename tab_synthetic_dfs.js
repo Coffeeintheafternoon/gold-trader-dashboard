@@ -251,11 +251,11 @@ function buildTickerSection(ticker, tdata) {
   const hasCoords = mi && mi.lat != null && mi.lng != null && (mi.lat !== 0 || mi.lng !== 0);
   const satLabel = mi && (mi.project || mi.location_description) || '';
   const satMapHtml = hasCoords ? `
-    <div style="margin-bottom:16px;border:1px solid #1a2a1a;border-radius:6px;overflow:hidden">
+    <div style="margin-bottom:16px;border:1px solid #1a2a1a;border-radius:6px;overflow:hidden;position:relative;z-index:10000">
       <div style="padding:6px 12px;background:#0d1117;border-bottom:1px solid #1a2a1a;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.07em">
         Satellite View${satLabel ? ' — ' + satLabel : ''}
       </div>
-      <div id="sdfs-mine-map-${ticker}" style="height:240px;width:100%;filter:brightness(1.35)"></div>
+      <div id="sdfs-mine-map-${ticker}" style="height:240px;width:100%"></div>
     </div>` : '';
 
   return `
