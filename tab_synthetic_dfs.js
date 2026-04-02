@@ -79,101 +79,122 @@ function sdfsSelectTicker(ticker) {
 }
 
 function buildMineInfoPanel(mi) {
-  // Graceful degradation — if mine_info is missing or empty, render nothing
   if (!mi || typeof mi !== 'object') return '';
+  const fv = (v, dp) => v == null ? '—' : (typeof v === 'number' ? (dp != null ? v.toFixed(dp) : v) : String(v));
+  const chip = (txt, col='#8bc34a', bg='#1a2a1a', border='#2a3a2a') =>
+    `<span style="font-size:10px;padding:2px 8px;border-radius:3px;background:${bg};border:1px solid ${border};color:${col};margin-right:5px;white-space:nowrap">${txt}</span>`;
 
-  // Location line
-  const lat = mi.lat != null ? mi.lat : null;
-  const lng = mi.lng != null ? mi.lng : null;
-  let locationHtml = '';
-  if (lat !== null && lng !== null && (lat !== 0 || lng !== 0)) {
-    const latStr = lat.toFixed(4);
-    const lngStr = lng.toFixed(4);
-    const state  = mi.state ? `, ${mi.state}` : '';
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    locationHtml = `
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-        <span style="font-size:13px">📍</span>
-        <span style="font-size:12px;color:#c9d1d9">${latStr}, ${lngStr}${state}</span>
-        <a href="${mapsUrl}" target="_blank"
-           style="font-size:10px;color:var(--accent);text-decoration:none;opacity:0.75">map ↗</a>
+  // ── Header chips ──────────────────────────────────────────────────────────
+  const chips = [];
+  if (mi.commodity)     chips.push(chip(mi.commodity, '#f5c518', '#1a1800', '#3a3200'));
+  if (mi.deposit_style) chips.push(chip(mi.deposit_style));
+  if (mi.depth_range_m) chips.push(chip('Depth: ' + mi.depth_range_m, '#88aacc', '#0a1a2a', '#1a2a3a'));
+  const chipsHtml = chips.length ? `<div style="margin-bottom:10px">${chips.join('')}</div>` : '';
+
+  // ── Location row ──────────────────────────────────────────────────────────
+  const lat = mi.lat, lng = mi.lng;
+  const hasCoords = lat != null && lng != null && (lat !== 0 || lng !== 0);
+  const mapsUrl = hasCoords ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : null;
+  const locationHtml = `
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px;font-size:11px;color:#aaa">
+      ${hasCoords ? `<span>📍 ${lat.toFixed(4)}°, ${lng.toFixed(4)}° ${mi.state || ''}
+        <a href="${mapsUrl}" target="_blank" style="color:var(--accent);text-decoration:none;margin-left:4px">map ↗</a></span>` : ''}
+      ${mi.location_description ? `<span>📌 ${mi.location_description}</span>` : ''}
+      ${mi.rock_type ? `<span>🪨 ${mi.rock_type}</span>` : ''}
+      ${mi.structural_setting ? `<span>⚡ ${mi.structural_setting}</span>` : ''}
+      ${mi.discovery ? `<span>🔍 Discovered ${mi.discovery}</span>` : ''}
+    </div>`;
+
+  // ── Resource comparison table ─────────────────────────────────────────────
+  const pub = mi.published_mre;
+  const mdl = mi.our_model;
+  let resourceHtml = '';
+  if (pub || mdl) {
+    const errColor = mdl && mdl.pass === true ? '#44bb88' : mdl && mdl.pass === false ? '#ff6666' : '#888';
+    const errLabel = mdl && mdl.error_pct != null
+      ? `<span style="color:${errColor};font-size:10px">${mdl.error_pct > 0 ? '+' : ''}${mdl.error_pct.toFixed(1)}% ${mdl.pass ? '✓ PASS' : '✗ OUTSIDE'}</span>` : '';
+
+    // JORC split mini-bar
+    let jorcHtml = '';
+    if (mdl && mdl.jorc_split) {
+      const j = mdl.jorc_split;
+      const total = j.Total || 1;
+      jorcHtml = `
+        <div style="margin-top:10px">
+          <div style="font-size:9px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em">JORC Classification (model)</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${[['Measured','#44bb88'], ['Indicated','#f5c518'], ['Inferred','#888']].map(([cat, col]) => j[cat] != null ? `
+              <div style="text-align:center">
+                <div style="font-size:13px;font-weight:bold;color:${col}">${j[cat].toFixed(0)}</div>
+                <div style="font-size:9px;color:#666">${cat} koz</div>
+                <div style="font-size:9px;color:#555">${(j[cat]/total*100).toFixed(0)}%</div>
+              </div>` : '').join('')}
+          </div>
+        </div>`;
+    }
+
+    resourceHtml = `
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:#8888aa;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px">Resource Estimate</div>
+        <table style="border-collapse:collapse;width:100%;font-size:11px">
+          <thead>
+            <tr style="border-bottom:1px solid #2a2a2a">
+              <th style="text-align:left;padding:3px 12px 3px 0;color:#666;font-weight:normal"></th>
+              <th style="text-align:right;padding:3px 10px;color:#666;font-weight:normal">Tonnes (Mt)</th>
+              <th style="text-align:right;padding:3px 10px;color:#666;font-weight:normal">Grade (g/t Au)</th>
+              <th style="text-align:right;padding:3px 10px;color:#666;font-weight:normal">Contained</th>
+              <th style="text-align:right;padding:3px 10px;color:#666;font-weight:normal">Cutoff</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pub ? `<tr style="border-bottom:1px solid #1a1a1a">
+              <td style="padding:5px 12px 5px 0;color:#aaa">Published MRE</td>
+              <td style="padding:5px 10px;color:#c9d1d9;text-align:right">${fv(pub.tonnes_mt, 1)}</td>
+              <td style="padding:5px 10px;color:#f5c518;text-align:right">${fv(pub.grade_gt, 3)}</td>
+              <td style="padding:5px 10px;color:#f5c518;text-align:right;font-weight:bold">${pub.contained_moz != null ? pub.contained_moz.toFixed(2) + ' Moz' : '—'}</td>
+              <td style="padding:5px 10px;color:#666;text-align:right">${fv(pub.cutoff_gt, 1)} g/t</td>
+            </tr>` : ''}
+            ${mdl ? `<tr>
+              <td style="padding:5px 12px 5px 0;color:#aaa">Our Model ${errLabel}</td>
+              <td style="padding:5px 10px;color:#c9d1d9;text-align:right">${fv(mdl.tonnes_mt, 1)}</td>
+              <td style="padding:5px 10px;color:#f5c518;text-align:right">${fv(mdl.grade_gt, 3)}</td>
+              <td style="padding:5px 10px;color:#f5c518;text-align:right;font-weight:bold">${mdl.contained_koz != null ? (mdl.contained_koz/1000).toFixed(2) + ' Moz' : '—'}</td>
+              <td style="padding:5px 10px;color:#666;text-align:right">—</td>
+            </tr>` : ''}
+          </tbody>
+        </table>
+        ${pub ? `<div style="font-size:9px;color:#444;margin-top:4px">${pub.source || ''}</div>` : ''}
+        ${jorcHtml}
       </div>`;
   }
 
-  // Commodity / deposit style
-  const metaChips = [];
-  if (mi.commodity)     metaChips.push(mi.commodity);
-  if (mi.deposit_style) metaChips.push(mi.deposit_style);
-  const metaHtml = metaChips.length
-    ? `<div style="margin-bottom:8px">${metaChips.map(c =>
-        `<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#1a2a1a;border:1px solid #2a3a2a;color:#8bc34a;margin-right:5px">${c}</span>`
-      ).join('')}</div>`
-    : '';
-
-  // Wikipedia summary — truncate at 300 chars
+  // ── Regional context (Wikipedia) ─────────────────────────────────────────
   let wikiHtml = '';
   if (mi.wikipedia_summary) {
     let extract = mi.wikipedia_summary.replace(/\n/g, ' ').trim();
-    if (extract.length > 300) extract = extract.slice(0, 297) + '…';
-    const wikiLink = mi.wikipedia_url
-      ? `<a href="${mi.wikipedia_url}" target="_blank"
-           style="font-size:10px;color:var(--accent);text-decoration:none;margin-left:6px">Wikipedia ↗</a>`
-      : '';
+    if (extract.length > 250) extract = extract.slice(0, 247) + '…';
     wikiHtml = `
-      <div style="margin-bottom:10px">
-        <span style="font-size:12px;color:#c9d1d9;line-height:1.5">${extract}</span>
-        ${wikiLink}
+      <div style="font-size:10px;color:#666;border-top:1px solid #1a1a1a;padding-top:8px;margin-top:4px;line-height:1.5">
+        <span style="color:#444">Regional context: </span>${extract}
+        ${mi.wikipedia_url ? `<a href="${mi.wikipedia_url}" target="_blank" style="color:#555;margin-left:4px">↗</a>` : ''}
       </div>`;
   }
 
-  // Mine studies table
-  let studiesHtml = '';
-  const studies = Array.isArray(mi.mine_studies) ? mi.mine_studies : [];
-  if (studies.length > 0) {
-    const fmtVal = v => (v == null ? '—' : (typeof v === 'number' ? v : String(v)));
-    const rows = studies.map(s => `
-      <tr style="border-bottom:1px solid #1a2a1a">
-        <td style="padding:4px 10px 4px 0;font-size:11px;color:#c9d1d9">${fmtVal(s.study_type)}</td>
-        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.total_tonnes_mt)}</td>
-        <td style="padding:4px 10px;font-size:11px;color:#f5c518;text-align:right">${fmtVal(s.avg_grade)}</td>
-        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.contained_metal_moz)}</td>
-        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.aisc_per_oz)}</td>
-      </tr>`).join('');
-    studiesHtml = `
-      <div style="margin-top:8px">
-        <div style="font-size:10px;font-weight:600;color:#8888aa;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Mine Studies</div>
-        <table style="border-collapse:collapse;width:100%">
-          <thead>
-            <tr style="border-bottom:1px solid #2a3a2a">
-              <th style="text-align:left;padding:3px 10px 3px 0;font-size:10px;color:#8888aa;font-weight:normal">Type</th>
-              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Tonnes (Mt)</th>
-              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Grade (g/t)</th>
-              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Contained (Moz)</th>
-              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">AISC ($/oz)</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  if (!locationHtml && !wikiHtml && !studiesHtml && !metaHtml) return '';
+  if (!chipsHtml && !locationHtml && !resourceHtml) return '';
 
   const panelId = `mi-panel-${Math.random().toString(36).slice(2, 8)}`;
-  const headId  = `mi-head-${panelId}`;
   return `
     <div style="background:#0d1117;border:1px solid #1a2a1a;border-radius:6px;margin-bottom:16px;overflow:hidden">
-      <div id="${headId}"
-           onclick="document.getElementById('${panelId}').style.display=document.getElementById('${panelId}').style.display==='none'?'block':'none';this.querySelector('.mi-chevron').style.transform=document.getElementById('${panelId}').style.display==='none'?'rotate(0deg)':'rotate(90deg)';"
+      <div onclick="const p=document.getElementById('${panelId}');p.style.display=p.style.display==='none'?'block':'none';this.querySelector('.mi-chev').style.transform=p.style.display==='none'?'rotate(0deg)':'rotate(90deg)'"
            style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;border-bottom:1px solid #1a2a1a">
-        <span style="font-size:12px;font-weight:600;color:#8bc34a">Mine Info</span>
-        <span class="mi-chevron" style="color:#8bc34a;font-size:12px;transition:transform 0.2s;transform:rotate(90deg)">▶</span>
+        <span style="font-size:12px;font-weight:600;color:#8bc34a">Mine Info — ${mi.project || mi.company || ''}</span>
+        <span class="mi-chev" style="color:#8bc34a;font-size:12px;transition:transform 0.2s;transform:rotate(90deg)">▶</span>
       </div>
-      <div id="${panelId}" style="padding:14px;display:block">
-        ${metaHtml}
+      <div id="${panelId}" style="padding:14px">
+        ${chipsHtml}
         ${locationHtml}
+        ${resourceHtml}
         ${wikiHtml}
-        ${studiesHtml}
       </div>
     </div>`;
 }
