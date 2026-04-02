@@ -23,6 +23,22 @@ async function initSynthDFSTab() {
   loading.style.display = 'none';
   body.style.display = 'block';
   body.innerHTML = buildSynthDFS(_synthDFSData);
+
+  // Attach grade-volume curve data to each target pane so the chart renderer can access it
+  const tickers2 = Object.keys(_synthDFSData.tickers || {});
+  tickers2.forEach(ticker => {
+    const tdata = _synthDFSData.tickers[ticker];
+    Object.keys(tdata.targets || {}).forEach((tkey, i) => {
+      const t = tdata.targets[tkey];
+      const gvc = t.mission1 && t.mission1.grade_volume_curve;
+      if (gvc && gvc.length > 1) {
+        const pane = document.getElementById(`sdfs-pane-${ticker}-${tkey}`);
+        if (pane) pane._gvcData = gvc;
+      }
+      // Render chart for the initially visible pane
+      if (i === 0) _sdfsRenderGVC(ticker, tkey);
+    });
+  });
 }
 
 function buildSynthDFS(data) {
@@ -62,6 +78,106 @@ function sdfsSelectTicker(ticker) {
   if (btn) btn.classList.add('sdfs-ticker-active');
 }
 
+function buildMineInfoPanel(mi) {
+  // Graceful degradation — if mine_info is missing or empty, render nothing
+  if (!mi || typeof mi !== 'object') return '';
+
+  // Location line
+  const lat = mi.lat != null ? mi.lat : null;
+  const lng = mi.lng != null ? mi.lng : null;
+  let locationHtml = '';
+  if (lat !== null && lng !== null && (lat !== 0 || lng !== 0)) {
+    const latStr = lat.toFixed(4);
+    const lngStr = lng.toFixed(4);
+    const state  = mi.state ? `, ${mi.state}` : '';
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    locationHtml = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="font-size:13px">📍</span>
+        <span style="font-size:12px;color:#c9d1d9">${latStr}, ${lngStr}${state}</span>
+        <a href="${mapsUrl}" target="_blank"
+           style="font-size:10px;color:var(--accent);text-decoration:none;opacity:0.75">map ↗</a>
+      </div>`;
+  }
+
+  // Commodity / deposit style
+  const metaChips = [];
+  if (mi.commodity)     metaChips.push(mi.commodity);
+  if (mi.deposit_style) metaChips.push(mi.deposit_style);
+  const metaHtml = metaChips.length
+    ? `<div style="margin-bottom:8px">${metaChips.map(c =>
+        `<span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#1a2a1a;border:1px solid #2a3a2a;color:#8bc34a;margin-right:5px">${c}</span>`
+      ).join('')}</div>`
+    : '';
+
+  // Wikipedia summary — truncate at 300 chars
+  let wikiHtml = '';
+  if (mi.wikipedia_summary) {
+    let extract = mi.wikipedia_summary.replace(/\n/g, ' ').trim();
+    if (extract.length > 300) extract = extract.slice(0, 297) + '…';
+    const wikiLink = mi.wikipedia_url
+      ? `<a href="${mi.wikipedia_url}" target="_blank"
+           style="font-size:10px;color:var(--accent);text-decoration:none;margin-left:6px">Wikipedia ↗</a>`
+      : '';
+    wikiHtml = `
+      <div style="margin-bottom:10px">
+        <span style="font-size:12px;color:#c9d1d9;line-height:1.5">${extract}</span>
+        ${wikiLink}
+      </div>`;
+  }
+
+  // Mine studies table
+  let studiesHtml = '';
+  const studies = Array.isArray(mi.mine_studies) ? mi.mine_studies : [];
+  if (studies.length > 0) {
+    const fmtVal = v => (v == null ? '—' : (typeof v === 'number' ? v : String(v)));
+    const rows = studies.map(s => `
+      <tr style="border-bottom:1px solid #1a2a1a">
+        <td style="padding:4px 10px 4px 0;font-size:11px;color:#c9d1d9">${fmtVal(s.study_type)}</td>
+        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.total_tonnes_mt)}</td>
+        <td style="padding:4px 10px;font-size:11px;color:#f5c518;text-align:right">${fmtVal(s.avg_grade)}</td>
+        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.contained_metal_moz)}</td>
+        <td style="padding:4px 10px;font-size:11px;color:#c9d1d9;text-align:right">${fmtVal(s.aisc_per_oz)}</td>
+      </tr>`).join('');
+    studiesHtml = `
+      <div style="margin-top:8px">
+        <div style="font-size:10px;font-weight:600;color:#8888aa;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Mine Studies</div>
+        <table style="border-collapse:collapse;width:100%">
+          <thead>
+            <tr style="border-bottom:1px solid #2a3a2a">
+              <th style="text-align:left;padding:3px 10px 3px 0;font-size:10px;color:#8888aa;font-weight:normal">Type</th>
+              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Tonnes (Mt)</th>
+              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Grade (g/t)</th>
+              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">Contained (Moz)</th>
+              <th style="text-align:right;padding:3px 10px;font-size:10px;color:#8888aa;font-weight:normal">AISC ($/oz)</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  if (!locationHtml && !wikiHtml && !studiesHtml && !metaHtml) return '';
+
+  const panelId = `mi-panel-${Math.random().toString(36).slice(2, 8)}`;
+  const headId  = `mi-head-${panelId}`;
+  return `
+    <div style="background:#0d1117;border:1px solid #1a2a1a;border-radius:6px;margin-bottom:16px;overflow:hidden">
+      <div id="${headId}"
+           onclick="document.getElementById('${panelId}').style.display=document.getElementById('${panelId}').style.display==='none'?'block':'none';this.querySelector('.mi-chevron').style.transform=document.getElementById('${panelId}').style.display==='none'?'rotate(0deg)':'rotate(90deg)';"
+           style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;border-bottom:1px solid #1a2a1a">
+        <span style="font-size:12px;font-weight:600;color:#8bc34a">Mine Info</span>
+        <span class="mi-chevron" style="color:#8bc34a;font-size:12px;transition:transform 0.2s;transform:rotate(90deg)">▶</span>
+      </div>
+      <div id="${panelId}" style="padding:14px;display:block">
+        ${metaHtml}
+        ${locationHtml}
+        ${wikiHtml}
+        ${studiesHtml}
+      </div>
+    </div>`;
+}
+
 function buildTickerSection(ticker, tdata) {
   const targets = Object.keys(tdata.targets || {});
   if (!targets.length) return '';
@@ -75,6 +191,7 @@ function buildTickerSection(ticker, tdata) {
   });
 
   const pdfGallery = buildPdfGallery(ticker, tdata.source_pdfs || []);
+  const mineInfoPanel = buildMineInfoPanel(tdata.mine_info);
 
   return `
     <div style="margin-bottom:36px">
@@ -82,6 +199,7 @@ function buildTickerSection(ticker, tdata) {
         <h2 style="margin:0;font-size:18px;color:var(--accent)">${ticker}</h2>
         <span style="color:var(--muted);font-size:13px">${tdata.company || ''}</span>
       </div>
+      ${mineInfoPanel}
       <div style="display:flex;gap:8px;margin-bottom:16px">${tabBtns}</div>
       ${tabPanes}
       ${pdfGallery}
@@ -401,6 +519,14 @@ function buildTargetPane(ticker, tkey, t, visible) {
         </div>
       </div>` : ''}
 
+      <!-- Grade-volume curve — shown when mission1 has grade_volume_curve data -->
+      ${m1.grade_volume_curve && m1.grade_volume_curve.length > 1 ? `
+      <div style="background:#0f0f1a;border:1px solid #2a2a3a;border-radius:6px;padding:16px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:600;color:#8888cc;margin-bottom:4px">Grade-Tonnage Curve</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px">Resource at each minimum cutoff grade — shows sensitivity to cutoff selection</div>
+        <canvas id="gvc-${ticker}-${tkey}" height="160" style="width:100%;max-width:700px"></canvas>
+      </div>` : ''}
+
       <!-- 3D viewer -->
       ${has3d ? `
       <div style="margin-bottom:20px">
@@ -467,6 +593,80 @@ function sdfsSelectTarget(ticker, tkey) {
   const btn  = document.getElementById(`sdfs-btn-${ticker}-${tkey}`);
   if (pane) pane.style.display = 'block';
   if (btn)  btn.classList.add('sdfs-tab-active');
+  // Render grade-volume curve chart if canvas is present and Chart.js is loaded
+  _sdfsRenderGVC(ticker, tkey);
+}
+
+// Grade-volume curve chart — renders Chart.js dual-axis chart (bars=tonnes, line=grade)
+function _sdfsRenderGVC(ticker, tkey) {
+  const canvasId = `gvc-${ticker}-${tkey}`;
+  const canvas   = document.getElementById(canvasId);
+  if (!canvas || !window.Chart || canvas._gvcDone) return;
+  canvas._gvcDone = true;
+
+  // Pull data from the pre-parsed target object stored on the pane
+  const pane = document.getElementById(`sdfs-pane-${ticker}-${tkey}`);
+  if (!pane || !pane._gvcData) return;
+  const pts = pane._gvcData;
+  if (!pts || pts.length < 2) return;
+
+  const labels   = pts.map(p => p.cutoff_gt.toFixed(1) + ' g/t');
+  const tonnes   = pts.map(p => p.tonnes_mt);
+  const grades   = pts.map(p => p.grade_gt);
+  const koz      = pts.map(p => p.contained_koz);
+
+  new Chart(canvas, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Tonnes (Mt)',
+          data: tonnes,
+          backgroundColor: 'rgba(68,136,204,0.55)',
+          borderColor: '#4488cc',
+          borderWidth: 1,
+          yAxisID: 'yTonnes',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Grade (g/t Au)',
+          data: grades,
+          borderColor: '#f5c518',
+          backgroundColor: 'rgba(245,197,24,0.15)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#f5c518',
+          yAxisID: 'yGrade',
+          order: 1,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#aaa', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            afterBody: (items) => {
+              const i = items[0]?.dataIndex;
+              return i != null ? [`Contained: ${koz[i]} koz`] : [];
+            },
+          },
+        },
+      },
+      scales: {
+        x:       { ticks: { color: '#888', font: { size: 10 } }, grid: { color: '#1a2a1a' } },
+        yTonnes: { position: 'left',  ticks: { color: '#4488cc', font: { size: 10 } },
+                   grid: { color: '#1a2a1a' }, title: { display: true, text: 'Tonnes (Mt)', color: '#4488cc', font: { size: 10 } } },
+        yGrade:  { position: 'right', ticks: { color: '#f5c518', font: { size: 10 } },
+                   grid: { drawOnChartArea: false }, title: { display: true, text: 'Grade (g/t)', color: '#f5c518', font: { size: 10 } } },
+      },
+    },
+  });
 }
 
 async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
