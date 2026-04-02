@@ -542,7 +542,7 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   const cy   = wrap._threeCy  || 0;
   const zRef = wrap._threeZRef || 0;
 
-  function addMeshToScene(meshData, color, opacity, wireColor) {
+  function addMeshToScene(meshData, color, opacity, wireColor, showWireframe) {
     if (!meshData) return false;
     const verts = meshData.vertices;  // [[easting, northing, rl], ...]
     const faces = meshData.faces;     // [[a,b,c], ...]
@@ -559,42 +559,36 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
     geometry.computeVertexNormals();
 
-    // Solid surface — front face opaque enough to read as a 3D object
+    // DoubleSide so the solid reads correctly from any angle and when sliced
     const solidMat = new THREE.MeshPhongMaterial({
       color,
       transparent: true,
       opacity,
-      side: THREE.FrontSide,
-      shininess: 60,
+      side: THREE.DoubleSide,
+      shininess: 80,
       depthWrite: false,
     });
     scene.add(new THREE.Mesh(geometry, solidMat));
 
-    // Back face at lower opacity — gives the interior some depth
-    const backMat = new THREE.MeshPhongMaterial({
-      color,
-      transparent: true,
-      opacity: opacity * 0.35,
-      side: THREE.BackSide,
-      depthWrite: false,
-    });
-    scene.add(new THREE.Mesh(geometry, backMat));
-
-    // Wireframe overlay — makes the mesh shape legible as a 3D structure
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: wireColor,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.18,
-      depthWrite: false,
-    });
-    scene.add(new THREE.Mesh(geometry, wireMat));
+    // Wireframe overlay — only for open surfaces (base), not closed solid (top)
+    if (showWireframe) {
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: wireColor,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.12,
+        depthWrite: false,
+      });
+      scene.add(new THREE.Mesh(geometry, wireMat));
+    }
 
     return true;
   }
 
-  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.55, 0xf5c518);
-  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.35, 0x4488cc);
+  // Top: closed solid ore body — higher opacity, no wireframe (would trace every voxel edge)
+  // Base: open floor surface — show wireframe so the surface shape reads clearly
+  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.72, 0xf5c518, false);
+  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.55, 0x4488cc, true);
 
   // Add key badge to the 3D viewer
   // Avoid duplicating if already present (re-load case)
