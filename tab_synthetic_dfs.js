@@ -4,6 +4,31 @@
 let _synthDFSData = null;
 const _mineMapInstances = {};
 
+// ── Satellite map base layers ─────────────────────────────────────────────────
+// Add or remove entries here to change what appears in the layer switcher.
+// 'default: true' marks which base layer is shown on load.
+const _SDFS_BASE_LAYERS = [
+  {
+    name: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri World Imagery',
+    maxZoom: 19,
+    default: true,
+  },
+  {
+    name: 'Topo',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri World Topo',
+    maxZoom: 19,
+  },
+  {
+    name: 'Streets',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri World Street',
+    maxZoom: 19,
+  },
+];
+
 async function initSynthDFSTab() {
   const body = document.getElementById('synth-dfs-body');
   const loading = document.getElementById('synth-dfs-loading');
@@ -45,12 +70,12 @@ async function initSynthDFSTab() {
   Object.entries(_synthDFSData.tickers || {}).forEach(([ticker, tdata]) => {
     const mi = tdata.mine_info;
     if (mi && mi.lat != null && mi.lng != null) {
-      _sdfsInitMineMap(ticker, mi.lat, mi.lng);
+      _sdfsInitMineMap(ticker, mi.lat, mi.lng, mi);
     }
   });
 }
 
-function _sdfsInitMineMap(ticker, lat, lng) {
+function _sdfsInitMineMap(ticker, lat, lng, mi) {
   if (!window.L) return;
   const containerId = `sdfs-mine-map-${ticker}`;
   const container = document.getElementById(containerId);
@@ -59,10 +84,33 @@ function _sdfsInitMineMap(ticker, lat, lng) {
   const map = L.map(containerId, { zoomControl: true, attributionControl: true })
     .setView([lat, lng], 14);
 
-  L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { attribution: '© Esri World Imagery', maxZoom: 19 }
-  ).addTo(map);
+  // ── Base layers from config ───────────────────────────────────────────────
+  const baseLayers = {};
+  _SDFS_BASE_LAYERS.forEach(cfg => {
+    const layer = L.tileLayer(cfg.url, { attribution: cfg.attribution, maxZoom: cfg.maxZoom || 19 });
+    if (cfg.default) layer.addTo(map);
+    baseLayers[cfg.name] = layer;
+  });
+
+  // ── Mine-specific overlay layers from mine_info.map_overlays ─────────────
+  // Each entry: { name, url, type: "tile"|"wms", options: {}, default: bool }
+  const overlayLayers = {};
+  const mapOverlays = (mi && mi.map_overlays) || [];
+  mapOverlays.forEach(ov => {
+    let layer;
+    if (ov.type === 'wms') {
+      layer = L.tileLayer.wms(ov.url, { layers: ov.wms_layers || '', ...(ov.options || {}) });
+    } else {
+      layer = L.tileLayer(ov.url, { attribution: ov.attribution || '', maxZoom: ov.maxZoom || 19, ...(ov.options || {}) });
+    }
+    if (ov.default) layer.addTo(map);
+    overlayLayers[ov.name] = layer;
+  });
+
+  // ── Layer control (only show if >1 base or any overlays) ─────────────────
+  if (_SDFS_BASE_LAYERS.length > 1 || Object.keys(overlayLayers).length) {
+    L.control.layers(baseLayers, overlayLayers, { collapsed: true }).addTo(map);
+  }
 
   // Mine site marker
   L.circleMarker([lat, lng], {
