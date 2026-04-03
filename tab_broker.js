@@ -44,7 +44,7 @@
 
   // ── Entry point ────────────────────────────────────────────────────────────
   window.initBrokerTab = function () {
-    if (_data) { _render(); return; }
+    // Always re-fetch — data changes between sessions and new tickers get added
     fetch('generated_report_data.json?_=' + Date.now())
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(json => { _data = json; _render(); })
@@ -69,13 +69,14 @@
     if (body)    body.style.display    = 'block';
     if (body)    body.innerHTML        = '';
 
+    if (!_selectedTicker) _selectedTicker = _data.tickers[0].ticker;
+
     body.appendChild(_buildTickerBar(_data.tickers));
 
     const content = document.createElement('div');
     content.id = 'broker-content';
     body.appendChild(content);
 
-    if (!_selectedTicker) _selectedTicker = _data.tickers[0].ticker;
     _renderTicker(_selectedTicker);
   }
 
