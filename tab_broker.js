@@ -707,8 +707,8 @@
     }
 
     // ── Analyst forward estimates ──
-    const ae = fund.analyst_estimates || {};
-    const aeYears = Object.keys(ae).sort();
+    const aeConsensus = fund.analyst_estimates || {};
+    const aeYears = Object.keys(aeConsensus).sort();
     if (aeYears.length) {
       const aeTitle = document.createElement('div');
       aeTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
@@ -733,7 +733,7 @@
         tr.style.cssText = 'border-top:1px solid #1a1a1a';
         let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
         aeYears.forEach(y => {
-          const d = ae[y] || {};
+          const d = aeConsensus[y] || {};
           const avg = d[row.avgKey];
           if (avg == null) {
             cells += `<td style="padding:5px 8px;color:#444;text-align:right">—</td>`;
