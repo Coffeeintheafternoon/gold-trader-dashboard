@@ -367,6 +367,7 @@
     <button class="tab-btn" id="tabnav-mines" onclick="switchTab('mines')">Mines</button>
     <button class="tab-btn" id="tabnav-synthdfs" onclick="switchTab('synthdfs')">DFS Pred</button>
     <button class="tab-btn" id="tabnav-sow" onclick="switchTab('sow')">S.O.W</button>
+    <button class="tab-btn" id="tabnav-broker" onclick="switchTab('broker')">Broker</button>
   </nav>
   <div class="header-right">
     <!-- Local server status indicator -->
@@ -1995,6 +1996,13 @@
   </div>
 </div>
 
+<div id="tab-broker" class="tab-pane">
+  <div style="padding:20px 24px;max-width:1400px;margin:0 auto">
+    <div id="broker-loading" style="text-align:center;padding:60px;color:var(--muted);font-size:13px">Loading broker data…</div>
+    <div id="broker-body" style="display:none"></div>
+  </div>
+</div>
+
 <footer>Squant Bot — Paper trading only. Not financial advice.</footer>
 
 <script>
@@ -2021,8 +2029,9 @@
 
 // ── Colors + Chart defaults now live in sq_theme.js ──────────────────────────
 
+
 // ── Tab management ────────────────────────────────────────────────────────────
-const TABS = ['signal','modellab','universe','meta','papertrade','regime','macrostate','chatter','mines','synthdfs','sow'];
+const TABS = ['signal','modellab','universe','meta','papertrade','regime','macrostate','chatter','mines','synthdfs','sow','broker'];
 const _tabInit = new Set();
 
 function switchTab(id) {
@@ -2050,6 +2059,7 @@ function switchTab(id) {
     else if (id === 'mines')    initMinesTab();
     else if (id === 'synthdfs') initSynthDFSTab();
     else if (id === 'sow') initSOWTab();
+    else if (id === 'broker') initBrokerTab();
   }
 }
 
@@ -2107,6 +2117,7 @@ function showNoData(canvasId, placeholderId) { const c=document.getElementById(c
 <script src="tab_mines_map.js?v=20260331c"></script>
 <script src="tab_mines_charts.js?v=20260331e"></script>
 <script src="tab_sow.js?v=20260325"></script>
+<script src="tab_broker.js?v=20260403a"></script>
 
 <!-- ── Token modal ──────────────────────────────────────────────────────────── -->
 <div id="token-modal" class="token-modal-overlay" style="display:none">
