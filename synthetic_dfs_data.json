@@ -9762,8 +9762,8 @@
           "mission1": {
             "ore_volume_m3": 8916208.0,
             "tonnes": 24965382.0,
-            "grade_gt": 0.464,
-            "contained_koz": 372.1,
+            "grade_gt": 2.448,
+            "contained_koz": 1965.2,
             "ho_koz": null,
             "error_pct": null,
             "pass_gate": "\u00b130%",
@@ -9771,7 +9771,7 @@
             "ho_label": "Paris Gold Project Maiden MRE September 2024 (BLIND)",
             "method": "gempy",
             "model_version": "1.2",
-            "run_at": "2026-04-03T19:37:15.818848+00:00",
+            "run_at": "2026-04-03T20:51:00.939252+00:00",
             "assumptions": {
               "grade_cutoff_gt": 0.3,
               "grade_cutoff_source": "per-target override",
@@ -9801,15 +9801,15 @@
                 "grade_shells",
                 "slip_wa_geology"
               ],
-              "grade_method": "kriging_ok3d_anisotropic",
+              "grade_method": "kriging_ok3d_anisotropic_multidomain",
               "composited": true,
               "composite_length_m": 4.0,
               "variogram": {
                 "model": "spherical_anisotropic",
-                "nugget": 3.9493,
-                "sill": 3.9493,
-                "iso_range_m": 10007.0,
-                "nugget_pct": 100.0,
+                "nugget": 5.0945,
+                "sill": 2970.7868,
+                "iso_range_m": 97853.9,
+                "nugget_pct": 0.2,
                 "strike_deg": 290.0,
                 "along_m": 100.0,
                 "across_m": 20.0,
@@ -9817,18 +9817,42 @@
               },
               "cross_validation": {
                 "n_folds": 5,
-                "n_samples": 2685,
-                "rmse_gt": 5.027,
-                "bias_gt": 0.2704,
-                "r2": -8.648
+                "n_samples": 85,
+                "rmse_gt": 2.7113,
+                "bias_gt": 0.2106,
+                "r2": 0.068
               },
-              "n_domains": 1,
+              "n_domains": 5,
               "domain_summary": [
                 {
                   "domain_id": 0,
-                  "n_runs": 43,
-                  "n_holes": 34,
-                  "mean_grade_gt": 1.539
+                  "n_runs": 51,
+                  "n_holes": 42,
+                  "mean_grade_gt": 1.694
+                },
+                {
+                  "domain_id": 1,
+                  "n_runs": 36,
+                  "n_holes": 26,
+                  "mean_grade_gt": 3.4
+                },
+                {
+                  "domain_id": 2,
+                  "n_runs": 37,
+                  "n_holes": 27,
+                  "mean_grade_gt": 4.524
+                },
+                {
+                  "domain_id": 3,
+                  "n_runs": 23,
+                  "n_holes": 21,
+                  "mean_grade_gt": 3.106
+                },
+                {
+                  "domain_id": 4,
+                  "n_runs": 18,
+                  "n_holes": 14,
+                  "mean_grade_gt": 1.059
                 }
               ],
               "jorc_measured_threshold_m": 12.5,
@@ -11594,5 +11618,5 @@
       }
     }
   },
-  "updated_at": "2026-04-03T20:24:59.750660+00:00"
+  "updated_at": "2026-04-03T20:51:01.103437+00:00"
 }
