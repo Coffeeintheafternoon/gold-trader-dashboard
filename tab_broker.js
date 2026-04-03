@@ -743,6 +743,7 @@
     // ── Historical P&L actuals ──
     const hist = fund.historical_pnl || {};
     const histYears = Object.keys(hist).sort();
+    const compType  = fund.company_type || 'mining';
     if (histYears.length) {
       const histTitle = document.createElement('div');
       histTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
@@ -757,12 +758,14 @@
       </tr></thead>`;
       const histTbody = document.createElement('tbody');
 
+      // Show gross profit for consumer/general; not relevant for mining
       const histRows = [
-        { label: 'Revenue (A$m)',   key: 'revenue_m',    fmt: v => _fmtNum(v, 0) },
-        { label: 'EBITDA (A$m)',    key: 'ebitda_m',     fmt: v => _fmtNum(v, 0) },
-        { label: 'EBIT (A$m)',      key: 'ebit_m',       fmt: v => _fmtNum(v, 0) },
-        { label: 'Net Income (A$m)',key: 'net_income_m', fmt: v => _fmtNum(v, 0) },
-        { label: 'EPS (A$)',        key: 'eps',          fmt: v => _fmtNum(v, 3) },
+        { label: 'Revenue (A$m)',      key: 'revenue_m',      fmt: v => _fmtNum(v, 0) },
+        ...(compType !== 'mining' ? [{ label: 'Gross Profit (A$m)', key: 'gross_profit_m', fmt: v => _fmtNum(v, 0) }] : []),
+        { label: 'EBITDA (A$m)',       key: 'ebitda_m',       fmt: v => _fmtNum(v, 0) },
+        { label: 'EBIT (A$m)',         key: 'ebit_m',         fmt: v => _fmtNum(v, 0) },
+        { label: 'Net Income (A$m)',   key: 'net_income_m',   fmt: v => _fmtNum(v, 0) },
+        { label: 'EPS (A$)',           key: 'eps',            fmt: v => _fmtNum(v, 3) },
       ];
 
       histRows.forEach(row => {
@@ -832,6 +835,97 @@
       return document.createElement('div');
     }
 
+    return wrap;
+  }
+
+  // ── Valuation Ratios card (non-mining) ────────────────────────────────────
+  function _buildValuationRatiosCard(fund) {
+    const vr   = fund.valuation_ratios || {};
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'Valuation & Returns';
+    wrap.appendChild(hdr);
+
+    const note = document.createElement('div');
+    note.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:12px`;
+    note.textContent = 'source: yfinance';
+    wrap.appendChild(note);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px';
+
+    const cells = [
+      { label: 'Trailing P/E',   v: vr.trailing_pe,    fmt: v => _fmtNum(v, 1) + 'x' },
+      { label: 'Forward P/E',    v: vr.forward_pe,     fmt: v => _fmtNum(v, 1) + 'x' },
+      { label: 'EV/EBITDA',      v: vr.ev_ebitda,      fmt: v => _fmtNum(v, 1) + 'x' },
+      { label: 'Price/Book',     v: vr.price_to_book,  fmt: v => _fmtNum(v, 2) + 'x' },
+      { label: 'Div Yield',      v: vr.div_yield_pct,  fmt: v => _fmtNum(v, 2) + '%' },
+      { label: 'DPS (A$)',       v: vr.div_rate,       fmt: v => 'A$' + _fmtNum(v, 2) },
+      { label: 'Payout Ratio',   v: vr.payout_ratio_pct, fmt: v => _fmtNum(v, 0) + '%' },
+      { label: 'Trailing EPS',   v: vr.trailing_eps,   fmt: v => 'A$' + _fmtNum(v, 3) },
+      { label: 'Forward EPS',    v: vr.forward_eps,    fmt: v => 'A$' + _fmtNum(v, 3) },
+      { label: 'Debt/Equity',    v: vr.debt_to_equity, fmt: v => _fmtNum(v, 1) + '%' },
+      { label: 'Current Ratio',  v: vr.current_ratio,  fmt: v => _fmtNum(v, 2) + 'x' },
+    ];
+
+    cells.forEach(({ label, v, fmt }) => {
+      if (v == null) return;
+      const col = (label.includes('P/E') || label.includes('EV')) && v > 0
+        ? SRC_COLOUR.yfinance : SRC_COLOUR.yfinance;
+      grid.innerHTML += `
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px">
+          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:4px">${label}</div>
+          <div style="font-size:14px;font-weight:700;color:${col}">${fmt(v)}</div>
+        </div>`;
+    });
+
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ── Profitability card (non-mining) ────────────────────────────────────────
+  function _buildProfitabilityCard(fund) {
+    const pr   = fund.profitability || {};
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'Profitability & Growth';
+    wrap.appendChild(hdr);
+
+    const note = document.createElement('div');
+    note.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:12px`;
+    note.textContent = 'source: yfinance (trailing 12 months)';
+    wrap.appendChild(note);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px';
+
+    const cells = [
+      { label: 'Gross Margin',      v: pr.gross_margin_pct,    positive: true },
+      { label: 'Op Margin',         v: pr.op_margin_pct,       positive: true },
+      { label: 'Net Margin',        v: pr.net_margin_pct,      positive: true },
+      { label: 'ROE',               v: pr.roe_pct,             positive: true },
+      { label: 'ROA',               v: pr.roa_pct,             positive: true },
+      { label: 'Revenue Growth',    v: pr.revenue_growth_pct,  positive: null },
+      { label: 'Earnings Growth',   v: pr.earnings_growth_pct, positive: null },
+    ];
+
+    cells.forEach(({ label, v }) => {
+      if (v == null) return;
+      const col = v >= 0 ? SRC_COLOUR.yfinance : '#e05252';
+      grid.innerHTML += `
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px">
+          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:4px">${label}</div>
+          <div style="font-size:14px;font-weight:700;color:${col}">${v >= 0 ? '' : ''}${_fmtNum(v, 2)}%</div>
+        </div>`;
+    });
+
+    wrap.appendChild(grid);
     return wrap;
   }
 
