@@ -137,13 +137,15 @@
         content.appendChild(_buildProfitabilityCard(fund));
     }
 
-    // Page 2 — key metrics + P&L show for ALL company types (universal forecast data)
+    // Page 2 — universal sections (show for ALL company types when PDF data present)
     if (p2.key_metrics && p2.key_metrics.length)
       content.appendChild(_buildForecastTable('Key Metrics', p2.years, p2.key_metrics, 'label', 'values'));
     if (p2.pnl && p2.pnl.length)
       content.appendChild(_buildForecastTable('P&L / Cash Flow Summary (A$m)', p2.years, p2.pnl, 'label', 'values'));
+    if (p2.shareholders && p2.shareholders.length)
+      content.appendChild(_buildShareholdersTable(p2.shareholders));
 
-    // Page 2 — mining-specific sections
+    // Page 2 — mining-specific sections only
     if (companyType === 'mining') {
       if (p2.production_forecasts && p2.production_forecasts.length)
         content.appendChild(_buildForecastTable('Production Forecasts (koz)', p2.years, p2.production_forecasts, 'mine', 'values'));
@@ -160,8 +162,6 @@
         content.appendChild(_buildRRDetailTable('Mineral Resources', p2.resources));
       if (p2.valuation && p2.valuation.length)
         content.appendChild(_buildValuationTable(p2.valuation));
-      if (p2.shareholders && p2.shareholders.length)
-        content.appendChild(_buildShareholdersTable(p2.shareholders));
     }
 
     content.appendChild(_buildNarrativePanel(report));
