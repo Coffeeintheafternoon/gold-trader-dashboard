@@ -122,30 +122,45 @@
     content.appendChild(_buildCoverCard(report, ticker));
     content.appendChild(_buildFundamentalsPanel(fund, report.cover_stats || {}));
     content.appendChild(_buildPriceChart(report));
-    content.appendChild(_buildProductionTable(report));
+    const companyType = fund.company_type || 'mining';
 
-    // Page 2 sections
-    if (p2.production_forecasts && p2.production_forecasts.length)
-      content.appendChild(_buildForecastTable('Production Forecasts (koz)', p2.years, p2.production_forecasts, 'mine', 'values'));
-    if (p2.aisc_forecasts && p2.aisc_forecasts.length)
-      content.appendChild(_buildForecastTable('AISC Forecasts (A$/oz)', p2.years, p2.aisc_forecasts, 'mine', 'values'));
-    if (p2.key_metrics && p2.key_metrics.length)
-      content.appendChild(_buildForecastTable('Key Metrics', p2.years, p2.key_metrics, 'label', 'values'));
-    if (p2.commodity_assumptions && p2.commodity_assumptions.length)
-      content.appendChild(_buildForecastTable('Commodity Assumptions', p2.years, p2.commodity_assumptions, 'label', 'values'));
-    if (p2.pnl && p2.pnl.length)
-      content.appendChild(_buildForecastTable('P&L / Cash Flow Summary (A$m)', p2.years, p2.pnl, 'label', 'values'));
-    if (p2.reserves && p2.reserves.length) {
-      content.appendChild(_buildRRDetailTable('Ore Reserves', p2.reserves));
-    } else if (report.cover_stats && _hasCoverKey(report.cover_stats, ['reserves_koz'])) {
-      content.appendChild(_buildRRCard(report));  // fallback summary card
+    // Production table — mining only
+    if (companyType === 'mining') {
+      content.appendChild(_buildProductionTable(report));
     }
-    if (p2.resources && p2.resources.length)
-      content.appendChild(_buildRRDetailTable('Mineral Resources', p2.resources));
-    if (p2.valuation && p2.valuation.length)
-      content.appendChild(_buildValuationTable(p2.valuation));
-    if (p2.shareholders && p2.shareholders.length)
-      content.appendChild(_buildShareholdersTable(p2.shareholders));
+
+    // Valuation ratios + profitability — non-mining (or mining without page2 data)
+    if (companyType !== 'mining' || !Object.keys(p2).length) {
+      if (fund.valuation_ratios && Object.keys(fund.valuation_ratios).some(k => fund.valuation_ratios[k] != null))
+        content.appendChild(_buildValuationRatiosCard(fund));
+      if (fund.profitability && Object.keys(fund.profitability).some(k => fund.profitability[k] != null))
+        content.appendChild(_buildProfitabilityCard(fund));
+    }
+
+    // Page 2 sections — mining only
+    if (companyType === 'mining') {
+      if (p2.production_forecasts && p2.production_forecasts.length)
+        content.appendChild(_buildForecastTable('Production Forecasts (koz)', p2.years, p2.production_forecasts, 'mine', 'values'));
+      if (p2.aisc_forecasts && p2.aisc_forecasts.length)
+        content.appendChild(_buildForecastTable('AISC Forecasts (A$/oz)', p2.years, p2.aisc_forecasts, 'mine', 'values'));
+      if (p2.key_metrics && p2.key_metrics.length)
+        content.appendChild(_buildForecastTable('Key Metrics', p2.years, p2.key_metrics, 'label', 'values'));
+      if (p2.commodity_assumptions && p2.commodity_assumptions.length)
+        content.appendChild(_buildForecastTable('Commodity Assumptions', p2.years, p2.commodity_assumptions, 'label', 'values'));
+      if (p2.pnl && p2.pnl.length)
+        content.appendChild(_buildForecastTable('P&L / Cash Flow Summary (A$m)', p2.years, p2.pnl, 'label', 'values'));
+      if (p2.reserves && p2.reserves.length) {
+        content.appendChild(_buildRRDetailTable('Ore Reserves', p2.reserves));
+      } else if (report.cover_stats && _hasCoverKey(report.cover_stats, ['reserves_koz'])) {
+        content.appendChild(_buildRRCard(report));
+      }
+      if (p2.resources && p2.resources.length)
+        content.appendChild(_buildRRDetailTable('Mineral Resources', p2.resources));
+      if (p2.valuation && p2.valuation.length)
+        content.appendChild(_buildValuationTable(p2.valuation));
+      if (p2.shareholders && p2.shareholders.length)
+        content.appendChild(_buildShareholdersTable(p2.shareholders));
+    }
 
     content.appendChild(_buildNarrativePanel(report));
     if (td.reports.length > 1) {
