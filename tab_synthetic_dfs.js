@@ -70,12 +70,12 @@ async function initSynthDFSTab() {
   Object.entries(_synthDFSData.tickers || {}).forEach(([ticker, tdata]) => {
     const mi = tdata.mine_info;
     if (mi && mi.lat != null && mi.lng != null) {
-      _sdfsInitMineMap(ticker, mi.lat, mi.lng, mi);
+      _sdfsInitMineMap(ticker, mi.lat, mi.lng, mi, tdata.drill_collars);
     }
   });
 }
 
-function _sdfsInitMineMap(ticker, lat, lng, mi) {
+function _sdfsInitMineMap(ticker, lat, lng, mi, drillCollars) {
   if (!window.L) return;
   const containerId = `sdfs-mine-map-${ticker}`;
   const container = document.getElementById(containerId);
@@ -84,7 +84,7 @@ function _sdfsInitMineMap(ticker, lat, lng, mi) {
   const map = L.map(containerId, { zoomControl: true, attributionControl: true })
     .setView([lat, lng], 14);
 
-  // ── Base layers from config ───────────────────────────────────────────────
+  // ── Base layers ───────────────────────────────────────────────────────────
   const baseLayers = {};
   _SDFS_BASE_LAYERS.forEach(cfg => {
     const layer = L.tileLayer(cfg.url, { attribution: cfg.attribution, maxZoom: cfg.maxZoom || 19 });
@@ -92,8 +92,7 @@ function _sdfsInitMineMap(ticker, lat, lng, mi) {
     baseLayers[cfg.name] = layer;
   });
 
-  // ── Mine-specific overlay layers from mine_info.map_overlays ─────────────
-  // Each entry: { name, url, type: "tile"|"wms", options: {}, default: bool }
+  // ── Mine-specific tile/WMS overlays from mine_info.map_overlays ───────────
   const overlayLayers = {};
   const mapOverlays = (mi && mi.map_overlays) || [];
   mapOverlays.forEach(ov => {
@@ -107,15 +106,46 @@ function _sdfsInitMineMap(ticker, lat, lng, mi) {
     overlayLayers[ov.name] = layer;
   });
 
-  // ── Layer control (only show if >1 base or any overlays) ─────────────────
-  if (_SDFS_BASE_LAYERS.length > 1 || Object.keys(overlayLayers).length) {
-    L.control.layers(baseLayers, overlayLayers, { collapsed: true }).addTo(map);
+  // ── Drill collar layers ───────────────────────────────────────────────────
+  // ASX holes: orange — company's announced drill holes (significant intercepts only)
+  // WAMEX holes: cyan  — government-registered historical holes (complete assay record)
+  const asxCollars   = (drillCollars && drillCollars.asx)   || [];
+  const wamexCollars = (drillCollars && drillCollars.wamex) || [];
+
+  function _makeCollarLayer(collars, color, label) {
+    const group = L.layerGroup();
+    collars.forEach(c => {
+      L.circleMarker([c.lat, c.lng], {
+        radius: 4, color: color, fillColor: color,
+        fillOpacity: 0.75, weight: 1.5,
+      }).bindTooltip(
+        `<b>${c.hole_id}</b><br>Depth: ${c.depth_m}m<br><span style="color:${color}">${label}</span>`,
+        { sticky: true, direction: 'top', offset: [0, -4] }
+      ).addTo(group);
+    });
+    return group;
   }
 
-  // Mine site marker
+  if (asxCollars.length) {
+    const layer = _makeCollarLayer(asxCollars, '#ff8c00', `ASX drill (${asxCollars.length} holes)`);
+    layer.addTo(map);
+    overlayLayers[`ASX Drill Holes (${asxCollars.length})`] = layer;
+  }
+  if (wamexCollars.length) {
+    const layer = _makeCollarLayer(wamexCollars, '#00bcd4', `WAMEX historical (${wamexCollars.length} holes)`);
+    layer.addTo(map);
+    overlayLayers[`WAMEX Historical Holes (${wamexCollars.length})`] = layer;
+  }
+
+  // ── Layer control ─────────────────────────────────────────────────────────
+  if (_SDFS_BASE_LAYERS.length > 1 || Object.keys(overlayLayers).length) {
+    L.control.layers(baseLayers, overlayLayers, { collapsed: false }).addTo(map);
+  }
+
+  // Mine site centre marker
   L.circleMarker([lat, lng], {
     radius: 7, color: '#8bc34a', fillColor: '#8bc34a', fillOpacity: 0.55, weight: 2
-  }).addTo(map);
+  }).bindTooltip(`${ticker} — ${mi.project || ''}`, { permanent: false }).addTo(map);
 
   _mineMapInstances[ticker] = map;
 }
