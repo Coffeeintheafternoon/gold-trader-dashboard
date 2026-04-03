@@ -734,7 +734,7 @@
       wrap.appendChild(histTitle);
 
       const histTable = document.createElement('table');
-      histTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+      histTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px';
       histTable.innerHTML = `<thead><tr style="color:var(--muted)">
         <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
         ${histYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
@@ -750,7 +750,6 @@
       ];
 
       histRows.forEach(row => {
-        // skip if no data for any year
         const hasAny = histYears.some(y => hist[y] && hist[y][row.key] != null);
         if (!hasAny) return;
         const tr = document.createElement('tr');
@@ -767,6 +766,49 @@
 
       histTable.appendChild(histTbody);
       wrap.appendChild(histTable);
+    }
+
+    // ── Historical Balance Sheet ──
+    const bs = fund.historical_bs || {};
+    const bsYears = Object.keys(bs).sort();
+    if (bsYears.length) {
+      const bsTitle = document.createElement('div');
+      bsTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      bsTitle.textContent = 'Historical Balance Sheet (yfinance)';
+      wrap.appendChild(bsTitle);
+
+      const bsTable = document.createElement('table');
+      bsTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+      bsTable.innerHTML = `<thead><tr style="color:var(--muted)">
+        <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
+        ${bsYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
+      </tr></thead>`;
+      const bsTbody = document.createElement('tbody');
+
+      const bsRows = [
+        { label: 'Cash (A$m)',        key: 'cash_m',        fmt: v => _fmtNum(v, 1) },
+        { label: 'Net Cash (A$m)',    key: 'net_cash_m',    fmt: v => _fmtNum(v, 1) },
+        { label: 'Total Assets (A$m)',key: 'total_assets_m',fmt: v => _fmtNum(v, 1) },
+        { label: 'Net Equity (A$m)',  key: 'net_equity_m',  fmt: v => _fmtNum(v, 1) },
+      ];
+
+      bsRows.forEach(row => {
+        const hasAny = bsYears.some(y => bs[y] && bs[y][row.key] != null);
+        if (!hasAny) return;
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-top:1px solid #1a1a1a';
+        let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
+        bsYears.forEach(y => {
+          const v = bs[y] ? bs[y][row.key] : null;
+          const col = v != null && v < 0 ? '#e05252' : SRC_COLOUR.yfinance;
+          cells += `<td style="padding:5px 8px;color:${v != null ? col : '#444'};text-align:right">${v != null ? row.fmt(v) : '—'}</td>`;
+        });
+        tr.innerHTML = cells;
+        bsTbody.appendChild(tr);
+      });
+
+      bsTable.appendChild(bsTbody);
+      wrap.appendChild(bsTable);
     }
 
     // If nothing to show, hide the panel
