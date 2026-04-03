@@ -948,9 +948,20 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(faces.flat()), 1));
     geometry.computeVertexNormals();
 
-    // DoubleSide so the solid reads correctly from any angle and when sliced
+    // Per-vertex grade colouring — uses vertex_grades written by mission1_gempy.py
+    // Falls back to flat colour if vertex_grades is absent (old mesh files).
+    const hasVG = Array.isArray(meshData.vertex_grades) && meshData.vertex_grades.length === verts.length;
+    if (hasVG && typeof _gradeColor === 'function') {
+      const colArr = new Float32Array(verts.length * 3);
+      meshData.vertex_grades.forEach((g, i) => {
+        const c = _gradeColor(g, false, 'heat');
+        colArr[i * 3] = c.r; colArr[i * 3 + 1] = c.g; colArr[i * 3 + 2] = c.b;
+      });
+      geometry.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
+    }
+
     const solidMat = new THREE.MeshPhongMaterial({
-      color,
+      ...(hasVG && typeof _gradeColor === 'function' ? { vertexColors: true } : { color }),
       transparent: true,
       opacity,
       side: THREE.DoubleSide,
