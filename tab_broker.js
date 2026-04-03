@@ -1,6 +1,10 @@
 // tab_broker.js — Generated Equity Reports tab
 // Fetches generated_report_data.json and renders cover card, price chart,
 // production table, Claude narrative sections, and history timeline.
+//
+// Data-source colour coding (building phase):
+//   yfinance data  →  #4a9eff  (blue)
+//   PDF data       →  #e8e8e8  (white)
 
 (function () {
   'use strict';
@@ -10,23 +14,35 @@
   let _selectedReportId = null;
   let _chartInstance   = null;
 
-  // ── Friendly metric labels ─────────────────────────────────────────────────
-  const METRIC_LABELS = {
-    gold_production_koz: 'Gold Production',
-    gold_sales_koz:      'Gold Sales',
-    head_grade_gt:       'Head Grade',
-    recovery_pct:        'Mill Recovery',
-    aisc_per_oz:         'AISC',
-    ore_milled_mt:       'Ore Milled',
-    ore_mined_mt:        'Ore Mined',
-    waste_mined_mt:      'Waste Mined',
-    strip_ratio:         'Strip Ratio',
-    cash_cost_per_oz:    'Cash Cost',
-    capex_m:             'Capex',
-    cash_m:              'Cash & Bullion',
+  // Source colours — remove once data is fully verified
+  const SRC_COLOUR = {
+    yfinance: '#4a9eff',
+    pdf:      '#e8e8e8',
+  };
+  const SRC_LABEL = {
+    yfinance: 'yf',
+    pdf:      '',
   };
 
-  // ── Entry point ─────────────────────────────────────────────────────────────
+  const METRIC_LABELS = {
+    gold_production_koz:  'Gold Production',
+    annual_production_koz:'Full-Year Production',
+    gold_sales_koz:       'Gold Sales',
+    head_grade_gt:        'Head Grade',
+    recovery_pct:         'Mill Recovery',
+    recovery_prior_pct:   'Prior Recovery',
+    aisc_per_oz:          'AISC',
+    ore_milled_kt:        'Ore Milled',
+    ore_mined_kt:         'Ore Mined',
+    waste_mined_kt:       'Waste Mined',
+    strip_ratio:          'Strip Ratio',
+    cash_cost_per_oz:     'Cash Cost',
+    capex_m:              'Capex',
+    cash_m:               'Cash',
+    bullion_m:            'Bullion on Hand',
+  };
+
+  // ── Entry point ────────────────────────────────────────────────────────────
   window.initBrokerTab = function () {
     if (_data) { _render(); return; }
     fetch('generated_report_data.json?_=' + Date.now())
@@ -40,7 +56,7 @@
       });
   };
 
-  // ── Top-level render ──────────────────────────────────────────────────────
+  // ── Top-level render ────────────────────────────────────────────────────────
   function _render() {
     const loading = document.getElementById('broker-loading');
     const body    = document.getElementById('broker-body');
@@ -53,8 +69,7 @@
     if (body)    body.style.display    = 'block';
     if (body)    body.innerHTML        = '';
 
-    const bar = _buildTickerBar(_data.tickers);
-    body.appendChild(bar);
+    body.appendChild(_buildTickerBar(_data.tickers));
 
     const content = document.createElement('div');
     content.id = 'broker-content';
@@ -64,7 +79,7 @@
     _renderTicker(_selectedTicker);
   }
 
-  // ── Ticker bar ────────────────────────────────────────────────────────────
+  // ── Ticker bar ──────────────────────────────────────────────────────────────
   function _buildTickerBar(tickers) {
     const bar = document.createElement('div');
     bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px';
@@ -73,7 +88,7 @@
       btn.className = 'tab-btn' + (t.ticker === _selectedTicker ? ' active' : '');
       btn.textContent = t.ticker;
       btn.onclick = () => {
-        _selectedTicker  = t.ticker;
+        _selectedTicker   = t.ticker;
         _selectedReportId = null;
         document.querySelectorAll('#broker-body .tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -84,7 +99,7 @@
     return bar;
   }
 
-  // ── Render one ticker ────────────────────────────────────────────────────
+  // ── Render one ticker ────────────────────────────────────────────────────────
   function _renderTicker(ticker) {
     const content = document.getElementById('broker-content');
     content.innerHTML = '';
@@ -99,24 +114,65 @@
     if (!_selectedReportId) _selectedReportId = td.reports[0].id;
     const report = td.reports.find(r => r.id === _selectedReportId) || td.reports[0];
 
+    content.appendChild(_buildSourceLegend());
     content.appendChild(_buildCoverCard(report, ticker));
     content.appendChild(_buildPriceChart(report));
     content.appendChild(_buildProductionTable(report));
+    if (report.cover_stats && _hasCoverKey(report.cover_stats, ['reserves_koz','resources_koz'])) {
+      content.appendChild(_buildRRCard(report));
+    }
     content.appendChild(_buildNarrativePanel(report));
     if (td.reports.length > 1) {
       content.appendChild(_buildHistoryTimeline(td.reports, ticker));
     }
   }
 
-  // ── Cover card ────────────────────────────────────────────────────────────
+  // ── Source colour legend ─────────────────────────────────────────────────────
+  function _buildSourceLegend() {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:16px;margin-bottom:12px;font-size:10px;color:var(--muted)';
+    row.innerHTML = `
+      <span>Data sources:</span>
+      <span><span style="color:${SRC_COLOUR.pdf};font-weight:700">■</span> PDF extract</span>
+      <span><span style="color:${SRC_COLOUR.yfinance};font-weight:700">■</span> yfinance (live)</span>
+    `;
+    return row;
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  /** Get value + colour from a cover_stats entry (new {value, source} or legacy flat). */
+  function _statVal(cs, key) {
+    const entry = cs[key];
+    if (entry === null || entry === undefined) return { v: null, colour: '#555' };
+    if (typeof entry === 'object' && 'value' in entry) {
+      return { v: entry.value, colour: SRC_COLOUR[entry.source] || '#e8e8e8' };
+    }
+    return { v: entry, colour: '#e8e8e8' };  // legacy flat format
+  }
+
+  function _hasCoverKey(cs, keys) {
+    return keys.some(k => {
+      const e = cs[k];
+      if (!e) return false;
+      const v = typeof e === 'object' ? e.value : e;
+      return v != null;
+    });
+  }
+
+  function _fmtNum(v, dp = 2) {
+    return v != null ? Number(v).toFixed(dp) : 'n/a';
+  }
+
+  // ── Cover card ───────────────────────────────────────────────────────────────
   function _buildCoverCard(report, ticker) {
-    const s = report.cover_stats || {};
+    const cs   = report.cover_stats || {};
     const card = document.createElement('div');
     card.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
-    const fmt = (v, pfx = 'A$', sfx = '') =>
-      v != null ? `${pfx}${Number(v).toFixed(2)}${sfx}` : 'n/a';
-    const fmtM = v => v != null ? `A$${Number(v).toFixed(0)}m` : 'n/a';
+    const price   = _statVal(cs, 'price');
+    const pt      = _statVal(cs, 'price_target');
+    const tsr     = _statVal(cs, 'tsr_pct');
 
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
@@ -125,38 +181,56 @@
           <span style="font-size:13px;color:var(--muted);margin-left:12px">${report.period || ''}</span>
           <span style="font-size:11px;color:#444;margin-left:8px">${(report.report_date || '').slice(0,10)}</span>
         </div>
-        <span style="font-size:20px;font-weight:900;color:var(--gold)">${fmt(s.price)}</span>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:900;color:${price.colour}">${price.v != null ? 'A$' + _fmtNum(price.v) : 'n/a'}</div>
+          ${pt.v != null ? `<div style="font-size:11px;color:${pt.colour}">PT A$${_fmtNum(pt.v)}${tsr.v != null ? ` &nbsp;TSR <span style="color:${tsr.colour}">${_fmtNum(tsr.v,0)}%</span>` : ''}</div>` : ''}
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:16px">
-        ${_statCell('Market Cap', fmtM(s.mktcap_m))}
-        ${_statCell('Shares on Issue', s.shares_m != null ? `${Number(s.shares_m).toFixed(0)}m` : 'n/a')}
-        ${_statCell('52wk High', fmt(s.wk52_high))}
-        ${_statCell('52wk Low', fmt(s.wk52_low))}
-        ${_statCell('ADTO', s.adto_m != null ? `A$${s.adto_m}m` : 'n/a')}
-        ${_statCell('Net Cash (Debt)', s.net_cash_m != null ? `A$${Number(s.net_cash_m).toFixed(0)}m` : 'n/a')}
+        ${_statCell('Market Cap',     cs, 'mktcap_m',   v => 'A$' + _fmtNum(v,0) + 'm')}
+        ${_statCell('Shares on Issue',cs, 'shares_m',   v => _fmtNum(v,0) + 'm')}
+        ${_statCell('52wk High',      cs, 'wk52_high',  v => 'A$' + _fmtNum(v))}
+        ${_statCell('52wk Low',       cs, 'wk52_low',   v => 'A$' + _fmtNum(v))}
+        ${_statCell('ADTO',           cs, 'adto_m',     v => 'A$' + _fmtNum(v) + 'm')}
+        ${_statCell('Net Cash (Debt)',cs, 'net_cash_m', v => 'A$' + _fmtNum(v,0) + 'm')}
+        ${_statCell('EV',             cs, 'ev_m',       v => 'A$' + _fmtNum(v,0) + 'm')}
+        ${_statCellRaw('Bullion on Hand', cs, 'bullion_m', v => 'A$' + _fmtNum(v,0) + 'm')}
       </div>
     `;
     return card;
   }
 
-  function _statCell(label, value) {
+  function _statCell(label, cs, key, fmt) {
+    const { v, colour } = _statVal(cs, key);
+    const display = v != null ? fmt(v) : 'n/a';
+    const src = cs[key] && typeof cs[key] === 'object' ? cs[key].source : null;
+    const badge = src === 'yfinance'
+      ? `<span style="font-size:8px;color:${SRC_COLOUR.yfinance};margin-left:3px">yf</span>` : '';
     return `
       <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:10px 12px">
         <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:4px">${label}</div>
-        <div style="font-size:14px;font-weight:700;color:#ddd">${value}</div>
-      </div>
-    `;
+        <div style="font-size:14px;font-weight:700;color:${colour}">${display}${badge}</div>
+      </div>`;
   }
 
-  // ── Price chart ──────────────────────────────────────────────────────────
+  function _statCellRaw(label, cs, key, fmt) {
+    return _statCell(label, cs, key, fmt);
+  }
+
+  // ── Price chart ──────────────────────────────────────────────────────────────
   function _buildPriceChart(report) {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
     const title = document.createElement('div');
-    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px';
+    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
     title.textContent = '90-Day Price Performance (Indexed to 100)';
     wrap.appendChild(title);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:10px`;
+    src.textContent = 'source: yfinance';
+    wrap.appendChild(src);
 
     const hist = report.price_history || [];
     if (!hist.length) {
@@ -165,11 +239,10 @@
     }
 
     const canvas = document.createElement('canvas');
-    canvas.id     = 'broker-price-chart';
+    canvas.id    = 'broker-price-chart';
     canvas.style.cssText = 'width:100%;max-height:220px';
     wrap.appendChild(canvas);
 
-    // Defer chart init until after DOM insert
     requestAnimationFrame(() => {
       if (typeof Chart === 'undefined') return;
       const labels  = hist.map(d => d.date);
@@ -177,17 +250,15 @@
       const axjo    = hist.map(d => d.axjo ?? null);
       const hasAxjo = axjo.some(v => v != null);
 
-      const datasets = [
-        {
-          label: report.ticker || 'Stock',
-          data:  prices,
-          borderColor: '#c9a227',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.3,
-          fill: false,
-        },
-      ];
+      const datasets = [{
+        label: report.ticker || 'Stock',
+        data:  prices,
+        borderColor: SRC_COLOUR.yfinance,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+      }];
       if (hasAxjo) {
         datasets.push({
           label: 'ASX 200',
@@ -210,14 +281,8 @@
           animation: false,
           plugins: { legend: { labels: { color: '#888', font: { size: 11 } } } },
           scales: {
-            x: {
-              ticks: { color: '#444', maxTicksLimit: 8, font: { size: 10 } },
-              grid:  { color: '#111' },
-            },
-            y: {
-              ticks: { color: '#555', font: { size: 10 } },
-              grid:  { color: '#1a1a1a' },
-            },
+            x: { ticks: { color: '#444', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: '#111' } },
+            y: { ticks: { color: '#555', font: { size: 10 } }, grid: { color: '#1a1a1a' } },
           },
         },
       });
@@ -226,15 +291,20 @@
     return wrap;
   }
 
-  // ── Production table ────────────────────────────────────────────────────
+  // ── Production table ────────────────────────────────────────────────────────
   function _buildProductionTable(report) {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
     const title = document.createElement('div');
-    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px';
+    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
     title.textContent = `Production Actuals — ${report.period || ''}`;
     wrap.appendChild(title);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
 
     const metrics = report.metrics || [];
     if (!metrics.length) {
@@ -242,28 +312,21 @@
       return wrap;
     }
 
-    // Group by mine
     const mines = [...new Set(metrics.map(m => m.mine))];
-    const mineOrder = ['Group', ...mines.filter(m => m !== 'Group')];
+    const mineOrder = ['Group', ...mines.filter(m => m !== 'Group').sort()];
+    const orderedMines = mineOrder.filter(m => mines.includes(m));
 
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
-
-    // Build header: Metric | Unit | [mine1] | [mine2] ...
-    const orderedMines = mineOrder.filter(m => mines.includes(m));
     table.innerHTML = `
       <thead>
         <tr style="color:var(--muted)">
           <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
           <th style="padding:4px 8px;font-weight:600;text-align:right">Unit</th>
-          ${orderedMines.map(m =>
-            `<th style="padding:4px 8px;font-weight:600;text-align:right">${m}</th>`
-          ).join('')}
+          ${orderedMines.map(m => `<th style="padding:4px 8px;font-weight:600;text-align:right">${m}</th>`).join('')}
         </tr>
-      </thead>
-    `;
+      </thead>`;
 
-    // Collect all metric names
     const allMetrics = [...new Set(metrics.map(m => m.metric_name))];
     const tbody = document.createElement('tbody');
 
@@ -278,12 +341,14 @@
 
       let cells = `
         <td style="padding:6px 8px;color:#ccc">${label}</td>
-        <td style="padding:6px 8px;color:var(--muted);text-align:right">${unit}</td>
-      `;
+        <td style="padding:6px 8px;color:var(--muted);text-align:right">${unit}</td>`;
+
       orderedMines.forEach(mine => {
         const m = rowMetrics.find(r => r.mine === mine);
         const val = m && m.actual != null ? Number(m.actual).toFixed(1) : '—';
-        cells += `<td style="padding:6px 8px;color:${m ? '#ddd' : '#333'};text-align:right">${val}</td>`;
+        const src = m ? (m.source || 'pdf') : null;
+        const colour = m ? (SRC_COLOUR[src] || SRC_COLOUR.pdf) : '#333';
+        cells += `<td style="padding:6px 8px;color:${colour};text-align:right">${val}</td>`;
       });
 
       tr.innerHTML = cells;
@@ -295,7 +360,49 @@
     return wrap;
   }
 
-  // ── Narrative panel ───────────────────────────────────────────────────────
+  // ── R&R card ─────────────────────────────────────────────────────────────────
+  function _buildRRCard(report) {
+    const cs   = report.cover_stats || {};
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    title.textContent = 'Reserves & Resources';
+    wrap.appendChild(title);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
+
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px';
+
+    const rrRows = [
+      ['Ore Reserves',    'reserves_koz',  v => _fmtNum(v,0) + ' koz'],
+      ['Reserve Grade',   'reserves_gt',   v => _fmtNum(v,2) + ' g/t'],
+      ['Reserve Tonnes',  'reserves_mt',   v => _fmtNum(v,1) + ' mt'],
+      ['Mineral Resources','resources_koz', v => _fmtNum(v,0) + ' koz'],
+      ['Resource Grade',  'resources_gt',  v => _fmtNum(v,2) + ' g/t'],
+      ['Resource Tonnes', 'resources_mt',  v => _fmtNum(v,1) + ' mt'],
+    ];
+
+    rrRows.forEach(([label, key, fmt]) => {
+      const { v, colour } = _statVal(cs, key);
+      if (v == null) return;
+      grid.innerHTML += `
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:10px 12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:4px">${label}</div>
+          <div style="font-size:14px;font-weight:700;color:${colour}">${fmt(v)}</div>
+        </div>`;
+    });
+
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ── Narrative panel ────────────────────────────────────────────────────────
   function _buildNarrativePanel(report) {
     const narrs = report.narratives || {};
     const wrap  = document.createElement('div');
@@ -307,14 +414,9 @@
       { key: 'production',   label: 'Production Analysis' },
       { key: 'outlook',      label: 'Outlook' },
     ];
-
-    // Placeholder sections (dimmed cards)
     const placeholders = [
-      'Earnings Estimates',
-      'Valuation',
-      'Financials',
-      'Resources & Reserves',
-      'Commodity Assumptions',
+      'Earnings Estimates', 'Valuation', 'Financials',
+      'Resources & Reserves Detail', 'Commodity Assumptions',
     ];
 
     sections.forEach(s => {
@@ -334,21 +436,19 @@
       wrap.appendChild(card);
     });
 
-    // Placeholder cards
     placeholders.forEach(label => {
       const card = document.createElement('div');
       card.style.cssText = 'background:#0a0a0a;border:1px dashed #1f1f1f;border-radius:6px;padding:16px 22px;margin-bottom:10px;opacity:0.5';
       card.innerHTML = `
         <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:#333;text-transform:uppercase;margin-bottom:6px">${label}</div>
-        <div style="font-size:12px;color:#2a2a2a">Coming soon</div>
-      `;
+        <div style="font-size:12px;color:#2a2a2a">Coming soon</div>`;
       wrap.appendChild(card);
     });
 
     return wrap;
   }
 
-  // ── History timeline ────────────────────────────────────────────────────
+  // ── History timeline ───────────────────────────────────────────────────────
   function _buildHistoryTimeline(reports, ticker) {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
@@ -368,16 +468,11 @@
         background:${isActive ? '#c9a22722' : '#0a0a0a'};
         border:1px solid ${isActive ? '#c9a22788' : '#222'};
         border-radius:4px;padding:6px 12px;cursor:pointer;font-size:11px;
-        color:${isActive ? '#c9a227' : '#888'};text-align:left;
-      `;
+        color:${isActive ? '#c9a227' : '#888'};text-align:left;`;
       node.innerHTML = `
         <div style="font-weight:700">${r.period || r.report_date}</div>
-        <div style="font-size:10px;color:var(--muted)">${(r.report_date || '').slice(0,10)}</div>
-      `;
-      node.onclick = () => {
-        _selectedReportId = r.id;
-        _renderTicker(ticker);
-      };
+        <div style="font-size:10px;color:var(--muted)">${(r.report_date || '').slice(0,10)}</div>`;
+      node.onclick = () => { _selectedReportId = r.id; _renderTicker(ticker); };
       timeline.appendChild(node);
     });
 
