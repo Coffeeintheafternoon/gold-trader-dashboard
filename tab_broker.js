@@ -142,8 +142,13 @@
       content.appendChild(_buildForecastTable('Key Metrics', p2.years, p2.key_metrics, 'label', 'values'));
     if (p2.pnl && p2.pnl.length)
       content.appendChild(_buildForecastTable('P&L / Cash Flow Summary (A$m)', p2.years, p2.pnl, 'label', 'values'));
-    if (p2.shareholders && p2.shareholders.length)
+
+    // Shareholders — prefer PDF extract, fall back to yfinance institutional holders
+    if (p2.shareholders && p2.shareholders.length) {
       content.appendChild(_buildShareholdersTable(p2.shareholders));
+    } else if (fund.shareholders && fund.shareholders.length) {
+      content.appendChild(_buildYfShareholdersTable(fund.shareholders));
+    }
 
     // Page 2 — mining-specific sections only
     if (companyType === 'mining') {
@@ -624,14 +629,18 @@
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
+    const isMining = (fund.company_type || 'mining') === 'mining';
+
     const hdr = document.createElement('div');
     hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
-    hdr.textContent = 'Independent Estimates (Our Data vs PDF Holdout)';
+    hdr.textContent = isMining
+      ? 'Independent Estimates (Our Data vs PDF Holdout)'
+      : 'Independent Estimates (yfinance)';
     wrap.appendChild(hdr);
 
     const note = document.createElement('div');
     note.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:16px`;
-    note.textContent = 'source: yfinance — independently computed, not from the broker PDF';
+    note.textContent = 'source: yfinance — independently sourced';
     wrap.appendChild(note);
 
     // ── Price target comparison ──
@@ -676,8 +685,8 @@
       wrap.appendChild(ptRow);
     }
 
-    // ── Gold spot ──
-    if (fund.gold_spot_aud != null) {
+    // ── Gold spot (mining only) ──
+    if (isMining && fund.gold_spot_aud != null) {
       const goldRow = document.createElement('div');
       goldRow.style.cssText = 'margin-bottom:14px';
       const goldTitle = document.createElement('div');
@@ -928,6 +937,45 @@
     });
 
     wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ── yfinance institutional holders table ─────────────────────────────────
+  function _buildYfShareholdersTable(rows) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'Institutional Holders';
+    wrap.appendChild(hdr);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:10px`;
+    src.textContent = 'source: yfinance institutional holders';
+    wrap.appendChild(src);
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+    table.innerHTML = `<thead><tr style="color:var(--muted)">
+      <th style="text-align:left;padding:4px 8px;font-weight:600">Holder</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Shares (m)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Stake</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.style.cssText = 'border-top:1px solid #1a1a1a';
+      tr.innerHTML = `
+        <td style="padding:5px 8px;color:#ccc">${r.name || ''}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${r.shares_m != null ? _fmtNum(r.shares_m, 1) : '—'}</td>
+        <td style="padding:5px 8px;color:${SRC_COLOUR.yfinance};text-align:right">${r.pct != null ? _fmtNum(r.pct, 2) + '%' : '—'}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
     return wrap;
   }
 
