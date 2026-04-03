@@ -1,84 +1,73 @@
-// tab_broker.js — Broker Research Report tab
-// Fetches broker_data.json and renders report cards, variance tables,
-// Claude narrative, and report history timeline.
+// tab_broker.js — Generated Equity Reports tab
+// Fetches generated_report_data.json and renders cover card, price chart,
+// production table, Claude narrative sections, and history timeline.
 
 (function () {
   'use strict';
 
-  let _data = null;
-  let _selectedTicker = null;
+  let _data            = null;
+  let _selectedTicker  = null;
   let _selectedReportId = null;
+  let _chartInstance   = null;
 
-  // ── Friendly metric labels ──────────────────────────────────────────────
+  // ── Friendly metric labels ─────────────────────────────────────────────────
   const METRIC_LABELS = {
     gold_production_koz: 'Gold Production',
+    gold_sales_koz:      'Gold Sales',
     head_grade_gt:       'Head Grade',
     recovery_pct:        'Mill Recovery',
     aisc_per_oz:         'AISC',
     ore_milled_mt:       'Ore Milled',
+    ore_mined_mt:        'Ore Mined',
+    waste_mined_mt:      'Waste Mined',
     strip_ratio:         'Strip Ratio',
     cash_cost_per_oz:    'Cash Cost',
     capex_m:             'Capex',
+    cash_m:              'Cash & Bullion',
   };
 
-  // ── Verdict colours ─────────────────────────────────────────────────────
-  const VERDICT_COLOUR = {
-    BEAT:    '#c9a227',
-    MISS:    '#e05252',
-    MIXED:   '#e07f2a',
-    IN_LINE: '#555',
-    UNKNOWN: '#444',
-  };
-
-  // ── Entry point ─────────────────────────────────────────────────────────
+  // ── Entry point ─────────────────────────────────────────────────────────────
   window.initBrokerTab = function () {
     if (_data) { _render(); return; }
-    fetch('broker_data.json?_=' + Date.now())
+    fetch('generated_report_data.json?_=' + Date.now())
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(json => {
-        _data = json;
-        _render();
-      })
+      .then(json => { _data = json; _render(); })
       .catch(err => {
-        document.getElementById('broker-loading').textContent =
-          'broker_data.json not found — ingest a report first.';
+        const el = document.getElementById('broker-loading');
+        if (el) el.textContent =
+          'No generated reports found. Run scripts/generate_equity_report.py to create one.';
         console.warn('broker tab:', err);
       });
   };
 
-  // ── Top-level render ─────────────────────────────────────────────────────
+  // ── Top-level render ──────────────────────────────────────────────────────
   function _render() {
     const loading = document.getElementById('broker-loading');
     const body    = document.getElementById('broker-body');
-
     if (!_data || !_data.tickers || !_data.tickers.length) {
-      loading.textContent = 'No broker reports ingested yet. Run scripts/ingest_broker_report.py to add one.';
+      if (loading) loading.textContent =
+        'No generated reports. Run scripts/generate_equity_report.py to create one.';
       return;
     }
+    if (loading) loading.style.display = 'none';
+    if (body)    body.style.display    = 'block';
+    if (body)    body.innerHTML        = '';
 
-    loading.style.display = 'none';
-    body.style.display    = 'block';
-    body.innerHTML        = '';
-
-    // Ticker selector bar
     const bar = _buildTickerBar(_data.tickers);
     body.appendChild(bar);
 
-    // Content area
     const content = document.createElement('div');
     content.id = 'broker-content';
     body.appendChild(content);
 
-    // Select first ticker by default
     if (!_selectedTicker) _selectedTicker = _data.tickers[0].ticker;
     _renderTicker(_selectedTicker);
   }
 
-  // ── Ticker selector bar ──────────────────────────────────────────────────
+  // ── Ticker bar ────────────────────────────────────────────────────────────
   function _buildTickerBar(tickers) {
     const bar = document.createElement('div');
     bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px';
-
     tickers.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'tab-btn' + (t.ticker === _selectedTicker ? ' active' : '');
@@ -97,103 +86,207 @@
 
   // ── Render one ticker ────────────────────────────────────────────────────
   function _renderTicker(ticker) {
-    const content  = document.getElementById('broker-content');
+    const content = document.getElementById('broker-content');
     content.innerHTML = '';
+    if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
 
-    const tickerData = _data.tickers.find(t => t.ticker === ticker);
-    if (!tickerData || !tickerData.reports.length) {
+    const td = _data.tickers.find(t => t.ticker === ticker);
+    if (!td || !td.reports.length) {
       content.innerHTML = '<p style="color:var(--muted)">No reports for ' + ticker + '</p>';
       return;
     }
 
-    // Default to latest report
-    if (!_selectedReportId) _selectedReportId = tickerData.reports[0].id;
-    const report = tickerData.reports.find(r => r.id === _selectedReportId)
-                || tickerData.reports[0];
+    if (!_selectedReportId) _selectedReportId = td.reports[0].id;
+    const report = td.reports.find(r => r.id === _selectedReportId) || td.reports[0];
 
-    content.appendChild(_buildHeaderCard(report, ticker));
-    content.appendChild(_buildVarianceTable(report));
+    content.appendChild(_buildCoverCard(report, ticker));
+    content.appendChild(_buildPriceChart(report));
+    content.appendChild(_buildProductionTable(report));
     content.appendChild(_buildNarrativePanel(report));
-    if (tickerData.reports.length > 1) {
-      content.appendChild(_buildHistoryTimeline(tickerData.reports, ticker));
+    if (td.reports.length > 1) {
+      content.appendChild(_buildHistoryTimeline(td.reports, ticker));
     }
   }
 
-  // ── Header card ──────────────────────────────────────────────────────────
-  function _buildHeaderCard(report, ticker) {
-    const a = report.analysis || {};
-    const verdict = a.overall_verdict || 'UNKNOWN';
-    const colour  = VERDICT_COLOUR[verdict] || '#444';
-
+  // ── Cover card ────────────────────────────────────────────────────────────
+  function _buildCoverCard(report, ticker) {
+    const s = report.cover_stats || {};
     const card = document.createElement('div');
     card.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
+    const fmt = (v, pfx = 'A$', sfx = '') =>
+      v != null ? `${pfx}${Number(v).toFixed(2)}${sfx}` : 'n/a';
+    const fmtM = v => v != null ? `A$${Number(v).toFixed(0)}m` : 'n/a';
+
     card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
-          <span style="font-size:18px;font-weight:900;color:var(--gold)">${ticker}</span>
-          <span style="font-size:13px;color:var(--muted);margin-left:12px">${report.broker_name}</span>
-          <span style="font-size:12px;color:#444;margin-left:8px">${report.report_date || ''}</span>
-          ${report.report_quarter ? `<span style="font-size:12px;color:#444;margin-left:8px">${report.report_quarter}</span>` : ''}
+          <span style="font-size:22px;font-weight:900;color:var(--gold)">${ticker}</span>
+          <span style="font-size:13px;color:var(--muted);margin-left:12px">${report.period || ''}</span>
+          <span style="font-size:11px;color:#444;margin-left:8px">${(report.report_date || '').slice(0,10)}</span>
         </div>
-        <span style="font-size:11px;font-weight:900;letter-spacing:1px;padding:4px 12px;border-radius:3px;background:${colour}22;color:${colour};border:1px solid ${colour}44">${verdict}</span>
+        <span style="font-size:20px;font-weight:900;color:var(--gold)">${fmt(s.price)}</span>
       </div>
-      ${a.headline ? `<div style="margin-top:12px;font-size:13px;color:#ccc;line-height:1.5">${a.headline}</div>` : ''}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:16px">
+        ${_statCell('Market Cap', fmtM(s.mktcap_m))}
+        ${_statCell('Shares on Issue', s.shares_m != null ? `${Number(s.shares_m).toFixed(0)}m` : 'n/a')}
+        ${_statCell('52wk High', fmt(s.wk52_high))}
+        ${_statCell('52wk Low', fmt(s.wk52_low))}
+        ${_statCell('ADTO', s.adto_m != null ? `A$${s.adto_m}m` : 'n/a')}
+        ${_statCell('Net Cash (Debt)', s.net_cash_m != null ? `A$${Number(s.net_cash_m).toFixed(0)}m` : 'n/a')}
+      </div>
     `;
     return card;
   }
 
-  // ── Variance table ───────────────────────────────────────────────────────
-  function _buildVarianceTable(report) {
+  function _statCell(label, value) {
+    return `
+      <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:4px">${label}</div>
+        <div style="font-size:14px;font-weight:700;color:#ddd">${value}</div>
+      </div>
+    `;
+  }
+
+  // ── Price chart ──────────────────────────────────────────────────────────
+  function _buildPriceChart(report) {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
 
     const title = document.createElement('div');
     title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px';
-    title.textContent = 'Metrics vs Estimates';
+    title.textContent = '90-Day Price Performance (Indexed to 100)';
     wrap.appendChild(title);
 
-    if (!report.variances || !report.variances.length) {
-      wrap.innerHTML += '<p style="color:var(--muted);font-size:12px">No metrics extracted.</p>';
+    const hist = report.price_history || [];
+    if (!hist.length) {
+      wrap.innerHTML += '<p style="color:var(--muted);font-size:12px">No price history available.</p>';
       return wrap;
     }
 
+    const canvas = document.createElement('canvas');
+    canvas.id     = 'broker-price-chart';
+    canvas.style.cssText = 'width:100%;max-height:220px';
+    wrap.appendChild(canvas);
+
+    // Defer chart init until after DOM insert
+    requestAnimationFrame(() => {
+      if (typeof Chart === 'undefined') return;
+      const labels  = hist.map(d => d.date);
+      const prices  = hist.map(d => d.price);
+      const axjo    = hist.map(d => d.axjo ?? null);
+      const hasAxjo = axjo.some(v => v != null);
+
+      const datasets = [
+        {
+          label: report.ticker || 'Stock',
+          data:  prices,
+          borderColor: '#c9a227',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+        },
+      ];
+      if (hasAxjo) {
+        datasets.push({
+          label: 'ASX 200',
+          data:  axjo,
+          borderColor: '#555',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          borderDash: [4,4],
+          tension: 0.3,
+          fill: false,
+        });
+      }
+
+      if (_chartInstance) _chartInstance.destroy();
+      _chartInstance = new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          animation: false,
+          plugins: { legend: { labels: { color: '#888', font: { size: 11 } } } },
+          scales: {
+            x: {
+              ticks: { color: '#444', maxTicksLimit: 8, font: { size: 10 } },
+              grid:  { color: '#111' },
+            },
+            y: {
+              ticks: { color: '#555', font: { size: 10 } },
+              grid:  { color: '#1a1a1a' },
+            },
+          },
+        },
+      });
+    });
+
+    return wrap;
+  }
+
+  // ── Production table ────────────────────────────────────────────────────
+  function _buildProductionTable(report) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px';
+    title.textContent = `Production Actuals — ${report.period || ''}`;
+    wrap.appendChild(title);
+
+    const metrics = report.metrics || [];
+    if (!metrics.length) {
+      wrap.innerHTML += '<p style="color:var(--muted);font-size:12px">No metrics extracted from PDF.</p>';
+      return wrap;
+    }
+
+    // Group by mine
+    const mines = [...new Set(metrics.map(m => m.mine))];
+    const mineOrder = ['Group', ...mines.filter(m => m !== 'Group')];
+
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+
+    // Build header: Metric | Unit | [mine1] | [mine2] ...
+    const orderedMines = mineOrder.filter(m => mines.includes(m));
     table.innerHTML = `
       <thead>
-        <tr style="color:var(--muted);text-align:right">
+        <tr style="color:var(--muted)">
           <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
-          <th style="padding:4px 8px;font-weight:600">Unit</th>
-          <th style="padding:4px 8px;font-weight:600">Estimate</th>
-          <th style="padding:4px 8px;font-weight:600">Actual</th>
-          <th style="padding:4px 8px;font-weight:600">Var %</th>
-          <th style="padding:4px 8px;font-weight:600">Result</th>
+          <th style="padding:4px 8px;font-weight:600;text-align:right">Unit</th>
+          ${orderedMines.map(m =>
+            `<th style="padding:4px 8px;font-weight:600;text-align:right">${m}</th>`
+          ).join('')}
         </tr>
       </thead>
     `;
 
+    // Collect all metric names
+    const allMetrics = [...new Set(metrics.map(m => m.metric_name))];
     const tbody = document.createElement('tbody');
-    report.variances.forEach(v => {
-      const verdict = v.beat_miss || '';
-      const colour  = verdict === 'BEAT' ? '#c9a227' : verdict === 'MISS' ? '#e05252' : '#555';
-      const varPct  = v.variance_pct != null ? (v.variance_pct > 0 ? '+' : '') + v.variance_pct.toFixed(1) + '%' : 'n/a';
-      const label   = METRIC_LABELS[v.metric_name] || v.metric_name;
-      const est     = v.estimate != null ? v.estimate.toFixed(2) : 'n/a';
-      const act     = v.actual   != null ? v.actual.toFixed(2)   : 'n/a';
+
+    allMetrics.forEach(metricName => {
+      const rowMetrics = metrics.filter(m => m.metric_name === metricName);
+      if (!rowMetrics.length) return;
+      const unit  = rowMetrics[0].unit || '';
+      const label = METRIC_LABELS[metricName] || metricName;
 
       const tr = document.createElement('tr');
       tr.style.cssText = 'border-top:1px solid #1a1a1a';
-      tr.innerHTML = `
+
+      let cells = `
         <td style="padding:6px 8px;color:#ccc">${label}</td>
-        <td style="padding:6px 8px;color:var(--muted);text-align:right">${v.unit || ''}</td>
-        <td style="padding:6px 8px;color:var(--muted);text-align:right">${est}</td>
-        <td style="padding:6px 8px;color:#ccc;text-align:right">${act}</td>
-        <td style="padding:6px 8px;color:${colour};text-align:right">${varPct}</td>
-        <td style="padding:6px 8px;text-align:right">
-          <span style="font-size:10px;font-weight:700;letter-spacing:0.8px;color:${colour}">${verdict}</span>
-        </td>
+        <td style="padding:6px 8px;color:var(--muted);text-align:right">${unit}</td>
       `;
+      orderedMines.forEach(mine => {
+        const m = rowMetrics.find(r => r.mine === mine);
+        const val = m && m.actual != null ? Number(m.actual).toFixed(1) : '—';
+        cells += `<td style="padding:6px 8px;color:${m ? '#ddd' : '#333'};text-align:right">${val}</td>`;
+      });
+
+      tr.innerHTML = cells;
       tbody.appendChild(tr);
     });
 
@@ -202,65 +295,60 @@
     return wrap;
   }
 
-  // ── Claude narrative panel ───────────────────────────────────────────────
+  // ── Narrative panel ───────────────────────────────────────────────────────
   function _buildNarrativePanel(report) {
-    const a = report.analysis;
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+    const narrs = report.narratives || {};
+    const wrap  = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:16px';
 
-    const title = document.createElement('div');
-    title.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px';
-    title.textContent = 'Analysis';
-    wrap.appendChild(title);
+    const sections = [
+      { key: 'headline',     label: 'Headline' },
+      { key: 'exec_summary', label: 'Executive Summary' },
+      { key: 'production',   label: 'Production Analysis' },
+      { key: 'outlook',      label: 'Outlook' },
+    ];
 
-    if (!a || !a.narrative) {
-      wrap.innerHTML += '<p style="color:var(--muted);font-size:12px">No analysis available. Re-run with Claude enabled.</p>';
-      return wrap;
-    }
+    // Placeholder sections (dimmed cards)
+    const placeholders = [
+      'Earnings Estimates',
+      'Valuation',
+      'Financials',
+      'Resources & Reserves',
+      'Commodity Assumptions',
+    ];
 
-    // Narrative paragraphs
-    const narr = document.createElement('div');
-    narr.style.cssText = 'font-size:13px;line-height:1.7;color:#ccc;margin-bottom:16px';
-    narr.innerHTML = a.narrative.split('\n').filter(l => l.trim()).map(p => `<p style="margin:0 0 10px">${p}</p>`).join('');
-    wrap.appendChild(narr);
+    sections.forEach(s => {
+      const content = narrs[s.key];
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:16px 22px;margin-bottom:10px';
 
-    // Key drivers
-    if (a.key_drivers && a.key_drivers.length) {
-      const drivers = document.createElement('div');
-      drivers.style.marginBottom = '12px';
-      drivers.innerHTML = `
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Key Drivers</div>
-        <ul style="margin:0;padding-left:18px;font-size:12px;color:#aaa;line-height:1.7">
-          ${a.key_drivers.map(d => `<li>${d}</li>`).join('')}
-        </ul>
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px';
+      hdr.textContent = s.label;
+      card.appendChild(hdr);
+
+      const body = document.createElement('div');
+      body.style.cssText = 'font-size:13px;line-height:1.7;color:#ccc';
+      body.textContent = content || 'Analysis not available — re-run with Claude enabled.';
+      card.appendChild(body);
+      wrap.appendChild(card);
+    });
+
+    // Placeholder cards
+    placeholders.forEach(label => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#0a0a0a;border:1px dashed #1f1f1f;border-radius:6px;padding:16px 22px;margin-bottom:10px;opacity:0.5';
+      card.innerHTML = `
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:#333;text-transform:uppercase;margin-bottom:6px">${label}</div>
+        <div style="font-size:12px;color:#2a2a2a">Coming soon</div>
       `;
-      wrap.appendChild(drivers);
-    }
-
-    // Risks
-    if (a.risks && a.risks.length) {
-      const risks = document.createElement('div');
-      risks.innerHTML = `
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Risks</div>
-        <ul style="margin:0;padding-left:18px;font-size:12px;color:#e05252;line-height:1.7">
-          ${a.risks.map(r => `<li>${r}</li>`).join('')}
-        </ul>
-      `;
-      wrap.appendChild(risks);
-    }
-
-    // Token cost
-    if (a.input_tokens) {
-      const meta = document.createElement('div');
-      meta.style.cssText = 'margin-top:14px;font-size:10px;color:#333';
-      meta.textContent = `${a.model || 'claude'} · ${a.input_tokens}→${a.output_tokens} tokens · ${(a.analysed_at || '').slice(0,10)}`;
-      wrap.appendChild(meta);
-    }
+      wrap.appendChild(card);
+    });
 
     return wrap;
   }
 
-  // ── History timeline ─────────────────────────────────────────────────────
+  // ── History timeline ────────────────────────────────────────────────────
   function _buildHistoryTimeline(reports, ticker) {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
@@ -274,21 +362,17 @@
     timeline.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
 
     reports.forEach(r => {
-      const a       = r.analysis || {};
-      const verdict = a.overall_verdict || 'UNKNOWN';
-      const colour  = VERDICT_COLOUR[verdict] || '#444';
       const isActive = r.id === _selectedReportId;
-
       const node = document.createElement('button');
       node.style.cssText = `
-        background:${isActive ? colour + '22' : '#0a0a0a'};
-        border:1px solid ${colour}${isActive ? '' : '44'};
-        border-radius:4px;padding:6px 12px;cursor:pointer;
-        font-size:11px;color:${colour};text-align:left;
+        background:${isActive ? '#c9a22722' : '#0a0a0a'};
+        border:1px solid ${isActive ? '#c9a22788' : '#222'};
+        border-radius:4px;padding:6px 12px;cursor:pointer;font-size:11px;
+        color:${isActive ? '#c9a227' : '#888'};text-align:left;
       `;
       node.innerHTML = `
-        <div style="font-weight:700">${r.report_quarter || r.report_date}</div>
-        <div style="font-size:10px;color:var(--muted)">${r.broker_name}</div>
+        <div style="font-weight:700">${r.period || r.report_date}</div>
+        <div style="font-size:10px;color:var(--muted)">${(r.report_date || '').slice(0,10)}</div>
       `;
       node.onclick = () => {
         _selectedReportId = r.id;
