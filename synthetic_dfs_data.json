@@ -797,18 +797,18 @@
             "model_plan": "synthetic_dfs/STN/model_plan_mre_feb2025.png"
           },
           "mission1": {
-            "ore_volume_m3": 13796203.0,
-            "tonnes": 39595102.0,
-            "grade_gt": 0.909,
-            "contained_koz": 1156.6,
+            "ore_volume_m3": 77100959.0,
+            "tonnes": 221279753.0,
+            "grade_gt": 0.846,
+            "contained_koz": 6017.4,
             "ho_koz": 2030,
-            "error_pct": -43.0,
+            "error_pct": 196.4,
             "pass_gate": "\u00b130%",
             "pass": false,
             "ho_label": "Apollo Hill MRE February 2025 (2.03 Moz)",
             "method": "gempy",
             "model_version": "1.2",
-            "run_at": "2026-04-03T09:25:49.194813+00:00",
+            "run_at": "2026-04-03T09:35:07.206422+00:00",
             "assumptions": {
               "grade_cutoff_gt": 0.2,
               "grade_cutoff_source": "per-target override",
@@ -818,7 +818,7 @@
               "orientation_dip_direction_deg": 13.4,
               "orientation_dip_deg": 2.7,
               "interval_buffer_m": 0.0,
-              "influence_clip_m": 80.0,
+              "influence_clip_m": 300.0,
               "northing_min": 6771000,
               "model_resolution": [
                 70,
@@ -840,15 +840,15 @@
                 "ga_geology",
                 "wamex_holes"
               ],
-              "grade_method": "kriging_ok3d_anisotropic_multidomain",
+              "grade_method": "kriging_ok3d_anisotropic",
               "composited": true,
               "composite_length_m": 5.0,
               "variogram": {
                 "model": "spherical_anisotropic",
-                "nugget": 1.8135,
-                "sill": 1.8137,
-                "iso_range_m": 50.0,
-                "nugget_pct": 100.0,
+                "nugget": 1.6045,
+                "sill": 1.7118,
+                "iso_range_m": 54.4,
+                "nugget_pct": 93.7,
                 "strike_deg": 340.0,
                 "along_m": 150.0,
                 "across_m": 60.0,
@@ -856,72 +856,18 @@
               },
               "cross_validation": {
                 "n_folds": 5,
-                "n_samples": 805,
-                "rmse_gt": 1.2691,
-                "bias_gt": -0.0007,
-                "r2": -0.001
+                "n_samples": 1095,
+                "rmse_gt": 1.1052,
+                "bias_gt": -0.001,
+                "r2": 0.077
               },
-              "n_domains": 10,
+              "n_domains": 1,
               "domain_summary": [
                 {
                   "domain_id": 0,
-                  "n_runs": 162,
-                  "n_holes": 120,
-                  "mean_grade_gt": 0.99
-                },
-                {
-                  "domain_id": 1,
-                  "n_runs": 45,
-                  "n_holes": 24,
-                  "mean_grade_gt": 1.057
-                },
-                {
-                  "domain_id": 2,
-                  "n_runs": 16,
-                  "n_holes": 16,
-                  "mean_grade_gt": 1.04
-                },
-                {
-                  "domain_id": 3,
-                  "n_runs": 6,
-                  "n_holes": 5,
-                  "mean_grade_gt": 1.278
-                },
-                {
-                  "domain_id": 4,
-                  "n_runs": 5,
-                  "n_holes": 4,
-                  "mean_grade_gt": 0.528
-                },
-                {
-                  "domain_id": 5,
-                  "n_runs": 5,
-                  "n_holes": 2,
-                  "mean_grade_gt": 1.523
-                },
-                {
-                  "domain_id": 6,
-                  "n_runs": 4,
-                  "n_holes": 2,
-                  "mean_grade_gt": 1.04
-                },
-                {
-                  "domain_id": 7,
-                  "n_runs": 4,
-                  "n_holes": 4,
-                  "mean_grade_gt": 0.371
-                },
-                {
-                  "domain_id": 8,
-                  "n_runs": 4,
-                  "n_holes": 4,
-                  "mean_grade_gt": 0.453
-                },
-                {
-                  "domain_id": 9,
-                  "n_runs": 3,
-                  "n_holes": 2,
-                  "mean_grade_gt": 0.915
+                  "n_runs": 211,
+                  "n_holes": 182,
+                  "mean_grade_gt": 1.002
                 }
               ],
               "jorc_measured_threshold_m": 12.5,
@@ -977,5 +923,5 @@
       }
     }
   },
-  "updated_at": "2026-04-03T09:25:49.273591+00:00"
+  "updated_at": "2026-04-03T09:35:07.295802+00:00"
 }

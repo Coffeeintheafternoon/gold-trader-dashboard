@@ -114,10 +114,12 @@
     if (!_selectedReportId) _selectedReportId = td.reports[0].id;
     const report = td.reports.find(r => r.id === _selectedReportId) || td.reports[0];
 
-    const p2 = report.page2_data || {};
+    const p2   = report.page2_data   || {};
+    const fund = report.fundamentals || {};
 
     content.appendChild(_buildSourceLegend());
     content.appendChild(_buildCoverCard(report, ticker));
+    content.appendChild(_buildFundamentalsPanel(fund, report.cover_stats || {}));
     content.appendChild(_buildPriceChart(report));
     content.appendChild(_buildProductionTable(report));
 
@@ -156,8 +158,8 @@
     row.style.cssText = 'display:flex;gap:16px;margin-bottom:12px;font-size:10px;color:var(--muted)';
     row.innerHTML = `
       <span>Data sources:</span>
-      <span><span style="color:${SRC_COLOUR.pdf};font-weight:700">■</span> PDF extract</span>
-      <span><span style="color:${SRC_COLOUR.yfinance};font-weight:700">■</span> yfinance (live)</span>
+      <span><span style="color:${SRC_COLOUR.pdf};font-weight:700">■</span> PDF extract (Argonaut holdout)</span>
+      <span><span style="color:${SRC_COLOUR.yfinance};font-weight:700">■</span> yfinance (our independent estimate)</span>
     `;
     return row;
   }
@@ -596,6 +598,182 @@
 
     table.appendChild(tbody);
     wrap.appendChild(table);
+    return wrap;
+  }
+
+  // ── Independent Estimates panel (holdout comparison) ─────────────────────
+  function _buildFundamentalsPanel(fund, coverStats) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'Independent Estimates (Our Data vs PDF Holdout)';
+    wrap.appendChild(hdr);
+
+    const note = document.createElement('div');
+    note.style.cssText = `font-size:9px;color:${SRC_COLOUR.yfinance};margin-bottom:16px`;
+    note.textContent = 'source: yfinance — independently computed, not from the broker PDF';
+    wrap.appendChild(note);
+
+    // ── Price target comparison ──
+    const pt     = fund.price_target || {};
+    const pdfPt  = coverStats.price_target;
+    const pdfPtV = pdfPt && typeof pdfPt === 'object' ? pdfPt.value : pdfPt;
+
+    if (pt.mean != null || pdfPtV != null) {
+      const ptRow = document.createElement('div');
+      ptRow.style.cssText = 'margin-bottom:14px';
+      const ptTitle = document.createElement('div');
+      ptTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      ptTitle.textContent = 'Price Target';
+      ptRow.appendChild(ptTitle);
+
+      const ptGrid = document.createElement('div');
+      ptGrid.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
+
+      if (pt.mean != null) {
+        ptGrid.innerHTML += `<div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px;min-width:110px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Consensus Mean <span style="color:${SRC_COLOUR.yfinance}">(yf)</span></div>
+          <div style="font-size:16px;font-weight:700;color:${SRC_COLOUR.yfinance}">A$${_fmtNum(pt.mean)}</div>
+          ${pt.n != null ? `<div style="font-size:9px;color:#555">${pt.n} analysts</div>` : ''}
+        </div>`;
+      }
+      if (pt.high != null || pt.low != null) {
+        ptGrid.innerHTML += `<div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px;min-width:110px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Range <span style="color:${SRC_COLOUR.yfinance}">(yf)</span></div>
+          <div style="font-size:13px;font-weight:700;color:#aaa">A$${_fmtNum(pt.low)} – A$${_fmtNum(pt.high)}</div>
+        </div>`;
+      }
+      if (pdfPtV != null) {
+        const delta = pt.mean != null ? (pt.mean - pdfPtV) : null;
+        const deltaCol = delta == null ? '#888' : delta >= 0 ? '#4ec94e' : '#e05252';
+        ptGrid.innerHTML += `<div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px;min-width:110px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">PDF (Argonaut)</div>
+          <div style="font-size:16px;font-weight:700;color:${SRC_COLOUR.pdf}">A$${_fmtNum(pdfPtV)}</div>
+          ${delta != null ? `<div style="font-size:9px;color:${deltaCol}">${delta >= 0 ? '+' : ''}${_fmtNum(delta)} vs ours</div>` : ''}
+        </div>`;
+      }
+      ptRow.appendChild(ptGrid);
+      wrap.appendChild(ptRow);
+    }
+
+    // ── Gold spot ──
+    if (fund.gold_spot_aud != null) {
+      const goldRow = document.createElement('div');
+      goldRow.style.cssText = 'margin-bottom:14px';
+      const goldTitle = document.createElement('div');
+      goldTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      goldTitle.textContent = 'Live Gold Price';
+      goldRow.appendChild(goldTitle);
+
+      const goldGrid = document.createElement('div');
+      goldGrid.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
+      goldGrid.innerHTML = `
+        <div style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:4px;padding:8px 12px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Spot Gold <span style="color:${SRC_COLOUR.yfinance}">(yf GC=F)</span></div>
+          <div style="font-size:16px;font-weight:700;color:${SRC_COLOUR.yfinance}">A$${Number(fund.gold_spot_aud).toLocaleString('en-AU', {maximumFractionDigits:0})}/oz</div>
+          ${fund.gold_spot_usd != null ? `<div style="font-size:9px;color:#555">US$${_fmtNum(fund.gold_spot_usd, 0)}/oz · AUDUSD ${fund.audusd}</div>` : ''}
+        </div>`;
+      goldRow.appendChild(goldGrid);
+      wrap.appendChild(goldRow);
+    }
+
+    // ── Analyst forward estimates ──
+    const ae = fund.analyst_estimates || {};
+    const aeYears = Object.keys(ae).sort();
+    if (aeYears.length) {
+      const aeTitle = document.createElement('div');
+      aeTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      aeTitle.textContent = 'Analyst Consensus Estimates';
+      wrap.appendChild(aeTitle);
+
+      const aeTable = document.createElement('table');
+      aeTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px';
+      aeTable.innerHTML = `<thead><tr style="color:var(--muted)">
+        <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
+        ${aeYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
+      </tr></thead>`;
+      const aeTbody = document.createElement('tbody');
+
+      const aeRows = [
+        { label: 'EPS (A$)',        avgKey: 'eps_avg',       loKey: 'eps_low',        hiKey: 'eps_high',       fmt: v => _fmtNum(v, 3) },
+        { label: 'Revenue (A$m)',   avgKey: 'revenue_m_avg', loKey: 'revenue_m_low',  hiKey: 'revenue_m_high', fmt: v => _fmtNum(v, 0) },
+      ];
+
+      aeRows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-top:1px solid #1a1a1a';
+        let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
+        aeYears.forEach(y => {
+          const d = ae[y] || {};
+          const avg = d[row.avgKey];
+          if (avg == null) {
+            cells += `<td style="padding:5px 8px;color:#444;text-align:right">—</td>`;
+          } else {
+            const lo = d[row.loKey]; const hi = d[row.hiKey];
+            const range = (lo != null && hi != null) ? ` <span style="font-size:9px;color:#555">(${row.fmt(lo)}–${row.fmt(hi)})</span>` : '';
+            cells += `<td style="padding:5px 8px;color:${SRC_COLOUR.yfinance};text-align:right">${row.fmt(avg)}${range}</td>`;
+          }
+        });
+        tr.innerHTML = cells;
+        aeTbody.appendChild(tr);
+      });
+
+      aeTable.appendChild(aeTbody);
+      wrap.appendChild(aeTable);
+    }
+
+    // ── Historical P&L actuals ──
+    const hist = fund.historical_pnl || {};
+    const histYears = Object.keys(hist).sort();
+    if (histYears.length) {
+      const histTitle = document.createElement('div');
+      histTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      histTitle.textContent = 'Historical P&L Actuals (yfinance)';
+      wrap.appendChild(histTitle);
+
+      const histTable = document.createElement('table');
+      histTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+      histTable.innerHTML = `<thead><tr style="color:var(--muted)">
+        <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
+        ${histYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
+      </tr></thead>`;
+      const histTbody = document.createElement('tbody');
+
+      const histRows = [
+        { label: 'Revenue (A$m)',   key: 'revenue_m',    fmt: v => _fmtNum(v, 0) },
+        { label: 'EBITDA (A$m)',    key: 'ebitda_m',     fmt: v => _fmtNum(v, 0) },
+        { label: 'EBIT (A$m)',      key: 'ebit_m',       fmt: v => _fmtNum(v, 0) },
+        { label: 'Net Income (A$m)',key: 'net_income_m', fmt: v => _fmtNum(v, 0) },
+        { label: 'EPS (A$)',        key: 'eps',          fmt: v => _fmtNum(v, 3) },
+      ];
+
+      histRows.forEach(row => {
+        // skip if no data for any year
+        const hasAny = histYears.some(y => hist[y] && hist[y][row.key] != null);
+        if (!hasAny) return;
+        const tr = document.createElement('tr');
+        tr.style.cssText = 'border-top:1px solid #1a1a1a';
+        let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
+        histYears.forEach(y => {
+          const v = hist[y] ? hist[y][row.key] : null;
+          const col = v != null && v < 0 ? '#e05252' : SRC_COLOUR.yfinance;
+          cells += `<td style="padding:5px 8px;color:${v != null ? col : '#444'};text-align:right">${v != null ? row.fmt(v) : '—'}</td>`;
+        });
+        tr.innerHTML = cells;
+        histTbody.appendChild(tr);
+      });
+
+      histTable.appendChild(histTbody);
+      wrap.appendChild(histTable);
+    }
+
+    // If nothing to show, hide the panel
+    if (!Object.keys(fund).some(k => fund[k] && (typeof fund[k] !== 'object' || Object.keys(fund[k]).length > 0))) {
+      return document.createElement('div');
+    }
+
     return wrap;
   }
 
