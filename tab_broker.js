@@ -751,94 +751,89 @@
       wrap.appendChild(aeTable);
     }
 
-    // ── Historical P&L actuals ──
-    const hist = fund.historical_pnl || {};
-    const histYears = Object.keys(hist).sort();
-    const compType  = fund.company_type || 'mining';
-    if (histYears.length) {
-      const histTitle = document.createElement('div');
-      histTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
-      histTitle.textContent = 'Historical P&L Actuals (yfinance)';
-      wrap.appendChild(histTitle);
+    // ── Combined P&L / Cash Flow / Balance Sheet (actuals + forward estimates) ──
+    const hist   = fund.historical_pnl  || {};
+    const histCf = fund.historical_cf   || {};
+    const histBs = fund.historical_bs   || {};
+    const ae     = fund.analyst_estimates || {};
+    const compType = fund.company_type || 'mining';
 
-      const histTable = document.createElement('table');
-      histTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px';
-      histTable.innerHTML = `<thead><tr style="color:var(--muted)">
-        <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
-        ${histYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
+    // Build unified year list: historical actuals (A suffix) + forward estimates (E suffix)
+    const actualYears   = [...new Set([...Object.keys(hist), ...Object.keys(histCf), ...Object.keys(histBs)])].sort();
+    const estimateYears = Object.keys(ae).sort();
+    const allYears      = [...actualYears, ...estimateYears];
+
+    if (allYears.length) {
+      const pnlTitle = document.createElement('div');
+      pnlTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
+      pnlTitle.textContent = 'P&L / Cash Flow Summary';
+      wrap.appendChild(pnlTitle);
+
+      const pnlTable = document.createElement('table');
+      pnlTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px';
+
+      // Header: actual years plain, estimate years get (E) styling
+      const hdrCells = allYears.map(y => {
+        const isEst = estimateYears.includes(y);
+        return `<th style="padding:4px 8px;font-weight:600;text-align:right;${isEst ? 'color:#888;font-style:italic' : ''}">${y}</th>`;
+      }).join('');
+      pnlTable.innerHTML = `<thead><tr style="color:var(--muted)">
+        <th style="text-align:left;padding:4px 8px;font-weight:600"></th>${hdrCells}
       </tr></thead>`;
-      const histTbody = document.createElement('tbody');
 
-      // Show gross profit for consumer/general; not relevant for mining
-      const histRows = [
-        { label: 'Revenue (A$m)',      key: 'revenue_m',      fmt: v => _fmtNum(v, 0) },
-        ...(compType !== 'mining' ? [{ label: 'Gross Profit (A$m)', key: 'gross_profit_m', fmt: v => _fmtNum(v, 0) }] : []),
-        { label: 'EBITDA (A$m)',       key: 'ebitda_m',       fmt: v => _fmtNum(v, 0) },
-        { label: 'EBIT (A$m)',         key: 'ebit_m',         fmt: v => _fmtNum(v, 0) },
-        { label: 'Net Income (A$m)',   key: 'net_income_m',   fmt: v => _fmtNum(v, 0) },
-        { label: 'EPS (A$)',           key: 'eps',            fmt: v => _fmtNum(v, 3) },
+      const pnlTbody = document.createElement('tbody');
+
+      // getValue: pulls from the right source for each year
+      const getV = (year, pnlKey, cfKey, bsKey, aeKey) => {
+        if (estimateYears.includes(year)) {
+          const d = ae[year] || {};
+          return aeKey ? d[aeKey] : null;
+        }
+        if (pnlKey && hist[year]  ) { const v = hist[year][pnlKey];   if (v != null) return v; }
+        if (cfKey  && histCf[year]) { const v = histCf[year][cfKey];   if (v != null) return v; }
+        if (bsKey  && histBs[year]) { const v = histBs[year][bsKey];   if (v != null) return v; }
+        return null;
+      };
+
+      // Row definitions: [label, pnlKey, cfKey, bsKey, aeKey, fmt, isSeparator]
+      const pnlRows = [
+        // P&L
+        { label: 'Revenue (A$m)',       pnl: 'revenue_m',      ae: 'revenue_m_avg', fmt: v => _fmtNum(v, 0) },
+        ...(compType !== 'mining' ? [{ label: 'Gross Profit (A$m)', pnl: 'gross_profit_m', fmt: v => _fmtNum(v, 0) }] : []),
+        { label: 'EBITDA (A$m)',        pnl: 'ebitda_m',       fmt: v => _fmtNum(v, 0) },
+        { label: 'EBIT (A$m)',          pnl: 'ebit_m',         fmt: v => _fmtNum(v, 0) },
+        { label: 'Net Income (A$m)',    pnl: 'net_income_m',   fmt: v => _fmtNum(v, 0) },
+        { label: 'EPS (A$)',            pnl: 'eps',            ae: 'eps_avg',        fmt: v => _fmtNum(v, 3) },
+        // Cash flow
+        { label: 'Operating CF (A$m)',  cf:  'operating_cf_m', fmt: v => _fmtNum(v, 0) },
+        { label: 'Capex (A$m)',         cf:  'capex_m',        fmt: v => _fmtNum(v, 0) },
+        { label: 'Free CF (A$m)',       cf:  'free_cf_m',      fmt: v => _fmtNum(v, 0) },
+        { label: 'Dividends (A$m)',     cf:  'dividends_m',    fmt: v => _fmtNum(v, 0) },
+        // Balance sheet
+        { label: 'Cash (A$m)',          bs:  'cash_m',         fmt: v => _fmtNum(v, 1) },
+        { label: 'Net Cash/Debt (A$m)', bs:  'net_cash_m',     fmt: v => _fmtNum(v, 1) },
+        { label: 'Total Assets (A$m)',  bs:  'total_assets_m', fmt: v => _fmtNum(v, 1) },
+        { label: 'Net Equity (A$m)',    bs:  'net_equity_m',   fmt: v => _fmtNum(v, 1) },
       ];
 
-      histRows.forEach(row => {
-        const hasAny = histYears.some(y => hist[y] && hist[y][row.key] != null);
-        if (!hasAny) return;
+      pnlRows.forEach(row => {
+        const vals = allYears.map(y => getV(y, row.pnl, row.cf, row.bs, row.ae));
+        if (!vals.some(v => v != null)) return;
         const tr = document.createElement('tr');
         tr.style.cssText = 'border-top:1px solid #1a1a1a';
-        let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
-        histYears.forEach(y => {
-          const v = hist[y] ? hist[y][row.key] : null;
-          const col = v != null && v < 0 ? '#e05252' : SRC_COLOUR.yfinance;
-          cells += `<td style="padding:5px 8px;color:${v != null ? col : '#444'};text-align:right">${v != null ? row.fmt(v) : '—'}</td>`;
+        let cells = `<td style="padding:5px 8px;color:#ccc;white-space:nowrap">${row.label}</td>`;
+        allYears.forEach((y, i) => {
+          const v   = vals[i];
+          const est = estimateYears.includes(y);
+          const col = v == null ? '#333' : v < 0 ? '#e05252' : est ? '#aaa' : SRC_COLOUR.yfinance;
+          cells += `<td style="padding:5px 8px;color:${col};text-align:right${est ? ';font-style:italic' : ''}">${v != null ? row.fmt(v) : '—'}</td>`;
         });
         tr.innerHTML = cells;
-        histTbody.appendChild(tr);
+        pnlTbody.appendChild(tr);
       });
 
-      histTable.appendChild(histTbody);
-      wrap.appendChild(histTable);
-    }
-
-    // ── Historical Balance Sheet ──
-    const bs = fund.historical_bs || {};
-    const bsYears = Object.keys(bs).sort();
-    if (bsYears.length) {
-      const bsTitle = document.createElement('div');
-      bsTitle.style.cssText = 'font-size:10px;color:#666;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px';
-      bsTitle.textContent = 'Historical Balance Sheet (yfinance)';
-      wrap.appendChild(bsTitle);
-
-      const bsTable = document.createElement('table');
-      bsTable.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
-      bsTable.innerHTML = `<thead><tr style="color:var(--muted)">
-        <th style="text-align:left;padding:4px 8px;font-weight:600">Metric</th>
-        ${bsYears.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
-      </tr></thead>`;
-      const bsTbody = document.createElement('tbody');
-
-      const bsRows = [
-        { label: 'Cash (A$m)',        key: 'cash_m',        fmt: v => _fmtNum(v, 1) },
-        { label: 'Net Cash (A$m)',    key: 'net_cash_m',    fmt: v => _fmtNum(v, 1) },
-        { label: 'Total Assets (A$m)',key: 'total_assets_m',fmt: v => _fmtNum(v, 1) },
-        { label: 'Net Equity (A$m)',  key: 'net_equity_m',  fmt: v => _fmtNum(v, 1) },
-      ];
-
-      bsRows.forEach(row => {
-        const hasAny = bsYears.some(y => bs[y] && bs[y][row.key] != null);
-        if (!hasAny) return;
-        const tr = document.createElement('tr');
-        tr.style.cssText = 'border-top:1px solid #1a1a1a';
-        let cells = `<td style="padding:5px 8px;color:#ccc">${row.label}</td>`;
-        bsYears.forEach(y => {
-          const v = bs[y] ? bs[y][row.key] : null;
-          const col = v != null && v < 0 ? '#e05252' : SRC_COLOUR.yfinance;
-          cells += `<td style="padding:5px 8px;color:${v != null ? col : '#444'};text-align:right">${v != null ? row.fmt(v) : '—'}</td>`;
-        });
-        tr.innerHTML = cells;
-        bsTbody.appendChild(tr);
-      });
-
-      bsTable.appendChild(bsTbody);
-      wrap.appendChild(bsTable);
+      pnlTable.appendChild(pnlTbody);
+      wrap.appendChild(pnlTable);
     }
 
     // If nothing to show, hide the panel
