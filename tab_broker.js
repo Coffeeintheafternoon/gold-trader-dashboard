@@ -114,13 +114,36 @@
     if (!_selectedReportId) _selectedReportId = td.reports[0].id;
     const report = td.reports.find(r => r.id === _selectedReportId) || td.reports[0];
 
+    const p2 = report.page2_data || {};
+
     content.appendChild(_buildSourceLegend());
     content.appendChild(_buildCoverCard(report, ticker));
     content.appendChild(_buildPriceChart(report));
     content.appendChild(_buildProductionTable(report));
-    if (report.cover_stats && _hasCoverKey(report.cover_stats, ['reserves_koz','resources_koz'])) {
-      content.appendChild(_buildRRCard(report));
+
+    // Page 2 sections
+    if (p2.production_forecasts && p2.production_forecasts.length)
+      content.appendChild(_buildForecastTable('Production Forecasts (koz)', p2.years, p2.production_forecasts, 'mine', 'values'));
+    if (p2.aisc_forecasts && p2.aisc_forecasts.length)
+      content.appendChild(_buildForecastTable('AISC Forecasts (A$/oz)', p2.years, p2.aisc_forecasts, 'mine', 'values'));
+    if (p2.key_metrics && p2.key_metrics.length)
+      content.appendChild(_buildForecastTable('Key Metrics', p2.years, p2.key_metrics, 'label', 'values'));
+    if (p2.commodity_assumptions && p2.commodity_assumptions.length)
+      content.appendChild(_buildForecastTable('Commodity Assumptions', p2.years, p2.commodity_assumptions, 'label', 'values'));
+    if (p2.pnl && p2.pnl.length)
+      content.appendChild(_buildForecastTable('P&L / Cash Flow Summary (A$m)', p2.years, p2.pnl, 'label', 'values'));
+    if (p2.reserves && p2.reserves.length) {
+      content.appendChild(_buildRRDetailTable('Ore Reserves', p2.reserves));
+    } else if (report.cover_stats && _hasCoverKey(report.cover_stats, ['reserves_koz'])) {
+      content.appendChild(_buildRRCard(report));  // fallback summary card
     }
+    if (p2.resources && p2.resources.length)
+      content.appendChild(_buildRRDetailTable('Mineral Resources', p2.resources));
+    if (p2.valuation && p2.valuation.length)
+      content.appendChild(_buildValuationTable(p2.valuation));
+    if (p2.shareholders && p2.shareholders.length)
+      content.appendChild(_buildShareholdersTable(p2.shareholders));
+
     content.appendChild(_buildNarrativePanel(report));
     if (td.reports.length > 1) {
       content.appendChild(_buildHistoryTimeline(td.reports, ticker));
@@ -402,6 +425,180 @@
     return wrap;
   }
 
+  // ── Generic forecast table (years as columns) ────────────────────────────
+  function _buildForecastTable(title, years, rows, labelKey, valKey) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = title;
+    wrap.appendChild(hdr);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+
+    const yrCols = (years || ['CY25E','CY26E','CY27E','CY28E','CY29E','CY30E']);
+    table.innerHTML = `<thead><tr style="color:var(--muted)">
+      <th style="text-align:left;padding:4px 8px;font-weight:600"></th>
+      ${yrCols.map(y => `<th style="padding:4px 8px;font-weight:600;text-align:right">${y}</th>`).join('')}
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(row => {
+      const label = row[labelKey] || '';
+      const vals  = row[valKey] || [];
+      const tr = document.createElement('tr');
+      tr.style.cssText = 'border-top:1px solid #1a1a1a';
+      tr.innerHTML = `<td style="padding:5px 8px;color:#ccc">${label}</td>` +
+        yrCols.map((_, i) => {
+          const v = vals[i];
+          const txt = v == null ? '—' : Number(v).toLocaleString('en-AU', {maximumFractionDigits: 2});
+          const col = v != null && v < 0 ? '#e05252' : '#ddd';
+          return `<td style="padding:5px 8px;color:${col};text-align:right">${txt}</td>`;
+        }).join('');
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  // ── R&R detail table (deposit rows) ───────────────────────────────────────
+  function _buildRRDetailTable(title, rows) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = title;
+    wrap.appendChild(hdr);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+    table.innerHTML = `<thead><tr style="color:var(--muted)">
+      <th style="text-align:left;padding:4px 8px;font-weight:600">Deposit</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Ore (mt)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Grade (g/t)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Metal (koz)</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const isTotal = (r.deposit || '').toLowerCase() === 'total';
+      const tr = document.createElement('tr');
+      tr.style.cssText = `border-top:1px solid #1a1a1a${isTotal ? ';font-weight:700' : ''}`;
+      const col = isTotal ? 'var(--gold)' : '#ccc';
+      tr.innerHTML = `
+        <td style="padding:5px 8px;color:${col}">${r.deposit || ''}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${r.mt != null ? Number(r.mt).toFixed(1) : '—'}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${r.grade_gt != null ? Number(r.grade_gt).toFixed(2) : '—'}</td>
+        <td style="padding:5px 8px;color:${col};text-align:right">${r.koz != null ? Number(r.koz).toLocaleString() : '—'}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  // ── Valuation table ────────────────────────────────────────────────────────
+  function _buildValuationTable(rows) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'NPV Valuation';
+    wrap.appendChild(hdr);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+    table.innerHTML = `<thead><tr style="color:var(--muted)">
+      <th style="text-align:left;padding:4px 8px;font-weight:600">Asset</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Spot (A$m)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Spot (A$/sh)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Base (A$m)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Base (A$/sh)</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const isTotal = (r.asset || '').toLowerCase() === 'total';
+      const tr = document.createElement('tr');
+      tr.style.cssText = `border-top:1px solid #1a1a1a${isTotal ? ';font-weight:700' : ''}`;
+      const col = isTotal ? 'var(--gold)' : '#ccc';
+      const fmt = v => v != null ? Number(v).toLocaleString('en-AU', {maximumFractionDigits: 1}) : '—';
+      const fmtPs = v => v != null ? Number(v).toFixed(2) : '—';
+      tr.innerHTML = `
+        <td style="padding:5px 8px;color:${col}">${r.asset || ''}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${fmt(r.spot_m)}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${fmtPs(r.spot_ps)}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${fmt(r.base_m)}</td>
+        <td style="padding:5px 8px;color:${col};text-align:right">${fmtPs(r.base_ps)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  // ── Shareholders table ─────────────────────────────────────────────────────
+  function _buildShareholdersTable(rows) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:#111;border:1px solid #222;border-radius:6px;padding:18px 22px;margin-bottom:16px';
+
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px';
+    hdr.textContent = 'Substantial Shareholders';
+    wrap.appendChild(hdr);
+
+    const src = document.createElement('div');
+    src.style.cssText = `font-size:9px;color:${SRC_COLOUR.pdf};margin-bottom:10px`;
+    src.textContent = 'source: PDF extract';
+    wrap.appendChild(src);
+
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px';
+    table.innerHTML = `<thead><tr style="color:var(--muted)">
+      <th style="text-align:left;padding:4px 8px;font-weight:600">Holder</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Shares (m)</th>
+      <th style="padding:4px 8px;font-weight:600;text-align:right">Stake</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.style.cssText = 'border-top:1px solid #1a1a1a';
+      tr.innerHTML = `
+        <td style="padding:5px 8px;color:#ccc">${r.name || ''}</td>
+        <td style="padding:5px 8px;color:#aaa;text-align:right">${r.shares_m != null ? Number(r.shares_m).toFixed(1) : '—'}</td>
+        <td style="padding:5px 8px;color:var(--gold);text-align:right">${r.pct != null ? Number(r.pct).toFixed(1) + '%' : '—'}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
   // ── Narrative panel ────────────────────────────────────────────────────────
   function _buildNarrativePanel(report) {
     const narrs = report.narratives || {};
@@ -414,11 +611,6 @@
       { key: 'production',   label: 'Production Analysis' },
       { key: 'outlook',      label: 'Outlook' },
     ];
-    const placeholders = [
-      'Earnings Estimates', 'Valuation', 'Financials',
-      'Resources & Reserves Detail', 'Commodity Assumptions',
-    ];
-
     sections.forEach(s => {
       const content = narrs[s.key];
       const card = document.createElement('div');
@@ -433,15 +625,6 @@
       body.style.cssText = 'font-size:13px;line-height:1.7;color:#ccc';
       body.textContent = content || 'Analysis not available — re-run with Claude enabled.';
       card.appendChild(body);
-      wrap.appendChild(card);
-    });
-
-    placeholders.forEach(label => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background:#0a0a0a;border:1px dashed #1f1f1f;border-radius:6px;padding:16px 22px;margin-bottom:10px;opacity:0.5';
-      card.innerHTML = `
-        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:#333;text-transform:uppercase;margin-bottom:6px">${label}</div>
-        <div style="font-size:12px;color:#2a2a2a">Coming soon</div>`;
       wrap.appendChild(card);
     });
 
