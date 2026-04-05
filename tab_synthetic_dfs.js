@@ -988,7 +988,7 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   // Top: voxel solid — smooth 4 Laplacian iterations to round staircase edges; no wireframe
   // Base: marching-cubes surface — already smooth; wireframe shows surface structure
   const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.72, 0xf5c518, false, 4);
-  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.55, 0x4488cc, true,  0);
+  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.15, 0x4488cc, true,  0);
 
   // Add key badge to the 3D viewer
   // Avoid duplicating if already present (re-load case)
