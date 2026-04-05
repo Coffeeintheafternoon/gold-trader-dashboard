@@ -486,13 +486,45 @@ function buildTargetPane(ticker, tkey, t, visible) {
     </div>`;
   };
 
-  const has3d       = !!t.drill_holes_url;
-  const hasMesh     = !!t.ore_body_mesh_url;
-  const hasMeshBase = !!t.ore_body_mesh_base_url;
+  const has3d        = !!t.drill_holes_url;
+  const hasMesh      = !!t.ore_body_mesh_url;
+  const hasMeshBase  = !!t.ore_body_mesh_base_url;
+  const hasSubmodels = (t.submodel_meshes || []).length > 0;
+  const hasAnyMesh   = hasMesh || hasMeshBase || hasSubmodels;
   const m1 = t.mission1 || {};
 
   // Resource estimate panel (Mission 1 GemPy)
   const errColor = m1.pass === true ? '#44bb88' : m1.pass === false ? '#ff6666' : '#888';
+  // Sub-model breakdown rows (paris / hhh / observation)
+  const smRows = (m1.submodels || []).map(sm => `
+    <tr>
+      <td style="padding:3px 10px 3px 0;font-size:11px;white-space:nowrap">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${sm.color || '#f5c518'};margin-right:5px;vertical-align:middle"></span>
+        <span style="color:#ccc">${sm.label || sm.name}</span>
+      </td>
+      <td style="padding:3px 10px 3px 0;font-size:11px;font-family:monospace;color:${sm.color || '#f5c518'};text-align:right">${sm.contained_koz != null ? sm.contained_koz.toFixed(1) : '—'}</td>
+      <td style="padding:3px 10px 3px 0;font-size:11px;font-family:monospace;color:#aaa;text-align:right">${sm.grade_gt != null ? sm.grade_gt.toFixed(3) : '—'}</td>
+      <td style="padding:3px 0;font-size:11px;color:var(--muted);text-align:right">${sm.ore_tonnes != null ? (sm.ore_tonnes/1e6).toFixed(2) + ' Mt' : '—'}</td>
+    </tr>`).join('');
+  const smTable = smRows ? `
+    <div style="margin-top:12px;border-top:1px solid #2a2a2a;padding-top:10px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:9px;color:var(--muted);font-weight:500;padding-bottom:4px">Deposit</th>
+          <th style="text-align:right;font-size:9px;color:var(--muted);font-weight:500;padding-bottom:4px">koz</th>
+          <th style="text-align:right;font-size:9px;color:var(--muted);font-weight:500;padding-bottom:4px">g/t</th>
+          <th style="text-align:right;font-size:9px;color:var(--muted);font-weight:500;padding-bottom:4px">Mt</th>
+        </tr></thead>
+        <tbody>${smRows}</tbody>
+      </table>
+    </div>` : '';
+  // JORC classification row
+  const jorcRow = (m1.jorc_measured_koz != null) ? `
+    <div style="margin-top:10px;border-top:1px solid #2a2a2a;padding-top:8px;display:flex;gap:16px;flex-wrap:wrap">
+      <span style="font-size:10px;color:#aaa"><span style="color:#44bb88">M</span> ${(m1.jorc_measured_koz||0).toFixed(0)} koz</span>
+      <span style="font-size:10px;color:#aaa"><span style="color:#88aaff">I</span> ${(m1.jorc_indicated_koz||0).toFixed(0)} koz</span>
+      <span style="font-size:10px;color:#aaa"><span style="color:#888">Inf</span> ${(m1.jorc_inferred_koz||0).toFixed(0)} koz</span>
+    </div>` : '';
   const m1Panel = m1.contained_koz != null ? `
     <div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:16px;margin-bottom:20px">
       <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px">
@@ -517,6 +549,8 @@ function buildTargetPane(ticker, tkey, t, visible) {
           <div style="font-size:11px;color:var(--muted)">Grade g/t Au</div>
         </div>
       </div>
+      ${smTable}
+      ${jorcRow}
       ${m1.ho_label ? `<div style="font-size:11px;color:var(--muted);margin-top:10px;border-top:1px solid #333;padding-top:8px">HO: ${m1.ho_label} | Gate: ${m1.pass_gate || '±30%'} | Method: ${m1.method || 'gempy'}${m1.model_version ? ' v' + m1.model_version : ''}</div>` : ''}
     </div>` : '';
 
@@ -680,7 +714,7 @@ function buildTargetPane(ticker, tkey, t, visible) {
           <div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;flex-direction:column;gap:8px">
             <div>
               Click <strong style="color:var(--accent);margin:0 4px;cursor:pointer"
-                onclick="sdfsLoad3D('${ticker}','${tkey}','${t.drill_holes_url}','${hasMesh ? t.ore_body_mesh_url : ''}','${hasMeshBase ? t.ore_body_mesh_base_url : ''}')">Load 3D View</strong> to render drill intercepts${hasMesh || hasMeshBase ? ' + ore body mesh' : ''}
+                onclick="sdfsLoad3D('${ticker}','${tkey}')">Load 3D View</strong> to render drill intercepts${hasAnyMesh ? ' + ore body' : ''}
             </div>
           </div>
         </div>
@@ -813,18 +847,25 @@ function _sdfsRenderGVC(ticker, tkey) {
   });
 }
 
-async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
+async function sdfsLoad3D(ticker, tkey) {
   const containerId = `sdfs-3d-wrap-${ticker}-${tkey}`;
   const wrap = document.getElementById(containerId);
   if (!wrap) return;
   wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading…</div>`;
 
-  let holesArray, groundSurface = null, meshData = null, meshDataBase = null;
+  // Look up target data from global sdfsData
+  const tData = (sdfsData && sdfsData[ticker] && sdfsData[ticker].targets)
+    ? sdfsData[ticker].targets[tkey] : null;
+  if (!tData || !tData.drill_holes_url) {
+    wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">No drill data URL</div>`;
+    return;
+  }
+
+  let holesArray, groundSurface = null;
   try {
-    const r = await fetch(url + '?v=' + Date.now());
+    const r = await fetch(tData.drill_holes_url + '?v=' + Date.now());
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const drillData = await r.json();
-    // drill_holes JSON may be {holes: [...], ground_surface: {...}} or legacy plain array
     if (Array.isArray(drillData)) {
       holesArray = drillData;
     } else {
@@ -836,29 +877,38 @@ async function sdfsLoad3D(ticker, tkey, url, meshUrl, meshBaseUrl) {
     return;
   }
 
-  // Try to load ore body top mesh (optional — soft fail)
-  if (meshUrl) {
-    try {
-      const mr = await fetch(meshUrl + '?v=' + Date.now());
-      if (mr.ok) meshData = await mr.json();
-    } catch (e) { /* ignore */ }
+  // Load sub-model meshes (paris / hhh / observation each with own colour)
+  const submodelMeshes = tData.submodel_meshes || [];
+  const loadedSubmodels = [];
+  for (const sm of submodelMeshes) {
+    const entry = { name: sm.name, label: sm.label, color: sm.color, top: null, base: null };
+    if (sm.top_url) {
+      try { const r = await fetch(sm.top_url  + '?v=' + Date.now()); if (r.ok) entry.top  = await r.json(); } catch(e){}
+    }
+    if (sm.base_url) {
+      try { const r = await fetch(sm.base_url + '?v=' + Date.now()); if (r.ok) entry.base = await r.json(); } catch(e){}
+    }
+    if (entry.top || entry.base) loadedSubmodels.push(entry);
   }
 
-  // Try to load ore body base mesh (optional — soft fail)
-  if (meshBaseUrl) {
-    try {
-      const mr = await fetch(meshBaseUrl + '?v=' + Date.now());
-      if (mr.ok) meshDataBase = await mr.json();
-    } catch (e) { /* ignore */ }
+  // Fallback: single mesh if no sub-models
+  let meshData = null, meshDataBase = null;
+  if (loadedSubmodels.length === 0) {
+    if (tData.ore_body_mesh_url) {
+      try { const r = await fetch(tData.ore_body_mesh_url + '?v=' + Date.now()); if (r.ok) meshData = await r.json(); } catch(e){}
+    }
+    if (tData.ore_body_mesh_base_url) {
+      try { const r = await fetch(tData.ore_body_mesh_base_url + '?v=' + Date.now()); if (r.ok) meshDataBase = await r.json(); } catch(e){}
+    }
   }
 
   if (typeof minesRender3D === 'function') {
-    // Queue the mesh bundle before calling minesRender3D — it's async and will pick up _pendingMesh
-    // once the Three.js scene is fully constructed (_minesRender3DInner stores scene on wrap).
-    if (meshData || meshDataBase) {
+    // Store pending mesh data on the wrap element — picked up after Three.js scene init
+    if (loadedSubmodels.length > 0) {
+      wrap._pendingSubmodelMeshes = loadedSubmodels;
+    } else if (meshData || meshDataBase) {
       wrap._pendingMesh = { top: meshData, base: meshDataBase };
     }
-    // Queue ground surface terrain mesh if present
     if (groundSurface && groundSurface.n_points >= 3) {
       wrap._pendingGround = groundSurface;
     }
@@ -985,44 +1035,51 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     return true;
   }
 
-  // Top: voxel solid — smooth 4 Laplacian iterations to round staircase edges; no wireframe
-  // Base: marching-cubes surface — already smooth; wireframe shows surface structure
-  const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.72, 0xf5c518, false, 4);
-  const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.15, 0x4488cc, true,  0);
+  // Sub-model meshes: each deposit rendered in its own colour
+  // meshBundle.submodels = [{name, label, color, top, base}, ...]
+  // Fallback: single mesh in gold (legacy / non-sub-model tickers)
+  const submodels = meshBundle.submodels || [];
+  const keyRows = [];
 
-  // Add key badge to the 3D viewer
-  // Avoid duplicating if already present (re-load case)
-  if (!wrap.querySelector('.sdfs-ore-key')) {
+  if (submodels.length > 0) {
+    for (const sm of submodels) {
+      const hexColor = parseInt(sm.color.replace('#',''), 16);
+      // Top: solid ore body (semi-transparent, smoothed)
+      const smTop  = addMeshToScene(sm.top,  hexColor, 0.68, hexColor, false, 4);
+      // Base: footwall outline (very transparent, wireframe)
+      const smBase = addMeshToScene(sm.base, hexColor, 0.10, hexColor, true,  0);
+      if (smTop || smBase) {
+        keyRows.push(
+          `<div style="display:flex;align-items:center;gap:6px;color:${sm.color};margin-top:3px">` +
+          `  <span style="width:10px;height:10px;background:${sm.color}55;border:1px solid ${sm.color};` +
+          `    display:inline-block;border-radius:2px"></span>` +
+          `  ${sm.label || sm.name}` +
+          `</div>`
+        );
+      }
+    }
+  } else {
+    // Legacy single-mesh path
+    const hasTop  = addMeshToScene(meshBundle.top,  0xf5c518, 0.68, 0xf5c518, false, 4);
+    const hasBase = addMeshToScene(meshBundle.base, 0x4488cc, 0.10, 0x4488cc, true,  0);
+    if (hasTop)  keyRows.push(`<div style="display:flex;align-items:center;gap:6px;color:#f5c518"><span style="width:10px;height:10px;background:rgba(245,197,24,0.35);border:1px solid #f5c518;display:inline-block;border-radius:2px"></span> Ore_Top</div>`);
+    if (hasBase) keyRows.push(`<div style="display:flex;align-items:center;gap:6px;color:#4488cc;margin-top:3px"><span style="width:10px;height:10px;background:rgba(68,136,204,0.25);border:1px solid #4488cc;display:inline-block;border-radius:2px"></span> Ore_Base</div>`);
+  }
+
+  // Key badge — avoid duplicating on re-load
+  if (!wrap.querySelector('.sdfs-ore-key') && keyRows.length > 0) {
     const key = document.createElement('div');
     key.className = 'sdfs-ore-key';
     key.style.cssText = [
       'position:absolute', 'bottom:12px', 'right:12px',
       'font-size:10px', 'font-family:monospace', 'pointer-events:none',
-      'background:rgba(0,0,0,0.60)', 'padding:8px 10px',
+      'background:rgba(0,0,0,0.65)', 'padding:8px 10px',
       'border-radius:3px', 'border:1px solid #333',
     ].join(';');
-    const topRow = hasTop ? [
-      `<div style="display:flex;align-items:center;gap:6px;color:#f5c518">`,
-      `  <span style="width:12px;height:12px;background:rgba(245,197,24,0.35);`,
-      `    border:1px solid #f5c518;display:inline-block;border-radius:2px"></span>`,
-      `  Ore_Top surface`,
-      `</div>`,
-    ].join('') : '';
-    const baseRow = hasBase ? [
-      `<div style="display:flex;align-items:center;gap:6px;color:#4488cc;margin-top:4px">`,
-      `  <span style="width:12px;height:12px;background:rgba(68,136,204,0.30);`,
-      `    border:1px solid #4488cc;display:inline-block;border-radius:2px"></span>`,
-      `  Ore_Base surface`,
-      `</div>`,
-    ].join('') : '';
-    key.innerHTML = [
-      `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>`,
-      topRow,
-      baseRow,
-      `<div style="font-size:9px;color:#555;margin-top:4px">`,
-      `  Implicit GemPy kriging · 1.0 g/t cutoff`,
-      `</div>`,
-    ].join('');
+    key.innerHTML =
+      `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>` +
+      keyRows.join('') +
+      `<div style="font-size:9px;color:#555;margin-top:5px">Implicit surface · kriging grade</div>`;
     wrap.appendChild(key);
   }
 }

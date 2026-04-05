@@ -408,6 +408,7 @@
           "drill_holes_url": "synthetic_dfs/MEK/drill_holes_fs1.json",
           "ore_body_mesh_url": "synthetic_dfs/MEK/ore_body_mesh_fs1.json",
           "ore_body_mesh_base_url": "synthetic_dfs/MEK/ore_body_mesh_base_fs1.json",
+          "submodel_meshes": [],
           "model_sections": {
             "model_section_ns": "synthetic_dfs/MEK/model_section_ns_fs1.png",
             "model_section_ew": "synthetic_dfs/MEK/model_section_ew_fs1.png",
@@ -418,6 +419,9 @@
             "tonnes": 565354.0,
             "grade_gt": 1.247,
             "contained_koz": 22.7,
+            "jorc_measured_koz": null,
+            "jorc_indicated_koz": null,
+            "jorc_inferred_koz": null,
             "ho_koz": 25.0,
             "error_pct": -9.3,
             "pass_gate": "\u00b130%",
@@ -454,7 +458,8 @@
                 "drill_contacts",
                 "drill_orientations"
               ]
-            }
+            },
+            "submodels": []
           }
         }
       },
@@ -2224,6 +2229,7 @@
           "drill_holes_url": "synthetic_dfs/STN/drill_holes_mre_feb2025.json",
           "ore_body_mesh_url": "synthetic_dfs/STN/ore_body_mesh_mre_feb2025.json",
           "ore_body_mesh_base_url": "synthetic_dfs/STN/ore_body_mesh_base_mre_feb2025.json",
+          "submodel_meshes": [],
           "model_sections": {
             "model_section_ns": "synthetic_dfs/STN/model_section_ns_mre_feb2025.png",
             "model_section_ew": "synthetic_dfs/STN/model_section_ew_mre_feb2025.png",
@@ -2234,6 +2240,9 @@
             "tonnes": 117027364.0,
             "grade_gt": 0.47,
             "contained_koz": 1769.2,
+            "jorc_measured_koz": 128.2,
+            "jorc_indicated_koz": 487.2,
+            "jorc_inferred_koz": 1153.8,
             "ho_koz": 2030,
             "error_pct": -12.8,
             "pass_gate": "\u00b130%",
@@ -2305,7 +2314,8 @@
               ],
               "jorc_measured_threshold_m": 12.5,
               "jorc_indicated_threshold_m": 30.0
-            }
+            },
+            "submodels": []
           }
         }
       },
@@ -9752,106 +9762,79 @@
             "section_ew": "synthetic_dfs/TOR/section_ew_mre_sep2024.png"
           },
           "drill_holes_url": "synthetic_dfs/TOR/drill_holes_mre_sep2024.json",
-          "ore_body_mesh_url": "synthetic_dfs/TOR/ore_body_mesh_mre_sep2024.json",
-          "ore_body_mesh_base_url": "synthetic_dfs/TOR/ore_body_mesh_base_mre_sep2024.json",
+          "ore_body_mesh_url": null,
+          "ore_body_mesh_base_url": null,
+          "submodel_meshes": [
+            {
+              "name": "paris",
+              "label": "Paris / Paris West / Paris SW",
+              "color": "#f5c518",
+              "top_url": "synthetic_dfs/TOR/ore_body_mesh_top_mre_sep2024_paris.json",
+              "base_url": "synthetic_dfs/TOR/ore_body_mesh_base_mre_sep2024_paris.json"
+            },
+            {
+              "name": "hhh",
+              "label": "HHH",
+              "color": "#ff7c2a",
+              "top_url": "synthetic_dfs/TOR/ore_body_mesh_top_mre_sep2024_hhh.json",
+              "base_url": "synthetic_dfs/TOR/ore_body_mesh_base_mre_sep2024_hhh.json"
+            },
+            {
+              "name": "observation",
+              "label": "Observation",
+              "color": "#4ecdc4",
+              "top_url": "synthetic_dfs/TOR/ore_body_mesh_top_mre_sep2024_observation.json",
+              "base_url": "synthetic_dfs/TOR/ore_body_mesh_base_mre_sep2024_observation.json"
+            }
+          ],
           "model_sections": {
-            "model_section_ns": "synthetic_dfs/TOR/model_section_ns_mre_sep2024.png",
-            "model_section_ew": "synthetic_dfs/TOR/model_section_ew_mre_sep2024.png",
-            "model_plan": "synthetic_dfs/TOR/model_plan_mre_sep2024.png"
+            "model_section_ns": "synthetic_dfs/TOR/model_section_ns_mre_sep2024_observation.png",
+            "model_section_ew": "synthetic_dfs/TOR/model_section_ew_mre_sep2024_observation.png",
+            "model_plan": "synthetic_dfs/TOR/model_plan_mre_sep2024_observation.png"
           },
           "mission1": {
-            "ore_volume_m3": 1772348.0,
-            "tonnes": 4962573.0,
-            "grade_gt": 2.747,
-            "contained_koz": 438.4,
+            "ore_volume_m3": 4757941.0,
+            "tonnes": 13322236.0,
+            "grade_gt": 2.266,
+            "contained_koz": 970.6,
+            "jorc_measured_koz": 225.4,
+            "jorc_indicated_koz": 354.0,
+            "jorc_inferred_koz": 391.2,
             "ho_koz": null,
             "error_pct": null,
             "pass_gate": "\u00b130%",
             "pass": null,
             "ho_label": "Paris Gold Project Maiden MRE September 2024 (BLIND)",
-            "method": "gempy",
-            "model_version": "1.2",
-            "run_at": "2026-04-05T18:15:56.729220+00:00",
-            "assumptions": {
-              "grade_cutoff_gt": 0.3,
-              "grade_cutoff_source": "per-target override",
-              "grade_cap_gt": 10.0,
-              "bulk_density_tm3": 2.8,
-              "orientation_strategy": "pca",
-              "orientation_dip_direction_deg": 242.0,
-              "orientation_dip_deg": 21.6,
-              "interval_buffer_m": 0.0,
-              "influence_clip_m": 60.0,
-              "northing_min": 6503000,
-              "model_resolution": [
-                100,
-                80,
-                50
-              ],
-              "model_pad_xy_m": 300.0,
-              "model_pad_z_m": 50.0,
-              "correction_factor": 0.62,
-              "assay_intervals_total": 1303,
-              "assay_intervals_above_cutoff": 339,
-              "layers_enabled": [
-                "drill_contacts",
-                "drill_orientations",
-                "collar_topo",
-                "dry_hole_footwall",
-                "grade_shells",
-                "slip_wa_geology"
-              ],
-              "grade_method": "kriging_ok3d_anisotropic_multidomain",
-              "composited": true,
-              "composite_length_m": 4.0,
-              "variogram": {
-                "model": "spherical_anisotropic",
-                "nugget": 6.9339,
-                "sill": 2643.6594,
-                "iso_range_m": 200.0,
-                "nugget_pct": 0.3,
-                "strike_deg": 290.0,
-                "along_m": 50.0,
-                "across_m": 8.0,
-                "vertical_m": 40.0
+            "method": null,
+            "model_version": null,
+            "run_at": null,
+            "assumptions": {},
+            "submodels": [
+              {
+                "name": "paris",
+                "label": "paris",
+                "contained_koz": 500.5,
+                "grade_gt": 3.743,
+                "ore_tonnes": 4159459.0,
+                "color": "#f5c518"
               },
-              "cross_validation": {
-                "n_folds": 5,
-                "n_samples": 85,
-                "rmse_gt": 2.7556,
-                "bias_gt": 0.1576,
-                "r2": 0.037
+              {
+                "name": "hhh",
+                "label": "hhh",
+                "contained_koz": 457.4,
+                "grade_gt": 1.584,
+                "ore_tonnes": 8984347.0,
+                "color": "#ff7c2a"
               },
-              "n_domains": 4,
-              "domain_summary": [
-                {
-                  "domain_id": 0,
-                  "n_runs": 51,
-                  "n_holes": 42,
-                  "mean_grade_gt": 1.694
-                },
-                {
-                  "domain_id": 1,
-                  "n_runs": 36,
-                  "n_holes": 26,
-                  "mean_grade_gt": 3.4
-                },
-                {
-                  "domain_id": 2,
-                  "n_runs": 37,
-                  "n_holes": 27,
-                  "mean_grade_gt": 4.524
-                },
-                {
-                  "domain_id": 3,
-                  "n_runs": 18,
-                  "n_holes": 14,
-                  "mean_grade_gt": 1.059
-                }
-              ],
-              "jorc_measured_threshold_m": 12.5,
-              "jorc_indicated_threshold_m": 25.0
-            }
+              {
+                "name": "observation",
+                "label": "observation",
+                "contained_koz": 12.7,
+                "grade_gt": 2.21,
+                "ore_tonnes": 178430.0,
+                "color": "#4ecdc4"
+              }
+            ]
           }
         }
       },
@@ -37786,5 +37769,5 @@
       }
     }
   },
-  "updated_at": "2026-04-05T20:22:38.753153+00:00"
+  "updated_at": "2026-04-05T20:35:43.583958+00:00"
 }
