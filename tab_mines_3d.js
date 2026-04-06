@@ -80,6 +80,34 @@ function _buildLegendHTML(scheme) {
   ).join('');
 }
 
+// ── Opacity helper ────────────────────────────────────────────────────────────
+// Apply a stored opacity value to the matching set of scene objects.
+// Called by the opacity sliders in the controls panel and by _rebuildIntercepts.
+
+function _applyOpacity(wrap, key, v) {
+  if (key === 'voxels') {
+    if (wrap._voxelMesh) {
+      wrap._voxelMesh.material.opacity     = v;
+      wrap._voxelMesh.material.transparent = v < 1.0;
+      wrap._voxelMesh.material.needsUpdate = true;
+    }
+  } else if (key === 'intercepts') {
+    const s = wrap._3dState;
+    if (s && s.interceptMeshes) s.interceptMeshes.forEach(m => {
+      m.material.opacity     = v;
+      m.material.transparent = v < 1.0;
+      m.material.needsUpdate = true;
+    });
+  } else if (key === 'surface') {
+    // _oreMeshes is populated by sdfsAddOreMesh; may be empty until surfaces are loaded
+    (wrap._oreMeshes || []).forEach(m => {
+      m.material.opacity     = v;
+      m.material.transparent = v < 1.0;
+      m.material.needsUpdate = true;
+    });
+  }
+}
+
 // ── Intercept mesh builder ────────────────────────────────────────────────────
 // Builds only the intercept cylinders — called on init and on every settings change.
 // Returns array of added THREE.Mesh so they can be removed on rebuild.
@@ -140,6 +168,9 @@ function _rebuildIntercepts(wrap) {
   s.interceptMeshes = _buildInterceptMeshes(
     s.scene, s.holesWithData, s.holePos, s.geomScale, s.settings
   );
+  // Re-apply intercept opacity if user has changed it from the default
+  const opa = wrap._opacity?.intercepts ?? 1.0;
+  if (opa < 1.0) _applyOpacity(wrap, 'intercepts', opa);
   _update3DBadge(wrap);
   if (wrap._3dLegend) wrap._3dLegend.innerHTML = _buildLegendHTML(s.settings.colourScheme);
 }
@@ -253,6 +284,46 @@ function _build3DControlsPanel(wrap) {
   cutoffDiv.appendChild(cutoffTop);
   cutoffDiv.appendChild(slider);
   panel.appendChild(cutoffDiv);
+
+  // ── Opacity sliders ────────────────────────────────────────────────────────
+  // Initialise opacity store with sensible defaults matching the render defaults.
+  if (!wrap._opacity) wrap._opacity = { voxels: 0.82, intercepts: 1.0, surface: 0.68 };
+
+  const opDiv = document.createElement('div');
+  opDiv.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:1px solid #1a2a3a';
+
+  const opHdr = document.createElement('div');
+  opHdr.textContent = 'Opacity';
+  opHdr.style.cssText = 'font-size:9px;color:#667766;text-transform:uppercase;letter-spacing:0.05em';
+  opDiv.appendChild(opHdr);
+
+  const _opRow = (label, key, minVal) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:5px';
+    const lbl = document.createElement('span');
+    lbl.textContent = label;
+    lbl.style.cssText = 'min-width:62px;flex-shrink:0;font-size:9px;color:#667766';
+    const sl = document.createElement('input');
+    sl.type = 'range'; sl.min = String(minVal); sl.max = '1'; sl.step = '0.05';
+    sl.value = String(wrap._opacity[key]);
+    sl.style.cssText = 'flex:1;cursor:pointer;accent-color:#4a8a4a;margin:0';
+    const pct = document.createElement('span');
+    pct.style.cssText = 'min-width:26px;text-align:right;color:#aaccaa;font-size:9px';
+    pct.textContent = Math.round(wrap._opacity[key] * 100) + '%';
+    sl.addEventListener('input', function () {
+      const v = parseFloat(this.value);
+      wrap._opacity[key] = v;
+      pct.textContent = Math.round(v * 100) + '%';
+      _applyOpacity(wrap, key, v);
+    });
+    row.appendChild(lbl); row.appendChild(sl); row.appendChild(pct);
+    return row;
+  };
+
+  opDiv.appendChild(_opRow('Ore body',    'voxels',     0.05));
+  opDiv.appendChild(_opRow('Drill holes', 'intercepts', 0.05));
+  opDiv.appendChild(_opRow('Surfaces',    'surface',    0));
+  panel.appendChild(opDiv);
 
   wrap.appendChild(panel);
 }

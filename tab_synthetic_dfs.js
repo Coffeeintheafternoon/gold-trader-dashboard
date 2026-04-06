@@ -992,7 +992,7 @@ function sdfsAddVoxelMesh(containerId, voxelEntries) {
   const geom = new THREE.BoxGeometry(cdx, cdz, cdy);
   const mat  = new THREE.MeshPhongMaterial({
     transparent: true,
-    opacity: 0.82,
+    opacity: wrap._opacity?.voxels ?? 0.82,
     shininess: 40,
     vertexColors: false,
   });
@@ -1122,6 +1122,9 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   const cy   = wrap._threeCy  || 0;
   const zRef = wrap._threeZRef || 0;
 
+  // Track all ore surface meshes so the opacity slider can reach them
+  const _newOreMeshes = [];
+
   // Smooth the RL (height) of a voxel mesh by averaging each grid corner's RL
   // with its 4 cardinal neighbours. Handles top and base independently so the
   // ore thickness is preserved. CELL = grid spacing in metres.
@@ -1196,15 +1199,20 @@ function sdfsAddOreMesh(containerId, meshBundle) {
       geometry.setAttribute('color', new THREE.BufferAttribute(colArr, 3));
     }
 
+    // Use surface opacity from slider if set, otherwise use the render default
+    const _opa = wrap._opacity?.surface ?? opacity;
     const solidMat = new THREE.MeshPhongMaterial({
       ...(hasVG && typeof _gradeColor === 'function' ? { vertexColors: true } : { color }),
       transparent: true,
-      opacity,
+      opacity: _opa,
       side: THREE.DoubleSide,
       shininess: 80,
       depthWrite: false,
     });
-    scene.add(new THREE.Mesh(geometry, solidMat));
+    const solidMesh = new THREE.Mesh(geometry, solidMat);
+    solidMesh._sdfsOre = true;
+    scene.add(solidMesh);
+    _newOreMeshes.push(solidMesh);
 
     // Wireframe overlay — only for open surfaces (base), not closed solid (top)
     if (showWireframe) {
@@ -1212,10 +1220,13 @@ function sdfsAddOreMesh(containerId, meshBundle) {
         color: wireColor,
         wireframe: true,
         transparent: true,
-        opacity: 0.12,
+        opacity: Math.min(0.12, _opa * 0.18),
         depthWrite: false,
       });
-      scene.add(new THREE.Mesh(geometry, wireMat));
+      const wireMesh = new THREE.Mesh(geometry, wireMat);
+      wireMesh._sdfsOre = true;
+      scene.add(wireMesh);
+      _newOreMeshes.push(wireMesh);
     }
 
     return true;
@@ -1251,6 +1262,9 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     if (hasTop)  keyRows.push(`<div style="display:flex;align-items:center;gap:6px;color:#f5c518"><span style="width:10px;height:10px;background:rgba(245,197,24,0.35);border:1px solid #f5c518;display:inline-block;border-radius:2px"></span> Ore_Top</div>`);
     if (hasBase) keyRows.push(`<div style="display:flex;align-items:center;gap:6px;color:#4488cc;margin-top:3px"><span style="width:10px;height:10px;background:rgba(68,136,204,0.25);border:1px solid #4488cc;display:inline-block;border-radius:2px"></span> Ore_Base</div>`);
   }
+
+  // Register surface meshes so opacity slider can reach them
+  wrap._oreMeshes = (wrap._oreMeshes || []).concat(_newOreMeshes);
 
   // Update the bottom-left legend (only when no voxel mesh is active — voxels take priority)
   if (!wrap._voxelMesh && wrap._3dLegend && keyRows.length > 0) {
