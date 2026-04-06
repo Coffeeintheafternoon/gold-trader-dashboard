@@ -853,9 +853,9 @@ async function sdfsLoad3D(ticker, tkey) {
   if (!wrap) return;
   wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Loading…</div>`;
 
-  // Look up target data from global sdfsData
-  const tData = (sdfsData && sdfsData[ticker] && sdfsData[ticker].targets)
-    ? sdfsData[ticker].targets[tkey] : null;
+  // Look up target data from global _synthDFSData
+  const tData = (_synthDFSData && _synthDFSData.tickers && _synthDFSData.tickers[ticker] && _synthDFSData.tickers[ticker].targets)
+    ? _synthDFSData.tickers[ticker].targets[tkey] : null;
   if (!tData || !tData.drill_holes_url) {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">No drill data URL</div>`;
     return;
