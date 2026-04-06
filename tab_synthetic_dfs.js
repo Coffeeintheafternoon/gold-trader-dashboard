@@ -690,11 +690,16 @@ function buildTargetPane(ticker, tkey, t, visible) {
       ${(t.model_sections && Object.keys(t.model_sections).length > 0) ? `
       <div style="margin-bottom:20px">
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px">GemPy Block Model Sections — lith + grade</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:12px">
           ${imgHtml2('model_section_ns', 'N\u2013S Section (GemPy)')}
           ${imgHtml2('model_section_ew', 'E\u2013W Section (GemPy)')}
           ${imgHtml2('model_plan', 'Plan View (GemPy)')}
         </div>
+        ${(t.model_sections?.model_longsection) ? `
+        <div style="margin-top:4px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">Long Section (looking along strike) — shows ore shoot plunge direction, depth extent, oxide/fresh zones</div>
+          ${imgHtml2('model_longsection', 'Long Section (along-strike)')}
+        </div>` : ''}
       </div>` : ''}
 
       <!-- Grade-volume curve — shown when mission1 has grade_volume_curve data -->
