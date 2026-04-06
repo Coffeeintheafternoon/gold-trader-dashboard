@@ -927,8 +927,8 @@ function sdfsAddOreMesh(containerId, meshBundle) {
   if (!wrap || !wrap._threeScene || !window.THREE) return;
   const scene = wrap._threeScene;
 
-  // Normalise legacy single-mesh call
-  if (meshBundle && !('top' in meshBundle) && !('base' in meshBundle)) {
+  // Normalise legacy single-mesh call (skip if already sub-models or bundle form)
+  if (meshBundle && !('top' in meshBundle) && !('base' in meshBundle) && !('submodels' in meshBundle)) {
     meshBundle = { top: meshBundle, base: null };
   }
 
