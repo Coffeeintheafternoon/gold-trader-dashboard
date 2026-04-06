@@ -541,7 +541,23 @@ function _minesRender3DInner(wrap, holes) {
   const _rls = holesWithData.filter(h => h.rl != null).map(h => h.rl);
   wrap._threeZRef  = _rls.length > 0 ? _median(_rls) : 0;
 
-  if (wrap._pendingSubmodelMeshes && typeof sdfsAddOreMesh === 'function') {
+  // Voxel volumetric render — preferred over surface mesh when available
+  const _hasVoxels = wrap._pendingSubmodelMeshes
+    ? wrap._pendingSubmodelMeshes.some(sm => sm.voxels)
+    : !!wrap._pendingVoxels;
+
+  if (_hasVoxels && typeof sdfsAddVoxelMesh === 'function') {
+    const _entries = wrap._pendingSubmodelMeshes
+      ? wrap._pendingSubmodelMeshes.filter(sm => sm.voxels).map(sm => ({ voxels: sm.voxels, color: sm.color }))
+      : (wrap._pendingVoxels || []);
+    sdfsAddVoxelMesh(wrap.id, _entries);
+    delete wrap._pendingVoxels;
+    // Still add the surface mesh underneath (hidden by sdfsAddVoxelMesh) for fallback
+    if (wrap._pendingSubmodelMeshes && typeof sdfsAddOreMesh === 'function') {
+      sdfsAddOreMesh(wrap.id, { submodels: wrap._pendingSubmodelMeshes });
+      delete wrap._pendingSubmodelMeshes;
+    }
+  } else if (wrap._pendingSubmodelMeshes && typeof sdfsAddOreMesh === 'function') {
     sdfsAddOreMesh(wrap.id, { submodels: wrap._pendingSubmodelMeshes });
     delete wrap._pendingSubmodelMeshes;
   } else if (wrap._pendingMesh && typeof sdfsAddOreMesh === 'function') {

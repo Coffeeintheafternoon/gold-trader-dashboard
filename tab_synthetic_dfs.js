@@ -886,14 +886,17 @@ async function sdfsLoad3D(ticker, tkey) {
   const submodelMeshes = tData.submodel_meshes || [];
   const loadedSubmodels = [];
   for (const sm of submodelMeshes) {
-    const entry = { name: sm.name, label: sm.label, color: sm.color, top: null, base: null };
+    const entry = { name: sm.name, label: sm.label, color: sm.color, top: null, base: null, voxels: null };
     if (sm.top_url) {
       try { const r = await fetch(sm.top_url  + '?v=' + Date.now()); if (r.ok) entry.top  = await r.json(); } catch(e){}
     }
     if (sm.base_url) {
       try { const r = await fetch(sm.base_url + '?v=' + Date.now()); if (r.ok) entry.base = await r.json(); } catch(e){}
     }
-    if (entry.top || entry.base) loadedSubmodels.push(entry);
+    if (sm.voxel_url) {
+      try { const r = await fetch(sm.voxel_url + '?v=' + Date.now()); if (r.ok) entry.voxels = await r.json(); } catch(e){}
+    }
+    if (entry.top || entry.base || entry.voxels) loadedSubmodels.push(entry);
   }
 
   // Fallback: single mesh if no sub-models
@@ -907,6 +910,12 @@ async function sdfsLoad3D(ticker, tkey) {
     }
   }
 
+  // Load single-model voxel data (fallback when no sub-models)
+  let voxelDataSingle = null;
+  if (loadedSubmodels.length === 0 && tData.ore_body_voxel_url) {
+    try { const r = await fetch(tData.ore_body_voxel_url + '?v=' + Date.now()); if (r.ok) voxelDataSingle = await r.json(); } catch(e){}
+  }
+
   if (typeof minesRender3D === 'function') {
     // Store pending mesh data on the wrap element — picked up after Three.js scene init
     if (loadedSubmodels.length > 0) {
@@ -914,12 +923,172 @@ async function sdfsLoad3D(ticker, tkey) {
     } else if (meshData || meshDataBase) {
       wrap._pendingMesh = { top: meshData, base: meshDataBase };
     }
+    if (voxelDataSingle) wrap._pendingVoxels = [{ voxels: voxelDataSingle, color: '#f5c518' }];
     if (groundSurface && groundSurface.n_points >= 3) {
       wrap._pendingGround = groundSurface;
     }
     minesRender3D(holesArray, containerId);
   } else {
     wrap.innerHTML = `<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#ff6666;font-size:12px">3D engine not loaded — tab_mines_3d.js required</div>`;
+  }
+}
+
+function sdfsAddVoxelMesh(containerId, voxelEntries) {
+  // Render the ore body as a volumetric InstancedMesh — one solid cube per voxel.
+  // voxelEntries: [{voxels: {cell_dx, cell_dy, cell_dz, voxels:[[E,N,RL,grade,jorc],...]}, color}]
+  // Adds a Grade / JORC toggle button to the scene container.
+  const wrap = document.getElementById(containerId);
+  if (!wrap || !wrap._threeScene || !window.THREE) return;
+  const THREE = window.THREE;
+  const scene = wrap._threeScene;
+  const cx    = wrap._threeCx  || 0;
+  const cy    = wrap._threeCy  || 0;
+  const zRef  = wrap._threeZRef || 0;
+
+  // Colour scales
+  function gradeToColor(g) {
+    // blue(0.3) → cyan(1) → green(2) → yellow(5) → red(10+)
+    const stops = [
+      [0.3,  0.26, 0.53, 1.00],
+      [1.0,  0.00, 0.80, 0.80],
+      [2.0,  0.20, 0.85, 0.20],
+      [5.0,  1.00, 0.85, 0.00],
+      [10.0, 1.00, 0.13, 0.00],
+    ];
+    if (g <= stops[0][0]) return { r: stops[0][1], g: stops[0][2], b: stops[0][3] };
+    if (g >= stops[stops.length-1][0]) { const s = stops[stops.length-1]; return { r: s[1], g: s[2], b: s[3] }; }
+    for (let i = 1; i < stops.length; i++) {
+      if (g <= stops[i][0]) {
+        const t = (g - stops[i-1][0]) / (stops[i][0] - stops[i-1][0]);
+        return {
+          r: stops[i-1][1] + t * (stops[i][1] - stops[i-1][1]),
+          g: stops[i-1][2] + t * (stops[i][2] - stops[i-1][2]),
+          b: stops[i-1][3] + t * (stops[i][3] - stops[i-1][3]),
+        };
+      }
+    }
+  }
+  function jorcToColor(j) {
+    // 1=Measured (bright green), 2=Indicated (yellow), 3=Inferred (steel blue)
+    if (j === 1) return { r: 0.27, g: 1.00, b: 0.53 };
+    if (j === 2) return { r: 1.00, g: 0.80, b: 0.00 };
+    return           { r: 0.27, g: 0.53, b: 0.80 };
+  }
+
+  // Collect all voxels from all entries
+  const allVoxels = [];   // {e, n, rl, grade, jorc}
+  let cdx = 45, cdy = 50, cdz = 20;  // defaults
+  for (const entry of voxelEntries) {
+    const vd = entry.voxels;
+    if (!vd || !vd.voxels) continue;
+    cdx = vd.cell_dx || cdx;
+    cdy = vd.cell_dy || cdy;
+    cdz = vd.cell_dz || cdz;
+    for (const v of vd.voxels) allVoxels.push({ e: v[0], n: v[1], rl: v[2], grade: v[3], jorc: v[4] });
+  }
+  if (allVoxels.length === 0) return;
+
+  // Three.js: X=easting, Y=RL, Z=northing (after centring)
+  const geom = new THREE.BoxGeometry(cdx, cdz, cdy);
+  const mat  = new THREE.MeshPhongMaterial({
+    transparent: true,
+    opacity: 0.82,
+    shininess: 40,
+    vertexColors: false,
+  });
+  const mesh = new THREE.InstancedMesh(geom, mat, allVoxels.length);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  mesh.castShadow    = false;
+  mesh.receiveShadow = false;
+
+  const dummy  = new THREE.Object3D();
+  const color  = new THREE.Color();
+  let colorMode = 'grade';   // 'grade' | 'jorc'
+
+  function applyColors(mode) {
+    for (let i = 0; i < allVoxels.length; i++) {
+      const v = allVoxels[i];
+      const c = mode === 'grade' ? gradeToColor(v.grade) : jorcToColor(v.jorc);
+      color.setRGB(c.r, c.g, c.b);
+      mesh.setColorAt(i, color);
+    }
+    mesh.instanceColor.needsUpdate = true;
+  }
+
+  // Position each instance
+  for (let i = 0; i < allVoxels.length; i++) {
+    const v = allVoxels[i];
+    dummy.position.set(v.e - cx, v.rl - zRef, v.n - cy);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  applyColors(colorMode);
+  scene.add(mesh);
+  wrap._voxelMesh = mesh;
+  wrap._voxelData = allVoxels;
+  wrap._voxelApplyColors = applyColors;
+
+  // Hide legacy surface meshes — replaced by volumetric view
+  scene.traverse(obj => {
+    if (obj.isMesh && obj !== mesh) {
+      obj.visible = false;
+      obj._sdfsHidden = true;
+    }
+  });
+
+  // Toggle button
+  if (!wrap.querySelector('.sdfs-voxel-toggle')) {
+    const btn = document.createElement('div');
+    btn.className = 'sdfs-voxel-toggle';
+    btn.style.cssText = [
+      'position:absolute', 'top:12px', 'left:12px',
+      'display:flex', 'gap:6px', 'z-index:10',
+    ].join(';');
+    btn.innerHTML = `
+      <button data-mode="grade" style="
+        padding:4px 10px;font-size:10px;font-family:monospace;cursor:pointer;
+        border-radius:3px;border:1px solid #f5c518;background:#f5c51830;color:#f5c518;
+        letter-spacing:0.05em;text-transform:uppercase;font-weight:bold;">Grade</button>
+      <button data-mode="jorc" style="
+        padding:4px 10px;font-size:10px;font-family:monospace;cursor:pointer;
+        border-radius:3px;border:1px solid #555;background:transparent;color:#888;
+        letter-spacing:0.05em;text-transform:uppercase;">JORC</button>`;
+    btn.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        colorMode = b.dataset.mode;
+        applyColors(colorMode);
+        btn.querySelectorAll('button').forEach(x => {
+          const active = x.dataset.mode === colorMode;
+          x.style.borderColor  = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#555';
+          x.style.background   = active ? (colorMode === 'grade' ? '#f5c51830' : '#44ff8820') : 'transparent';
+          x.style.color        = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#888';
+        });
+      });
+    });
+    wrap.appendChild(btn);
+  }
+
+  // Colour legend badge
+  if (!wrap.querySelector('.sdfs-voxel-key')) {
+    const key = document.createElement('div');
+    key.className = 'sdfs-voxel-key';
+    key.style.cssText = [
+      'position:absolute', 'bottom:12px', 'right:12px',
+      'font-size:10px', 'font-family:monospace', 'pointer-events:none',
+      'background:rgba(0,0,0,0.65)', 'padding:8px 10px',
+      'border-radius:3px', 'border:1px solid #333', 'min-width:110px',
+    ].join(';');
+    key.innerHTML = `
+      <div style="color:#888;margin-bottom:6px;font-size:9px;letter-spacing:0.05em">GRADE (g/t Au)</div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ff2100;border-radius:2px;display:inline-block"></span><span style="color:#aaa">&gt;10 g/t</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ffd900;border-radius:2px;display:inline-block"></span><span style="color:#aaa">5 g/t</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#33d933;border-radius:2px;display:inline-block"></span><span style="color:#aaa">2 g/t</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#00cccc;border-radius:2px;display:inline-block"></span><span style="color:#aaa">1 g/t</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#4287ff;border-radius:2px;display:inline-block"></span><span style="color:#aaa">0.3 g/t</span></div>
+      </div>`;
+    wrap.appendChild(key);
   }
 }
 
