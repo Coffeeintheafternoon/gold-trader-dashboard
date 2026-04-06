@@ -463,11 +463,17 @@ function _minesRender3DInner(wrap, holes) {
   wrap.appendChild(badge);
   _update3DBadge(wrap);
 
-  // Plan view toggle — top-left
+  // Top-left controls container — plan view toggle stacked above any future rows
+  // (sdfsAddVoxelMesh appends a Grade/JORC row here instead of creating an overlapping element)
+  const controlsLeft = document.createElement('div');
+  controlsLeft.className = 'mines3d-controls-left';
+  controlsLeft.style.cssText = `position:absolute;top:10px;left:10px;display:flex;
+    flex-direction:column;gap:4px;z-index:10`;
+  wrap._3dControlsLeft = controlsLeft;
+
   const planBtn = document.createElement('div');
-  planBtn.style.cssText = `position:absolute;top:10px;left:10px;font-size:10px;
-    font-family:monospace;background:rgba(0,0,0,0.6);padding:4px 10px;
-    border-radius:2px;border:1px solid #1a2a3a;cursor:pointer;color:#88aa88;
+  planBtn.style.cssText = `font-size:10px;font-family:monospace;background:rgba(0,0,0,0.6);
+    padding:4px 10px;border-radius:2px;border:1px solid #1a2a3a;cursor:pointer;color:#88aa88;
     user-select:none`;
   planBtn.textContent = '⊙ Plan view';
   let _planMode = false;
@@ -491,7 +497,8 @@ function _minesRender3DInner(wrap, holes) {
       planBtn.style.borderColor = '#1a2a3a';
     }
   });
-  wrap.appendChild(planBtn);
+  controlsLeft.appendChild(planBtn);
+  wrap.appendChild(controlsLeft);
 
   // Display controls panel — top-right, below badge
   _build3DControlsPanel(wrap);

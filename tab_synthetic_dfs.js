@@ -1037,58 +1037,70 @@ function sdfsAddVoxelMesh(containerId, voxelEntries) {
     }
   });
 
-  // Toggle button
-  if (!wrap.querySelector('.sdfs-voxel-toggle')) {
-    const btn = document.createElement('div');
-    btn.className = 'sdfs-voxel-toggle';
-    btn.style.cssText = [
-      'position:absolute', 'top:12px', 'left:12px',
-      'display:flex', 'gap:6px', 'z-index:10',
-    ].join(';');
-    btn.innerHTML = `
+  // Legend updater — writes into the existing bottom-left legend instead of a new overlapping badge
+  function _updateLegendForVoxels(mode) {
+    if (!wrap._3dLegend) return;
+    wrap._3dLegend.style.borderColor = '#2a2a3a';
+    if (mode === 'grade') {
+      wrap._3dLegend.innerHTML = `
+        <div style="color:#888;margin-bottom:6px;font-size:9px;letter-spacing:0.05em;text-transform:uppercase">Grade (g/t Au)</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ff2100;border-radius:2px;display:inline-block"></span><span style="color:#aaa">&gt;10 g/t</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ffd900;border-radius:2px;display:inline-block"></span><span style="color:#aaa">5 g/t</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#33d933;border-radius:2px;display:inline-block"></span><span style="color:#aaa">2 g/t</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#00cccc;border-radius:2px;display:inline-block"></span><span style="color:#aaa">1 g/t</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#4287ff;border-radius:2px;display:inline-block"></span><span style="color:#aaa">0.3 g/t</span></div>
+        </div>`;
+    } else {
+      wrap._3dLegend.innerHTML = `
+        <div style="color:#888;margin-bottom:6px;font-size:9px;letter-spacing:0.05em;text-transform:uppercase">JORC Class</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#44ff88;border-radius:2px;display:inline-block"></span><span style="color:#aaa">Measured</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ffcc00;border-radius:2px;display:inline-block"></span><span style="color:#aaa">Indicated</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#4488cc;border-radius:2px;display:inline-block"></span><span style="color:#aaa">Inferred</span></div>
+        </div>`;
+    }
+  }
+  _updateLegendForVoxels(colorMode);
+
+  // Grade/JORC toggle — appended to the top-left controls container (below plan view button),
+  // not as a separate absolutely-positioned element
+  const _ctrlLeft = wrap._3dControlsLeft || (() => {
+    const c = document.createElement('div');
+    c.className = 'mines3d-controls-left';
+    c.style.cssText = `position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px;z-index:10`;
+    wrap._3dControlsLeft = c;
+    wrap.appendChild(c);
+    return c;
+  })();
+
+  if (!_ctrlLeft.querySelector('.sdfs-voxel-toggle-row')) {
+    const btnRow = document.createElement('div');
+    btnRow.className = 'sdfs-voxel-toggle-row';
+    btnRow.style.cssText = 'display:flex;gap:4px';
+    btnRow.innerHTML = `
       <button data-mode="grade" style="
-        padding:4px 10px;font-size:10px;font-family:monospace;cursor:pointer;
+        padding:3px 9px;font-size:10px;font-family:monospace;cursor:pointer;
         border-radius:3px;border:1px solid #f5c518;background:#f5c51830;color:#f5c518;
         letter-spacing:0.05em;text-transform:uppercase;font-weight:bold;">Grade</button>
       <button data-mode="jorc" style="
-        padding:4px 10px;font-size:10px;font-family:monospace;cursor:pointer;
+        padding:3px 9px;font-size:10px;font-family:monospace;cursor:pointer;
         border-radius:3px;border:1px solid #555;background:transparent;color:#888;
         letter-spacing:0.05em;text-transform:uppercase;">JORC</button>`;
-    btn.querySelectorAll('button').forEach(b => {
+    btnRow.querySelectorAll('button').forEach(b => {
       b.addEventListener('click', () => {
         colorMode = b.dataset.mode;
         applyColors(colorMode);
-        btn.querySelectorAll('button').forEach(x => {
+        _updateLegendForVoxels(colorMode);
+        btnRow.querySelectorAll('button').forEach(x => {
           const active = x.dataset.mode === colorMode;
-          x.style.borderColor  = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#555';
-          x.style.background   = active ? (colorMode === 'grade' ? '#f5c51830' : '#44ff8820') : 'transparent';
-          x.style.color        = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#888';
+          x.style.borderColor = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#555';
+          x.style.background  = active ? (colorMode === 'grade' ? '#f5c51830' : '#44ff8820') : 'transparent';
+          x.style.color       = active ? (colorMode === 'grade' ? '#f5c518' : '#44ff88') : '#888';
         });
       });
     });
-    wrap.appendChild(btn);
-  }
-
-  // Colour legend badge
-  if (!wrap.querySelector('.sdfs-voxel-key')) {
-    const key = document.createElement('div');
-    key.className = 'sdfs-voxel-key';
-    key.style.cssText = [
-      'position:absolute', 'bottom:12px', 'right:12px',
-      'font-size:10px', 'font-family:monospace', 'pointer-events:none',
-      'background:rgba(0,0,0,0.65)', 'padding:8px 10px',
-      'border-radius:3px', 'border:1px solid #333', 'min-width:110px',
-    ].join(';');
-    key.innerHTML = `
-      <div style="color:#888;margin-bottom:6px;font-size:9px;letter-spacing:0.05em">GRADE (g/t Au)</div>
-      <div style="display:flex;flex-direction:column;gap:3px">
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ff2100;border-radius:2px;display:inline-block"></span><span style="color:#aaa">&gt;10 g/t</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#ffd900;border-radius:2px;display:inline-block"></span><span style="color:#aaa">5 g/t</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#33d933;border-radius:2px;display:inline-block"></span><span style="color:#aaa">2 g/t</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#00cccc;border-radius:2px;display:inline-block"></span><span style="color:#aaa">1 g/t</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;background:#4287ff;border-radius:2px;display:inline-block"></span><span style="color:#aaa">0.3 g/t</span></div>
-      </div>`;
-    wrap.appendChild(key);
+    _ctrlLeft.appendChild(btnRow);
   }
 }
 
@@ -1240,21 +1252,13 @@ function sdfsAddOreMesh(containerId, meshBundle) {
     if (hasBase) keyRows.push(`<div style="display:flex;align-items:center;gap:6px;color:#4488cc;margin-top:3px"><span style="width:10px;height:10px;background:rgba(68,136,204,0.25);border:1px solid #4488cc;display:inline-block;border-radius:2px"></span> Ore_Base</div>`);
   }
 
-  // Key badge — avoid duplicating on re-load
-  if (!wrap.querySelector('.sdfs-ore-key') && keyRows.length > 0) {
-    const key = document.createElement('div');
-    key.className = 'sdfs-ore-key';
-    key.style.cssText = [
-      'position:absolute', 'bottom:12px', 'right:12px',
-      'font-size:10px', 'font-family:monospace', 'pointer-events:none',
-      'background:rgba(0,0,0,0.65)', 'padding:8px 10px',
-      'border-radius:3px', 'border:1px solid #333',
-    ].join(';');
-    key.innerHTML =
+  // Update the bottom-left legend (only when no voxel mesh is active — voxels take priority)
+  if (!wrap._voxelMesh && wrap._3dLegend && keyRows.length > 0) {
+    wrap._3dLegend.style.borderColor = '#2a2a3a';
+    wrap._3dLegend.innerHTML =
       `<div style="color:#888;margin-bottom:5px;font-size:9px;letter-spacing:0.05em">GemPy MODEL</div>` +
       keyRows.join('') +
       `<div style="font-size:9px;color:#555;margin-top:5px">Implicit surface · kriging grade</div>`;
-    wrap.appendChild(key);
   }
 }
 
