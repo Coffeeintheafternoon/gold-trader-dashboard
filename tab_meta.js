@@ -47,7 +47,7 @@ let _metaFeatData=null;
 let _metaDistSectorChart=null,_metaCatChart=null;
 let _advCharts=new Array(10).fill(null);
 let _trCharts=new Array(20).fill(null);
-let _modelIndexData=null, _screenerFull=null;
+let _modelIndexData=null, _screenerFull=null, _benchmarkData=null;
 let _modelIndexFlat=[];
 let _activeModelFilter='All';
 let _mcptLookup={}; // ticker → {status, mcpt_p, overfit}
@@ -87,6 +87,7 @@ async function initMetaTab(){
   if(!_compData) loads.push(fetch(`./models_comparison.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_compData=d;}).catch(()=>{}));
   if(!_metaFeatData) loads.push(fetch(`./meta_features.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_metaFeatData=d;}).catch(()=>{}));
   if(!Object.keys(_mcptLookup).length) loads.push(fetch(`./mcpt_results.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.results){d.results.forEach(r=>{_mcptLookup[r.ticker]={status:r.status,mcpt_p:r.mcpt_p,overfit:r.overfit};});}}).catch(()=>{}));
+  if(!_benchmarkData) loads.push(fetch(`./benchmark_results.json?v=${_CV}`).then(r=>r.ok?r.json():null).then(d=>{if(d)_benchmarkData=d;}).catch(()=>{}));
   await Promise.all(loads);
   _screenerFull=_fullScreenerData||[];
 
@@ -288,7 +289,20 @@ function _buildMetaTab(){
   const avgIs=isPFs.length?isPFs.reduce((a,b)=>a+b,0)/isPFs.length:0;
   const decay=avgIs>0?(avgIs-avgHoPF)/avgIs*100:0;
   el('meta-lr-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:${GREEN}">${edge.length}/${valid.length}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">${valid.length?Math.round(edge.length/valid.length*100):0}% with HO PF ≥ 1.10</div><div style="font-size:12px;color:var(--muted);margin-top:6px">IS avg ${avgIs.toFixed(3)} → HO avg ${avgHoPF.toFixed(3)} (−${decay.toFixed(1)}% decay)</div>`;
-  el('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:${RED}">0/${valid.length}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div><div style="font-size:12px;color:var(--muted);margin-top:6px">No validated edge found</div>`;
+  // Donchian stat — use benchmark data if available
+  if(_benchmarkData&&_benchmarkData.summary){
+    const donS=_benchmarkData.summary.find(s=>s.strategy==='Donchian(20)');
+    if(donS){
+      const col=donS.median_sharpe>0?GREEN:'#b45309';
+      el('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:${col}">${donS.pct_positive.toFixed(0)}%</span><div style="font-size:13px;color:var(--muted);margin-top:2px">${donS.n} tickers · median Sharpe ${donS.median_sharpe>0?'+':''}${donS.median_sharpe.toFixed(3)}</div><div style="font-size:12px;color:var(--muted);margin-top:6px">Wins best on ${donS.win_pct.toFixed(0)}% of tickers</div>`;
+    }else{
+      el('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:${RED}">0/${valid.length}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div>`;
+    }
+  }else{
+    el('meta-don-stat').innerHTML=`<span style="font-size:28px;font-weight:800;color:${RED}">0/${valid.length}</span><div style="font-size:13px;color:var(--muted);margin-top:2px">0% pass rate</div>`;
+  }
+  // Render benchmark comparison section
+  _renderBenchmarkSection();
 
   // ── Portfolio alignment ───────────────────────────────────────────────────
   if(_compData&&_compData.tickers){
@@ -1381,4 +1395,92 @@ function _buildTradeMechanicsCharts(joined){
           y:{stacked:true,grid:{display:false},ticks:{color:SQ.muted,font:{size:10}}}
         }});
   })();
+}
+
+// ── Benchmark Comparison Section ────────────────────────────────────────────
+let _benchChart=null;
+function _renderBenchmarkSection(){
+  const container=el('meta-benchmark-section');
+  if(!container||!_benchmarkData||!_benchmarkData.summary)return;
+  container.style.display='';
+
+  // Summary cards row
+  const sumRow=el('meta-bench-summary');
+  if(sumRow){
+    const strats=_benchmarkData.summary;
+    sumRow.innerHTML=strats.map(s=>{
+      const col=s.median_sharpe>0?'var(--green)':s.median_sharpe>-0.1?'#b45309':'var(--red)';
+      return`<div class="chart-card" style="flex:1;min-width:140px;padding:14px;margin-bottom:0;text-align:center">
+        <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;margin-bottom:8px">${s.strategy.toUpperCase()}</div>
+        <div style="font-size:24px;font-weight:800;color:${col}">${s.median_sharpe>0?'+':''}${s.median_sharpe.toFixed(3)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">median HO Sharpe</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">${s.pct_positive.toFixed(0)}% positive · wins ${s.win_pct.toFixed(0)}%</div>
+        <div style="font-size:11px;color:#555;margin-top:2px">${s.n} tickers</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Summary table
+  const tbody=el('meta-bench-tbody');
+  if(tbody){
+    tbody.innerHTML=_benchmarkData.summary.map(s=>{
+      const col=s.median_sharpe>0?'var(--green)':'var(--red)';
+      return`<tr>
+        <td style="font-weight:600">${s.strategy}</td>
+        <td style="text-align:center">${s.n}</td>
+        <td style="text-align:right;color:${col}">${s.median_sharpe>0?'+':''}${s.median_sharpe.toFixed(3)}</td>
+        <td style="text-align:right">${s.mean_sharpe>0?'+':''}${s.mean_sharpe.toFixed(3)}</td>
+        <td style="text-align:right">${s.pct_positive.toFixed(0)}%</td>
+        <td style="text-align:right;font-weight:600">${s.win_pct.toFixed(0)}%</td>
+        <td style="text-align:right">${s.median_pf!=null?s.median_pf.toFixed(3):'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Bar chart — median HO Sharpe per strategy
+  const canvas=document.getElementById('meta-bench-chart');
+  if(canvas){
+    if(_benchChart){_benchChart.destroy();_benchChart=null;}
+    const strats=_benchmarkData.summary;
+    const labels=strats.map(s=>s.strategy);
+    const medians=strats.map(s=>s.median_sharpe);
+    const colors=medians.map(v=>v>0?hexA(SQ.green,0.7):hexA(SQ.red,0.5));
+    _benchChart=new Chart(canvas,{type:'bar',data:{
+      labels,
+      datasets:[{label:'Median HO Sharpe',data:medians,backgroundColor:colors,borderColor:colors,borderWidth:1}]
+    },options:{
+      indexAxis:'y',
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.raw>0?'+':''}${c.raw.toFixed(3)}`}}},
+      scales:{
+        x:{grid:{color:SQ.grid},ticks:{color:SQ.muted},title:{display:true,text:'Median Holdout Sharpe',color:SQ.muted,font:{size:10}}},
+        y:{grid:{display:false},ticks:{color:SQ.muted,font:{size:11}}}
+      }
+    }});
+  }
+
+  // Per-ticker toggle table
+  const tickerTbody=el('meta-bench-ticker-tbody');
+  if(tickerTbody){
+    const tickers=_benchmarkData.tickers||[];
+    const sorted=[...tickers].sort((a,b)=>(b['Donchian(20)_sharpe']||0)-(a['Donchian(20)_sharpe']||0));
+    const top=sorted.slice(0,100);
+    tickerTbody.innerHTML=top.map(t=>{
+      const fmt=(v)=>v!=null?`<span style="color:${v>0?'var(--green)':'var(--red)'}">` + (v>0?'+':'') + v.toFixed(3) + '</span>':'—';
+      const ridgeV7=fmt(t.ridge_v7_sharpe);
+      const ridgeV6=fmt(t.ridge_v6_sharpe);
+      const best=t.best_benchmark||'';
+      return`<tr>
+        <td style="font-weight:600">${t.ticker}</td>
+        <td style="font-size:11px;color:var(--muted)">${t.sector||''}</td>
+        <td style="text-align:right">${fmt(t['Buy & Hold_sharpe'])}</td>
+        <td style="text-align:right">${fmt(t['SMA(200)_sharpe'])}</td>
+        <td style="text-align:right">${fmt(t['Donchian(20)_sharpe'])}</td>
+        <td style="text-align:right">${fmt(t['Turtle(55/20)_sharpe'])}</td>
+        <td style="text-align:right">${ridgeV7}</td>
+        <td style="text-align:right">${ridgeV6}</td>
+        <td style="text-align:center;font-size:11px;color:var(--muted)">${best}</td>
+      </tr>`;
+    }).join('');
+  }
 }
