@@ -121,8 +121,7 @@ function _buildInterceptMeshes(scene, holesWithData, holePos, geomScale, setting
     const pos = holePos[hole.id];
     if (!pos) return;
     const isWamex = hole.source === 'wamex';
-    const { x, z, azRad, dipRad, depth } = pos;
-    const y0 = 0;
+    const { x, z, y0, azRad, dipRad, depth } = pos;
     const dx = depth * Math.sin(azRad) * Math.cos(dipRad);
     const dy = depth * Math.sin(dipRad);
     const dz = depth * Math.cos(azRad) * Math.cos(dipRad);
@@ -388,6 +387,11 @@ function _minesRender3DInner(wrap, holes) {
   const COLS         = Math.ceil(Math.sqrt(holesWithData.length));
   const HOLE_SPACING = 60;
 
+  // Compute median collar RL so drill traces start at their real elevation
+  // relative to the scene centre (matches voxel RL positioning).
+  const _allRLs = holesWithData.filter(h => h.rl != null).map(h => h.rl);
+  const _medianRL = _allRLs.length > 0 ? _median(_allRLs) : 0;
+
   const holePos = {};
   holesWithData.forEach((h, i) => {
     let x, z;
@@ -402,7 +406,8 @@ function _minesRender3DInner(wrap, holes) {
     const dip = (-Math.abs(h.dip || 60)      * Math.PI) / 180;
     const dep = h.total_depth_m ||
       Math.max(...h.intervals.map(iv => iv.to_m || 0), 150);
-    holePos[h.id] = { x, z, azRad: az, dipRad: dip, depth: dep };
+    const y0  = (h.rl != null) ? (h.rl - _medianRL) : 0;
+    holePos[h.id] = { x, z, y0, azRad: az, dipRad: dip, depth: dep };
   });
 
   // ── Scene setup ──────────────────────────────────────────────────────────
@@ -460,8 +465,7 @@ function _minesRender3DInner(wrap, holes) {
     const isWamex = hole.source === 'wamex';
     if (isWamex) nWamex++; else nCompany++;
 
-    const { x, z, azRad, dipRad, depth } = pos;
-    const y0 = 0;
+    const { x, z, y0, azRad, dipRad, depth } = pos;
     const dx = depth * Math.sin(azRad) * Math.cos(dipRad);
     const dy = depth * Math.sin(dipRad);
     const dz = depth * Math.cos(azRad) * Math.cos(dipRad);
@@ -616,8 +620,7 @@ function _minesRender3DInner(wrap, holes) {
   wrap._threeScene = scene;
   wrap._threeCx    = hasCoords ? cx : 0;
   wrap._threeCy    = hasCoords ? cy : 0;
-  const _rls = holesWithData.filter(h => h.rl != null).map(h => h.rl);
-  wrap._threeZRef  = _rls.length > 0 ? _median(_rls) : 0;
+  wrap._threeZRef  = _medianRL;
 
   // Voxel volumetric render — preferred over surface mesh when available
   const _hasVoxels = wrap._pendingSubmodelMeshes
