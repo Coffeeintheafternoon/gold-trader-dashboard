@@ -85,16 +85,29 @@ async function openTickerInModelLab(ticker, data, safeName) {
 }
 
 // ── VC1 cross-sectional ranking overview ──────────────────────────────────────
+function vc1Attr(tk){
+  const d=window._vc1; const panel=document.getElementById('vc1-attr'); if(!d||!panel) return;
+  const r=(d.ranking||[]).find(x=>x.ticker===tk); if(!r){panel.innerHTML='';return;}
+  const max=Math.max(...r.attribution.map(a=>Math.abs(a.contrib)),0.01);
+  panel.innerHTML=`<div style="font-weight:700;color:#a78bfa;font-size:13px">${r.ticker} — #${r.rank} <span style="color:var(--muted);font-weight:400">(score ${r.score>=0?'+':''}${r.score.toFixed(3)} · ${r.sector||''})</span></div>
+    <div style="font-size:10px;color:var(--muted);margin:2px 0 6px">why it ranks here — top feature contributions to its score</div>
+    ${r.attribution.map(a=>{const w=Math.abs(a.contrib)/max*100;const c=a.contrib>=0?'var(--green)':'var(--red)';return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:11px"><div style="width:140px;font-family:monospace;color:#9ca3af;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.feature}</div><div style="flex:1;background:#111;height:11px;border-radius:2px;position:relative"><div style="position:absolute;left:0;height:11px;width:${w}%;background:${c};opacity:0.55;border-radius:2px"></div></div><div style="width:52px;font-family:monospace;color:${c}">${a.contrib>=0?'+':''}${a.contrib.toFixed(3)}</div></div>`;}).join('')}`;
+}
 function renderVc1Overview(d, clickedTicker){
   const el=document.getElementById('ml-vc1-overview'); if(!el) return;
-  const m=d.metrics||{}, ic=d.ic||{};
+  window._vc1=d;
+  const m=d.metrics||{}, ic=d.ic||{}, ins=d.insights||{};
   const fmt=(v,dp=2,suf='')=>v==null?'—':((suf==='%'&&v>=0)?'+':'')+Number(v).toFixed(dp)+suf;
   const hero=(label,val,sub,col)=>`<div class="hero-card" style="min-width:118px"><div class="hero-label">${label}</div><div class="hero-value" style="color:${col||'var(--gold)'}">${val}</div>${sub?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div>`:''}</div>`;
   const coefRow=(name,v)=>{const w=Math.min(Math.abs(v)/0.2*100,100);const c=v>=0?'var(--green)':'var(--red)';return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:11px"><div style="width:150px;font-family:monospace;color:#9ca3af;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div><div style="flex:1;background:#111;border-radius:2px;height:11px;position:relative"><div style="position:absolute;left:0;height:11px;width:${w}%;background:${c};opacity:0.5;border-radius:2px"></div></div><div style="width:52px;font-family:monospace;color:${c}">${v>=0?'+':''}${v.toFixed(3)}</div></div>`;};
+  const icRow=(label,v,max)=>`<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:11px"><div style="width:135px;color:#9ca3af;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</div><div style="flex:1;background:#111;height:11px;border-radius:2px;position:relative"><div style="position:absolute;left:0;height:11px;width:${Math.min(Math.abs(v)/max*100,100)}%;background:${v>=0?'var(--green)':'var(--red)'};opacity:0.55;border-radius:2px"></div></div><div style="width:46px;font-family:monospace;color:${v>=0?'var(--green)':'var(--red)'}">${v>=0?'+':''}${v.toFixed(3)}</div></div>`;
   const pos=Object.entries(d.coefficients?.positive||{}).slice(0,8);
   const neg=Object.entries(d.coefficients?.negative||{}).slice(0,8);
   const rk=d.ranking||[];
-  const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} style="border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
+  const sec=ins.ic_by_sector||[], secMax=Math.max(...sec.map(s=>Math.abs(s.ic)),0.05);
+  const yr=ins.ic_by_year||[], yrMax=Math.max(...yr.map(s=>Math.abs(s.ic)),0.05);
+  const per=ins.persistence||[], ls=ins.long_short||{};
+  const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} onclick="vc1Attr('${r.ticker}')" style="cursor:pointer;border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <h2 style="margin:0;color:#a78bfa">VC1 — Pooled Cross-Sectional Ranking</h2>
@@ -109,18 +122,37 @@ function renderVc1Overview(d, clickedTicker){
       ${hero('Max DD',fmt(m.max_drawdown_pct,1,'%'),'',(m.max_drawdown_pct<0?'var(--red)':'var(--muted)'))}
       ${hero('Turnover',fmt(m.avg_weekly_turnover_pct,0,'%'),'per rebalance')}
     </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+      <div style="flex:1;min-width:300px">
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Where the edge lives — IC by sector</h3>
+        ${sec.slice(0,6).map(s=>icRow(s.sector,s.ic,secMax)).join('')}
+        <div style="font-size:10px;color:var(--red);margin:6px 0 2px">— where it does NOT work —</div>
+        ${sec.slice(-4).map(s=>icRow(s.sector,s.ic,secMax)).join('')}
+      </div>
+      <div style="flex:1;min-width:300px">
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Edge over time — IC by year</h3>
+        ${yr.map(s=>icRow(s.year+(s.hit!=null?` (${s.hit}% wks)`:''),s.ic,yrMax)).join('')}
+        <div style="margin-top:10px;font-size:11px;color:#9ca3af;line-height:1.6">
+          <b style="color:#a78bfa">Long vs short</b> (per 20d): top decile ${fmt(ls.top_pct,2,'%')} · bottom ${fmt(ls.bottom_pct,2,'%')}<br>
+          long-only captures <b style="color:var(--green)">${fmt(ls.long_alpha_pct,2,'%')}</b>; the larger short alpha <b style="color:var(--red)">${fmt(ls.short_alpha_pct,2,'%')}</b> we can't (no shorting).<br>
+          <b style="color:#a78bfa">Persistence:</b> ${per.map(p=>p.lag+'d='+p.autocorr).join(' · ')}
+        </div>
+      </div>
+    </div>
     <div style="display:flex;gap:20px;flex-wrap:wrap">
       <div style="flex:1;min-width:330px">
-        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">What drives the ranking</h3>
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">What drives the ranking (model)</h3>
         <div style="font-size:10px;color:var(--green);margin:4px 0">▲ pushes rank UP</div>${pos.map(([n,v])=>coefRow(n,v)).join('')}
         <div style="font-size:10px;color:var(--red);margin:8px 0 4px">▼ pushes rank DOWN</div>${neg.map(([n,v])=>coefRow(n,v)).join('')}
+        <div id="vc1-attr" style="margin-top:14px;padding-top:10px;border-top:1px solid #222"></div>
       </div>
-      <div style="flex:1;min-width:330px;max-height:520px;overflow:auto">
-        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Ranking (${rk.length} stocks)</h3>
+      <div style="flex:1;min-width:330px;max-height:560px;overflow:auto">
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Ranking (${rk.length}) — click a stock for its attribution</h3>
         <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid #333"><th style="padding:4px 10px;text-align:right">#</th><th style="padding:4px 10px">Ticker</th><th style="padding:4px 10px;text-align:right">Score</th><th style="padding:4px 10px">Sector</th></tr></thead><tbody>${rows}</tbody></table>
       </div>
     </div>
     ${(d.caveats||[]).length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ ${d.caveats.join(' · ')}</div>`:''}`;
+  vc1Attr(clickedTicker||(rk[0]&&rk[0].ticker));
   const hl=document.getElementById('vc1-hl'); if(hl) setTimeout(()=>hl.scrollIntoView({block:'center'}),120);
 }
 
