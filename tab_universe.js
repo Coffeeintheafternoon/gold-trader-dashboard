@@ -59,7 +59,7 @@ function _modelBadges(models, activeTicker) {
   if(!models||!models.length) return '<span style="color:#333;font-size:10px">—</span>';
   return models.map(m=>{
     const isDefault=m.label==='Ridge (1yr)';
-    const isVc1=m.label==='VC1';
+    const isVc1=/^VC\d/.test(m.label||'');
     const bg=isVc1?'rgba(139,92,246,0.16)':isDefault?'rgba(245,165,32,0.12)':'rgba(0,255,65,0.08)';
     const border=isVc1?'rgba(139,92,246,0.5)':isDefault?'rgba(245,165,32,0.35)':'rgba(0,255,65,0.25)';
     const color=isVc1?'#a78bfa':isDefault?'var(--gold)':'var(--green)';

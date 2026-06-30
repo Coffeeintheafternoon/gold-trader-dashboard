@@ -31,7 +31,7 @@ async function openTickerInModelLab(ticker, data, safeName) {
     _mlTickerCache[safe]=mlData;
     _mlCurrentSafe=safe;
     const _vc1el=document.getElementById('ml-vc1-overview');
-    if(mlData.model_type==='vc1'){
+    if((''+(mlData.model_type||'')).indexOf('vc')===0){
       document.getElementById('ml-ticker-detail').style.display='none';
       if(_vc1el) _vc1el.style.display='';
       try { renderVc1Overview(mlData, ticker); } catch(e){ console.error('renderVc1Overview error:',e); if(_vc1el) _vc1el.innerHTML='<div style="padding:20px;color:#f87171">vc1 render error: '+e.message+'</div>'; }
@@ -107,6 +107,15 @@ function renderVc1Overview(d, clickedTicker){
   const sec=ins.ic_by_sector||[], secMax=Math.max(...sec.map(s=>Math.abs(s.ic)),0.05);
   const yr=ins.ic_by_year||[], yrMax=Math.max(...yr.map(s=>Math.abs(s.ic)),0.05);
   const per=ins.persistence||[], ls=ins.long_short||{};
+  const fs=d.feature_summary||{}, fcat=fs.by_category||[];
+  const fsHtml=fs.n_total?`<div style="margin-top:18px;border-top:1px solid #222;padding-top:12px">
+    <h3 style="color:#9ca3af;font-size:13px;margin:0 0 4px">Features tested — ${fs.n_total} (same set for every stock; no per-stock selection)</h3>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;max-width:880px">${fs.treatment||''}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:8px;font-size:11px">${fcat.map(c=>`<span><span style="color:#9ca3af">${c.category}</span> <span style="color:#a78bfa;font-weight:700">${c.n}</span></span>`).join('')}</div>
+    <details style="font-size:11px"><summary style="cursor:pointer;color:#a78bfa">show all ${fs.n_total} features &amp; their weights</summary>
+      <table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid #333"><th style="padding:3px 8px">Feature</th><th style="padding:3px 8px">Category</th><th style="padding:3px 8px;text-align:right">Coefficient</th></tr></thead><tbody>${(fs.features||[]).map(f=>`<tr style="border-bottom:1px solid #161616"><td style="padding:3px 8px;font-family:monospace;color:#cbd5e1">${f.name}</td><td style="padding:3px 8px;color:var(--muted)">${f.category}</td><td style="padding:3px 8px;text-align:right;font-family:monospace;color:${f.coef>=0?'var(--green)':'var(--red)'}">${f.coef>=0?'+':''}${f.coef.toFixed(3)}</td></tr>`).join('')}</tbody></table>
+    </details>
+  </div>`:'';
   const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} onclick="vc1Attr('${r.ticker}')" style="cursor:pointer;border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -151,6 +160,7 @@ function renderVc1Overview(d, clickedTicker){
         <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid #333"><th style="padding:4px 10px;text-align:right">#</th><th style="padding:4px 10px">Ticker</th><th style="padding:4px 10px;text-align:right">Score</th><th style="padding:4px 10px">Sector</th></tr></thead><tbody>${rows}</tbody></table>
       </div>
     </div>
+    ${fsHtml}
     ${(d.caveats||[]).length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ ${d.caveats.join(' · ')}</div>`:''}`;
   vc1Attr(clickedTicker||(rk[0]&&rk[0].ticker));
   const hl=document.getElementById('vc1-hl'); if(hl) setTimeout(()=>hl.scrollIntoView({block:'center'}),120);
