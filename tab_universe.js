@@ -59,9 +59,10 @@ function _modelBadges(models, activeTicker) {
   if(!models||!models.length) return '<span style="color:#333;font-size:10px">—</span>';
   return models.map(m=>{
     const isDefault=m.label==='Ridge (1yr)';
-    const bg=isDefault?'rgba(245,165,32,0.12)':'rgba(0,255,65,0.08)';
-    const border=isDefault?'rgba(245,165,32,0.35)':'rgba(0,255,65,0.25)';
-    const color=isDefault?'var(--gold)':'var(--green)';
+    const isVc1=m.label==='VC1';
+    const bg=isVc1?'rgba(139,92,246,0.16)':isDefault?'rgba(245,165,32,0.12)':'rgba(0,255,65,0.08)';
+    const border=isVc1?'rgba(139,92,246,0.5)':isDefault?'rgba(245,165,32,0.35)':'rgba(0,255,65,0.25)';
+    const color=isVc1?'#a78bfa':isDefault?'var(--gold)':'var(--green)';
     return `<span onclick="event.stopPropagation();openTickerInModelLab('${activeTicker}',{},'${m.safe_name}')" title="Open ${m.label}" style="display:inline-block;padding:2px 7px;margin:1px 2px;border-radius:3px;border:1px solid ${border};background:${bg};color:${color};font-size:10px;cursor:pointer;white-space:nowrap">${m.label}</span>`;
   }).join('');
 }

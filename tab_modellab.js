@@ -30,6 +30,15 @@ async function openTickerInModelLab(ticker, data, safeName) {
     try { mlData=await mlRes.json(); } catch(e) { alert('JSON parse error for '+ticker+': '+e.message); return; }
     _mlTickerCache[safe]=mlData;
     _mlCurrentSafe=safe;
+    const _vc1el=document.getElementById('ml-vc1-overview');
+    if(mlData.model_type==='vc1'){
+      document.getElementById('ml-ticker-detail').style.display='none';
+      if(_vc1el) _vc1el.style.display='';
+      try { renderVc1Overview(mlData, ticker); } catch(e){ console.error('renderVc1Overview error:',e); if(_vc1el) _vc1el.innerHTML='<div style="padding:20px;color:#f87171">vc1 render error: '+e.message+'</div>'; }
+      (_vc1el||document.getElementById('ml-ticker-detail')).scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    if(_vc1el) _vc1el.style.display='none';
     try { renderTickerDetail(mlData); } catch(e) { console.error('renderTickerDetail error:',e); document.getElementById('ml-detail-title').textContent=ticker+' — render error: '+e.message; }
     document.getElementById('ml-ticker-detail').scrollIntoView({behavior:'smooth',block:'start'});
     return;
@@ -73,6 +82,46 @@ async function openTickerInModelLab(ticker, data, safeName) {
     <div class="hero-card" style="min-width:130px"><div class="hero-label">OOS Bars</div><div class="hero-value" style="font-size:20px">${oos!=null?oos.toLocaleString():'—'}</div></div>`;
   document.getElementById('ml-stats-note').textContent=`No full backtest run for ${ticker} yet. To generate: python quant/run_backtest.py --asset-class ${tickerId} --ticker ${ticker} --interval 1d`;
   document.getElementById('ml-screener-stats').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── VC1 cross-sectional ranking overview ──────────────────────────────────────
+function renderVc1Overview(d, clickedTicker){
+  const el=document.getElementById('ml-vc1-overview'); if(!el) return;
+  const m=d.metrics||{}, ic=d.ic||{};
+  const fmt=(v,dp=2,suf='')=>v==null?'—':((suf==='%'&&v>=0)?'+':'')+Number(v).toFixed(dp)+suf;
+  const hero=(label,val,sub,col)=>`<div class="hero-card" style="min-width:118px"><div class="hero-label">${label}</div><div class="hero-value" style="color:${col||'var(--gold)'}">${val}</div>${sub?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div>`:''}</div>`;
+  const coefRow=(name,v)=>{const w=Math.min(Math.abs(v)/0.2*100,100);const c=v>=0?'var(--green)':'var(--red)';return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:11px"><div style="width:150px;font-family:monospace;color:#9ca3af;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div><div style="flex:1;background:#111;border-radius:2px;height:11px;position:relative"><div style="position:absolute;left:0;height:11px;width:${w}%;background:${c};opacity:0.5;border-radius:2px"></div></div><div style="width:52px;font-family:monospace;color:${c}">${v>=0?'+':''}${v.toFixed(3)}</div></div>`;};
+  const pos=Object.entries(d.coefficients?.positive||{}).slice(0,8);
+  const neg=Object.entries(d.coefficients?.negative||{}).slice(0,8);
+  const rk=d.ranking||[];
+  const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} style="border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
+  el.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="margin:0;color:#a78bfa">VC1 — Pooled Cross-Sectional Ranking</h2>
+      <button onclick="document.getElementById('ml-vc1-overview').style.display='none';document.getElementById('ml-gold-screener').style.display='';" style="background:#1a1a1a;border:1px solid #333;color:#9ca3af;padding:5px 12px;border-radius:4px;cursor:pointer">← Back</button>
+    </div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:12px">${d.model||''} · ${d.universe_size||rk.length} stocks · ${d.n_features||0} features · as of ${(m.last_date||d.generated_at||'').slice(0,10)}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      ${hero('Mean RankIC',fmt(m.mean_rank_ic,3),'signal strength','#a78bfa')}
+      ${hero('IC t-stat',fmt(ic.tstat,1),(ic.hit_rate_pct!=null?ic.hit_rate_pct+'% weeks +':''))}
+      ${hero('Sharpe (net)',fmt(m.sharpe_annual,2),'annual')}
+      ${hero('CAGR',fmt(m.cagr_pct,1,'%'),'net of cost')}
+      ${hero('Max DD',fmt(m.max_drawdown_pct,1,'%'),'',(m.max_drawdown_pct<0?'var(--red)':'var(--muted)'))}
+      ${hero('Turnover',fmt(m.avg_weekly_turnover_pct,0,'%'),'per rebalance')}
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:330px">
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">What drives the ranking</h3>
+        <div style="font-size:10px;color:var(--green);margin:4px 0">▲ pushes rank UP</div>${pos.map(([n,v])=>coefRow(n,v)).join('')}
+        <div style="font-size:10px;color:var(--red);margin:8px 0 4px">▼ pushes rank DOWN</div>${neg.map(([n,v])=>coefRow(n,v)).join('')}
+      </div>
+      <div style="flex:1;min-width:330px;max-height:520px;overflow:auto">
+        <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Ranking (${rk.length} stocks)</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid #333"><th style="padding:4px 10px;text-align:right">#</th><th style="padding:4px 10px">Ticker</th><th style="padding:4px 10px;text-align:right">Score</th><th style="padding:4px 10px">Sector</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>
+    ${(d.caveats||[]).length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ ${d.caveats.join(' · ')}</div>`:''}`;
+  const hl=document.getElementById('vc1-hl'); if(hl) setTimeout(()=>hl.scrollIntoView({block:'center'}),120);
 }
 
 
