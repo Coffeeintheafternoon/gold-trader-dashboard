@@ -115,7 +115,7 @@ function renderVc1Overview(d, clickedTicker){
     <h3 style="color:#9ca3af;font-size:13px;margin:0 0 4px">Features tested — ${fs.n_total||fst.length} (per-window stats across the walk-forward; same set for every stock)</h3>
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px;max-width:880px">${fs.treatment||''}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:8px;font-size:11px">${fcat.map(c=>`<span><span style="color:#9ca3af">${c.category}</span> <span style="color:#a78bfa;font-weight:700">${c.n}</span></span>`).join('')}</div>
-    <details style="font-size:11px"><summary style="cursor:pointer;color:#a78bfa">show all features &amp; per-window stats</summary>${fTbl}</details>
+    <details open style="font-size:11px"><summary style="cursor:pointer;color:#a78bfa">all features &amp; per-window stats (click to collapse)</summary>${fTbl}</details>
   </div>`:'';
   const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} onclick="vc1Attr('${r.ticker}')" style="cursor:pointer;border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
   el.innerHTML=`
