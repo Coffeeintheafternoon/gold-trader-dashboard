@@ -1,56 +1,812 @@
 {
   "model_type": "vc5ind",
-  "model": "vc5.ind \u2014 per-GICS-sector Ridge, sector-balanced book",
-  "generated_at": "2026-07-01T06:30:32Z",
+  "model": "vc5.ind \u2014 one Ridge & one result PER GICS sector",
+  "generated_at": "2026-07-01T06:43:56Z",
   "universe_size": 439,
   "n_features": 83,
   "metrics": {
     "n_rebalances": 57,
     "sharpe_annual": 0.674,
     "cagr_pct": 9.34,
-    "total_return_pct": 49.8,
     "max_drawdown_pct": -18.37,
     "avg_weekly_turnover_pct": 149.0,
     "mean_rank_ic": 0.0496,
-    "ic_hit_rate_pct": 80.7,
     "last_date": "2026-06-01",
     "holdout": {
       "from": "2025-12-03",
-      "sharpe": -0.594,
-      "mean_rank_ic": 0.0695
+      "sharpe": -0.594
     }
   },
   "ic": {
     "mean": 0.0496,
-    "tstat": 3.68,
-    "hit_rate_pct": 80.7
+    "hit_rate_pct": null
   },
-  "coefficients": {
-    "positive": {
-      "ret_252d": 0.0242,
-      "close_vs_52w_high": 0.019,
-      "bb_width_50": 0.0131,
-      "vol_252d": 0.0115,
-      "vol_trend_60d": 0.0112,
-      "upper_wick_pct": 0.0106,
-      "vol_z_score": 0.0103,
-      "ret_60d": 0.0099,
-      "volume_ratio": 0.0094,
-      "body_pct": 0.0083
+  "per_industry": [
+    {
+      "sector": "Energy",
+      "n_names": 24,
+      "ic": {
+        "mean": 0.0961,
+        "n": 26,
+        "tstat": 1.75
+      },
+      "backtest": {
+        "sharpe": 1.118,
+        "cagr_pct": 39.17,
+        "max_dd_pct": -30.58,
+        "turnover_pct": 118.4,
+        "n_rebal": 57,
+        "holdout_sharpe": 1.267,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "YAL.AX",
+          "score": 0.1527
+        },
+        {
+          "ticker": "WDS.AX",
+          "score": 0.1456
+        },
+        {
+          "ticker": "WHC.AX",
+          "score": 0.1225
+        },
+        {
+          "ticker": "VEA.AX",
+          "score": 0.1077
+        },
+        {
+          "ticker": "BPT.AX",
+          "score": 0.0838
+        },
+        {
+          "ticker": "PDN.AX",
+          "score": 0.0783
+        },
+        {
+          "ticker": "DYL.AX",
+          "score": 0.0749
+        },
+        {
+          "ticker": "ALD.AX",
+          "score": 0.0694
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "atr_14_pct",
+            0.0519
+          ],
+          [
+            "adx_14",
+            0.0326
+          ],
+          [
+            "bb_zscore",
+            0.0316
+          ],
+          [
+            "close_vs_52w_low",
+            0.0273
+          ],
+          [
+            "eff_ratio_60",
+            0.0269
+          ]
+        ],
+        "neg": [
+          [
+            "vol_252d",
+            -0.0592
+          ],
+          [
+            "close_vs_ma50",
+            -0.0508
+          ],
+          [
+            "ret_60d",
+            -0.0319
+          ],
+          [
+            "vov_20d",
+            -0.0303
+          ],
+          [
+            "vol_fd",
+            -0.029
+          ]
+        ]
+      }
     },
-    "negative": {
-      "close_vs_ma50": -0.0307,
-      "parkinson_20d": -0.0202,
-      "close_vs_ma200": -0.0202,
-      "vol_60d": -0.0177,
-      "price_fd_short": -0.0152,
-      "donchian_pos_20": -0.0144,
-      "vov_20d": -0.0128,
-      "atr_14_pct": -0.0089,
-      "ret_1d": -0.0088,
-      "close_position": -0.008
+    {
+      "sector": "Consumer Cyclical",
+      "n_names": 55,
+      "ic": {
+        "mean": 0.0894,
+        "n": 57,
+        "tstat": 3.08
+      },
+      "backtest": {
+        "sharpe": -0.407,
+        "cagr_pct": -6.85,
+        "max_dd_pct": -34.75,
+        "turnover_pct": 125.1,
+        "n_rebal": 57,
+        "holdout_sharpe": -2.007,
+        "book_k": 6
+      },
+      "top_picks": [
+        {
+          "ticker": "SSG.AX",
+          "score": 0.1104
+        },
+        {
+          "ticker": "PWH.AX",
+          "score": 0.0962
+        },
+        {
+          "ticker": "CKF.AX",
+          "score": 0.0797
+        },
+        {
+          "ticker": "SKC.AX",
+          "score": 0.0742
+        },
+        {
+          "ticker": "TLC.AX",
+          "score": 0.0718
+        },
+        {
+          "ticker": "AOV.AX",
+          "score": 0.0616
+        },
+        {
+          "ticker": "TAH.AX",
+          "score": 0.0502
+        },
+        {
+          "ticker": "DMP.AX",
+          "score": 0.0326
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0514
+          ],
+          [
+            "trend_signed_adx",
+            0.025
+          ],
+          [
+            "ret_20d",
+            0.0223
+          ],
+          [
+            "vol_trend_60d",
+            0.0215
+          ],
+          [
+            "bb_width_20",
+            0.0214
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma200",
+            -0.0504
+          ],
+          [
+            "close_vs_ma50",
+            -0.0422
+          ],
+          [
+            "macd_signal",
+            -0.0351
+          ],
+          [
+            "parkinson_20d",
+            -0.0349
+          ],
+          [
+            "adx_14",
+            -0.0255
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Financial Services",
+      "n_names": 66,
+      "ic": {
+        "mean": 0.0771,
+        "n": 57,
+        "tstat": 3.19
+      },
+      "backtest": {
+        "sharpe": 0.822,
+        "cagr_pct": 11.68,
+        "max_dd_pct": -20.46,
+        "turnover_pct": 151.1,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.588,
+        "book_k": 7
+      },
+      "top_picks": [
+        {
+          "ticker": "WAX.AX",
+          "score": 0.0616
+        },
+        {
+          "ticker": "WAM.AX",
+          "score": 0.0507
+        },
+        {
+          "ticker": "WMA.AX",
+          "score": 0.0404
+        },
+        {
+          "ticker": "PL8.AX",
+          "score": 0.0336
+        },
+        {
+          "ticker": "NGI.AX",
+          "score": 0.0314
+        },
+        {
+          "ticker": "WBC.AX",
+          "score": 0.0297
+        },
+        {
+          "ticker": "HLI.AX",
+          "score": 0.0172
+        },
+        {
+          "ticker": "FGX.AX",
+          "score": 0.0141
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ret_252d",
+            0.0628
+          ],
+          [
+            "bb_width_50",
+            0.0366
+          ],
+          [
+            "trend_regime",
+            0.0339
+          ],
+          [
+            "vol_zscore_20",
+            0.0231
+          ],
+          [
+            "cmf_20",
+            0.0209
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma200",
+            -0.0557
+          ],
+          [
+            "parkinson_20d",
+            -0.0481
+          ],
+          [
+            "adx_14",
+            -0.0478
+          ],
+          [
+            "donchian_pos_20",
+            -0.0328
+          ],
+          [
+            "dollar_vol_zscore",
+            -0.0262
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Basic Materials",
+      "n_names": 153,
+      "ic": {
+        "mean": 0.0703,
+        "n": 57,
+        "tstat": 2.68
+      },
+      "backtest": {
+        "sharpe": 0.446,
+        "cagr_pct": 9.12,
+        "max_dd_pct": -45.37,
+        "turnover_pct": 151.8,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.261,
+        "book_k": 8
+      },
+      "top_picks": [
+        {
+          "ticker": "AAR.AX",
+          "score": 0.1849
+        },
+        {
+          "ticker": "JMS.AX",
+          "score": 0.1724
+        },
+        {
+          "ticker": "RSG.AX",
+          "score": 0.151
+        },
+        {
+          "ticker": "PRU.AX",
+          "score": 0.1496
+        },
+        {
+          "ticker": "MGX.AX",
+          "score": 0.1425
+        },
+        {
+          "ticker": "GRR.AX",
+          "score": 0.1404
+        },
+        {
+          "ticker": "S32.AX",
+          "score": 0.1314
+        },
+        {
+          "ticker": "RMS.AX",
+          "score": 0.1139
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0375
+          ],
+          [
+            "ret_126d",
+            0.0249
+          ],
+          [
+            "adx_14",
+            0.0205
+          ],
+          [
+            "ret_252d",
+            0.0181
+          ],
+          [
+            "up_vol_ratio_20d",
+            0.0172
+          ]
+        ],
+        "neg": [
+          [
+            "price_fd_short",
+            -0.0285
+          ],
+          [
+            "atr_14_pct",
+            -0.0232
+          ],
+          [
+            "close_vs_52w_low",
+            -0.0232
+          ],
+          [
+            "trend_regime",
+            -0.0196
+          ],
+          [
+            "rel_to_gold_5d",
+            -0.0196
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Technology",
+      "n_names": 27,
+      "ic": {
+        "mean": 0.0465,
+        "n": 57,
+        "tstat": 1.35
+      },
+      "backtest": {
+        "sharpe": -0.093,
+        "cagr_pct": -8.68,
+        "max_dd_pct": -70.98,
+        "turnover_pct": 137.7,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.62,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "DTL.AX",
+          "score": 0.1426
+        },
+        {
+          "ticker": "BRN.AX",
+          "score": 0.1158
+        },
+        {
+          "ticker": "CCL.AX",
+          "score": 0.1056
+        },
+        {
+          "ticker": "NXT.AX",
+          "score": 0.0999
+        },
+        {
+          "ticker": "360.AX",
+          "score": 0.0968
+        },
+        {
+          "ticker": "MAQ.AX",
+          "score": 0.0954
+        },
+        {
+          "ticker": "TNE.AX",
+          "score": 0.0731
+        },
+        {
+          "ticker": "CDA.AX",
+          "score": 0.0719
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0563
+          ],
+          [
+            "vol_252d",
+            0.0518
+          ],
+          [
+            "ret_60d",
+            0.0346
+          ],
+          [
+            "rsi_14",
+            0.0295
+          ],
+          [
+            "upper_wick_pct",
+            0.0261
+          ]
+        ],
+        "neg": [
+          [
+            "donchian_pos_20",
+            -0.03
+          ],
+          [
+            "close_vs_ma50",
+            -0.0296
+          ],
+          [
+            "ma50_vs_ma200",
+            -0.0262
+          ],
+          [
+            "vol_60d",
+            -0.0261
+          ],
+          [
+            "ret_126d",
+            -0.02
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Real Estate",
+      "n_names": 41,
+      "ic": {
+        "mean": 0.042,
+        "n": 57,
+        "tstat": 1.25
+      },
+      "backtest": {
+        "sharpe": 0.24,
+        "cagr_pct": 2.85,
+        "max_dd_pct": -18.03,
+        "turnover_pct": 153.3,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.61,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "CNI.AX",
+          "score": 0.1053
+        },
+        {
+          "ticker": "DXS.AX",
+          "score": 0.1007
+        },
+        {
+          "ticker": "RGN.AX",
+          "score": 0.0468
+        },
+        {
+          "ticker": "CHC.AX",
+          "score": 0.044
+        },
+        {
+          "ticker": "GOZ.AX",
+          "score": 0.0333
+        },
+        {
+          "ticker": "ARF.AX",
+          "score": 0.0279
+        },
+        {
+          "ticker": "GDI.AX",
+          "score": 0.0248
+        },
+        {
+          "ticker": "GPT.AX",
+          "score": 0.0168
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "vol_252d",
+            0.0396
+          ],
+          [
+            "bb_width_50",
+            0.0281
+          ],
+          [
+            "vol_cv_20d",
+            0.027
+          ],
+          [
+            "ret_126d",
+            0.0247
+          ],
+          [
+            "vol_z_score",
+            0.0201
+          ]
+        ],
+        "neg": [
+          [
+            "parkinson_20d",
+            -0.0476
+          ],
+          [
+            "close_vs_ma50",
+            -0.0358
+          ],
+          [
+            "close_vs_ma200",
+            -0.0349
+          ],
+          [
+            "donchian_pos_20",
+            -0.0274
+          ],
+          [
+            "vov_20d",
+            -0.0187
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Industrials",
+      "n_names": 41,
+      "ic": {
+        "mean": 0.0236,
+        "n": 57,
+        "tstat": 0.92
+      },
+      "backtest": {
+        "sharpe": 1.097,
+        "cagr_pct": 29.87,
+        "max_dd_pct": -19.59,
+        "turnover_pct": 126.0,
+        "n_rebal": 57,
+        "holdout_sharpe": 2.036,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "ANG.AX",
+          "score": 0.1561
+        },
+        {
+          "ticker": "SXE.AX",
+          "score": 0.1409
+        },
+        {
+          "ticker": "QUB.AX",
+          "score": 0.0966
+        },
+        {
+          "ticker": "AZJ.AX",
+          "score": 0.0946
+        },
+        {
+          "ticker": "BOL.AX",
+          "score": 0.0898
+        },
+        {
+          "ticker": "ALX.AX",
+          "score": 0.066
+        },
+        {
+          "ticker": "SSM.AX",
+          "score": 0.0652
+        },
+        {
+          "ticker": "CVL.AX",
+          "score": 0.0622
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ma50_vs_ma200",
+            0.0362
+          ],
+          [
+            "ret_60d",
+            0.0308
+          ],
+          [
+            "adx_14",
+            0.0213
+          ],
+          [
+            "vol_trend_60d",
+            0.0175
+          ],
+          [
+            "ret_252d",
+            0.0164
+          ]
+        ],
+        "neg": [
+          [
+            "vov_60d",
+            -0.0347
+          ],
+          [
+            "vol_60d",
+            -0.0328
+          ],
+          [
+            "close_vs_52w_high",
+            -0.0307
+          ],
+          [
+            "price_fd_short",
+            -0.0239
+          ],
+          [
+            "trend_regime",
+            -0.0239
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Healthcare",
+      "n_names": 32,
+      "ic": {
+        "mean": -0.0313,
+        "n": 57,
+        "tstat": -0.93
+      },
+      "backtest": {
+        "sharpe": -0.422,
+        "cagr_pct": -9.6,
+        "max_dd_pct": -50.38,
+        "turnover_pct": 116.1,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.027,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "SPL.AX",
+          "score": 0.1899
+        },
+        {
+          "ticker": "MVF.AX",
+          "score": 0.1097
+        },
+        {
+          "ticker": "RMD.AX",
+          "score": 0.0647
+        },
+        {
+          "ticker": "ARX.AX",
+          "score": 0.0483
+        },
+        {
+          "ticker": "4DX.AX",
+          "score": 0.0419
+        },
+        {
+          "ticker": "HLS.AX",
+          "score": 0.0417
+        },
+        {
+          "ticker": "MSB.AX",
+          "score": 0.0397
+        },
+        {
+          "ticker": "SIG.AX",
+          "score": 0.037
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_ma200",
+            0.0479
+          ],
+          [
+            "ret_252d",
+            0.0392
+          ],
+          [
+            "bb_width_50",
+            0.0313
+          ],
+          [
+            "vol_252d",
+            0.0278
+          ],
+          [
+            "ret_60d",
+            0.027
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma50",
+            -0.0632
+          ],
+          [
+            "atr_14_pct",
+            -0.0599
+          ],
+          [
+            "trend_regime",
+            -0.0426
+          ],
+          [
+            "ma50_vs_ma200",
+            -0.0404
+          ],
+          [
+            "rsi_14",
+            -0.024
+          ]
+        ]
+      }
     }
-  },
+  ],
   "insights": {
     "ic_by_sector": [
       {
@@ -86,38 +842,7 @@
         "ic": -0.0313
       }
     ],
-    "ic_by_year": [
-      {
-        "year": 2021,
-        "ic": 0.032,
-        "hit": 100
-      },
-      {
-        "year": 2022,
-        "ic": 0.039,
-        "hit": 75
-      },
-      {
-        "year": 2023,
-        "ic": 0.068,
-        "hit": 92
-      },
-      {
-        "year": 2024,
-        "ic": 0.059,
-        "hit": 85
-      },
-      {
-        "year": 2025,
-        "ic": 0.016,
-        "hit": 67
-      },
-      {
-        "year": 2026,
-        "ic": 0.078,
-        "hit": 83
-      }
-    ],
+    "ic_by_year": [],
     "persistence": [],
     "long_short": {}
   },
@@ -2746,62 +3471,12 @@
     }
   ],
   "vc5_diagnostics": {
-    "per_sector_ic_ind": {
-      "Basic Materials": {
-        "mean": 0.0703,
-        "n": 57,
-        "tstat": 2.68,
-        "n_names": 153
-      },
-      "Consumer Cyclical": {
-        "mean": 0.0894,
-        "n": 57,
-        "tstat": 3.08,
-        "n_names": 55
-      },
-      "Energy": {
-        "mean": 0.0961,
-        "n": 26,
-        "tstat": 1.75,
-        "n_names": 24
-      },
-      "Financial Services": {
-        "mean": 0.0771,
-        "n": 57,
-        "tstat": 3.19,
-        "n_names": 66
-      },
-      "Healthcare": {
-        "mean": -0.0313,
-        "n": 57,
-        "tstat": -0.93,
-        "n_names": 32
-      },
-      "Industrials": {
-        "mean": 0.0236,
-        "n": 57,
-        "tstat": 0.92,
-        "n_names": 41
-      },
-      "Real Estate": {
-        "mean": 0.042,
-        "n": 57,
-        "tstat": 1.25,
-        "n_names": 41
-      },
-      "Technology": {
-        "mean": 0.0465,
-        "n": 57,
-        "tstat": 1.35,
-        "n_names": 27
-      }
-    },
-    "note": "vc5.ind = one Ridge per GICS sector, traded industry-neutral (round-robin top names across sectors). Combined IC is within-sector-standardised (sector-neutral by design). Compare per-sector IC here vs the global model on the vc5.all card."
+    "note": "Each GICS sector is its OWN model with its OWN result below (separate Ridge, own backtest, own picks, own drivers). The header metrics are the combined sector-balanced book for reference."
   },
   "caveats": [
-    "survivorship deferred (mining-sector ICs provisional)",
+    "survivorship deferred (mining-sector results provisional)",
     "flat 0.30% cost",
-    "per-sector rank-percentile proxy",
-    "small sectors (<8 names) dropped"
+    "features z-scored globally then sliced by sector",
+    "sectors <8 names dropped"
   ]
 }

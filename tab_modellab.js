@@ -160,6 +160,13 @@ function renderVc1Overview(d, clickedTicker){
         ${plots.map(p=>`<div style="background:#0c0c0c;border:1px solid #222;border-radius:6px;padding:8px"><img src="${p.file}?v=${_CV}" onclick="vcZoom('${p.file}?v=${_CV}')" style="width:100%;border-radius:4px;display:block;cursor:zoom-in" loading="lazy"><div style="font-size:10.5px;color:var(--muted);margin-top:5px">${p.caption}</div></div>`).join('')}
       </div>
     </div>`:'';
+  const pind=d.per_industry||[];
+  const piHtml=pind.length?`
+    <div style="margin:4px 0 16px;border:1px solid #2a3a5a;border-radius:6px;padding:12px;background:rgba(59,130,246,0.05)">
+      <h3 style="color:#60a5fa;font-size:13px;margin:0 0 4px">Per-industry models — each sector is its OWN Ridge with its OWN result</h3>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">IC = within-sector ranking skill · Sharpe/Holdout = a top-k book trading ONLY that sector. Note: IC and tradeable Sharpe can diverge sharply. Click a row for that sector's drivers &amp; picks.</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid #333"><th style="padding:4px 8px">Industry</th><th style="padding:4px 8px;text-align:right">Names</th><th style="padding:4px 8px;text-align:right">IC</th><th style="padding:4px 8px;text-align:right">Sharpe</th><th style="padding:4px 8px;text-align:right">Holdout</th><th style="padding:4px 8px">Current top picks</th></tr></thead><tbody>${pind.map((e,i)=>{const b=e.backtest||{},icv=e.ic.mean,sh=b.sharpe,ho=b.holdout_sharpe;const col=v=>v==null?'var(--muted)':(v>=0.5?'var(--green)':v>=0?SQ.amber:'var(--red)');return `<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer" onclick="var x=document.getElementById('pi-${i}');x.style.display=x.style.display==='none'?'':'none'"><td style="padding:4px 8px;color:#e5e7eb;font-weight:600">${e.sector}</td><td style="padding:4px 8px;text-align:right;color:var(--muted)">${e.n_names}</td><td style="padding:4px 8px;text-align:right;font-family:monospace;color:${icv>=0?'var(--green)':'var(--red)'}">${icv==null?'—':(icv>=0?'+':'')+icv.toFixed(3)}</td><td style="padding:4px 8px;text-align:right;font-family:monospace;color:${col(sh)}">${sh==null?'—':sh.toFixed(2)}</td><td style="padding:4px 8px;text-align:right;font-family:monospace;color:${col(ho)}">${ho==null?'—':ho.toFixed(2)}</td><td style="padding:4px 8px;color:#9ca3af;font-size:10.5px">${(e.top_picks||[]).slice(0,5).map(p=>p.ticker).join(', ')}</td></tr><tr id="pi-${i}" style="display:none;background:#0a0a0a"><td colspan="6" style="padding:6px 12px"><div style="display:flex;gap:24px;flex-wrap:wrap;font-size:10.5px"><div><span style="color:var(--green)">▲ ${e.sector} drivers:</span> ${(e.drivers.pos||[]).map(x=>x[0]+' '+x[1].toFixed(2)).join(' · ')}</div><div><span style="color:var(--red)">▼ drivers:</span> ${(e.drivers.neg||[]).map(x=>x[0]+' '+x[1].toFixed(2)).join(' · ')}</div></div><div style="font-size:10.5px;color:#9ca3af;margin-top:4px">all picks: ${(e.top_picks||[]).map(p=>p.ticker+' ('+(p.score>=0?'+':'')+p.score.toFixed(2)+')').join(' · ')}</div></td></tr>`;}).join('')}</tbody></table>
+    </div>`:'';
   const _title=(d.model_type||'vc1').toUpperCase();
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -176,6 +183,7 @@ function renderVc1Overview(d, clickedTicker){
       ${hero('Turnover',fmt(m.avg_weekly_turnover_pct,0,'%'),'per rebalance')}
       ${m.holdout?hero('Holdout Sharpe',fmt(m.holdout.sharpe,2),'SEALED · from '+(''+(m.holdout.from||'')).slice(2)+' · IC '+fmt(m.holdout.mean_rank_ic,3),'#22d3ee'):''}
     </div>
+    ${piHtml}
     ${v5diag}
     <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px">
       <div style="flex:1;min-width:300px">
