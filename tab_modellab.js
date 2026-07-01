@@ -118,9 +118,42 @@ function renderVc1Overview(d, clickedTicker){
     <details open style="font-size:11px"><summary style="cursor:pointer;color:#a78bfa">all features &amp; per-window stats (click to collapse)</summary>${fTbl}</details>
   </div>`:'';
   const rows=rk.map(r=>{const hl=r.ticker===clickedTicker;return `<tr ${hl?'id="vc1-hl"':''} onclick="vc1Attr('${r.ticker}')" style="cursor:pointer;border-bottom:1px solid #1a1a1a;${hl?'background:rgba(139,92,246,0.18)':''}"><td style="padding:4px 10px;text-align:right;color:var(--muted)">${r.rank}</td><td style="padding:4px 10px;font-weight:600;color:#e5e7eb">${r.ticker}</td><td style="padding:4px 10px;text-align:right;font-family:monospace;color:${r.score>=0?'var(--green)':'var(--red)'}">${r.score>=0?'+':''}${r.score.toFixed(3)}</td><td style="padding:4px 10px;color:var(--muted);font-size:11px">${r.sector||'—'}</td></tr>`;}).join('');
+  // vc5 truth-check panel + diagnostic plot gallery (only when the JSON carries them)
+  const g5=d.vc5_diagnostics, dsr=g5&&g5.deflated_sharpe;
+  const v5diag=g5?`
+    <div style="margin:4px 0 16px;border:1px solid #3b2a5a;border-radius:6px;padding:12px;background:rgba(139,92,246,0.06)">
+      <h3 style="color:#a78bfa;font-size:13px;margin:0 0 8px">vc5 truth-check — does the edge survive scrutiny?</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        ${hero('IC raw (all)',fmt(g5.ic_raw_all.mean,3),'t='+g5.ic_raw_all.tstat,'#9ca3af')}
+        ${hero('IC liquid',fmt(g5.ic_raw_liquid.mean,3),'t='+g5.ic_raw_liquid.tstat,'#22d3ee')}
+        ${hero('IC sector-neutral',fmt(g5.ic_sector_neutral.mean,3),'t='+g5.ic_sector_neutral.tstat+' · skill after sector','#22c55e')}
+        ${dsr?hero('Deflated Sharpe',fmt(dsr.dsr,2),'P(SR>0) after '+dsr.n_trials+' trials',(dsr.dsr>0.9?'var(--green)':dsr.dsr>0.6?SQ.amber:'var(--red)')):''}
+        ${g5.long_short?hero('Long-short IR',fmt(g5.long_short.long_short_IR,2),'decile spread'):''}
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:3px">Cost sensitivity — net Sharpe by round-trip cost</div>
+          <div style="display:flex;gap:12px;font-size:12px;font-family:monospace">${Object.entries(g5.cost_sweep||{}).map(([k,v])=>`<span><span style="color:var(--muted)">${k}</span> <span style="color:${v.sharpe>0.5?'var(--green)':v.sharpe>0.2?SQ.amber:'var(--red)'}">${v.sharpe.toFixed(2)}</span></span>`).join('')}</div>
+        </div>
+        <div style="flex:1;min-width:260px">
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:3px">Per-sector IC — global (.all) vs per-sector (.ind)</div>
+          <table style="font-size:10.5px;font-family:monospace;border-collapse:collapse">${Object.keys(g5.per_sector_ic_global||{}).map(s=>{const ga=g5.per_sector_ic_global[s],gi=(g5.per_sector_ic_ind||{})[s];return `<tr><td style="padding:1px 10px 1px 0;color:#cbd5e1">${s}</td><td style="padding:1px 8px;text-align:right;color:${ga.mean>=0?'var(--green)':'var(--red)'}">${ga.mean>=0?'+':''}${ga.mean.toFixed(3)}</td><td style="padding:1px 8px;text-align:right;color:${gi&&gi.mean>=0?'var(--green)':'var(--red)'}">${gi?(gi.mean>=0?'+':'')+gi.mean.toFixed(3):'—'}</td></tr>`;}).join('')}</table>
+        </div>
+      </div>
+      ${g5.note?`<div style="font-size:11px;color:var(--muted);margin-top:8px;max-width:900px;line-height:1.5">${g5.note}</div>`:''}
+    </div>`:'';
+  const plots=d.plots||[];
+  const v5plots=plots.length?`
+    <div style="margin-top:18px;border-top:1px solid #222;padding-top:12px">
+      <h3 style="color:#9ca3af;font-size:13px;margin:0 0 8px">Model diagnostics — visualising each stage (click to enlarge)</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px">
+        ${plots.map(p=>`<div style="background:#0c0c0c;border:1px solid #222;border-radius:6px;padding:8px"><a href="${p.file}?v=${_CV}" target="_blank"><img src="${p.file}?v=${_CV}" style="width:100%;border-radius:4px;display:block" loading="lazy"></a><div style="font-size:10.5px;color:var(--muted);margin-top:5px">${p.caption}</div></div>`).join('')}
+      </div>
+    </div>`:'';
+  const _title=(d.model_type||'vc1').toUpperCase();
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <h2 style="margin:0;color:#a78bfa">VC1 — Pooled Cross-Sectional Ranking</h2>
+      <h2 style="margin:0;color:#a78bfa">${_title} — Pooled Cross-Sectional Ranking</h2>
       <button onclick="document.getElementById('ml-vc1-overview').style.display='none';document.getElementById('ml-gold-screener').style.display='';" style="background:#1a1a1a;border:1px solid #333;color:#9ca3af;padding:5px 12px;border-radius:4px;cursor:pointer">← Back</button>
     </div>
     <div style="color:var(--muted);font-size:12px;margin-bottom:12px">${d.model||''} · ${d.universe_size||rk.length} stocks · ${d.n_features||0} features · as of ${(m.last_date||d.generated_at||'').slice(0,10)}</div>
@@ -133,6 +166,7 @@ function renderVc1Overview(d, clickedTicker){
       ${hero('Turnover',fmt(m.avg_weekly_turnover_pct,0,'%'),'per rebalance')}
       ${m.holdout?hero('Holdout Sharpe',fmt(m.holdout.sharpe,2),'SEALED · from '+(''+(m.holdout.from||'')).slice(2)+' · IC '+fmt(m.holdout.mean_rank_ic,3),'#22d3ee'):''}
     </div>
+    ${v5diag}
     <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:18px">
       <div style="flex:1;min-width:300px">
         <h3 style="color:#9ca3af;font-size:13px;margin:0 0 6px">Where the edge lives — IC by sector</h3>
@@ -163,6 +197,7 @@ function renderVc1Overview(d, clickedTicker){
       </div>
     </div>
     ${fsHtml}
+    ${v5plots}
     ${(d.caveats||[]).length?`<div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ ${d.caveats.join(' · ')}</div>`:''}`;
   vc1Attr(clickedTicker||(rk[0]&&rk[0].ticker));
   const hl=document.getElementById('vc1-hl'); if(hl) setTimeout(()=>hl.scrollIntoView({block:'center'}),120);
