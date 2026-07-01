@@ -1,0 +1,4048 @@
+{
+  "model_type": "vc1com",
+  "model": "vc1.com \u2014 partial pooling (per-sector Ridge shrunk to global, K0=50)",
+  "generated_at": "2026-07-01T07:11:22Z",
+  "universe_size": 483,
+  "n_features": 83,
+  "metrics": {
+    "n_rebalances": 57,
+    "sharpe_annual": 0.929,
+    "cagr_pct": 11.7,
+    "max_drawdown_pct": -11.44,
+    "avg_weekly_turnover_pct": 149.8,
+    "mean_rank_ic": 0.0515,
+    "last_date": "2026-06-01",
+    "holdout": {
+      "from": "2025-12-03",
+      "sharpe": -0.523
+    }
+  },
+  "ic": {
+    "mean": 0.0515,
+    "hit_rate_pct": null
+  },
+  "per_industry": [
+    {
+      "sector": "Consumer Cyclical",
+      "n_names": 55,
+      "lambda": 0.52,
+      "ic": {
+        "mean": 0.0944,
+        "n": 57,
+        "tstat": 3.24
+      },
+      "backtest": {
+        "sharpe": -0.517,
+        "cagr_pct": -8.87,
+        "max_dd_pct": -39.56,
+        "turnover_pct": 126.3,
+        "n_rebal": 57,
+        "holdout_sharpe": -2.306,
+        "book_k": 6
+      },
+      "top_picks": [
+        {
+          "ticker": "PWH.AX",
+          "score": 0.0822
+        },
+        {
+          "ticker": "SSG.AX",
+          "score": 0.0762
+        },
+        {
+          "ticker": "CKF.AX",
+          "score": 0.0685
+        },
+        {
+          "ticker": "AOV.AX",
+          "score": 0.0603
+        },
+        {
+          "ticker": "TAH.AX",
+          "score": 0.0576
+        },
+        {
+          "ticker": "TLC.AX",
+          "score": 0.0536
+        },
+        {
+          "ticker": "DMP.AX",
+          "score": 0.0441
+        },
+        {
+          "ticker": "WES.AX",
+          "score": 0.0413
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0406
+          ],
+          [
+            "bb_width_50",
+            0.0192
+          ],
+          [
+            "ret_20d",
+            0.0166
+          ],
+          [
+            "vol_trend_60d",
+            0.0158
+          ],
+          [
+            "trend_signed_adx",
+            0.0152
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma200",
+            -0.0453
+          ],
+          [
+            "parkinson_20d",
+            -0.0374
+          ],
+          [
+            "close_vs_ma50",
+            -0.0324
+          ],
+          [
+            "macd_signal",
+            -0.0239
+          ],
+          [
+            "vov_20d",
+            -0.0173
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Energy",
+      "n_names": 24,
+      "lambda": 0.32,
+      "ic": {
+        "mean": 0.0872,
+        "n": 26,
+        "tstat": 1.44
+      },
+      "backtest": {
+        "sharpe": 0.894,
+        "cagr_pct": 26.91,
+        "max_dd_pct": -26.47,
+        "turnover_pct": 123.7,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.728,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "WHC.AX",
+          "score": 0.0972
+        },
+        {
+          "ticker": "WDS.AX",
+          "score": 0.0908
+        },
+        {
+          "ticker": "PDN.AX",
+          "score": 0.078
+        },
+        {
+          "ticker": "YAL.AX",
+          "score": 0.0712
+        },
+        {
+          "ticker": "DYL.AX",
+          "score": 0.0666
+        },
+        {
+          "ticker": "ALD.AX",
+          "score": 0.0647
+        },
+        {
+          "ticker": "BPT.AX",
+          "score": 0.0636
+        },
+        {
+          "ticker": "NXG.AX",
+          "score": 0.0624
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "atr_14_pct",
+            0.0246
+          ],
+          [
+            "ret_252d",
+            0.0246
+          ],
+          [
+            "close_vs_52w_high",
+            0.0138
+          ],
+          [
+            "eff_ratio_60",
+            0.0135
+          ],
+          [
+            "vol_trend_60d",
+            0.0115
+          ]
+        ],
+        "neg": [
+          [
+            "parkinson_20d",
+            -0.0281
+          ],
+          [
+            "close_vs_ma50",
+            -0.0275
+          ],
+          [
+            "close_vs_ma200",
+            -0.0222
+          ],
+          [
+            "vov_20d",
+            -0.021
+          ],
+          [
+            "donchian_pos_20",
+            -0.0191
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Financial Services",
+      "n_names": 66,
+      "lambda": 0.57,
+      "ic": {
+        "mean": 0.0769,
+        "n": 57,
+        "tstat": 3.18
+      },
+      "backtest": {
+        "sharpe": 0.837,
+        "cagr_pct": 11.48,
+        "max_dd_pct": -21.27,
+        "turnover_pct": 157.6,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.485,
+        "book_k": 7
+      },
+      "top_picks": [
+        {
+          "ticker": "WAX.AX",
+          "score": 0.079
+        },
+        {
+          "ticker": "WMA.AX",
+          "score": 0.069
+        },
+        {
+          "ticker": "WAM.AX",
+          "score": 0.0663
+        },
+        {
+          "ticker": "FGX.AX",
+          "score": 0.0479
+        },
+        {
+          "ticker": "HLI.AX",
+          "score": 0.0453
+        },
+        {
+          "ticker": "PL8.AX",
+          "score": 0.0443
+        },
+        {
+          "ticker": "NGI.AX",
+          "score": 0.0365
+        },
+        {
+          "ticker": "WBC.AX",
+          "score": 0.0343
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ret_252d",
+            0.067
+          ],
+          [
+            "bb_width_50",
+            0.0352
+          ],
+          [
+            "trend_regime",
+            0.0191
+          ],
+          [
+            "vol_252d",
+            0.018
+          ],
+          [
+            "ret_126d",
+            0.0166
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma200",
+            -0.0541
+          ],
+          [
+            "parkinson_20d",
+            -0.0535
+          ],
+          [
+            "adx_14",
+            -0.0288
+          ],
+          [
+            "donchian_pos_20",
+            -0.0237
+          ],
+          [
+            "vov_20d",
+            -0.0234
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Technology",
+      "n_names": 27,
+      "lambda": 0.35,
+      "ic": {
+        "mean": 0.0754,
+        "n": 57,
+        "tstat": 2.52
+      },
+      "backtest": {
+        "sharpe": 0.92,
+        "cagr_pct": 29.75,
+        "max_dd_pct": -51.02,
+        "turnover_pct": 132.5,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.82,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "DTL.AX",
+          "score": 0.1039
+        },
+        {
+          "ticker": "CCL.AX",
+          "score": 0.0758
+        },
+        {
+          "ticker": "PXA.AX",
+          "score": 0.068
+        },
+        {
+          "ticker": "BRN.AX",
+          "score": 0.063
+        },
+        {
+          "ticker": "NXT.AX",
+          "score": 0.0575
+        },
+        {
+          "ticker": "SLX.AX",
+          "score": 0.0497
+        },
+        {
+          "ticker": "BVS.AX",
+          "score": 0.0457
+        },
+        {
+          "ticker": "HSN.AX",
+          "score": 0.0419
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0378
+          ],
+          [
+            "vol_252d",
+            0.0342
+          ],
+          [
+            "ret_252d",
+            0.024
+          ],
+          [
+            "upper_wick_pct",
+            0.0176
+          ],
+          [
+            "rsi_14",
+            0.0147
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma50",
+            -0.025
+          ],
+          [
+            "donchian_pos_20",
+            -0.0201
+          ],
+          [
+            "parkinson_20d",
+            -0.0177
+          ],
+          [
+            "close_vs_ma200",
+            -0.0168
+          ],
+          [
+            "close_vs_52w_low",
+            -0.0165
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Real Estate",
+      "n_names": 41,
+      "lambda": 0.45,
+      "ic": {
+        "mean": 0.0745,
+        "n": 57,
+        "tstat": 2.29
+      },
+      "backtest": {
+        "sharpe": 0.553,
+        "cagr_pct": 8.77,
+        "max_dd_pct": -20.55,
+        "turnover_pct": 163.2,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.388,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "CNI.AX",
+          "score": 0.1048
+        },
+        {
+          "ticker": "DXS.AX",
+          "score": 0.0927
+        },
+        {
+          "ticker": "RGN.AX",
+          "score": 0.0763
+        },
+        {
+          "ticker": "GOZ.AX",
+          "score": 0.0682
+        },
+        {
+          "ticker": "GDI.AX",
+          "score": 0.0669
+        },
+        {
+          "ticker": "RFF.AX",
+          "score": 0.0593
+        },
+        {
+          "ticker": "ARF.AX",
+          "score": 0.0558
+        },
+        {
+          "ticker": "CHC.AX",
+          "score": 0.0555
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "vol_252d",
+            0.0434
+          ],
+          [
+            "bb_width_50",
+            0.0338
+          ],
+          [
+            "ret_126d",
+            0.0312
+          ],
+          [
+            "close_vs_52w_high",
+            0.0289
+          ],
+          [
+            "ret_252d",
+            0.023
+          ]
+        ],
+        "neg": [
+          [
+            "parkinson_20d",
+            -0.0623
+          ],
+          [
+            "close_vs_ma200",
+            -0.0472
+          ],
+          [
+            "close_vs_ma50",
+            -0.0412
+          ],
+          [
+            "vov_20d",
+            -0.0242
+          ],
+          [
+            "donchian_pos_20",
+            -0.0209
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Basic Materials",
+      "n_names": 153,
+      "lambda": 0.75,
+      "ic": {
+        "mean": 0.0715,
+        "n": 57,
+        "tstat": 2.77
+      },
+      "backtest": {
+        "sharpe": 0.587,
+        "cagr_pct": 13.91,
+        "max_dd_pct": -48.93,
+        "turnover_pct": 155.7,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.488,
+        "book_k": 8
+      },
+      "top_picks": [
+        {
+          "ticker": "AAR.AX",
+          "score": 0.1723
+        },
+        {
+          "ticker": "JMS.AX",
+          "score": 0.1548
+        },
+        {
+          "ticker": "RSG.AX",
+          "score": 0.1469
+        },
+        {
+          "ticker": "PRU.AX",
+          "score": 0.1427
+        },
+        {
+          "ticker": "MGX.AX",
+          "score": 0.1335
+        },
+        {
+          "ticker": "GRR.AX",
+          "score": 0.1277
+        },
+        {
+          "ticker": "S32.AX",
+          "score": 0.123
+        },
+        {
+          "ticker": "RMS.AX",
+          "score": 0.1123
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "close_vs_52w_high",
+            0.0325
+          ],
+          [
+            "ret_126d",
+            0.018
+          ],
+          [
+            "ret_252d",
+            0.0172
+          ],
+          [
+            "up_vol_ratio_20d",
+            0.0153
+          ],
+          [
+            "adx_14",
+            0.0146
+          ]
+        ],
+        "neg": [
+          [
+            "price_fd_short",
+            -0.0239
+          ],
+          [
+            "atr_14_pct",
+            -0.0193
+          ],
+          [
+            "parkinson_20d",
+            -0.0188
+          ],
+          [
+            "close_vs_52w_low",
+            -0.0175
+          ],
+          [
+            "trend_regime",
+            -0.0154
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Industrials",
+      "n_names": 41,
+      "lambda": 0.45,
+      "ic": {
+        "mean": 0.0127,
+        "n": 57,
+        "tstat": 0.49
+      },
+      "backtest": {
+        "sharpe": 0.427,
+        "cagr_pct": 7.03,
+        "max_dd_pct": -27.2,
+        "turnover_pct": 144.2,
+        "n_rebal": 57,
+        "holdout_sharpe": 3.006,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "QUB.AX",
+          "score": 0.0979
+        },
+        {
+          "ticker": "ANG.AX",
+          "score": 0.0907
+        },
+        {
+          "ticker": "AZJ.AX",
+          "score": 0.0907
+        },
+        {
+          "ticker": "ALX.AX",
+          "score": 0.0874
+        },
+        {
+          "ticker": "BOL.AX",
+          "score": 0.0865
+        },
+        {
+          "ticker": "SXE.AX",
+          "score": 0.0803
+        },
+        {
+          "ticker": "SSM.AX",
+          "score": 0.0752
+        },
+        {
+          "ticker": "TCL.AX",
+          "score": 0.0712
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ma50_vs_ma200",
+            0.0253
+          ],
+          [
+            "ret_252d",
+            0.0231
+          ],
+          [
+            "ret_60d",
+            0.0211
+          ],
+          [
+            "parkinson_10d",
+            0.0144
+          ],
+          [
+            "vol_trend_60d",
+            0.0139
+          ]
+        ],
+        "neg": [
+          [
+            "vov_60d",
+            -0.0276
+          ],
+          [
+            "vol_60d",
+            -0.0265
+          ],
+          [
+            "atr_14_pct",
+            -0.0228
+          ],
+          [
+            "price_fd_short",
+            -0.0213
+          ],
+          [
+            "close_vs_ma50",
+            -0.0205
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Healthcare",
+      "n_names": 32,
+      "lambda": 0.39,
+      "ic": {
+        "mean": -0.0238,
+        "n": 57,
+        "tstat": -0.72
+      },
+      "backtest": {
+        "sharpe": -0.389,
+        "cagr_pct": -8.83,
+        "max_dd_pct": -49.98,
+        "turnover_pct": 115.4,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.061,
+        "book_k": 5
+      },
+      "top_picks": [
+        {
+          "ticker": "SPL.AX",
+          "score": 0.1095
+        },
+        {
+          "ticker": "ARX.AX",
+          "score": 0.0601
+        },
+        {
+          "ticker": "RMD.AX",
+          "score": 0.0496
+        },
+        {
+          "ticker": "MVF.AX",
+          "score": 0.0455
+        },
+        {
+          "ticker": "SIG.AX",
+          "score": 0.0435
+        },
+        {
+          "ticker": "IDX.AX",
+          "score": 0.0302
+        },
+        {
+          "ticker": "MSB.AX",
+          "score": 0.0279
+        },
+        {
+          "ticker": "PNV.AX",
+          "score": 0.0259
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ret_252d",
+            0.0311
+          ],
+          [
+            "vol_252d",
+            0.0241
+          ],
+          [
+            "bb_width_50",
+            0.0215
+          ],
+          [
+            "close_vs_52w_high",
+            0.0192
+          ],
+          [
+            "close_vs_ma200",
+            0.0189
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma50",
+            -0.0445
+          ],
+          [
+            "atr_14_pct",
+            -0.0423
+          ],
+          [
+            "ma50_vs_ma200",
+            -0.0254
+          ],
+          [
+            "trend_regime",
+            -0.0192
+          ],
+          [
+            "close_vs_52w_low",
+            -0.0148
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Communication Services",
+      "n_names": 18,
+      "lambda": 0.26,
+      "ic": {
+        "mean": null,
+        "n": 0,
+        "tstat": null
+      },
+      "backtest": {
+        "sharpe": -0.156,
+        "cagr_pct": -5.46,
+        "max_dd_pct": -54.12,
+        "turnover_pct": 95.6,
+        "n_rebal": 57,
+        "holdout_sharpe": -2.04,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "SXL.AX",
+          "score": 0.1174
+        },
+        {
+          "ticker": "TLS.AX",
+          "score": 0.0959
+        },
+        {
+          "ticker": "NEC.AX",
+          "score": 0.0704
+        },
+        {
+          "ticker": "CNU.AX",
+          "score": 0.0509
+        },
+        {
+          "ticker": "REA.AX",
+          "score": 0.0502
+        },
+        {
+          "ticker": "ABB.AX",
+          "score": 0.0482
+        },
+        {
+          "ticker": "NWS.AX",
+          "score": 0.0261
+        },
+        {
+          "ticker": "EVT.AX",
+          "score": 0.0185
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ret_252d",
+            0.0379
+          ],
+          [
+            "bb_width_50",
+            0.016
+          ],
+          [
+            "volume_ratio",
+            0.0125
+          ],
+          [
+            "vol_trend_60d",
+            0.0122
+          ],
+          [
+            "vol_z_score",
+            0.0111
+          ]
+        ],
+        "neg": [
+          [
+            "parkinson_20d",
+            -0.0283
+          ],
+          [
+            "close_vs_52w_low",
+            -0.0266
+          ],
+          [
+            "close_vs_ma50",
+            -0.0194
+          ],
+          [
+            "vov_20d",
+            -0.0146
+          ],
+          [
+            "donchian_pos_20",
+            -0.0144
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Consumer Defensive",
+      "n_names": 18,
+      "lambda": 0.26,
+      "ic": {
+        "mean": null,
+        "n": 0,
+        "tstat": null
+      },
+      "backtest": {
+        "sharpe": 0.361,
+        "cagr_pct": 4.54,
+        "max_dd_pct": -24.53,
+        "turnover_pct": 113.2,
+        "n_rebal": 57,
+        "holdout_sharpe": -0.361,
+        "book_k": 4
+      },
+      "top_picks": [
+        {
+          "ticker": "GNC.AX",
+          "score": 0.0866
+        },
+        {
+          "ticker": "EDV.AX",
+          "score": 0.0787
+        },
+        {
+          "ticker": "MTS.AX",
+          "score": 0.0667
+        },
+        {
+          "ticker": "ELD.AX",
+          "score": 0.0666
+        },
+        {
+          "ticker": "SVL.AX",
+          "score": 0.0632
+        },
+        {
+          "ticker": "SHV.AX",
+          "score": 0.0524
+        },
+        {
+          "ticker": "RIC.AX",
+          "score": 0.0489
+        },
+        {
+          "ticker": "COL.AX",
+          "score": 0.0452
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ret_252d",
+            0.0323
+          ],
+          [
+            "ret_126d",
+            0.0219
+          ],
+          [
+            "close_vs_52w_high",
+            0.0209
+          ],
+          [
+            "parkinson_10d",
+            0.0184
+          ],
+          [
+            "ret_20d",
+            0.0168
+          ]
+        ],
+        "neg": [
+          [
+            "close_vs_ma200",
+            -0.0401
+          ],
+          [
+            "atr_14_pct",
+            -0.0394
+          ],
+          [
+            "close_vs_ma50",
+            -0.0306
+          ],
+          [
+            "price_fd_short",
+            -0.0206
+          ],
+          [
+            "adx_14",
+            -0.0197
+          ]
+        ]
+      }
+    },
+    {
+      "sector": "Utilities",
+      "n_names": 8,
+      "lambda": 0.14,
+      "ic": {
+        "mean": null,
+        "n": 0,
+        "tstat": null
+      },
+      "backtest": {
+        "sharpe": 0.796,
+        "cagr_pct": 12.7,
+        "max_dd_pct": -15.61,
+        "turnover_pct": 48.5,
+        "n_rebal": 57,
+        "holdout_sharpe": 0.79,
+        "book_k": 3
+      },
+      "top_picks": [
+        {
+          "ticker": "APA.AX",
+          "score": 0.0879
+        },
+        {
+          "ticker": "AGL.AX",
+          "score": 0.0871
+        },
+        {
+          "ticker": "ORG.AX",
+          "score": 0.0203
+        },
+        {
+          "ticker": "MEZ.AX",
+          "score": -0.0204
+        }
+      ],
+      "drivers": {
+        "pos": [
+          [
+            "ma50_vs_ma200",
+            0.021
+          ],
+          [
+            "close_vs_52w_high",
+            0.0207
+          ],
+          [
+            "ret_252d",
+            0.0203
+          ],
+          [
+            "atr_14_pct",
+            0.0192
+          ],
+          [
+            "macd_line",
+            0.0145
+          ]
+        ],
+        "neg": [
+          [
+            "parkinson_20d",
+            -0.0225
+          ],
+          [
+            "close_vs_ma200",
+            -0.0223
+          ],
+          [
+            "close_vs_52w_low",
+            -0.021
+          ],
+          [
+            "vov_20d",
+            -0.0175
+          ],
+          [
+            "price_fd_short",
+            -0.0172
+          ]
+        ]
+      }
+    }
+  ],
+  "insights": {
+    "ic_by_sector": [
+      {
+        "sector": "Consumer Cyclical",
+        "ic": 0.0944
+      },
+      {
+        "sector": "Energy",
+        "ic": 0.0872
+      },
+      {
+        "sector": "Financial Services",
+        "ic": 0.0769
+      },
+      {
+        "sector": "Technology",
+        "ic": 0.0754
+      },
+      {
+        "sector": "Real Estate",
+        "ic": 0.0745
+      },
+      {
+        "sector": "Basic Materials",
+        "ic": 0.0715
+      },
+      {
+        "sector": "Industrials",
+        "ic": 0.0127
+      },
+      {
+        "sector": "Healthcare",
+        "ic": -0.0238
+      },
+      {
+        "sector": "Communication Services",
+        "ic": null
+      },
+      {
+        "sector": "Consumer Defensive",
+        "ic": null
+      },
+      {
+        "sector": "Utilities",
+        "ic": null
+      }
+    ],
+    "ic_by_year": [],
+    "persistence": [],
+    "long_short": {}
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "ticker": "CXZ.AX",
+      "score": 2.6463,
+      "sector": "Technology"
+    },
+    {
+      "rank": 2,
+      "ticker": "AAR.AX",
+      "score": 2.3606,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 3,
+      "ticker": "SGA.AX",
+      "score": 2.1456,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 4,
+      "ticker": "SPL.AX",
+      "score": 2.096,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 5,
+      "ticker": "JMS.AX",
+      "score": 2.0662,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 6,
+      "ticker": "GRX.AX",
+      "score": 2.0182,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 7,
+      "ticker": "MHJ.AX",
+      "score": 1.9838,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 8,
+      "ticker": "GLB.AX",
+      "score": 1.9523,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 9,
+      "ticker": "HAS.AX",
+      "score": 1.9498,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 10,
+      "ticker": "RSG.AX",
+      "score": 1.9313,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 11,
+      "ticker": "PRU.AX",
+      "score": 1.8604,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 12,
+      "ticker": "SXL.AX",
+      "score": 1.8394,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 13,
+      "ticker": "QUB.AX",
+      "score": 1.7254,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 14,
+      "ticker": "MGX.AX",
+      "score": 1.7051,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 15,
+      "ticker": "WAX.AX",
+      "score": 1.6685,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 16,
+      "ticker": "CYC.AX",
+      "score": 1.6348,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 17,
+      "ticker": "GRR.AX",
+      "score": 1.6079,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 18,
+      "ticker": "ANG.AX",
+      "score": 1.549,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 19,
+      "ticker": "AZJ.AX",
+      "score": 1.5488,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 20,
+      "ticker": "S32.AX",
+      "score": 1.5272,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 21,
+      "ticker": "WMA.AX",
+      "score": 1.5057,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 22,
+      "ticker": "PWH.AX",
+      "score": 1.4977,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 23,
+      "ticker": "CNI.AX",
+      "score": 1.4966,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 24,
+      "ticker": "DTL.AX",
+      "score": 1.4824,
+      "sector": "Technology"
+    },
+    {
+      "rank": 25,
+      "ticker": "ALX.AX",
+      "score": 1.4667,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 26,
+      "ticker": "WAM.AX",
+      "score": 1.4622,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 27,
+      "ticker": "PNC.AX",
+      "score": 1.455,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 28,
+      "ticker": "BOL.AX",
+      "score": 1.4458,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 29,
+      "ticker": "TLS.AX",
+      "score": 1.4199,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 30,
+      "ticker": "SSG.AX",
+      "score": 1.3911,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 31,
+      "ticker": "RMS.AX",
+      "score": 1.3473,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 32,
+      "ticker": "GNC.AX",
+      "score": 1.3385,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 33,
+      "ticker": "HFY.AX",
+      "score": 1.3141,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 34,
+      "ticker": "BGL.AX",
+      "score": 1.3073,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 35,
+      "ticker": "DXS.AX",
+      "score": 1.2993,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 36,
+      "ticker": "SXE.AX",
+      "score": 1.2954,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 37,
+      "ticker": "WAF.AX",
+      "score": 1.2726,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 38,
+      "ticker": "CKF.AX",
+      "score": 1.255,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 39,
+      "ticker": "SBM.AX",
+      "score": 1.2536,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 40,
+      "ticker": "AMI.AX",
+      "score": 1.2331,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 41,
+      "ticker": "DSK.AX",
+      "score": 1.1898,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 42,
+      "ticker": "SSM.AX",
+      "score": 1.1708,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 43,
+      "ticker": "FGX.AX",
+      "score": 1.1627,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 44,
+      "ticker": "EDV.AX",
+      "score": 1.1531,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 45,
+      "ticker": "RGL.AX",
+      "score": 1.1444,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 46,
+      "ticker": "ARX.AX",
+      "score": 1.1418,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 47,
+      "ticker": "AGY.AX",
+      "score": 1.1405,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 48,
+      "ticker": "JYC.AX",
+      "score": 1.1328,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 49,
+      "ticker": "BSL.AX",
+      "score": 1.1306,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 50,
+      "ticker": "HLI.AX",
+      "score": 1.1215,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 51,
+      "ticker": "AOV.AX",
+      "score": 1.1115,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 52,
+      "ticker": "DRE.AX",
+      "score": 1.1094,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 53,
+      "ticker": "PL8.AX",
+      "score": 1.1041,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 54,
+      "ticker": "MVP.AX",
+      "score": 1.1016,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 55,
+      "ticker": "GML.AX",
+      "score": 1.0754,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 56,
+      "ticker": "AVL.AX",
+      "score": 1.0749,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 57,
+      "ticker": "TCL.AX",
+      "score": 1.073,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 58,
+      "ticker": "TAH.AX",
+      "score": 1.0633,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 59,
+      "ticker": "PDI.AX",
+      "score": 1.0507,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 60,
+      "ticker": "RGN.AX",
+      "score": 1.0317,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 61,
+      "ticker": "BHP.AX",
+      "score": 1.0081,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 62,
+      "ticker": "TLC.AX",
+      "score": 0.9931,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 63,
+      "ticker": "CCL.AX",
+      "score": 0.9817,
+      "sector": "Technology"
+    },
+    {
+      "rank": 64,
+      "ticker": "NGI.AX",
+      "score": 0.9774,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 65,
+      "ticker": "AXE.AX",
+      "score": 0.9723,
+      "sector": "Technology"
+    },
+    {
+      "rank": 66,
+      "ticker": "WHC.AX",
+      "score": 0.9583,
+      "sector": "Energy"
+    },
+    {
+      "rank": 67,
+      "ticker": "ASM.AX",
+      "score": 0.955,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 68,
+      "ticker": "STK.AX",
+      "score": 0.9457,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 69,
+      "ticker": "WBC.AX",
+      "score": 0.9425,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 70,
+      "ticker": "LGI.AX",
+      "score": 0.94,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 71,
+      "ticker": "RMD.AX",
+      "score": 0.9384,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 72,
+      "ticker": "SRG.AX",
+      "score": 0.9315,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 73,
+      "ticker": "OBM.AX",
+      "score": 0.9313,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 74,
+      "ticker": "NEC.AX",
+      "score": 0.9197,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 75,
+      "ticker": "SND.AX",
+      "score": 0.9107,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 76,
+      "ticker": "GOZ.AX",
+      "score": 0.8988,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 77,
+      "ticker": "GDI.AX",
+      "score": 0.8772,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 78,
+      "ticker": "QEM.AX",
+      "score": 0.8768,
+      "sector": "Energy"
+    },
+    {
+      "rank": 79,
+      "ticker": "MTS.AX",
+      "score": 0.8757,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 80,
+      "ticker": "ELD.AX",
+      "score": 0.8732,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 81,
+      "ticker": "MVF.AX",
+      "score": 0.8585,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 82,
+      "ticker": "FMG.AX",
+      "score": 0.8578,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 83,
+      "ticker": "WDS.AX",
+      "score": 0.8535,
+      "sector": "Energy"
+    },
+    {
+      "rank": 84,
+      "ticker": "PXA.AX",
+      "score": 0.8413,
+      "sector": "Technology"
+    },
+    {
+      "rank": 85,
+      "ticker": "KAU.AX",
+      "score": 0.8411,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 86,
+      "ticker": "DMP.AX",
+      "score": 0.8262,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 87,
+      "ticker": "MYS.AX",
+      "score": 0.8223,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 88,
+      "ticker": "SIG.AX",
+      "score": 0.8197,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 89,
+      "ticker": "APA.AX",
+      "score": 0.8099,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 90,
+      "ticker": "LKE.AX",
+      "score": 0.8055,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 91,
+      "ticker": "SVL.AX",
+      "score": 0.7927,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 92,
+      "ticker": "ADX.AX",
+      "score": 0.7925,
+      "sector": "Energy"
+    },
+    {
+      "rank": 93,
+      "ticker": "AGL.AX",
+      "score": 0.7917,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 94,
+      "ticker": "ASX.AX",
+      "score": 0.7872,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 95,
+      "ticker": "BKY.AX",
+      "score": 0.7835,
+      "sector": "Energy"
+    },
+    {
+      "rank": 96,
+      "ticker": "WES.AX",
+      "score": 0.7764,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 97,
+      "ticker": "CCV.AX",
+      "score": 0.7757,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 98,
+      "ticker": "RFF.AX",
+      "score": 0.7533,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 99,
+      "ticker": "BRN.AX",
+      "score": 0.7524,
+      "sector": "Technology"
+    },
+    {
+      "rank": 100,
+      "ticker": "CGF.AX",
+      "score": 0.7509,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 101,
+      "ticker": "GDF.AX",
+      "score": 0.7471,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 102,
+      "ticker": "FGG.AX",
+      "score": 0.7348,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 103,
+      "ticker": "CVL.AX",
+      "score": 0.7242,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 104,
+      "ticker": "PRN.AX",
+      "score": 0.7118,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 105,
+      "ticker": "RFG.AX",
+      "score": 0.7102,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 106,
+      "ticker": "ARF.AX",
+      "score": 0.6968,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 107,
+      "ticker": "MAF.AX",
+      "score": 0.6945,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 108,
+      "ticker": "CHC.AX",
+      "score": 0.6921,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 109,
+      "ticker": "DRR.AX",
+      "score": 0.6912,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 110,
+      "ticker": "TG1.AX",
+      "score": 0.6853,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 111,
+      "ticker": "MEI.AX",
+      "score": 0.6853,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 112,
+      "ticker": "FRI.AX",
+      "score": 0.6765,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 113,
+      "ticker": "CTO.AX",
+      "score": 0.6707,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 114,
+      "ticker": "ALK.AX",
+      "score": 0.6659,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 115,
+      "ticker": "SKC.AX",
+      "score": 0.6646,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 116,
+      "ticker": "MFF.AX",
+      "score": 0.6629,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 117,
+      "ticker": "MPL.AX",
+      "score": 0.6619,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 118,
+      "ticker": "NXT.AX",
+      "score": 0.6545,
+      "sector": "Technology"
+    },
+    {
+      "rank": 119,
+      "ticker": "GPT.AX",
+      "score": 0.6487,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 120,
+      "ticker": "RDX.AX",
+      "score": 0.6428,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 121,
+      "ticker": "PDN.AX",
+      "score": 0.6425,
+      "sector": "Energy"
+    },
+    {
+      "rank": 122,
+      "ticker": "DBI.AX",
+      "score": 0.6312,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 123,
+      "ticker": "LFS.AX",
+      "score": 0.6242,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 124,
+      "ticker": "BWP.AX",
+      "score": 0.6184,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 125,
+      "ticker": "WIN.AX",
+      "score": 0.6154,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 126,
+      "ticker": "HUM.AX",
+      "score": 0.6076,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 127,
+      "ticker": "GMD.AX",
+      "score": 0.599,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 128,
+      "ticker": "EMR.AX",
+      "score": 0.5885,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 129,
+      "ticker": "WPR.AX",
+      "score": 0.585,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 130,
+      "ticker": "CRN.AX",
+      "score": 0.5804,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 131,
+      "ticker": "PSC.AX",
+      "score": 0.571,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 132,
+      "ticker": "IDX.AX",
+      "score": 0.563,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 133,
+      "ticker": "EHL.AX",
+      "score": 0.555,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 134,
+      "ticker": "GNE.AX",
+      "score": 0.5465,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 135,
+      "ticker": "SHV.AX",
+      "score": 0.543,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 136,
+      "ticker": "CNU.AX",
+      "score": 0.5381,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 137,
+      "ticker": "CWY.AX",
+      "score": 0.5318,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 138,
+      "ticker": "YAL.AX",
+      "score": 0.5313,
+      "sector": "Energy"
+    },
+    {
+      "rank": 139,
+      "ticker": "REA.AX",
+      "score": 0.5256,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 140,
+      "ticker": "WLE.AX",
+      "score": 0.5256,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 141,
+      "ticker": "NAB.AX",
+      "score": 0.5203,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 142,
+      "ticker": "MSB.AX",
+      "score": 0.5184,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 143,
+      "ticker": "SLX.AX",
+      "score": 0.5155,
+      "sector": "Technology"
+    },
+    {
+      "rank": 144,
+      "ticker": "CVW.AX",
+      "score": 0.5144,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 145,
+      "ticker": "HDN.AX",
+      "score": 0.5058,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 146,
+      "ticker": "MTC.AX",
+      "score": 0.5005,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 147,
+      "ticker": "VCX.AX",
+      "score": 0.4951,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 148,
+      "ticker": "WCN.AX",
+      "score": 0.4897,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 149,
+      "ticker": "ABB.AX",
+      "score": 0.4864,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 150,
+      "ticker": "SCG.AX",
+      "score": 0.4795,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 151,
+      "ticker": "PNV.AX",
+      "score": 0.4795,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 152,
+      "ticker": "PCG.AX",
+      "score": 0.4771,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 153,
+      "ticker": "CMM.AX",
+      "score": 0.4761,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 154,
+      "ticker": "RHC.AX",
+      "score": 0.4734,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 155,
+      "ticker": "ANN.AX",
+      "score": 0.4716,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 156,
+      "ticker": "SMR.AX",
+      "score": 0.4698,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 157,
+      "ticker": "ACF.AX",
+      "score": 0.4634,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 158,
+      "ticker": "RIC.AX",
+      "score": 0.4599,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 159,
+      "ticker": "FEX.AX",
+      "score": 0.4567,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 160,
+      "ticker": "DYL.AX",
+      "score": 0.4554,
+      "sector": "Energy"
+    },
+    {
+      "rank": 161,
+      "ticker": "DUR.AX",
+      "score": 0.4488,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 162,
+      "ticker": "BVS.AX",
+      "score": 0.4444,
+      "sector": "Technology"
+    },
+    {
+      "rank": 163,
+      "ticker": "MLG.AX",
+      "score": 0.4375,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 164,
+      "ticker": "DNL.AX",
+      "score": 0.4326,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 165,
+      "ticker": "MFG.AX",
+      "score": 0.4321,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 166,
+      "ticker": "ALD.AX",
+      "score": 0.4241,
+      "sector": "Energy"
+    },
+    {
+      "rank": 167,
+      "ticker": "VAU.AX",
+      "score": 0.4139,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 168,
+      "ticker": "BPT.AX",
+      "score": 0.4072,
+      "sector": "Energy"
+    },
+    {
+      "rank": 169,
+      "ticker": "CQR.AX",
+      "score": 0.4071,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 170,
+      "ticker": "EVN.AX",
+      "score": 0.403,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 171,
+      "ticker": "CLW.AX",
+      "score": 0.4016,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 172,
+      "ticker": "WGN.AX",
+      "score": 0.3986,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 173,
+      "ticker": "APE.AX",
+      "score": 0.3925,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 174,
+      "ticker": "SGM.AX",
+      "score": 0.3902,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 175,
+      "ticker": "NXG.AX",
+      "score": 0.3876,
+      "sector": "Energy"
+    },
+    {
+      "rank": 176,
+      "ticker": "NST.AX",
+      "score": 0.3761,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 177,
+      "ticker": "HSN.AX",
+      "score": 0.3756,
+      "sector": "Technology"
+    },
+    {
+      "rank": 178,
+      "ticker": "COL.AX",
+      "score": 0.3752,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 179,
+      "ticker": "RIO.AX",
+      "score": 0.368,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 180,
+      "ticker": "TWR.AX",
+      "score": 0.3674,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 181,
+      "ticker": "MCY.AX",
+      "score": 0.363,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 182,
+      "ticker": "CIP.AX",
+      "score": 0.3511,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 183,
+      "ticker": "HVN.AX",
+      "score": 0.3446,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 184,
+      "ticker": "KCN.AX",
+      "score": 0.3393,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 185,
+      "ticker": "SFR.AX",
+      "score": 0.3392,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 186,
+      "ticker": "WGX.AX",
+      "score": 0.3306,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 187,
+      "ticker": "HUB.AX",
+      "score": 0.3285,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 188,
+      "ticker": "MAQ.AX",
+      "score": 0.3274,
+      "sector": "Technology"
+    },
+    {
+      "rank": 189,
+      "ticker": "PLS.AX",
+      "score": 0.3272,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 190,
+      "ticker": "VSL.AX",
+      "score": 0.3259,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 191,
+      "ticker": "RRL.AX",
+      "score": 0.3243,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 192,
+      "ticker": "MEU.AX",
+      "score": 0.3239,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 193,
+      "ticker": "CUV.AX",
+      "score": 0.32,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 194,
+      "ticker": "WWI.AX",
+      "score": 0.3098,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 195,
+      "ticker": "AMA.AX",
+      "score": 0.3088,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 196,
+      "ticker": "SDF.AX",
+      "score": 0.3013,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 197,
+      "ticker": "HT8.AX",
+      "score": 0.3012,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 198,
+      "ticker": "GL1.AX",
+      "score": 0.2982,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 199,
+      "ticker": "CDA.AX",
+      "score": 0.2975,
+      "sector": "Technology"
+    },
+    {
+      "rank": 200,
+      "ticker": "BRG.AX",
+      "score": 0.2951,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 201,
+      "ticker": "NCK.AX",
+      "score": 0.2946,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 202,
+      "ticker": "DOW.AX",
+      "score": 0.2945,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 203,
+      "ticker": "TNE.AX",
+      "score": 0.2917,
+      "sector": "Technology"
+    },
+    {
+      "rank": 204,
+      "ticker": "AMC.AX",
+      "score": 0.2863,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 205,
+      "ticker": "CQE.AX",
+      "score": 0.2826,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 206,
+      "ticker": "IPD.AX",
+      "score": 0.2813,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 207,
+      "ticker": "MAH.AX",
+      "score": 0.2786,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 208,
+      "ticker": "NMT.AX",
+      "score": 0.2695,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 209,
+      "ticker": "BMN.AX",
+      "score": 0.2688,
+      "sector": "Energy"
+    },
+    {
+      "rank": 210,
+      "ticker": "TER.AX",
+      "score": 0.2687,
+      "sector": "Energy"
+    },
+    {
+      "rank": 211,
+      "ticker": "WEB.AX",
+      "score": 0.2647,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 212,
+      "ticker": "CSC.AX",
+      "score": 0.2624,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 213,
+      "ticker": "JBH.AX",
+      "score": 0.2623,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 214,
+      "ticker": "PMV.AX",
+      "score": 0.261,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 215,
+      "ticker": "VEA.AX",
+      "score": 0.2607,
+      "sector": "Energy"
+    },
+    {
+      "rank": 216,
+      "ticker": "CYL.AX",
+      "score": 0.2499,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 217,
+      "ticker": "NWH.AX",
+      "score": 0.231,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 218,
+      "ticker": "HLS.AX",
+      "score": 0.2222,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 219,
+      "ticker": "FCL.AX",
+      "score": 0.2118,
+      "sector": "Technology"
+    },
+    {
+      "rank": 220,
+      "ticker": "QAL.AX",
+      "score": 0.2044,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 221,
+      "ticker": "CBA.AX",
+      "score": 0.1992,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 222,
+      "ticker": "PPC.AX",
+      "score": 0.1937,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 223,
+      "ticker": "GMG.AX",
+      "score": 0.1831,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 224,
+      "ticker": "BGA.AX",
+      "score": 0.1821,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 225,
+      "ticker": "ZNC.AX",
+      "score": 0.1798,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 226,
+      "ticker": "COF.AX",
+      "score": 0.1793,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 227,
+      "ticker": "IGO.AX",
+      "score": 0.1747,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 228,
+      "ticker": "SHL.AX",
+      "score": 0.1588,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 229,
+      "ticker": "ASL.AX",
+      "score": 0.1557,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 230,
+      "ticker": "NUF.AX",
+      "score": 0.1529,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 231,
+      "ticker": "SGP.AX",
+      "score": 0.1523,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 232,
+      "ticker": "A1M.AX",
+      "score": 0.1441,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 233,
+      "ticker": "GNG.AX",
+      "score": 0.137,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 234,
+      "ticker": "ORI.AX",
+      "score": 0.1343,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 235,
+      "ticker": "PWR.AX",
+      "score": 0.133,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 236,
+      "ticker": "NEM.AX",
+      "score": 0.1323,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 237,
+      "ticker": "CTP.AX",
+      "score": 0.124,
+      "sector": "Energy"
+    },
+    {
+      "rank": 238,
+      "ticker": "MEK.AX",
+      "score": 0.1238,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 239,
+      "ticker": "UNI.AX",
+      "score": 0.122,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 240,
+      "ticker": "LSF.AX",
+      "score": 0.1212,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 241,
+      "ticker": "IMD.AX",
+      "score": 0.1192,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 242,
+      "ticker": "STO.AX",
+      "score": 0.119,
+      "sector": "Energy"
+    },
+    {
+      "rank": 243,
+      "ticker": "NTD.AX",
+      "score": 0.1002,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 244,
+      "ticker": "HZN.AX",
+      "score": 0.0951,
+      "sector": "Energy"
+    },
+    {
+      "rank": 245,
+      "ticker": "FBU.AX",
+      "score": 0.0946,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 246,
+      "ticker": "NIC.AX",
+      "score": 0.0925,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 247,
+      "ticker": "MIN.AX",
+      "score": 0.089,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 248,
+      "ticker": "HAR.AX",
+      "score": 0.0809,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 249,
+      "ticker": "BBN.AX",
+      "score": 0.0809,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 250,
+      "ticker": "EQT.AX",
+      "score": 0.0695,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 251,
+      "ticker": "CXO.AX",
+      "score": 0.0633,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 252,
+      "ticker": "PIC.AX",
+      "score": 0.0574,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 253,
+      "ticker": "ANX.AX",
+      "score": 0.0557,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 254,
+      "ticker": "ANZ.AX",
+      "score": 0.053,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 255,
+      "ticker": "NWS.AX",
+      "score": 0.053,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 256,
+      "ticker": "AAC.AX",
+      "score": 0.0462,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 257,
+      "ticker": "SRV.AX",
+      "score": 0.043,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 258,
+      "ticker": "AMH.AX",
+      "score": 0.0299,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 259,
+      "ticker": "SUL.AX",
+      "score": 0.0171,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 260,
+      "ticker": "ENR.AX",
+      "score": 0.0133,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 261,
+      "ticker": "CMW.AX",
+      "score": 0.013,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 262,
+      "ticker": "MSV.AX",
+      "score": 0.0118,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 263,
+      "ticker": "FML.AX",
+      "score": 0.0103,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 264,
+      "ticker": "LYC.AX",
+      "score": 0.0097,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 265,
+      "ticker": "DXI.AX",
+      "score": 0.0072,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 266,
+      "ticker": "MQG.AX",
+      "score": 0.0069,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 267,
+      "ticker": "NHF.AX",
+      "score": 0.0057,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 268,
+      "ticker": "CIA.AX",
+      "score": -0.0078,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 269,
+      "ticker": "NTU.AX",
+      "score": -0.0081,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 270,
+      "ticker": "STP.AX",
+      "score": -0.0113,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 271,
+      "ticker": "CIN.AX",
+      "score": -0.0114,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 272,
+      "ticker": "MGR.AX",
+      "score": -0.0126,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 273,
+      "ticker": "NAN.AX",
+      "score": -0.0201,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 274,
+      "ticker": "IMR.AX",
+      "score": -0.0229,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 275,
+      "ticker": "CZR.AX",
+      "score": -0.0281,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 276,
+      "ticker": "IAG.AX",
+      "score": -0.0307,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 277,
+      "ticker": "ABY.AX",
+      "score": -0.0473,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 278,
+      "ticker": "SNL.AX",
+      "score": -0.0485,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 279,
+      "ticker": "4DX.AX",
+      "score": -0.0532,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 280,
+      "ticker": "CSL.AX",
+      "score": -0.0538,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 281,
+      "ticker": "LTR.AX",
+      "score": -0.0548,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 282,
+      "ticker": "SKY.AX",
+      "score": -0.055,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 283,
+      "ticker": "KNB.AX",
+      "score": -0.0624,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 284,
+      "ticker": "IRE.AX",
+      "score": -0.0651,
+      "sector": "Technology"
+    },
+    {
+      "rank": 285,
+      "ticker": "WOW.AX",
+      "score": -0.0829,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 286,
+      "ticker": "EVT.AX",
+      "score": -0.0965,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 287,
+      "ticker": "SLC.AX",
+      "score": -0.0973,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 288,
+      "ticker": "MBH.AX",
+      "score": -0.105,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 289,
+      "ticker": "ARG.AX",
+      "score": -0.1076,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 290,
+      "ticker": "DVP.AX",
+      "score": -0.1191,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 291,
+      "ticker": "REG.AX",
+      "score": -0.1268,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 292,
+      "ticker": "TAM.AX",
+      "score": -0.1332,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 293,
+      "ticker": "BEN.AX",
+      "score": -0.142,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 294,
+      "ticker": "SOL.AX",
+      "score": -0.1451,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 295,
+      "ticker": "QBE.AX",
+      "score": -0.1495,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 296,
+      "ticker": "IPH.AX",
+      "score": -0.1591,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 297,
+      "ticker": "MME.AX",
+      "score": -0.1637,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 298,
+      "ticker": "MGH.AX",
+      "score": -0.1741,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 299,
+      "ticker": "MXT.AX",
+      "score": -0.1753,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 300,
+      "ticker": "WOR.AX",
+      "score": -0.179,
+      "sector": "Energy"
+    },
+    {
+      "rank": 301,
+      "ticker": "MYR.AX",
+      "score": -0.1797,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 302,
+      "ticker": "NHC.AX",
+      "score": -0.2146,
+      "sector": "Energy"
+    },
+    {
+      "rank": 303,
+      "ticker": "NWL.AX",
+      "score": -0.2233,
+      "sector": "Technology"
+    },
+    {
+      "rank": 304,
+      "ticker": "RXL.AX",
+      "score": -0.2277,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 305,
+      "ticker": "VNT.AX",
+      "score": -0.2418,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 306,
+      "ticker": "SEK.AX",
+      "score": -0.2423,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 307,
+      "ticker": "SUN.AX",
+      "score": -0.2432,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 308,
+      "ticker": "CCP.AX",
+      "score": -0.2457,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 309,
+      "ticker": "AAI.AX",
+      "score": -0.2518,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 310,
+      "ticker": "AFI.AX",
+      "score": -0.2544,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 311,
+      "ticker": "360.AX",
+      "score": -0.2601,
+      "sector": "Technology"
+    },
+    {
+      "rank": 312,
+      "ticker": "FPH.AX",
+      "score": -0.2612,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 313,
+      "ticker": "FLT.AX",
+      "score": -0.2679,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 314,
+      "ticker": "AUI.AX",
+      "score": -0.2687,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 315,
+      "ticker": "GAL.AX",
+      "score": -0.2735,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 316,
+      "ticker": "RMX.AX",
+      "score": -0.2794,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 317,
+      "ticker": "ILU.AX",
+      "score": -0.2902,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 318,
+      "ticker": "PFE.AX",
+      "score": -0.2982,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 319,
+      "ticker": "MCE.AX",
+      "score": -0.3208,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 320,
+      "ticker": "TOT.AX",
+      "score": -0.324,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 321,
+      "ticker": "IXR.AX",
+      "score": -0.3306,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 322,
+      "ticker": "AIA.AX",
+      "score": -0.3343,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 323,
+      "ticker": "KGN.AX",
+      "score": -0.3391,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 324,
+      "ticker": "DXC.AX",
+      "score": -0.346,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 325,
+      "ticker": "GQG.AX",
+      "score": -0.3468,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 326,
+      "ticker": "CCX.AX",
+      "score": -0.3517,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 327,
+      "ticker": "DRO.AX",
+      "score": -0.3572,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 328,
+      "ticker": "OLI.AX",
+      "score": -0.3585,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 329,
+      "ticker": "OML.AX",
+      "score": -0.3783,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 330,
+      "ticker": "GBR.AX",
+      "score": -0.3788,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 331,
+      "ticker": "BOQ.AX",
+      "score": -0.3799,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 332,
+      "ticker": "HGO.AX",
+      "score": -0.3838,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 333,
+      "ticker": "SIQ.AX",
+      "score": -0.3899,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 334,
+      "ticker": "WMI.AX",
+      "score": -0.3918,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 335,
+      "ticker": "PPT.AX",
+      "score": -0.4007,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 336,
+      "ticker": "AUC.AX",
+      "score": -0.4087,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 337,
+      "ticker": "IEL.AX",
+      "score": -0.4148,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 338,
+      "ticker": "AVH.AX",
+      "score": -0.4237,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 339,
+      "ticker": "ASG.AX",
+      "score": -0.4253,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 340,
+      "ticker": "ATG.AX",
+      "score": -0.4373,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 341,
+      "ticker": "SVM.AX",
+      "score": -0.4483,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 342,
+      "ticker": "AMP.AX",
+      "score": -0.4581,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 343,
+      "ticker": "GWA.AX",
+      "score": -0.4668,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 344,
+      "ticker": "SGR.AX",
+      "score": -0.4736,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 345,
+      "ticker": "HCH.AX",
+      "score": -0.4801,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 346,
+      "ticker": "ING.AX",
+      "score": -0.4965,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 347,
+      "ticker": "BRI.AX",
+      "score": -0.4993,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 348,
+      "ticker": "APX.AX",
+      "score": -0.5,
+      "sector": "Technology"
+    },
+    {
+      "rank": 349,
+      "ticker": "CHN.AX",
+      "score": -0.5021,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 350,
+      "ticker": "DTM.AX",
+      "score": -0.5022,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 351,
+      "ticker": "CKA.AX",
+      "score": -0.5069,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 352,
+      "ticker": "PPS.AX",
+      "score": -0.5149,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 353,
+      "ticker": "GWR.AX",
+      "score": -0.5164,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 354,
+      "ticker": "LOV.AX",
+      "score": -0.5168,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 355,
+      "ticker": "INA.AX",
+      "score": -0.5184,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 356,
+      "ticker": "EBO.AX",
+      "score": -0.5193,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 357,
+      "ticker": "HZR.AX",
+      "score": -0.5455,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 358,
+      "ticker": "AX1.AX",
+      "score": -0.5516,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 359,
+      "ticker": "ORA.AX",
+      "score": -0.5575,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 360,
+      "ticker": "ARL.AX",
+      "score": -0.5705,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 361,
+      "ticker": "ACL.AX",
+      "score": -0.5783,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 362,
+      "ticker": "ALQ.AX",
+      "score": -0.5816,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 363,
+      "ticker": "CDP.AX",
+      "score": -0.5865,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 364,
+      "ticker": "SPK.AX",
+      "score": -0.5969,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 365,
+      "ticker": "FFM.AX",
+      "score": -0.6004,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 366,
+      "ticker": "JHX.AX",
+      "score": -0.6127,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 367,
+      "ticker": "OFX.AX",
+      "score": -0.6164,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 368,
+      "ticker": "MTH.AX",
+      "score": -0.6207,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 369,
+      "ticker": "GT1.AX",
+      "score": -0.6235,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 370,
+      "ticker": "TPG.AX",
+      "score": -0.6495,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 371,
+      "ticker": "BRE.AX",
+      "score": -0.6604,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 372,
+      "ticker": "COB.AX",
+      "score": -0.6618,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 373,
+      "ticker": "PNI.AX",
+      "score": -0.6639,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 374,
+      "ticker": "MMS.AX",
+      "score": -0.6649,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 375,
+      "ticker": "TWE.AX",
+      "score": -0.6736,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 376,
+      "ticker": "A2M.AX",
+      "score": -0.6746,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 377,
+      "ticker": "WTC.AX",
+      "score": -0.6818,
+      "sector": "Technology"
+    },
+    {
+      "rank": 378,
+      "ticker": "CWP.AX",
+      "score": -0.6839,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 379,
+      "ticker": "STN.AX",
+      "score": -0.6884,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 380,
+      "ticker": "OCL.AX",
+      "score": -0.6963,
+      "sector": "Technology"
+    },
+    {
+      "rank": 381,
+      "ticker": "CAR.AX",
+      "score": -0.697,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 382,
+      "ticker": "STX.AX",
+      "score": -0.7136,
+      "sector": "Energy"
+    },
+    {
+      "rank": 383,
+      "ticker": "MTO.AX",
+      "score": -0.7218,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 384,
+      "ticker": "ORG.AX",
+      "score": -0.723,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 385,
+      "ticker": "AZY.AX",
+      "score": -0.7271,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 386,
+      "ticker": "TLX.AX",
+      "score": -0.7384,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 387,
+      "ticker": "CTT.AX",
+      "score": -0.7514,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 388,
+      "ticker": "MND.AX",
+      "score": -0.7535,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 389,
+      "ticker": "TTM.AX",
+      "score": -0.7721,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 390,
+      "ticker": "BCN.AX",
+      "score": -0.7775,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 391,
+      "ticker": "ERM.AX",
+      "score": -0.7865,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 392,
+      "ticker": "MMA.AX",
+      "score": -0.8017,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 393,
+      "ticker": "BXB.AX",
+      "score": -0.813,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 394,
+      "ticker": "ALL.AX",
+      "score": -0.8454,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 395,
+      "ticker": "BKI.AX",
+      "score": -0.8489,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 396,
+      "ticker": "HRN.AX",
+      "score": -0.8685,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 397,
+      "ticker": "MIR.AX",
+      "score": -0.8719,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 398,
+      "ticker": "AUB.AX",
+      "score": -0.8911,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 399,
+      "ticker": "MLX.AX",
+      "score": -0.8967,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 400,
+      "ticker": "TUA.AX",
+      "score": -0.9124,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 401,
+      "ticker": "APZ.AX",
+      "score": -0.9129,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 402,
+      "ticker": "LLC.AX",
+      "score": -0.927,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 403,
+      "ticker": "SDR.AX",
+      "score": -0.9277,
+      "sector": "Technology"
+    },
+    {
+      "rank": 404,
+      "ticker": "IFT.AX",
+      "score": -0.9354,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 405,
+      "ticker": "LIC.AX",
+      "score": -0.9387,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 406,
+      "ticker": "ALC.AX",
+      "score": -0.9515,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 407,
+      "ticker": "MYX.AX",
+      "score": -0.9607,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 408,
+      "ticker": "BOE.AX",
+      "score": -0.9787,
+      "sector": "Energy"
+    },
+    {
+      "rank": 409,
+      "ticker": "AIS.AX",
+      "score": -0.9804,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 410,
+      "ticker": "ASK.AX",
+      "score": -0.9934,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 411,
+      "ticker": "CAT.AX",
+      "score": -0.9975,
+      "sector": "Technology"
+    },
+    {
+      "rank": 412,
+      "ticker": "WBT.AX",
+      "score": -1.0115,
+      "sector": "Technology"
+    },
+    {
+      "rank": 413,
+      "ticker": "GDG.AX",
+      "score": -1.0144,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 414,
+      "ticker": "RML.AX",
+      "score": -1.0222,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 415,
+      "ticker": "AAJ.AX",
+      "score": -1.0338,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 416,
+      "ticker": "XRO.AX",
+      "score": -1.0749,
+      "sector": "Technology"
+    },
+    {
+      "rank": 417,
+      "ticker": "EGH.AX",
+      "score": -1.0791,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 418,
+      "ticker": "MAD.AX",
+      "score": -1.0794,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 419,
+      "ticker": "CEN.AX",
+      "score": -1.082,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 420,
+      "ticker": "VUL.AX",
+      "score": -1.0872,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 421,
+      "ticker": "4DS.AX",
+      "score": -1.0907,
+      "sector": "Technology"
+    },
+    {
+      "rank": 422,
+      "ticker": "ARB.AX",
+      "score": -1.0968,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 423,
+      "ticker": "EBR.AX",
+      "score": -1.0998,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 424,
+      "ticker": "JDO.AX",
+      "score": -1.1006,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 425,
+      "ticker": "ZIP.AX",
+      "score": -1.128,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 426,
+      "ticker": "REH.AX",
+      "score": -1.1348,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 427,
+      "ticker": "WGB.AX",
+      "score": -1.1466,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 428,
+      "ticker": "SYR.AX",
+      "score": -1.1525,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 429,
+      "ticker": "KAR.AX",
+      "score": -1.1641,
+      "sector": "Energy"
+    },
+    {
+      "rank": 430,
+      "ticker": "ASB.AX",
+      "score": -1.1781,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 431,
+      "ticker": "CPU.AX",
+      "score": -1.183,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 432,
+      "ticker": "EML.AX",
+      "score": -1.1973,
+      "sector": "Technology"
+    },
+    {
+      "rank": 433,
+      "ticker": "PAC.AX",
+      "score": -1.2269,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 434,
+      "ticker": "ARR.AX",
+      "score": -1.2459,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 435,
+      "ticker": "LNW.AX",
+      "score": -1.2603,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 436,
+      "ticker": "PNN.AX",
+      "score": -1.2858,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 437,
+      "ticker": "VHM.AX",
+      "score": -1.2916,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 438,
+      "ticker": "RWC.AX",
+      "score": -1.3155,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 439,
+      "ticker": "PXX.AX",
+      "score": -1.3292,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 440,
+      "ticker": "SPZ.AX",
+      "score": -1.3738,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 441,
+      "ticker": "HMC.AX",
+      "score": -1.3859,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 442,
+      "ticker": "NXM.AX",
+      "score": -1.3891,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 443,
+      "ticker": "WHF.AX",
+      "score": -1.3973,
+      "sector": "Financial Services"
+    },
+    {
+      "rank": 444,
+      "ticker": "29M.AX",
+      "score": -1.4037,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 445,
+      "ticker": "CBO.AX",
+      "score": -1.4227,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 446,
+      "ticker": "PEN.AX",
+      "score": -1.4276,
+      "sector": "Energy"
+    },
+    {
+      "rank": 447,
+      "ticker": "BAP.AX",
+      "score": -1.4441,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 448,
+      "ticker": "TVN.AX",
+      "score": -1.4687,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 449,
+      "ticker": "ADH.AX",
+      "score": -1.501,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 450,
+      "ticker": "HAV.AX",
+      "score": -1.5412,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 451,
+      "ticker": "CVV.AX",
+      "score": -1.5542,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 452,
+      "ticker": "FRX.AX",
+      "score": -1.5763,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 453,
+      "ticker": "LEX.AX",
+      "score": -1.5999,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 454,
+      "ticker": "QAN.AX",
+      "score": -1.6105,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 455,
+      "ticker": "REE.AX",
+      "score": -1.6136,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 456,
+      "ticker": "LYL.AX",
+      "score": -1.6146,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 457,
+      "ticker": "MEZ.AX",
+      "score": -1.6461,
+      "sector": "Utilities"
+    },
+    {
+      "rank": 458,
+      "ticker": "ENV.AX",
+      "score": -1.7208,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 459,
+      "ticker": "BLX.AX",
+      "score": -1.7643,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 460,
+      "ticker": "ASN.AX",
+      "score": -1.7721,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 461,
+      "ticker": "TPW.AX",
+      "score": -1.8151,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 462,
+      "ticker": "SWP.AX",
+      "score": -1.8495,
+      "sector": "Communication Services"
+    },
+    {
+      "rank": 463,
+      "ticker": "EOS.AX",
+      "score": -1.8866,
+      "sector": "Industrials"
+    },
+    {
+      "rank": 464,
+      "ticker": "GYG.AX",
+      "score": -1.9003,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 465,
+      "ticker": "HCW.AX",
+      "score": -1.9191,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 466,
+      "ticker": "INR.AX",
+      "score": -1.9434,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 467,
+      "ticker": "ZIM.AX",
+      "score": -1.9478,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 468,
+      "ticker": "SHG.AX",
+      "score": -1.99,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 469,
+      "ticker": "PME.AX",
+      "score": -2.0089,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 470,
+      "ticker": "CYM.AX",
+      "score": -2.0652,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 471,
+      "ticker": "MP1.AX",
+      "score": -2.0686,
+      "sector": "Technology"
+    },
+    {
+      "rank": 472,
+      "ticker": "KLI.AX",
+      "score": -2.1797,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 473,
+      "ticker": "COH.AX",
+      "score": -2.2706,
+      "sector": "Healthcare"
+    },
+    {
+      "rank": 474,
+      "ticker": "KSN.AX",
+      "score": -2.3649,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 475,
+      "ticker": "LOT.AX",
+      "score": -2.6202,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 476,
+      "ticker": "DEV.AX",
+      "score": -2.6678,
+      "sector": "Basic Materials"
+    },
+    {
+      "rank": 477,
+      "ticker": "GEM.AX",
+      "score": -2.7694,
+      "sector": "Consumer Defensive"
+    },
+    {
+      "rank": 478,
+      "ticker": "KMD.AX",
+      "score": -3.121,
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "rank": 479,
+      "ticker": "AGE.AX",
+      "score": -3.5714,
+      "sector": "Energy"
+    },
+    {
+      "rank": 480,
+      "ticker": "FBR.AX",
+      "score": -4.0881,
+      "sector": "Real Estate"
+    },
+    {
+      "rank": 481,
+      "ticker": "ENN.AX",
+      "score": -5.4416,
+      "sector": "Financial Services"
+    }
+  ],
+  "vc5_diagnostics": {
+    "note": "PARTIAL POOLING (K0=50): each sector's coefficients = \u03bb\u00b7own + (1\u2212\u03bb)\u00b7global, \u03bb=n/(n+K0). Big sectors keep own signal; small ones shrink to global. Compare per-industry rows vs the VC5.IND card (pure per-sector, no shrinkage)."
+  },
+  "caveats": [
+    "survivorship deferred",
+    "flat 0.30% cost",
+    "features z-scored globally",
+    "shrinkage K0=50 not yet tuned",
+    "sectors <8 names dropped"
+  ]
+}
