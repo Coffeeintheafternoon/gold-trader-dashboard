@@ -93,6 +93,16 @@ function vc1Attr(tk){
     <div style="font-size:10px;color:var(--muted);margin:2px 0 6px">why it ranks here — top feature contributions to its score</div>
     ${r.attribution.map(a=>{const w=Math.abs(a.contrib)/max*100;const c=a.contrib>=0?'var(--green)':'var(--red)';return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0;font-size:11px"><div style="width:140px;font-family:monospace;color:#9ca3af;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.feature}</div><div style="flex:1;background:#111;height:11px;border-radius:2px;position:relative"><div style="position:absolute;left:0;height:11px;width:${w}%;background:${c};opacity:0.55;border-radius:2px"></div></div><div style="width:52px;font-family:monospace;color:${c}">${a.contrib>=0?'+':''}${a.contrib.toFixed(3)}</div></div>`;}).join('')}`;
 }
+function vcZoom(src){
+  let o=document.getElementById('vc-zoom');
+  if(o){o.remove();return;}                       // click again (anywhere) to shrink
+  o=document.createElement('div'); o.id='vc-zoom';
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:24px';
+  o.innerHTML=`<img src="${src}" style="max-width:96%;max-height:96%;border-radius:6px;box-shadow:0 0 50px #000">`;
+  o.onclick=()=>o.remove();
+  document.addEventListener('keydown',function esc(e){if(e.key==='Escape'){const z=document.getElementById('vc-zoom');if(z)z.remove();document.removeEventListener('keydown',esc);}});
+  document.body.appendChild(o);
+}
 function renderVc1Overview(d, clickedTicker){
   const el=document.getElementById('ml-vc1-overview'); if(!el) return;
   window._vc1=d;
@@ -147,7 +157,7 @@ function renderVc1Overview(d, clickedTicker){
     <div style="margin-top:18px;border-top:1px solid #222;padding-top:12px">
       <h3 style="color:#9ca3af;font-size:13px;margin:0 0 8px">Model diagnostics — visualising each stage (click to enlarge)</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px">
-        ${plots.map(p=>`<div style="background:#0c0c0c;border:1px solid #222;border-radius:6px;padding:8px"><a href="${p.file}?v=${_CV}" target="_blank"><img src="${p.file}?v=${_CV}" style="width:100%;border-radius:4px;display:block" loading="lazy"></a><div style="font-size:10.5px;color:var(--muted);margin-top:5px">${p.caption}</div></div>`).join('')}
+        ${plots.map(p=>`<div style="background:#0c0c0c;border:1px solid #222;border-radius:6px;padding:8px"><img src="${p.file}?v=${_CV}" onclick="vcZoom('${p.file}?v=${_CV}')" style="width:100%;border-radius:4px;display:block;cursor:zoom-in" loading="lazy"><div style="font-size:10.5px;color:var(--muted);margin-top:5px">${p.caption}</div></div>`).join('')}
       </div>
     </div>`:'';
   const _title=(d.model_type||'vc1').toUpperCase();
